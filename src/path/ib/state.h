@@ -46,6 +46,7 @@
 typedef struct {
     VAPI_qp_hndl_t handle;
     VAPI_qp_prop_t prop;
+    bool receive_multicast;
 } ib_qp_state_t;
 
 typedef struct {
@@ -70,6 +71,7 @@ typedef struct {
     int active_hcas[LAMPI_MAX_IB_HCAS];
     VAPI_hca_id_t hca_ids[LAMPI_MAX_IB_HCAS];
     ib_hca_state_t hca[LAMPI_MAX_IB_HCAS];
+    VAPI_qkey_t qkey;
 } ib_state_t;
 
 extern ib_state_t ib_state;

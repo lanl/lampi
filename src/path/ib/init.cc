@@ -31,14 +31,18 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <vapi.h>
+#include <vapi_common.h>
 #include "path/ib/init.h"
 #include "path/ib/state.h"
 #include "internal/malloc.h"
 
-void ibSetup(lampiState_t *s)
+void ibSetup(lampiState_t *s, int *authdata)
 {
     VAPI_ret_t vapi_result;
     VAPI_qp_init_attr_t qpinit;
+    VAPI_qp_attr_t qpattr;
+    VAPI_qp_attr_mask_t qpattrmask;
     IB_port_t p;
     int i, usable = 0;
 
@@ -133,6 +137,9 @@ void ibSetup(lampiState_t *s)
         goto exchange_info;
     }
 
+    // set Q_Key to timestamp from mpirun...
+    ib_state.qkey = (VAPI_qkey_t)authdata[2];
+
     for (i = 0; i < ib_state.num_active_hcas; i++) {
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
         // allocate protection domain for HCA
@@ -158,20 +165,34 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
-        // allocate a single UD QP
+        // initialize UD QP information to use PD and CQs just created
         qpinit.sq_cq_hndl = h->send_cq;
         qpinit.rq_cq_hndl = h->recv_cq;
         qpinit.cap.max_oust_wr_sq = h->cap.max_qp_ous_wr;
         qpinit.cap.max_oust_wr_rq = h->cap.max_qp_ous_wr;
         qpinit.cap.max_sg_size_sq = h->cap.max_num_sg_ent;
         qpinit.cap.max_sg_size_rq = h->cap.max_num_sg_ent;
+        qpinit.rdd_hndl = VAPI_INVAL_HNDL;
         qpinit.sq_sig_type = VAPI_SIGNAL_ALL_WR;
         qpinit.rq_sig_type = VAPI_SIGNAL_ALL_WR;
         qpinit.pd_hndl = h->pd;
         qpinit.ts_type = VAPI_TS_UD;
+        // allocate a single UD QP
         vapi_result = VAPI_create_qp(h->handle, &qpinit, &(h->ud.handle), &(h->ud.prop));
         if (vapi_result != VAPI_OK) {
             ulm_err(("ibSetup: VAPI_create_qp() for HCA %d returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+        // set Q_Key for QP and transition to INIT state
+        qpattr.qp_state = VAPI_INIT;
+        qpattr.qkey = ib_state.qkey;
+        QP_ATTR_MASK_CLR_ALL(qpattrmask);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QKEY);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
+        vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: VAPI_modify_qp() for HCA %d returned %s\n",
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
