@@ -637,8 +637,11 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     E3_DMA_MAIN *qdma = mainDMADesc;
 
     /* initialize the QDMA descriptor */
-
-    qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
+    if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+        qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED_BROADCAST, 63);
+    } else { // normal dma
+        qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
+    }
     qdma->dma_dest = 0;
     qdma->dma_destEvent = quadricsQueue[rail].elanQAddr;	// global queue object
     qdma->dma_size = sizeof(quadricsCtlHdr_t);
@@ -830,8 +833,11 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
     }
 
     /* initialize the first DMA descriptor */
-
-    d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
+    if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
+    } else { // normal DMA
+        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
+    }
     d->dma_dest = (E3_Addr)destAddr;
     d->dma_destEvent = (E3_Addr)0;
     d->dma_size = (elanbug) ? toEndOfPageBytes : fragLength;
@@ -848,7 +854,12 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
 
     if (elanbug) {
         /* initialize the second DMA descriptor */
-        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
+        if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+            d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
+        } else { // normal dma
+            d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
+        }
+
         d->dma_dest = (E3_Addr)((unsigned char *)destAddr + toEndOfPageBytes);
         d->dma_destEvent = (E3_Addr)0;
         d->dma_size = fragLength - toEndOfPageBytes;
