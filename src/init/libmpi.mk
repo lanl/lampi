@@ -26,3 +26,7 @@ endif
 ifneq (,$(findstring ENABLE_LSF, $(CPPFLAGS)))
 SRC_LIBMPI += src/init/init_lsf.cc
 endif
+
+ifneq (,$(findstring ENABLE_INFINIBAND, $(CPPFLAGS)))
+SRC_LIBMPI += src/init/init_ib.cc
+endif
