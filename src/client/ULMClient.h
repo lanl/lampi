@@ -47,6 +47,12 @@ void daemonAbnormalChildTermination(pid_t PIDofChild, int NChildren,
 void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
                     pid_t *ChildPIDs, unsigned int MessageType,
                     int Notify);
+void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
+                    pid_t *ChildPIDs, unsigned int MessageType,
+                    int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
+                    int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
+                    int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
+                    int *NewLineLast);
 int CheckIfChildrenAlive(int *ProcessCount, int _ulm_HostID,
                          int *IAmAlive);
 int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *ProcessCount,

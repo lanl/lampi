@@ -65,7 +65,7 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            size_t *StderrBytesWritten,
                            size_t *StdoutBytesWritten, int *NewLineLast)
 {
-    int i, RetVal, NumberReads, nfds, fd;
+    int i, RetVal, NumberReads, nfds;
     fd_set ReadSet;
     ssize_t lenR, lenW;
     struct timeval WaitTime;
@@ -94,47 +94,8 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     if (nfds == 0)
         return 0;
 
+    
     RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
-    /* check for closed descriptors - if a closed descriptor is included in
-       the descriptor list, a select call using this will fail */
-    if (RetVal < 0) {
-        nfds = 0;
-        FD_ZERO(&ReadSet);
-        sprintf(ReadBuffer, "/dev/fd/");
-        for (i = 0; i < NFDs; i++) {
-            sprintf(ReadBuffer + 8, "%d ", ClientStdoutFDs[i]);
-            fd = open(ReadBuffer, O_RDONLY);
-            if (fd < 0) {
-                ClientStdoutFDs[i] = -1;
-                lampiState.IAmAlive[i] = 0;
-            }
-            else {
-                if (ClientStdoutFDs[i] >= 0)
-                    FD_SET(ClientStdoutFDs[i], &ReadSet);
-                nfds++;
-                close(fd);
-            }
-        }
-        for (i = 0; i < NFDs; i++) {
-            sprintf(ReadBuffer + 8, "%d ", ClientStderrFDs[i]);
-            fd = open(ReadBuffer, O_RDONLY);
-            if (fd < 0) {
-                ClientStdoutFDs[i] = -1;
-                lampiState.IAmAlive[i] = 0;
-            }
-            else {
-                if (ClientStderrFDs[i] >= 0)
-                    FD_SET(ClientStderrFDs[i], &ReadSet);
-                nfds++;
-                close(fd);
-            }
-        }
-        if (nfds == 0)
-            return 0;
-        RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
-        if (RetVal < 0)
-            return RetVal;
-    }
     if (RetVal <= 0)
         return RetVal;
 
@@ -159,8 +120,15 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                         ClientStderrFDs[i] = -1;
                         lampiState.IAmAlive[i] = 0;
                     }
-                    else if ((lenR < 0) && (errno == EINTR)) {
-                        again = true;
+                    else if (lenR < 0) {
+                        if (errno == EINTR) {
+                            again = true;
+                        }
+                        else {
+                            close(ClientStderrFDs[i]);
+                            ClientStderrFDs[i] = -1;
+                            lampiState.IAmAlive[i] = 0;
+                        }
                     }
                 } while (again);
                 if (lenR > 0) {
@@ -207,8 +175,15 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                         ClientStdoutFDs[i] = -1;
                         lampiState.IAmAlive[i] = 0;
                     }
-                    else if ((lenR < 0) && (errno == EINTR)) {
-                        again = true;
+                    else if (lenR < 0) {
+                        if (errno == EINTR) {
+                            again = true;
+                        }
+                        else {
+                            close(ClientStdoutFDs[i]);
+                            ClientStdoutFDs[i] = -1;
+                            lampiState.IAmAlive[i] = 0;
+                        }
                     }
                 } while (again);
                 if (lenR > 0) {

@@ -83,3 +83,80 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
     /*  !!!!!!!!!  may want to do some cleanup here first */
     exit(2);
 }
+
+void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
+                    pid_t *ChildPIDs, unsigned int MessageType,
+                    int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
+                    int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
+                    int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
+                    int *NewLineLast)
+{
+    int i, NumChildren, MaxDesc, NFDs;
+    ulm_iovec_t IOVec;
+    ssize_t IOReturn;
+    bool again = true;
+
+    /*
+     * kill all children  - this signal will not be processed by mpirun's
+     * daemon loop
+     */
+    NumChildren = ProcessCount[hostIndex];
+    for (i = 0; i < NumChildren; i++) {
+        if (ChildPIDs[i] != -1) {
+            kill(ChildPIDs[i], SIGKILL);
+            ChildPIDs[i] = -1;
+        }
+    }
+
+    MaxDesc = 0;
+    NFDs = ProcessCount[hostIndex] + 1;
+
+    for (i = 0; i < NFDs; i++) {
+        if (ClientStdoutFDs[i] > MaxDesc)
+            MaxDesc = ClientStdoutFDs[i];
+        if (ClientStderrFDs[i] > MaxDesc)
+            MaxDesc = ClientStderrFDs[i];
+    }
+    MaxDesc++;
+
+    /* drain standard I/O of children */
+    if (ServerSocketFD >= 0) {
+        while (again) {
+            ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
+                ToServerStdoutFD, ToServerStderrFD, NFDs, MaxDesc,
+                IOPrefix, LenIOPreFix, StderrBytesWritten, StdoutBytesWritten,
+                NewLineLast);
+
+            again = false;
+            /* scan again only if pipes to children are still open; note
+             * that we avoid the last set of descriptors since they are
+             * the client daemon's....
+             */
+            for (i = 0; i < (NFDs - 1); i++) {
+                if ((ClientStdoutFDs[i] >= 0) || (ClientStderrFDs[i] >= 0)) {
+                    again = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    ClientStdoutFDs[NFDs - 1] = -1;
+    ClientStderrFDs[NFDs - 1] = -1;
+    dup2(ToServerStderrFD, STDERR_FILENO);
+    dup2(ToServerStdoutFD, STDOUT_FILENO);
+
+    /* notify server of termination */
+    if (Notify) {
+        IOVec.iov_base = (char *) &MessageType;
+        IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
+        IOReturn = _ulm_Send_Socket(ServerSocketFD, 1, &IOVec);
+        if (IOReturn < 0) {
+            ulm_exit((-1,
+                      "Error: reading Tag in AbortAndDrainLocalHost.  "
+                      "RetVal: %ld\n", IOReturn));
+        }
+    }
+
+    exit(2);
+}

@@ -84,7 +84,7 @@ void Clientsig_child(int Signal)
 
     case SIGCHLD:
         /* return if sigchld already caught */
-        if (lampiState.AbnormalExit.flag > 0)
+        if (lampiState.AbnormalExit->flag > 0)
             return;
 
         /* process signal -
@@ -115,27 +115,27 @@ void Clientsig_child(int Signal)
         }
 
         /* figure out which process terminated abnormally */
-        lampiState.AbnormalExit.pid = -1;
+        lampiState.AbnormalExit->pid = -1;
         for (i = 0; i < local_nprocs(); i++) {
             if (PIDofChild == lampiState.ChildPIDs[i]) {
                 ulm_dbg(("YourPID: %d, Child PID: %d, i: %d\n",
                          getpid(), lampiState.ChildPIDs[i], i));
                 /* save PID of terminated Child to global variable */
-                lampiState.AbnormalExit.pid = PIDofChild;
+                lampiState.AbnormalExit->pid = PIDofChild;
             }
         }
-        if (lampiState.AbnormalExit.pid == -1) {
+        if (lampiState.AbnormalExit->pid == -1) {
             return;
         }
         /* set global flag indicating abnormal termination */
-        lampiState.AbnormalExit.flag = 1;
-        lampiState.AbnormalExit.signal = (WIFSIGNALED(Status)) ? WTERMSIG(Status) : 0;
-        lampiState.AbnormalExit.status = (WIFEXITED(Status)) ? WEXITSTATUS(Status) : 0;
+        lampiState.AbnormalExit->flag = 1;
+        lampiState.AbnormalExit->signal = (WIFSIGNALED(Status)) ? WTERMSIG(Status) : 0;
+        lampiState.AbnormalExit->status = (WIFEXITED(Status)) ? WEXITSTATUS(Status) : 0;
 
         ulm_dbg(("child %d exited, signal %d exit status %d\n",
-                 (int) lampiState.AbnormalExit.pid,
-                 (int) lampiState.AbnormalExit.signal,
-                 (int) lampiState.AbnormalExit.status));
+                 (int) lampiState.AbnormalExit->pid,
+                 (int) lampiState.AbnormalExit->signal,
+                 (int) lampiState.AbnormalExit->status));
         break;
     default:
         break;
@@ -187,8 +187,8 @@ void ClientAbnormalChildTermination(pid_t PIDofChild, int NChildren,
     ErrorData[0] = (unsigned int) PIDofChild;
     ErrorData[1] = (unsigned int) TerminatedLocalProcess;
     ErrorData[2] = (unsigned int) TerminatedGlobalProcess;
-    ErrorData[3] = (unsigned int) lampiState.AbnormalExit.signal;
-    ErrorData[4] = (unsigned int) lampiState.AbnormalExit.status;
+    ErrorData[3] = (unsigned int) lampiState.AbnormalExit->signal;
+    ErrorData[4] = (unsigned int) lampiState.AbnormalExit->status;
     IOVec[0].iov_base = (char *) &Tag;
     IOVec[0].iov_len = (ssize_t) (sizeof(unsigned int));
     IOVec[1].iov_base = (char *) ErrorData;
@@ -244,8 +244,8 @@ void daemonAbnormalChildTermination(pid_t PIDofChild, int NChildren,
     ErrorData[0] = (unsigned int) PIDofChild;
     ErrorData[1] = (unsigned int) TerminatedLocalProcess;
     ErrorData[2] = (unsigned int) TerminatedGlobalProcess;
-    ErrorData[3] = (unsigned int) lampiState.AbnormalExit.signal;
-    ErrorData[4] = (unsigned int) lampiState.AbnormalExit.status;
+    ErrorData[3] = (unsigned int) lampiState.AbnormalExit->signal;
+    ErrorData[4] = (unsigned int) lampiState.AbnormalExit->status;
 
 	s->client->reset(adminMessage::SEND);
 	if ( false == s->client->pack(ErrorData, adminMessage::INTEGER, 5)  )

@@ -38,6 +38,7 @@
 #include <time.h>
 #endif                          /* LINUX */
 
+#include "init/fork_many.h"
 #include "internal/constants.h"
 #include "internal/profiler.h"
 #include "internal/types.h"
@@ -130,15 +131,15 @@ void lampi_daemon_loop(lampiState_t *s)
 #endif                          /* LINUX */
         DeltaTime = TimeInSeconds - LastTime;
         /* check to see if any children have exited abnormally */
-        if (s->AbnormalExit.flag == 1) {
-            ClientAbnormalChildTermination(s->AbnormalExit.pid,
+        if (s->AbnormalExit->flag == 1) {
+            ClientAbnormalChildTermination(s->AbnormalExit->pid,
                                            NChildren, ChildPIDs, IAmAlive,
                                            ServerSocketFD);
             /*
              * set abnormal termination flag to 2, so that termination
              * sequence does not start up again.
              */
-            s->AbnormalExit.flag = 2;
+            s->AbnormalExit->flag = 2;
         }
         /* handle stdio */
         ClientScanStdoutStderr(STDOUTfdsFromChildren,
@@ -161,15 +162,17 @@ void lampi_daemon_loop(lampiState_t *s)
 #endif
 
         /* check to see if children alive */
-        if (!s->AbnormalExit.flag)
-            NumAlive =
-                CheckIfChildrenAlive(ProcessCount, hostIndex, IAmAlive);
+        NumAlive = CheckIfChildrenAlive(ProcessCount, hostIndex, IAmAlive);
 
         /* cleanup and exit */
-        if ((!s->AbnormalExit.flag) && (NumAlive == 0) && (!shuttingDown)) {
-            shuttingDown = true;
-            ClientOrderlyShutdown(StderrBytesWritten, StdoutBytesWritten,
+        if ((s->AbnormalExit->flag == 0) && (NumAlive == 0) && (!shuttingDown)) {
+            /* make sure we check our children's exit status as well before continuing */
+            daemon_wait_for_children();
+            if (s->AbnormalExit->flag == 0) {
+                shuttingDown = true;
+                ClientOrderlyShutdown(StderrBytesWritten, StdoutBytesWritten,
                                   ServerSocketFD, s);
+            }
         }
 #ifdef USE_CT
         checkForRunControlMsgs(&ServerSocketFD,

@@ -96,9 +96,12 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
             /* recieve request to teminate immediately */
             Message = ACKTERMINATENOW;
             NotifyServer = 1;
-            AbortLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
+            AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
                            ChildPIDs, (unsigned int) Message,
-                           NotifyServer);
+                           NotifyServer, STDOUTfdsFromChildren,
+                           STDERRfdsFromChildren, StdoutFD, StderrFD,
+                           IOPreFix, LenIOPreFix, StderrBytesWritten, 
+                           StdoutBytesWritten, NewLineLast);
             break;
         case ACKABNORMALTERM:
             Tag = ACKACKABNORMALTERM;
@@ -256,9 +259,12 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                 /* recieve request to teminate immediately */
                 Message = ACKTERMINATENOW;
                 NotifyServer = 1;
-                AbortLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
+                AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
                                ChildPIDs, (unsigned int) Message,
-                               NotifyServer);
+                               NotifyServer, STDOUTfdsFromChildren,
+                               STDERRfdsFromChildren, StdoutFD, StderrFD,
+                               IOPreFix, LenIOPreFix, StderrBytesWritten, 
+                               StdoutBytesWritten, NewLineLast);
                 break;
             case ACKABNORMALTERM:
                 Tag = ACKACKABNORMALTERM;
