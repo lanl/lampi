@@ -37,12 +37,12 @@
  * Lock structure
  */
 
-enum { LOCK_UNLOCKED = 1 };
+enum { LOCK_UNLOCKED = 0 };
 
 typedef struct {
   union {
     volatile int lockData_m;
-    char padding[4];
+	char padding[4];
   } data;
 } lockStructure_t;
 
@@ -78,6 +78,7 @@ extern "C"
 /*
  *  Spin until I can get the lock
  */
+#if 0
 inline static void spinlock(lockStructure_t *lockData)
 {
 
@@ -94,7 +95,6 @@ inline static void spinlock(lockStructure_t *lockData)
 	:: "r"(*lockData)								
 	: "ar.ccv", "ar.pfs", "b7", "p15", "r28", "r29", "r30", "memory");	
 }
-
 /*
  * This routine tries once to obtain the lock
  */
@@ -112,6 +112,52 @@ inline static int spintrylock(lockStructure_t *lockData)
     return gotLock;
 
 }
+#endif
+
+#if 1
+inline static void spinlock(lockStructure_t *lockData)
+{
+	__asm__ __volatile__ (
+		"mov ar.ccv = r0\n"
+		"mov r29 = 1\n"
+		";;\n"
+		"1:\n"
+		"ld4 r2 = [%0]\n"
+		";;\n"
+		"cmp4.eq p0,p7 = r0,r2\n"
+		"(p7) br.cond.spnt.few 1b \n"
+		"cmpxchg4.acq r2 = [%0], r29, ar.ccv\n"
+		";;\n"
+		"cmp4.eq p0,p7 = r0, r2\n"
+		"(p7) br.cond.spnt.few 1b\n"
+		";;\n"
+		:: "r"(&(lockData)->data.lockData_m)
+		: "ar.ccv", "p7", "r2", "r29", "memory");
+}
+
+/*
+ * This routine tries once to obtain the lock
+ */
+inline static int spintrylock(lockStructure_t *lockData)
+{
+
+  int gotLock;
+
+    __asm__ __volatile__ (								
+	  "mov ar.ccv=r0\n"							
+	  ";;\n"									
+	  "cmpxchg4.acq %0=[%2],%1,ar.ccv\n"					
+	  : "=r"(gotLock) : "r"(1), "r"(&(lockData)->data.lockData_m) : "ar.ccv", "memory");
+
+	/* The lock has to initialized to zero for spinlock (above) to work correctly.
+	   When that happens, spintrylock breaks, because, it expects the lock to be
+	   initialized to zero. Thus, if lockData->data.lockData_m == 0, the lock is
+	   unlocked, meaning, we should return !gotLock.
+	*/
+    return (gotLock == 0) ? 1 : 0;
+}
+#endif
+
 
 
 /*
@@ -123,10 +169,50 @@ inline static int fetchNadd(volatile int *addr, int inc)
 {
   int inputValue;
 
-  __asm__ __volatile__ (
-	"fetchadd4.rel %0=[%1],%2" \
-	: "=r"(*addr) : "r"(inputValue), "i"(inc) : "memory");
-
+  switch (inc) {
+	  case -16:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(-16) : "memory");
+		  break;
+	  case -8:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(-8) : "memory");
+		  break;
+	  case -4:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(-4) : "memory");
+		  break;
+	  case -1:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(-1) : "memory");
+		  break;
+	  case 1:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(1) : "memory");
+		  break;
+	  case 4:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(4) : "memory");
+		  break;
+	  case 8:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(8) : "memory");
+		  break;
+	  case 16:
+		  __asm__ __volatile__ (
+			  "fetchadd4.rel %0=[%1],%2" \
+			  : "=r"(inputValue) : "r"(addr), "i"(16) : "memory");
+		  break;
+	  default:
+		  ;
+  }
   return (inputValue);
 }
 
@@ -135,9 +221,50 @@ inline static int fetchNset(volatile int *addr, int setValue)
 {
     int inputValue;
 
-    __asm__ __volatile__ (
-	"xchg4 %0=[%1],%2" \
-	: "=r"(*addr) : "r"(inputValue), "i"(setValue) : "memory");
+	switch (setValue) {
+		case -16:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(-16) : "memory");
+			break;
+		case -8:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(-8) : "memory");
+			break;
+		case -4:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(-4) : "memory");
+			break;
+		case -1:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(-1) : "memory");
+			break;
+		case 1:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(1) : "memory");
+			break;
+		case 4:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(4) : "memory");
+			break;
+		case 8:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(8) : "memory");
+			break;
+		case 16:
+			__asm__ __volatile__ (
+				"xchg4 %0=[%1],%2" \
+				: "=r"(inputValue) : "r"(addr), "i"(16) : "memory");
+			break;
+		default:
+			;
+	}
 
     return (inputValue);
 }
