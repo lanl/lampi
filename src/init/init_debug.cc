@@ -67,14 +67,11 @@ int MPIR_being_debugged = 0;
 volatile int MPIR_debug_gate = 0;
 volatile int MPIR_debug_state = 0;
 
-extern "C" void *MPIR_Breakpoint(void);
-
 static void wait_for_debugger(void)
 {
     while (MPIR_debug_gate == 0) {
         usleep(100000);
     }
-    (void *) MPIR_Breakpoint();
 }
 
 

@@ -4,7 +4,6 @@ SRC_LIBMPI += \
 	src/util/DblLinkList.cc \
 	src/util/HashNode.cc \
 	src/util/HashTable.cc \
-	src/util/MPIR_Breakpoint.c \
 	src/util/MemFunctions.cc \
 	src/util/Reactor.cc \
 	src/util/SharedMemBarrier.cc \
