@@ -207,8 +207,10 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	sendFragDesc->toAddr = UDPGlobals::UDPNet->getHostAddr(hostRank);
 	sendFragDesc->toAddr.sin_port = UDPGlobals::UDPNet->getHostPort(gldestProc, shortMsg);
 	sendFragDesc->sendSockfd = UDPGlobals::UDPNet->getLocalSocket(shortMsg);
-
-	// simple iovec setup for most messages...
+	// We attempt to get the UDPEarlySend_ descriptor.
+	// if we are temporarily out of resources we will return true (which
+	// means .. come back later -- big boy.).  if its a hard failure
+	// return false.
 	if (payloadSize) {
 	    if (message->datatype == NULL || message->datatype->layout == CONTIGUOUS) {
 		if (payloadSize <= EARLY_SEND_SMALL){
@@ -216,29 +218,38 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
                     if (returnValue != ULM_SUCCESS) {
 			*errorCode = returnValue;
 		 	ulm_warn(("UDPEarlySendData_small is null"));	
-			return false;  
+			if (returnValue == ULM_ERR_TEMP_OUT_OF_RESOURCE)
+				return true;
+			else 	
+				return false;  
 		   } 
 		    sendFragDesc->earlySend_type = EARLY_SEND_SMALL; 	
                     dest_addr = (unsigned char*)(((UDPEarlySend_small*)sendFragDesc->earlySend)->data);	
                 } 
 		else if (payloadSize <= EARLY_SEND_MED){	
                     sendFragDesc->earlySend = (void*)UDPEarlySendData_med.getElement(getMemPoolIndex(), returnValue);
-		    if (returnValue != ULM_SUCCESS) {
+               	       if (returnValue != ULM_SUCCESS) {
                         *errorCode = returnValue;
                         ulm_warn(("UDPEarlySendData_med is null"));
-                        return false;
-                   }  
-                    sendFragDesc->earlySend_type = EARLY_SEND_MED; 
-                    dest_addr = (unsigned char*)(((UDPEarlySend_med*)sendFragDesc->earlySend)->data);	
+                        if (returnValue == ULM_ERR_TEMP_OUT_OF_RESOURCE)
+                                return true;
+                        else    
+                                return false;
+    			} 
+			sendFragDesc->earlySend_type = EARLY_SEND_MED; 
+                    	dest_addr = (unsigned char*)(((UDPEarlySend_med*)sendFragDesc->earlySend)->data);	
                 }	
 		else if (payloadSize <= EARLY_SEND_LARGE) {
                     sendFragDesc->earlySend =  UDPEarlySendData_large.getElement(getMemPoolIndex(), returnValue);
-                    sendFragDesc->earlySend_type = EARLY_SEND_LARGE;
-               	    if (returnValue != ULM_SUCCESS) {
+		     if (returnValue != ULM_SUCCESS) {
                         *errorCode = returnValue;
-                        ulm_warn(("UDPEarlySendData_large is null"));
-                        return false;
-                   } 
+                        ulm_warn(("UDPEarlySendData_ large is null"));
+                        if (returnValue == ULM_ERR_TEMP_OUT_OF_RESOURCE)
+                                return true;
+                        else
+                                return false;
+                        }
+		    sendFragDesc->earlySend_type = EARLY_SEND_LARGE;
 		    dest_addr = (unsigned char*)(((UDPEarlySend_large*)sendFragDesc->earlySend)->data);	
                 }
 		else {
