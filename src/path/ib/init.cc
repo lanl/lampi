@@ -546,6 +546,8 @@ void ibSetup(lampiState_t *s)
             sfrag->sr_desc_m.fence = 0;
             sfrag->sr_desc_m.set_se = 0;
 
+            sfrag->reg_addr_m = smem;
+            sfrag->inline_m = false;
             sfrag->sg_m[0].addr = (VAPI_virt_addr_t)((unsigned long)smem);
             sfrag->sg_m[0].len = 2048; // possibly overwritten with real len <= 2048
             sfrag->sg_m[0].lkey = h->ud.send_mr.l_key;

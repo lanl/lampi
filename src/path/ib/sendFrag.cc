@@ -310,6 +310,9 @@ inline bool ibSendFragDesc::ud_init(void)
                 }
                 // now set the real send length
                 sg_m[0].len = sizeof(ibDataHdr_t) + length_m;
+                inline_m = 
+                    (sg_m[0].len <= ib_state.hca[hca_index_m].ud.prop.cap.max_inline_data_sq) ?
+                    true : false;
             }
             break;
         case MESSAGE_DATA_ACK:
@@ -328,6 +331,9 @@ inline bool ibSendFragDesc::ud_init(void)
                 }
                 // now set the real send length
                 sg_m[0].len = sizeof(ibDataAck_t);
+                inline_m = 
+                    (sg_m[0].len <= ib_state.hca[hca_index_m].ud.prop.cap.max_inline_data_sq) ?
+                    true : false;
             }
             break;
         default:
@@ -431,7 +437,7 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
             got_tokens = true;
         } 
         if (got_tokens) {
-            if (length_m <= ib_state.hca[hca_index_m].ud.prop.cap.max_inline_data_sq) {
+            if (inline_m) {
                 vapi_result = EVAPI_post_inline_sr(h->handle, h->ud.handle, &sr_desc_m);
             }
             else {
@@ -461,7 +467,12 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
             got_tokens = true;
         } 
         if (got_tokens) {
-            vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            if (inline_m) {
+                vapi_result = EVAPI_post_inline_sr(h->handle, h->ud.handle, &sr_desc_m);
+            }
+            else {
+                vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            }
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m & ~LOCALACKED);
 /* DEBUG */

@@ -66,6 +66,8 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         double timeSent_m;
         int globalDestID_m;
         unsigned long long frag_seq_m;
+        void *reg_addr_m;
+        bool inline_m;
 
 
         ibSendFragDesc(int poolIndex) { state_m = UNINITIALIZED; }
