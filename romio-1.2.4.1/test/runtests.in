@@ -1,5 +1,6 @@
 #! /bin/sh
 mpirun="@MPIRUN@"
+#mpirun="lampirun"
 STOPFILE=$HOME/.stopmpichtests
 #
 # If the programs are not available, run make.
@@ -11,6 +12,15 @@ MAKE="@MAKE@"
 srcdir=@srcdir@
 check_canrun=0
 FILENAME=test
+
+# a SCPFS/CFS file:  
+#FILENAME=/scratch2/taylorm/romiotest
+# a NFS file:  
+#FILENAME=romiotest
+# a unix file:  
+#FILENAME=/local/romiotest
+
+
 # Using shifts should remove args from the list.
 for arg in "$@" ; do
     case $arg in 

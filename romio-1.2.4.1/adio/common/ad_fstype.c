@@ -93,9 +93,15 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     if (err && (errno == ENOENT)) err = statvfs(dir, &vfsbuf);
     free(dir);
 
+    /* on QSC  8/7/2003, f_basetype can be:  
+       nfsv3 (home directories), 
+       advfs (/local)  
+       addon (/scratch1,2)
+    */
+
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
-	/* FPRINTF(stderr, "%s\n", vfsbuf.f_basetype); */
+	/*FPRINTF(stderr, "filesystem type: %s\n", vfsbuf.f_basetype); */
 	if (!strncmp(vfsbuf.f_basetype, "nfs", 3)) *fstype = ADIO_NFS;
 	else {
 # if (defined(HPUX) || defined(SPPUX))
@@ -172,7 +178,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
          else *fstype = ADIO_SFS;
      }
 #else
-    /* on other systems, make NFS the default */
+    /* on other systems, make UFS the default */
     free(dir);
 # ifdef ROMIO_NTFS
     *fstype = ADIO_NTFS;
@@ -214,6 +220,9 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     }
     else if (!strncmp(filename, "nfs:", 4) || !strncmp(filename, "NFS:", 4)) {
 	*fstype = ADIO_NFS;
+    }
+    else if (!strncmp(filename, "cfs:", 4) || !strncmp(filename, "CFS:", 4)) {
+	*fstype = ADIO_CFS;
     }
     else if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4)) {
 	*fstype = ADIO_HFS;

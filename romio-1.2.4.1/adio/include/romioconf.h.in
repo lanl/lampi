@@ -44,6 +44,7 @@
 #undef INT_LT_POINTER
 #undef IRIX
 #undef LINUX
+#undef DEC
 #undef MPICH
 #undef MPIHP
 #undef MPILAM
@@ -52,6 +53,7 @@
 #undef MPI_OFFSET_IS_INT
 #undef NEEDS_MPI_TEST
 #undef NFS
+#undef CFS
 #undef NO_AIO
 #undef NO_FD_IN_AIOCB
 #undef NO_MPI_SGI_type_is_contig
