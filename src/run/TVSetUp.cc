@@ -103,9 +103,7 @@ void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
     }
     for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++) {
         bzero((RunParameters->TVHostList)[HostRank], ULM_MAX_HOSTNAME_LEN);
-        Host = gethostbyname((RunParameters->HostList)[HostRank]);
-        sprintf((RunParameters->TVHostList)[HostRank], "%s",
-                inet_ntoa(*(struct in_addr *) Host->h_addr_list[0]));
+        strcpy((RunParameters->TVHostList)[HostRank], (char *)(RunParameters->HostList[HostRank]));
     }
 
 /* debug */
