@@ -127,3 +127,20 @@ buffer.  If we cannot obtain a valid vpid/buffer, we simply call
 ulm_bcast(). 
 
 --
+
+Final Notes:
+
+      1. Currently, on both the send and recv side, we're using
+         refCnt_m to determine if a message/fragment is multi-
+         cast or not.
+      2. After a discussion with Addy, we discovered that 
+         there's a bug in elan that prevents hardware broadcast
+         with queue dma's. The solution (copying libelan) would
+         probably be normal dma's to some known address...
+      3. I've updated comments in the following files, which describe
+         the changes made for hardware multicast and
+         ulm_bcast_quadrics in particular.
+
+         collective/quadrics/ulm_bcast_quadrics.cc
+         path/quadrics/sendFrag.h
+         queue/Pt2PtGroupMisc.cc

@@ -39,6 +39,10 @@
 #include "queue/globals.h"
 #include "path/quadrics/state.h"
 
+/*
+ * Performs a broadcast to all members of the communicator on the 
+ * same host as root
+ */
 static int ulm_bcast_onhost(void *buf, int count, ULMType_t *type,
                             int root, int comm)
 {
@@ -97,6 +101,10 @@ static int ulm_bcast_onhost(void *buf, int count, ULMType_t *type,
     return ULM_SUCCESS;
 }
 
+/*
+ * This version of broadcast uses the hardware multicast capability
+ * of the elan card.
+ */
 CDECL
 int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
                        int root, int comm)
@@ -124,31 +132,41 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
     }
 
     /* 
-     * make sure procs are contiguous.  Also, when called for
-     * the first time, getMcastVpid/getMcastBuf must be called by 
-     * everyone in the communicator.
+     * These calls must be made by all procs in the communicator
+     * for proper initialization.  Afterward, they can return
+     * error conditions that would force us to use the regular
+     * broadcast
      */
     rc = communicators[comm]->getMcastVpid(0, &vpid);
     if (rc != ULM_SUCCESS || vpid < 0) {
         ulm_err(("Error: comm=%d, proc=%d returned vpid=%d, rc=%d\n",
                  comm, self, vpid, rc));
-        goto DEFAULT;
+        goto DEFAULT_BCAST;
     }
     mcast_buf = (unsigned char *) 
         communicators[comm]->getMcastBuf(0, &mcast_buf_sz);
     if (mcast_buf == 0) {
         ulm_err(("Error: comm=%d, proc=%d couldn't fetch mcast buf\n",
                  comm, self));
-        goto DEFAULT;
+        goto DEFAULT_BCAST;
     }
 
-    /* make sure packed message will fit within the multicast
-     * buffer */
+    /* 
+     * make sure packed message will fit within the multicast
+     * buffer 
+     */
     if (count * type->packed_size > mcast_buf_sz) {
-        goto DEFAULT;
+        goto DEFAULT_BCAST;
     }
 
-    /* see if this proc is in the hw multicast stripe */
+    /*
+     * The way hardware broadcasts are set up on the elan defines
+     * a "stripe" across all participating hosts, e.g. the 0-th 
+     * proc on each participating host.  When the broadcast
+     * vpids are set up, this value is stored in 
+     *    Communicator::hw_ctx_stripe
+     * here we determine if this proc is in the stripe 
+     */
     grp = communicators[comm]->localGroup;
     myVp = grp->mapGroupProcIDToGlobalProcID[grp->ProcID];
     loc = elan3_vp2location(myVp, &quadricsCap);
@@ -156,7 +174,12 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
         in_stripe = 1;
     }
 
-    /* determine sending process on root host, my host */
+    /*
+     * The participating processes in the multicast must all
+     * lie within the stripe.  Here, we determine the group ID 
+     * of the processes in the stripe on the root host and
+     * this host.
+     */
     root_host = grp->mapGroupProcIDToHostID[root];
     my_host = grp->mapGroupProcIDToHostID[self];
     root_send_proc = root;
@@ -180,7 +203,15 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
         }
     }
 
-    /* broadcast from root to all on root's host */    
+    /* Broadcast steps:
+     *   1. Root does a shared memory bcast to all participants
+     *      on root's host
+     *   2. The stripe member on root's host calls ulm_send with
+     *      the ULM_SEND_MULTICAST flag
+     *   3. All stripe members (including the root hosts') call
+     *      ulm_recv
+     *   4. The non-root stripe members do a shared memory bcast
+     */
     tag = communicators[comm]->get_base_tag(1);
     if (my_host == root_host) {
         rc = ulm_bcast_onhost(buf, count, type, root, comm);
@@ -218,6 +249,6 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
 
     return ULM_SUCCESS;
 
-DEFAULT:
+DEFAULT_BCAST:
     return ulm_bcast(buf, count, type, root, comm);
 }

@@ -497,15 +497,17 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     return ULM_SUCCESS;
 }
 
+// This returns a buffer sitting at the same address on
+// all hosts in the communicator (per rail).  Used by
+// ulm_bcast_quadrics.  The size of the buffer is returned
+// in *sz, and a pointer to the buffer is the return value
+// of the method.  In case of error, zero is returned.
 void* Communicator::getMcastBuf(int rail, size_t *sz)
 {
 #ifndef __osf__
-
     *sz = 0;
     return 0;
-
 #else
-
     unsigned char *p, *q;
     ELAN3_CTX *ctx;
     int i;
@@ -548,21 +550,20 @@ void* Communicator::getMcastBuf(int rail, size_t *sz)
 
     *sz = MCAST_BUF_SZ;
     return elan_mcast_buf[rail];
-
 #endif
 }
 
-// fetch (compute the first time) the multicast vpid for use
-// with quadrics
+// This method returns the multicast vpid (in *vp) for use
+// on the rail "rail".  This vpid is used for hardware multicast
+// on quadrics, specifically in ulm_bcast_quadrics.  The
+// return value of the method is the error status (ULM_SUCCESS, etc)
+// and, if no such vpid is available, then *vp = -1.
 int Communicator::getMcastVpid(int rail, int *vp)
 {
 #ifndef __osf__
-
     *vp = -1;
     return ULM_SUCCESS;
-
 #else
-
     ELAN_LOCATION loc;
     ELAN3_CTX *ctx;
     int *vpids;
@@ -595,7 +596,12 @@ int Communicator::getMcastVpid(int rail, int *vp)
         vpids[i] = localGroup->mapGroupProcIDToGlobalProcID[i];
     }
 
-    // make sure we have a stripe across all nodes
+    // The quadrics hardware broadcast requires a "stripe" of
+    // processes across all participating hosts, e.g. process 0
+    // on all hosts.  Here we determine if such a stripe exists,
+    // and store it in 
+    //   Communicator::hw_ctx_stripe
+    // for use in ulm_bcast_quadrics.
     myVp = localGroup->mapGroupProcIDToGlobalProcID[localGroup->ProcID];
     for (i = 0; i < localGroup->groupSize; i++) {
         loc = elan3_vp2location(vpids[i],  &quadricsCap);
@@ -612,7 +618,9 @@ int Communicator::getMcastVpid(int rail, int *vp)
         return ULM_SUCCESS;
     }
 
-    // find low, high vp
+    // In order to set up a broadcast vpid, we must determine
+    // the processes IN THE STRIPE with the lowest, highest
+    // ranks.
     lowvp = localGroup->groupSize - 1; 
     highvp = 0;
     for (i = 0; i < localGroup->groupSize; i++) {
@@ -647,7 +655,6 @@ int Communicator::getMcastVpid(int rail, int *vp)
     ulm_free(vpids);
     *vp = multicast_vpid[rail];
     return ULM_SUCCESS;
-
 #endif
 }
 

@@ -638,6 +638,9 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
 
     /* initialize the QDMA descriptor */
     if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+        // Note that this setup was found by consulting the libelan 
+        // source code.  What documentation exists is misleading
+        // at best.  Caveat emptor
         qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED_BROADCAST, 63);
     } else { // normal dma
         qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
@@ -834,6 +837,9 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
 
     /* initialize the first DMA descriptor */
     if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+        // Note that this setup was found by consulting the libelan 
+        // source code.  What documentation exists is misleading
+        // at best.  Caveat emptor
         d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
     } else { // normal DMA
         d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
@@ -855,6 +861,9 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
     if (elanbug) {
         /* initialize the second DMA descriptor */
         if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
+            // Note that this setup was found by consulting the libelan 
+            // source code.  What documentation exists is misleading
+            // at best.  Caveat emptor
             d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
         } else { // normal dma
             d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
