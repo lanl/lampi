@@ -569,15 +569,15 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
         }
         if (receiver->DataReceived + receiver->DataInBitBucket >=
             receiver->reslts_m.length_m) {
-            //mark recv request as complete
-            assert(receiver->messageDone != REQUEST_COMPLETE);
-            receiver->messageDone = REQUEST_COMPLETE;
-            wmb();
             Comm = communicators[receiver->ctx_m];
             if (receiver->WhichQueue == MATCHEDIRECV) {
                 Comm->privateQueues.MatchedRecv[receiver->reslts_m.peer_m]->
                 RemoveLink(receiver);
             }
+            //mark recv request as complete
+            assert(receiver->messageDone != REQUEST_COMPLETE);
+            receiver->messageDone = REQUEST_COMPLETE;
+            wmb();
             // if ulm_request_free() has already been called, then
             // we free the recv/request obj. here...
             if (receiver->freeCalled)
@@ -635,15 +635,15 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     }
                     if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
                         matchedRecv->reslts_m.length_m) {
-                        //mark recv request as complete
-                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
-                        matchedRecv->messageDone = REQUEST_COMPLETE;
-                        wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         if (matchedRecv->WhichQueue == MATCHEDIRECV) {
                             Comm->privateQueues.MatchedRecv[matchedRecv->
 				                reslts_m.peer_m]->RemoveLink(matchedRecv);
                         }
+                        //mark recv request as complete
+                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
+                        matchedRecv->messageDone = REQUEST_COMPLETE;
+                        wmb();
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here
                         if (matchedRecv->freeCalled)
@@ -693,15 +693,15 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     }
                     if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
                         matchedRecv->reslts_m.length_m) {
-                        //mark recv request as complete
-                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
-                        matchedRecv->messageDone = REQUEST_COMPLETE;
-                        wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         if (matchedRecv->WhichQueue == MATCHEDIRECV) {
                             Comm->privateQueues.MatchedRecv[matchedRecv->
 				                reslts_m.peer_m]->RemoveLink(matchedRecv);
                         }
+                        //mark recv request as complete
+                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
+                        matchedRecv->messageDone = REQUEST_COMPLETE;
+                        wmb();
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here...
                         if (matchedRecv->freeCalled)
@@ -1009,6 +1009,7 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 		//  add this descriptor to the matched ireceive list
                 Comm = communicators[incomingFrag->ctx_m];
 		matchedRecv->WhichQueue = MATCHEDIRECV;
+                wmb();
 		Comm->privateQueues.MatchedRecv[sourceRank]->
 	    		Append(matchedRecv);
 	}
