@@ -48,9 +48,6 @@ void lampi_init_prefork_rms(lampiState_t *s)
     ELAN_CAPABILITY cap;
     ELAN3_DEVINFO devinfo;
     int elan_nodeId;
-    int *local2global;
-    int host;
-    int rank;
 
     if (s->error) {
         return;
@@ -83,14 +80,17 @@ void lampi_init_prefork_rms(lampiState_t *s)
 
 #ifdef QSNETLIBS_VERSION_STRING
 
-# if QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
+#if QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
     // This should never be true, but...
     elan_nodeId = devinfo.NodeId - cap.LowNode;
-# else
+#else
 
     if (0) { // debug
+        printf("QSNETLIBS_VERSION_STRING=%s\n", QSNETLIBS_VERSION_STRING);
         printf("devinfo.Position.NodeId = %d\n", devinfo.Position.NodeId);
-        printf("olddevinfo.NodeId = %d\n", ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId);
+        printf("olddevinfo.NodeId = %d\n",
+               ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId);
+        printf("cap.LowNode = %d\n", cap.LowNode);
         fflush(stdout);
     }
 
@@ -109,7 +109,7 @@ void lampi_init_prefork_rms(lampiState_t *s)
     // Old versions of qsnetlibs (pre 1.4) do this ..
     elan_nodeId = devinfo.NodeId - cap.LowNode;
 
-#endif ////  QSNETLIBS_VERSION_STRING
+#endif // QSNETLIBS_VERSION_STRING
 
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
 
