@@ -119,6 +119,41 @@ Options_t Options[] =
      GetAppHostDataFromMachineFile,
      "File containing list of hosts (machines)"
     },
+    {{"f", "no-arg-check"},
+     "NoArgCheck",
+     NO_ARGS,
+     NoOpFunction,
+     SetCheckArgsFalse,
+     "No checking of MPI arguments"
+    },
+    {{"t", "p", "output-prefix"},
+     "OutputPrefix",
+     NO_ARGS,
+     NoOpFunction,
+     SetOutputPrefixTrue,
+     "Prefix standard output and error with helpful information"
+    },
+    {{"q", "quiet"},
+     "Quiet",
+     NO_ARGS,
+     NoOpFunction,
+     SetQuietTrue,
+     "Suppress start-up messages"
+    },
+    {{"v", "verbose"},
+     "Verbose",
+     NO_ARGS,
+     NoOpFunction,
+     SetVerboseTrue,
+     "Verbose start-up messages"
+    },
+    {{"w", "warn"},
+     "Warn",
+     NO_ARGS,
+     NoOpFunction,
+     SetWarnTrue,
+     "Enable warning messages"
+    },
     {{"i", "interface"},
      "InterfaceList",
      STRING_ARGS,
@@ -451,7 +486,7 @@ Options_t Options[] =
      NoOpFunction,
      parseTCPConnectRetries,
      "TCP connection retries"
-    }
+    },
 #endif
     {{"list-options"},
      "ListOptions",
