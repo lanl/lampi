@@ -151,6 +151,56 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
     return;
 }
 
+// for a given RecvDesc_t this routine searches the
+//  list of privateQueues.OkToMatchRecvFrags for frags with the same tag
+//  The assumption is that a match has already
+//  been made, and this is just a check of the list to see if any
+//  more frags are present.
+void Communicator::SearchForFragsWithSpecifiedTag
+(RecvDesc_t *MatchedPostedRecvHeader, bool *recvDone, double timeNow)
+{
+    int SendingProc = MatchedPostedRecvHeader->srcProcID_m;
+    int tag = MatchedPostedRecvHeader->tag_m;
+
+    // lock list for thread safety
+    if(usethreads()) {
+        privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.lock();
+    }
+
+    for (BaseRecvFragDesc_t *RecDesc =
+             (BaseRecvFragDesc_t *) privateQueues.
+             OkToMatchRecvFrags[SendingProc]->begin();
+         RecDesc !=
+             (BaseRecvFragDesc_t *) privateQueues.
+             OkToMatchRecvFrags[SendingProc]->end();
+         RecDesc = (BaseRecvFragDesc_t *) RecDesc->next) {
+
+        // sanity check
+        assert(RecDesc->WhichQueue == UNMATCHEDFRAGS);
+
+        if (RecDesc->tag_m == tag) {
+            // remove frag from privateQueues.OkToMatchRecvFrags list
+            BaseRecvFragDesc_t *TmpDesc = RecDesc;
+            RecDesc = (BaseRecvFragDesc_t *)
+                privateQueues.OkToMatchRecvFrags[SendingProc]->
+                RemoveLinkNoLock(RecDesc);
+            // process data
+            ProcessMatchedData(MatchedPostedRecvHeader, TmpDesc, timeNow,
+                               recvDone);
+            if (*recvDone) {
+                break;
+            }
+        }                  
+    }                      
+
+    // unlock list
+    if(usethreads()) {
+        privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.unlock();
+    }
+
+    return;
+}
+
 
 //
 // Scan the list of frags that came in ahead of time to see if any

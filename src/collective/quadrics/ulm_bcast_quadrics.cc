@@ -194,6 +194,12 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
                 ulm_err(("Error: in multicast send, returned %d\n", rc));
                 return rc;
             }
+            /* Vacuous recv forced by quadrics hw multicast */
+            rc = ulm_recv(buf, count, type, root_send_proc, tag, comm, &status);
+            if (rc != ULM_SUCCESS) {
+                ulm_err(("Error: in multicast recv, returned %d\n", rc));
+                return rc;
+            }
         }
     } else {
         if (in_stripe) {

@@ -515,6 +515,10 @@ public:
     void SearchForFragsWithSpecifiedISendSeqNum(RecvDesc_t *MatchedPostedRecvHeader,
 		    bool *recvDone, double timeNow = -1.0);
 
+    // search for frags with specified tag
+    void SearchForFragsWithSpecifiedTag(RecvDesc_t *MatchedPostedRecvHeader, 
+                                        bool *recvDone, double timeNow = -1.0);
+
     // search ahead of sequence queue to see if frags can now be
     // matched (old name: scan_ahead_of_sequence)
     int matchFragsInAheadOfSequenceList(int proc, double timeNow = -1.0);

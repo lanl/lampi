@@ -604,6 +604,7 @@ int Communicator::getMcastVpid(int rail, int *vp)
     for (i = 0; i < 4; i++) {
         if (_hw_ctx[i] == localGroup->numberOfHostsInGroup) {
             hw_ctx_stripe = i;
+            break;
         }
     }
     if (hw_ctx_stripe == -1) { // no stripe exists

@@ -106,6 +106,7 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
             if (OKToSend) {
                 /* enqueue DMA */
                 if (sfd->enqueue(timeNow, errorCode)) {
+                    ulm_err(("proc %d sent %p \n", myproc(), sfd));
 #ifdef RELIABILITY_ON
                     sfd->timeSent = timeNow;
                     (sfd->numTransmits)++;
@@ -918,7 +919,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 
                 // reset event block
                 E3_RESET_BCOPY_BLOCK(quadricsQueue[i].rcvBlk);
-
+                    
                 // reprime ELAN q_event with a wait
                 elan3_waitevent(ctx, quadricsQueue[i].sdramQAddr +
                                 offsetof(E3_Queue, q_event));
@@ -934,6 +935,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     rd->rail = i;
                     rd->DataOK = false;
                     rd->path = this;
+
                     switch (rd->envelope.commonHdr.ctlMsgType) {
                     case MESSAGE_DATA:
                         rd->msgData(timeNow);

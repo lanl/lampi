@@ -82,7 +82,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
             //  is picked up. Need to search the list in any case
             //  just in case duplicate frags have arrived.
 //             if (!recvDone) {
-//                 SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,
+//                 SearchForFragsWithSpecifiedITag(MatchedPostedRecvHeader, &recvDone,
 //                                                        timeNow);
 //            }
 	} else {

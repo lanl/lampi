@@ -242,7 +242,8 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
 
         } else if (FragFound
                    && (RecDesc->isendSeq_m == SendingSequenceNumber)
-                   && (RecDesc->srcProcID_m == SendingProc)) {
+                   && (RecDesc->srcProcID_m == SendingProc)
+                   && (RecDesc->tag_m == tag)) {
 
             //
             // Copy the data to user space and record the amount moved.
