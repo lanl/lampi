@@ -119,6 +119,47 @@ enum {
     ULM_HW_REDUCE = 0
 };
 
+/*
+ * Basic data type indexes
+ */
+enum {
+    ULM_CHAR = 0,
+    ULM_SHORT,
+    ULM_INT,
+    ULM_LONG,
+    ULM_UNSIGNED_CHAR,
+    ULM_UNSIGNED_SHORT,
+    ULM_UNSIGNED,
+    ULM_UNSIGNED_LONG,
+    ULM_FLOAT,
+    ULM_DOUBLE,
+    ULM_LONG_DOUBLE,
+    ULM_PACKED,
+    ULM_BYTE,
+    ULM_LONG_LONG_INT,
+    ULM_FLOAT_INT,
+    ULM_DOUBLE_INT,
+    ULM_LONG_INT,
+    ULM_2INT,
+    ULM_SHORT_INT,
+    ULM_LONG_DOUBLE_INT,
+    ULM_LB,
+    ULM_UB,
+    ULM_INTEGER1,
+    ULM_INTEGER2,
+    ULM_INTEGER4,
+    ULM_INTEGER8,
+    ULM_REAL2,
+    ULM_REAL4,
+    ULM_REAL8,
+    ULM_COMPLEX,
+    ULM_DOUBLE_COMPLEX,
+    ULM_2REAL,
+    ULM_2DOUBLE_PRECISION,
+    ULM_2INTEGER,
+    ULM_NUMBER_OF_TYPES
+};
+
 #ifdef __cplusplus
 }
 #endif

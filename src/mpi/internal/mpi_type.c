@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -36,80 +36,12 @@
 #include "internal/mpi.h"
 
 /*
- * Indexes into type and pair arrays
- */
-enum {
-    I_CHAR = 0,
-    I_SHORT,
-    I_INT,
-    I_LONG,
-    I_UNSIGNED_CHAR,
-    I_UNSIGNED_SHORT,
-    I_UNSIGNED,
-    I_UNSIGNED_LONG,
-    I_FLOAT,
-    I_DOUBLE,
-    I_LONG_DOUBLE,
-    I_PACKED,
-    I_BYTE,
-    I_LONG_LONG_INT,
-    I_FLOAT_INT,
-    I_DOUBLE_INT,
-    I_LONG_INT,
-    I_2INT,
-    I_SHORT_INT,
-    I_LONG_DOUBLE_INT,
-    I_LB,
-    I_UB,
-    NUMBER_OF_TYPES
-};
-
-/*
  * Static space for basic datatypes
  */
 
-static ULMType_t type[NUMBER_OF_TYPES];
-static ULMTypeMapElt_t pair[NUMBER_OF_TYPES];
+ULMType_t ulm_type[ULM_NUMBER_OF_TYPES];
 
-/*
- * External symbols for basic datatypes
- */
-MPI_Datatype MPI_CHAR = &(type[I_CHAR]);
-MPI_Datatype MPI_SHORT = &(type[I_SHORT]);
-MPI_Datatype MPI_INT = &(type[I_INT]);
-MPI_Datatype MPI_LONG = &(type[I_LONG]);
-MPI_Datatype MPI_UNSIGNED_CHAR = &(type[I_UNSIGNED_CHAR]);
-MPI_Datatype MPI_UNSIGNED_SHORT = &(type[I_UNSIGNED_SHORT]);
-MPI_Datatype MPI_UNSIGNED = &(type[I_UNSIGNED]);
-MPI_Datatype MPI_UNSIGNED_LONG = &(type[I_UNSIGNED_LONG]);
-MPI_Datatype MPI_FLOAT = &(type[I_FLOAT]);
-MPI_Datatype MPI_DOUBLE = &(type[I_DOUBLE]);
-MPI_Datatype MPI_LONG_DOUBLE = &(type[I_LONG_DOUBLE]);
-MPI_Datatype MPI_PACKED = &(type[I_PACKED]);
-MPI_Datatype MPI_BYTE = &(type[I_BYTE]);
-MPI_Datatype MPI_LONG_LONG_INT = &(type[I_LONG_LONG_INT]);
-MPI_Datatype MPI_FLOAT_INT = &(type[I_FLOAT_INT]);
-MPI_Datatype MPI_DOUBLE_INT = &(type[I_DOUBLE_INT]);
-MPI_Datatype MPI_LONG_INT = &(type[I_LONG_INT]);
-MPI_Datatype MPI_2INT = &(type[I_2INT]);
-MPI_Datatype MPI_SHORT_INT = &(type[I_SHORT_INT]);
-MPI_Datatype MPI_LONG_DOUBLE_INT = &(type[I_LONG_DOUBLE_INT]);
-MPI_Datatype MPI_LB = &(type[I_LB]);
-MPI_Datatype MPI_UB = &(type[I_UB]);
-
-#ifdef LAMPI_FORTRAN_SUPPORT
-
-/*
- * External C symbols for Fortran datatypes which are aliases of C
- * datatypes
- */
-MPI_Datatype MPI_INTEGER = &(type[I_INT]);
-MPI_Datatype MPI_REAL = &(type[I_FLOAT]);
-MPI_Datatype MPI_DOUBLE_PRECISION = &(type[I_DOUBLE]);
-MPI_Datatype MPI_LOGICAL = &(type[I_UNSIGNED]);
-MPI_Datatype MPI_CHARACTER = &(type[I_CHAR]);
-
-#endif
+static ULMTypeMapElt_t tmap[ULM_NUMBER_OF_TYPES];
 
 /*
  * Basic datatype initialization
@@ -122,124 +54,166 @@ int _mpi_init_datatypes(void)
      * specific initialization
      */
 
-    type[I_CHAR].extent = sizeof(signed char);
-    type[I_CHAR].op_index = _MPI_CHAR_OP_INDEX;
+    ulm_type[ULM_CHAR].extent = sizeof(signed char);
+    ulm_type[ULM_CHAR].op_index = _MPI_CHAR_OP_INDEX;
 
-    type[I_SHORT].extent = sizeof(signed short int);
-    type[I_SHORT].op_index = _MPI_SHORT_OP_INDEX;
+    ulm_type[ULM_SHORT].extent = sizeof(signed short int);
+    ulm_type[ULM_SHORT].op_index = _MPI_SHORT_OP_INDEX;
 
-    type[I_INT].extent = sizeof(signed int);
-    type[I_INT].op_index = _MPI_INT_OP_INDEX;
+    ulm_type[ULM_INT].extent = sizeof(signed int);
+    ulm_type[ULM_INT].op_index = _MPI_INT_OP_INDEX;
 
-    type[I_LONG].extent = sizeof(signed long int);
-    type[I_LONG].op_index = _MPI_LONG_OP_INDEX;
+    ulm_type[ULM_LONG].extent = sizeof(signed long int);
+    ulm_type[ULM_LONG].op_index = _MPI_LONG_OP_INDEX;
 
-    type[I_UNSIGNED_CHAR].extent = sizeof(unsigned char);
-    type[I_UNSIGNED_CHAR].op_index = _MPI_UNSIGNED_CHAR_OP_INDEX;
+    ulm_type[ULM_UNSIGNED_CHAR].extent = sizeof(unsigned char);
+    ulm_type[ULM_UNSIGNED_CHAR].op_index = _MPI_UNSIGNED_CHAR_OP_INDEX;
 
-    type[I_UNSIGNED_SHORT].extent = sizeof(unsigned short int);
-    type[I_UNSIGNED_SHORT].op_index = _MPI_UNSIGNED_SHORT_OP_INDEX;
+    ulm_type[ULM_UNSIGNED_SHORT].extent = sizeof(unsigned short int);
+    ulm_type[ULM_UNSIGNED_SHORT].op_index = _MPI_UNSIGNED_SHORT_OP_INDEX;
 
-    type[I_UNSIGNED].extent = sizeof(unsigned int);
-    type[I_UNSIGNED].op_index = _MPI_UNSIGNED_OP_INDEX;
+    ulm_type[ULM_UNSIGNED].extent = sizeof(unsigned int);
+    ulm_type[ULM_UNSIGNED].op_index = _MPI_UNSIGNED_OP_INDEX;
 
-    type[I_UNSIGNED_LONG].extent = sizeof(unsigned long int);
-    type[I_UNSIGNED_LONG].op_index = _MPI_UNSIGNED_LONG_OP_INDEX;
+    ulm_type[ULM_UNSIGNED_LONG].extent = sizeof(unsigned long int);
+    ulm_type[ULM_UNSIGNED_LONG].op_index = _MPI_UNSIGNED_LONG_OP_INDEX;
 
-    type[I_FLOAT].extent = sizeof(float);
-    type[I_FLOAT].op_index = _MPI_FLOAT_OP_INDEX;
+    ulm_type[ULM_FLOAT].extent = sizeof(float);
+    ulm_type[ULM_FLOAT].op_index = _MPI_FLOAT_OP_INDEX;
 
-    type[I_DOUBLE].extent = sizeof(double);
-    type[I_DOUBLE].op_index = _MPI_DOUBLE_OP_INDEX;
+    ulm_type[ULM_DOUBLE].extent = sizeof(double);
+    ulm_type[ULM_DOUBLE].op_index = _MPI_DOUBLE_OP_INDEX;
 
-    type[I_LONG_DOUBLE].extent = sizeof(long double);
-    type[I_LONG_DOUBLE].op_index = _MPI_LONG_DOUBLE_OP_INDEX;
+    ulm_type[ULM_LONG_DOUBLE].extent = sizeof(long double);
+    ulm_type[ULM_LONG_DOUBLE].op_index = _MPI_LONG_DOUBLE_OP_INDEX;
 
-    type[I_PACKED].extent = sizeof(unsigned char);
-    type[I_PACKED].op_index = _MPI_PACKED_OP_INDEX;
+    ulm_type[ULM_PACKED].extent = sizeof(unsigned char);
+    ulm_type[ULM_PACKED].op_index = _MPI_PACKED_OP_INDEX;
 
-    type[I_BYTE].extent = sizeof(unsigned char);
-    type[I_BYTE].op_index = _MPI_BYTE_OP_INDEX;
+    ulm_type[ULM_BYTE].extent = sizeof(unsigned char);
+    ulm_type[ULM_BYTE].op_index = _MPI_BYTE_OP_INDEX;
 
-    type[I_LONG_LONG_INT].extent = sizeof(long long);
-    type[I_LONG_LONG_INT].op_index = _MPI_LONG_LONG_OP_INDEX;
+    ulm_type[ULM_LONG_LONG_INT].extent = sizeof(long long);
+    ulm_type[ULM_LONG_LONG_INT].op_index = _MPI_LONG_LONG_OP_INDEX;
 
-    type[I_FLOAT_INT].extent = sizeof(ulm_float_int_t);
-    type[I_FLOAT_INT].op_index = _MPI_FLOAT_INT_OP_INDEX;
+    ulm_type[ULM_FLOAT_INT].extent = sizeof(ulm_float_int_t);
+    ulm_type[ULM_FLOAT_INT].op_index = _MPI_FLOAT_INT_OP_INDEX;
 
-    type[I_DOUBLE_INT].extent = sizeof(ulm_double_int_t);
-    type[I_DOUBLE_INT].op_index = _MPI_DOUBLE_INT_OP_INDEX;
+    ulm_type[ULM_DOUBLE_INT].extent = sizeof(ulm_double_int_t);
+    ulm_type[ULM_DOUBLE_INT].op_index = _MPI_DOUBLE_INT_OP_INDEX;
 
-    type[I_LONG_INT].extent = sizeof(ulm_long_int_t);
-    type[I_LONG_INT].op_index = _MPI_LONG_INT_OP_INDEX;
+    ulm_type[ULM_LONG_INT].extent = sizeof(ulm_long_int_t);
+    ulm_type[ULM_LONG_INT].op_index = _MPI_LONG_INT_OP_INDEX;
 
-    type[I_2INT].extent = sizeof(ulm_int_int_t);
-    type[I_2INT].op_index = _MPI_2INT_OP_INDEX;
+    ulm_type[ULM_2INT].extent = sizeof(ulm_int_int_t);
+    ulm_type[ULM_2INT].op_index = _MPI_2INT_OP_INDEX;
 
-    type[I_SHORT_INT].extent = sizeof(ulm_short_int_t);
-    type[I_SHORT_INT].op_index = _MPI_SHORT_INT_OP_INDEX;
+    ulm_type[ULM_SHORT_INT].extent = sizeof(ulm_short_int_t);
+    ulm_type[ULM_SHORT_INT].op_index = _MPI_SHORT_INT_OP_INDEX;
 
-    type[I_LONG_DOUBLE_INT].extent = sizeof(ulm_ldouble_int_t);
-    type[I_LONG_DOUBLE_INT].op_index = _MPI_LONG_DOUBLE_INT_OP_INDEX;
+    ulm_type[ULM_LONG_DOUBLE_INT].extent = sizeof(ulm_ldouble_int_t);
+    ulm_type[ULM_LONG_DOUBLE_INT].op_index = _MPI_LONG_DOUBLE_INT_OP_INDEX;
 
-    type[I_LB].extent = 0;
-    type[I_LB].op_index = -1;
+    ulm_type[ULM_LB].extent = 0;
+    ulm_type[ULM_LB].op_index = -1;
 
-    type[I_UB].extent = 0;
-    type[I_UB].op_index = -2;
+    ulm_type[ULM_UB].extent = 0;
+    ulm_type[ULM_UB].op_index = -2;
+
+    ulm_type[ULM_INTEGER1].extent = 1;
+    ulm_type[ULM_INTEGER1].op_index = _MPI_CHAR_OP_INDEX;
+
+    ulm_type[ULM_INTEGER2].extent = 2;
+    ulm_type[ULM_INTEGER2].op_index = _MPI_SHORT_OP_INDEX;
+
+    ulm_type[ULM_INTEGER4].extent = 4;
+    ulm_type[ULM_INTEGER4].op_index = _MPI_INT_OP_INDEX;
+
+    ulm_type[ULM_INTEGER8].extent = 8;
+    ulm_type[ULM_INTEGER8].op_index = _MPI_LONG_LONG_OP_INDEX;
+
+    ulm_type[ULM_REAL2].extent = 2;
+    ulm_type[ULM_REAL2].op_index = _MPI_FLOAT_OP_INDEX;
+
+    ulm_type[ULM_REAL4].extent = 4;
+    ulm_type[ULM_REAL4].op_index = _MPI_FLOAT_OP_INDEX;
+
+    ulm_type[ULM_REAL8].extent = 8;
+    ulm_type[ULM_REAL8].op_index = _MPI_DOUBLE_OP_INDEX;
+
+    ulm_type[ULM_COMPLEX].extent = 2 * sizeof(float);
+    ulm_type[ULM_COMPLEX].op_index = _MPI_SCOMPLEX_OP_INDEX;
+
+    ulm_type[ULM_DOUBLE_COMPLEX].extent = 2 * sizeof(double);
+    ulm_type[ULM_DOUBLE_COMPLEX].op_index = _MPI_DCOMPLEX_OP_INDEX;
+
+    ulm_type[ULM_2REAL].extent = 2 * sizeof(float);
+    ulm_type[ULM_2REAL].op_index = _MPI_2REAL_OP_INDEX;
+
+    ulm_type[ULM_2DOUBLE_PRECISION].extent = 2 * sizeof(double);
+    ulm_type[ULM_2DOUBLE_PRECISION].op_index = _MPI_2DOUBLE_PRECISION_OP_INDEX;
+
+    ulm_type[ULM_2INTEGER].extent = 2 * sizeof(int);
+    ulm_type[ULM_2INTEGER].op_index = _MPI_2INT_OP_INDEX;
 
     /*
      * common initialization
      */
 
-    for (i = 0; i < NUMBER_OF_TYPES; i++) {
-        pair[i].size = type[i].extent;
-        pair[i].offset = 0;
-        pair[i].seq_offset = 0;
-        type[i].type_map = &pair[i];
-        type[i].packed_size = type[i].extent;
-        type[i].num_pairs = 1;
-        type[i].layout = CONTIGUOUS;
-        type[i].isbasic = 1;
-        type[i].num_primitives = 1;
-        type[i].second_primitive_offset = 0;
-        type[i].committed = 1;
-        type[i].ref_count = 1;
-        type[i].envelope.combiner = MPI_COMBINER_NAMED;
-        type[i].envelope.nints = 0;
-        type[i].envelope.naddrs = 0;
-        type[i].envelope.ndatatypes = 0;
+    for (i = 0; i < ULM_NUMBER_OF_TYPES ; i++) {
+        tmap[i].size = ulm_type[i].extent;
+        tmap[i].offset = 0;
+        tmap[i].seq_offset = 0;
+        ulm_type[i].type_map = &tmap[i];
+        ulm_type[i].packed_size = ulm_type[i].extent;
+        ulm_type[i].num_pairs = 1;
+        ulm_type[i].layout = CONTIGUOUS;
+        ulm_type[i].isbasic = 1;
+        ulm_type[i].num_primitives = 1;
+        ulm_type[i].second_primitive_offset = 0;
+        ulm_type[i].committed = 1;
+        ulm_type[i].ref_count = 1;
+        ulm_type[i].envelope.combiner = MPI_COMBINER_NAMED;
+        ulm_type[i].envelope.nints = 0;
+        ulm_type[i].envelope.naddrs = 0;
+        ulm_type[i].envelope.ndatatypes = 0;
     }
 
     /*
      * upper and lower bounds are special
      */
 
-    type[I_LB].type_map = NULL;
-    type[I_LB].num_pairs = 0;
-    type[I_LB].num_primitives = 0;
+    ulm_type[ULM_LB].type_map = NULL;
+    ulm_type[ULM_LB].num_pairs = 0;
+    ulm_type[ULM_LB].num_primitives = 0;
 
-    type[I_UB].type_map = NULL;
-    type[I_UB].num_pairs = 0;
-    type[I_UB].num_primitives = 0;
+    ulm_type[ULM_UB].type_map = NULL;
+    ulm_type[ULM_UB].num_pairs = 0;
+    ulm_type[ULM_UB].num_primitives = 0;
 
     /*
      * pair types are special
      */
 
-    type[I_SHORT_INT].num_primitives = 2;
-    type[I_2INT].num_primitives = 2;
-    type[I_LONG_INT].num_primitives = 2;
-    type[I_FLOAT_INT].num_primitives = 2;
-    type[I_DOUBLE_INT].num_primitives = 2;
-    type[I_LONG_DOUBLE_INT].num_primitives = 2;
+    ulm_type[ULM_SHORT_INT].num_primitives = 2;
+    ulm_type[ULM_2INT].num_primitives = 2;
+    ulm_type[ULM_LONG_INT].num_primitives = 2;
+    ulm_type[ULM_FLOAT_INT].num_primitives = 2;
+    ulm_type[ULM_DOUBLE_INT].num_primitives = 2;
+    ulm_type[ULM_LONG_DOUBLE_INT].num_primitives = 2;
+    ulm_type[ULM_2INTEGER].num_primitives = 2;
+    ulm_type[ULM_2REAL].num_primitives = 2;
+    ulm_type[ULM_2DOUBLE_PRECISION].num_primitives = 2;
 
-    type[I_SHORT_INT].second_primitive_offset = type[I_SHORT_INT].extent - sizeof(int);
-    type[I_2INT].second_primitive_offset = type[I_2INT].extent - sizeof(int);
-    type[I_LONG_INT].second_primitive_offset = type[I_LONG_INT].extent - sizeof(int);
-    type[I_FLOAT_INT].second_primitive_offset = type[I_FLOAT_INT].extent - sizeof(int);
-    type[I_DOUBLE_INT].second_primitive_offset = type[I_DOUBLE_INT].extent - sizeof(int);
-    type[I_LONG_DOUBLE_INT].second_primitive_offset = type[I_LONG_DOUBLE_INT].extent - sizeof(int);
+    ulm_type[ULM_SHORT_INT].second_primitive_offset = ulm_type[ULM_SHORT_INT].extent - sizeof(int);
+    ulm_type[ULM_2INT].second_primitive_offset = ulm_type[ULM_2INT].extent - sizeof(int);
+    ulm_type[ULM_LONG_INT].second_primitive_offset = ulm_type[ULM_LONG_INT].extent - sizeof(int);
+    ulm_type[ULM_FLOAT_INT].second_primitive_offset = ulm_type[ULM_FLOAT_INT].extent - sizeof(int);
+    ulm_type[ULM_DOUBLE_INT].second_primitive_offset = ulm_type[ULM_DOUBLE_INT].extent - sizeof(int);
+    ulm_type[ULM_LONG_DOUBLE_INT].second_primitive_offset = ulm_type[ULM_LONG_DOUBLE_INT].extent - sizeof(int);
+    ulm_type[ULM_2INTEGER].second_primitive_offset = ulm_type[ULM_2INTEGER].extent - sizeof(int);
+    ulm_type[ULM_2REAL].second_primitive_offset = ulm_type[ULM_2REAL].extent - sizeof(float);
+    ulm_type[ULM_2DOUBLE_PRECISION].second_primitive_offset = ulm_type[ULM_2DOUBLE_PRECISION].extent - sizeof(double);
 
     return MPI_SUCCESS;
 }

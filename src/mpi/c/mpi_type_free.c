@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 
+#include "os/atomic.h"
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 

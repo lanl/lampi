@@ -44,7 +44,7 @@
 #include "path/common/path.h"
 #include "queue/Communicator.h"
 #include "queue/globals.h"
-#include "queue/globals.h"
+#include "os/atomic.h"
 #include "ulm/ulm.h"
 
 

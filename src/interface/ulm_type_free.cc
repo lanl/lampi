@@ -34,6 +34,7 @@
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 #include "internal/mpif.h"
+#include "os/atomic.h"
 #include "ulm/ulm.h"
 
 /*!

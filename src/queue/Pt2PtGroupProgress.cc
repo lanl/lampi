@@ -38,6 +38,7 @@
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "path/common/path.h"
+#include "os/atomic.h"
 #include "ulm/ulm.h"
 
 #ifdef ENABLE_RELIABILITY

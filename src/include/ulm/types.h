@@ -359,8 +359,6 @@ typedef int (ulm_scatterv_t) (void *, int *, int *, ULMType_t *, void *,
  * datatype reference-count-based retain/release functions
  */
 
-#include "os/atomic.h"
-
 /*
  * datatype retain: increment reference count
  */

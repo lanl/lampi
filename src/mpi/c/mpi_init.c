@@ -34,7 +34,7 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
-int _PMPI_Init(int *argc, char ***argv)
+int PMPI_Init(int *argc, char ***argv)
 {
     int rc;
 
@@ -72,13 +72,13 @@ int _PMPI_Init(int *argc, char ***argv)
 
 #ifdef HAVE_PRAGMA_WEAK
 
-#pragma weak _MPI_Init = _PMPI_Init
+#pragma weak MPI_Init = PMPI_Init
 
 #else
 
-int _MPI_Init(int *argc, char ***argv)
+int MPI_Init(int *argc, char ***argv)
 {
-    return _PMPI_Init(argc, argv);
+    return PMPI_Init(argc, argv);
 }
 
 #endif

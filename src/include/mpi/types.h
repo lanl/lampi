@@ -36,6 +36,8 @@
 
 #include <sys/types.h>
 
+#include "ulm/types.h"
+
 #ifdef __cplusplus
 extern "C"
 {
