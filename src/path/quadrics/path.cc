@@ -106,7 +106,6 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
             if (OKToSend) {
                 /* enqueue DMA */
                 if (sfd->enqueue(timeNow, errorCode)) {
-                    ulm_err(("proc %d sent %p \n", myproc(), sfd));
 #ifdef RELIABILITY_ON
                     sfd->timeSent = timeNow;
                     (sfd->numTransmits)++;
