@@ -191,8 +191,8 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
             if (amountToRecv > IRDesc->PostedLength)
                 amountToRecv = IRDesc->PostedLength;
             IRDesc->actualAmountToRecv_m = amountToRecv;
-
-            IRDesc->tag_m = RecDesc->tag_m;
+            /* reset tag variable to matched value for further list processing */
+            IRDesc->tag_m = tag = RecDesc->tag_m;
             IRDesc->srcProcID_m = SendingProc;
 
             //
