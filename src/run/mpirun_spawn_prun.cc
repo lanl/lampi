@@ -372,6 +372,17 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
         (char *) ulm_malloc(sizeof(buf) + 4);
     sprintf(exec_args[PROCS - skip_arg_count], "-n %s", buf);
 
+    if (0) { // DEBUG
+        printf(">>>>> NHosts = %d, NHostsSet = %d, nprocs = %d\n",
+               RunParameters->NHosts, RunParameters->NHostsSet, nprocs);
+        printf(">>>>> ProcessCount =");
+        for (i = 0; i < RunParameters->NHosts; i++) {
+            printf(" %d", RunParameters->ProcessCount[i]);
+        }
+        printf("\n");
+        fflush(stdout);
+    }
+
     /* rms flag to tag stdout/stderr with process id */
     if (RunParameters->OutputPrefix) {
         exec_args[RMS_TAG - skip_arg_count] =
