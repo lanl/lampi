@@ -1,0 +1,7 @@
+This is a copy of popt-1.6 included for portability. Do not edit this!
+
+We assume Standard C, so a few hardwired configuration parameters
+have been added to config.h
+
+popt source is available as part of the rmp source available from
+ftp://ftp.rpm.org/pub/rpm/dist/
