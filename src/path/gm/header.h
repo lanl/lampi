@@ -46,7 +46,7 @@ enum {
     ACKSTATUS_DATACORRUPT = 0x2,        // data arrived corrupted (value for ackStatus below)
     ACKSTATUS_AGGINFO_ONLY = 0x4,       // ack fields for a specific frag are not valid (OR'ed with ackStatus)
     HEADER_SIZE = 18 * sizeof(ulm_uint32_t),
-    DATAACK_PADDING = 2
+    DATAACK_PADDING = 4
 };
 
 struct gmHeaderCommon {
@@ -74,7 +74,6 @@ struct gmHeaderData {
 };
 
 struct gmHeaderDataAck : public BaseAck_t {
-    ulm_int32_t  tag_m;               // user tag value for this message
     ulm_uint32_t padding[DATAACK_PADDING];
     ulm_uint32_t checksum;              // additive checksum or CRC of all 128 - 4 bytes of the control message
 };

@@ -161,7 +161,6 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
     p->type = MESSAGE_DATA_ACK;
     p->ctxAndMsgType = gmHeader_m->data.ctxAndMsgType;
-    p->tag_m = tag_m;
     p->src_proc = myproc();
     p->dest_proc = gmHeader_m->data.senderID;
     p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
