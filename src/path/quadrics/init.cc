@@ -171,10 +171,17 @@ void quadricsInitQueueInfo()
         exit(1);
     }
 
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+    if (quadricsNRails != elan_rails(&quadricsCap, dev)) {
+        ulm_err(("quadricsInitQueueInfo: elan_rails does not agree with elan_nrails!\n"));
+        exit(1);
+    }
+#else
     if (quadricsNRails != elan3_rails(&quadricsCap, dev)) {
         ulm_err(("quadricsInitQueueInfo: elan3_rails does not agree with elan3_nrails!\n"));
         exit(1);
     }
+#endif
 
     quadricsQueue = (quadricsQueueInfo_t *)ulm_malloc(sizeof(quadricsQueueInfo_t) * quadricsNRails);
     if (!quadricsQueue) {
@@ -565,12 +572,21 @@ void quadricsInitBeforeFork() {
         exit(1);
     }
 
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+    // calculate quadricsNRails
+    quadricsNRails = elan_nrails(&quadricsCap);
+    if (quadricsNRails <= 0) {
+        ulm_err(("quadricsInitBeforeFork: elan_nrails returned %d rails!\n", quadricsNRails));
+        exit(1);
+    }
+#else
     // calculate quadricsNRails
     quadricsNRails = elan3_nrails(&quadricsCap);
     if (quadricsNRails <= 0) {
         ulm_err(("quadricsInitBeforeFork: elan(3)_nrails returned %d rails!\n", quadricsNRails));
         exit(1);
     }
+#endif
 
     // set up process private quadricsSendFragDescs
     // note: a freelist per Quadrics rail

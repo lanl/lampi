@@ -75,6 +75,8 @@ struct gmHeaderDataAck : public BaseAck_t {
     ulm_uint32_t checksum;              // additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
+#define GM_HDR_WORDS    (HEADER_SIZE / sizeof(ulm_uint32_t))
+
 union gmHeader {
     unsigned char bytes[HEADER_SIZE];
     ulm_uint64_t lwords[HEADER_SIZE / sizeof(ulm_uint64_t)];

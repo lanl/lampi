@@ -300,7 +300,7 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     }
 
     // have all fragments been sent
-    *incomplete = (message->NumSent < message->numfrags);
+    *incomplete = ((unsigned)message->NumSent < message->numfrags);
     return true;
 }
 
@@ -600,6 +600,8 @@ void TCPPeer::exceptEventHandler(int sd)
 
 void TCPPeer::sendComplete(TCPSendFrag* sendFrag)
 {
+    sendFrag->setSendDidComplete(true);
+    
     // completed sending this frag, check for additional fragments to send
     for(size_t i=0; i<tcpSockets.size(); i++) {
         TCPSocket& tcpSocket = tcpSockets[i];
@@ -631,7 +633,7 @@ void TCPPeer::sendComplete(TCPSendFrag* sendFrag)
             sendFrag->ReturnDescToPool(getMemPoolIndex());
 
             // check to see if message is complete or need to send next fragment
-            if (message->NumSent == message->numfrags) {
+            if ((unsigned)message->NumSent == message->numfrags) {
                 if (message->messageDone == REQUEST_INCOMPLETE &&
                     message->sendType != ULM_SEND_SYNCHRONOUS)
                     message->messageDone = REQUEST_COMPLETE;

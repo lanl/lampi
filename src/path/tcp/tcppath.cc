@@ -125,10 +125,10 @@ int TCPPath::initPreFork()
 {
     // allocate send/recv socket descriptors
     int rc;
-    if((rc = TCPSendFrag::init()) != ULM_SUCCESS)
+    if((rc = TCPSendFrag::initialize()) != ULM_SUCCESS)
         return rc;
 
-    if((rc = TCPRecvFrag::init()) != ULM_SUCCESS) 
+    if((rc = TCPRecvFrag::initialize()) != ULM_SUCCESS) 
         return rc;
     return ULM_SUCCESS;
 }

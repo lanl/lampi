@@ -142,155 +142,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
 }
 
 
-#ifdef ENABLE_RELIABILITY
-
-bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd)
-{
-    quadricsDataAck_t *p = &(envelope.msgDataAck);
-    sender_ackinfo_control_t *sptr;
-    sender_ackinfo_t *tptr;
-
-    // update sender ACK info -- largest in-order delivered and received frag sequence
-    // numbers received by our peers (or peer box, in the case of collective communication)
-    // from ourself or another local process
-    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
-        sptr = &(reliabilityInfo->sender_ackinfo[local_myproc()]);
-        tptr = &(sptr->process_array[p->src_proc]);
-    } else {
-        ulm_err(("quadricsRecvFragDesc::check...Ack received ack of unknown "
-                 "message type %d\n", msgType_m));
-        return true;
-    }
-
-    sptr->Lock.lock();
-    if (p->deliveredFragSeq > tptr->delivered_largest_inorder_seq) {
-        tptr->delivered_largest_inorder_seq = p->deliveredFragSeq;
-    }
-    // received is not guaranteed to be a strictly increasing series...
-    tptr->received_largest_inorder_seq = p->receivedFragSeq;
-    sptr->Lock.unlock();
-
-    // check to see if this ACK is for a specific frag or not
-    // if not, then we don't need to do anything else...
-    if (p->ackStatus == ACKSTATUS_AGGINFO_ONLY) {
-        return true;
-    } else if ((sfd->frag_seq != p->thisFragSeq)) {
-        // this ACK is a duplicate...or just screwed up...just ignore it...
-        return true;
-    }
-
-    return false;
-}
-
-#endif
-
-void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
-                                                 quadricsSendFragDesc *sfd)
-{
-    short whichQueue = sfd->WhichQueue;
-    quadricsDataAck_t *p = &(envelope.msgDataAck);
-    int errorCode;
-
-    if (p->ackStatus == ACKSTATUS_DATAGOOD) {
-
-        // register frag as acked
-        bsd->clearToSend_m = true;
-        (bsd->NumAcked)++;
-
-        // remove frag descriptor from list of frags to be acked
-        if (whichQueue == QUADRICSFRAGSTOACK) {
-            bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
-        }
-#ifdef ENABLE_RELIABILITY
-        else if (whichQueue == QUADRICSFRAGSTOSEND) {
-            bsd->FragsToSend.RemoveLinkNoLock((Links_t *)sfd);
-            // increment NumSent since we were going to send this again...
-            (bsd->NumSent)++;
-        }
-#endif
-        else {
-            ulm_exit((-1, "quadricsRecvFragDesc::processAck: Frag "
-                      "on %d queue\n", whichQueue));
-        }
-
-        // reset WhichQueue flag
-        sfd->WhichQueue = QUADRICSFRAGFREELIST;
-
-#ifdef ENABLE_RELIABILITY
-        // set seq_m value to 0/null/invalid to detect duplicate ACKs
-        sfd->frag_seq = 0;
-#endif
-
-        // reset send descriptor pointer
-        sfd->parentSendDesc = 0;
-
-        if (sfd->done(timeNow, &errorCode)) {
-            // return all sfd send resources
-            sfd->freeRscs();
-            sfd->WhichQueue = QUADRICSFRAGFREELIST;
-            // return frag descriptor to free list
-            // the header holds the global proc id
-            if (usethreads()) {
-                quadricsSendFragDescs.returnElement(sfd, sfd->rail);
-            } else {
-                quadricsSendFragDescs.returnElementNoLock(sfd, sfd->rail);
-            }
-        }
-        else {
-            // set a bool to make sure this is not retransmitted
-            // when cleanCtlMsgs() removes it from ctlMsgsToAck...
-            sfd->freeWhenDone = true;
-            // put on ctlMsgsToAck list for later cleaning by push()
-            // the ACK has come after rescheduling this frag to
-            // be resent...
-            ProcessPrivateMemDblLinkList *list =
-                &(quadricsQueue[rail].ctlMsgsToAck[MESSAGE_DATA]);
-            if (usethreads()) {
-                list->Lock.lock();
-                list->AppendNoLock((Links_t *)sfd);
-                quadricsQueue[rail].ctlFlagsLock.lock();
-                quadricsQueue[rail].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
-                quadricsQueue[rail].ctlFlagsLock.unlock();
-                list->Lock.unlock();
-            }
-            else {
-                list->AppendNoLock((Links_t *)sfd);
-                quadricsQueue[rail].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
-            }
-        }
-
-    } else {
-        /*
-         * only process negative acknowledgements if we are
-         * the process that sent the original message; otherwise,
-         * just rely on sender side retransmission
-         */
-        ulm_warn(("Warning: Quadrics Data corrupt upon receipt.  Will retransmit.\n"));
-
-        // reset WhichQueue flag
-        sfd->WhichQueue = QUADRICSFRAGSTOSEND;
-        // move Frag from FragsToAck list to FragsToSend list
-        if (whichQueue == QUADRICSFRAGSTOACK) {
-            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
-            bsd->FragsToSend.Append((Links_t *)sfd);
-        }
-        // move message to incomplete queue
-        if (bsd->NumSent == bsd->numfrags) {
-            // sanity check, is frag really in UnackedPostedSends queue
-            if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
-                ulm_exit((-1, "Error: :: Send descriptor not "
-                          "in UnackedPostedSends"
-                          " list, where it was expected.\n"));
-            }
-            bsd->WhichQueue = INCOMPLETEISENDQUEUE;
-            UnackedPostedSends.RemoveLink(bsd);
-            IncompletePostedSends.Append(bsd);
-        }
-        // reset send desc. NumSent as though this frag has not been sent
-        (bsd->NumSent)--;
-    } // end NACK/ACK processing
-}
-
 
 void quadricsRecvFragDesc::msgData(double timeNow)
 {
@@ -352,7 +203,7 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 {
     quadricsDataAck_t *p = &(envelope.msgDataAck);
     quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->ptrToSendDesc.ptr;
-    volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc;
+    volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc_m;
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
 
@@ -361,7 +212,7 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 
         if (bsd) {
             ((SendDesc_t *)bsd)->Lock.lock();
-            if (bsd != sfd->parentSendDesc) {
+            if (bsd != sfd->parentSendDesc_m) {
                 ((SendDesc_t *)bsd)->Lock.unlock();
                 ReturnDescToPool(getMemPoolIndex());
                 return;

@@ -76,6 +76,7 @@ class SMPSecondFragDesc_t;
 class BasePath_t;
 typedef struct BaseAck BaseAck_t;
 
+
 // RequestDesc_t:
 //
 // A super class for both send and receive descriptors
@@ -160,7 +161,7 @@ public:
     unsigned numfrags;          // number of frags that will be sent
     volatile unsigned NumAcked; //  number of acks received
     volatile unsigned NumFragDescAllocated;     // number of frag descriptors allocated
-    volatile unsigned NumSent;  // the number that have had the 'action' applied
+    volatile int NumSent;       // the number that have had the 'action' applied
     int maxOutstandingFrags;    // maximum outstanding frags - for flow control
     Status_t posted_m;
 
@@ -189,6 +190,10 @@ public:
             bsendDatatype = NULL;
             path_m = 0;
             addr_m = 0;
+            NumAcked = 0;
+            NumSent = 0;
+            NumFragDescAllocated = 0;
+            numfrags = 0;
 #ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
@@ -203,8 +208,12 @@ public:
             Lock.init();
             FragsToSend.Lock.init();
             FragsToAck.Lock.init();
+            NumAcked = 0;
+            NumSent = 0;
+            NumFragDescAllocated = 0;
             path_m = 0;
             addr_m = 0;
+            numfrags = 0;
 #ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
@@ -218,7 +227,6 @@ public:
 
     virtual void shallowCopyTo(RequestDesc_t *request);
 };
-
 
 // RecvDesc_t:
 //
@@ -298,11 +306,61 @@ public:
     packType packed_m;          // type of fragment
     int numTransmits_m;         // count transmission attempts
     int tmapIndex_m;            // type map index
+    int globalDestProc_m;       // global destination process ID
+    double timeSent_m;
+    bool	sendDidComplete_m;      // true if the device successfully sent the frag
+    unsigned long long fragSeq_m;   // duplicate/dropped detection sequence number
 
     // methods
+    virtual bool init()
+    {
+        sendDidComplete_m = false;
+        
+        return true;
+    }
+    
+    virtual int globalDestProc() {return globalDestProc_m;}
+    virtual unsigned long isendSequence() {return parentSendDesc_m->isendSeq_m;}
+
+    virtual unsigned long long fragSequence() {return fragSeq_m;}
+    virtual void setFragSequence(unsigned long long seq) {fragSeq_m = seq;}
+    
+    virtual void freeResources(double timeNow, SendDesc_t *bsd) {}
+
+    
+    bool sendDidComplete() {return sendDidComplete_m;}
+    void setSendDidComplete(bool tf) {sendDidComplete_m = tf;}    
+    
+    
+#ifdef ENABLE_RELIABILITY
+
+    
+    virtual void initResendInfo(SendDesc_t *message, double timeNow)
+    {
+        unsigned long long max_multiple;
+        double timeToResend;
+        
+        timeSent_m = timeNow;
+        numTransmits_m++;
+        max_multiple =
+            (numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+            (1 << numTransmits_m) :
+            (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
+        timeToResend = timeSent_m + (RETRANS_TIME * max_multiple);
+        if (message->earliestTimeToResend == -1) {
+            message->earliestTimeToResend = timeToResend;
+        } else if (timeToResend < message->earliestTimeToResend) {
+            message->earliestTimeToResend = timeToResend;
+        }
+    }
+
+#endif
+    
 };
 
 enum { UNIQUE_FRAG=0, DUPLICATE_RECEIVED=1, DUPLICATE_DELIVERD=2 };
+
+
 
 // BaseRecvFragDesc_t:
 //
@@ -432,7 +490,29 @@ public:
         {
             return fragIndex_m * maxSegSize_m;
         }
+    
+#ifdef ENABLE_RELIABILITY
+    
+    virtual unsigned long long ackFragSequence() {return 0;}
+    
+    virtual unsigned long long ackDeliveredFragSeq() {return 0;}
+    
+    virtual unsigned long long ackReceivedFragSeq() {return 0;}
+        
+    /* returns the global Proc ID of sending process */
+    virtual int ackSourceProc() {return -1;}
+        
+    virtual bool checkForDuplicateAndNonSpecificAck(BaseSendFragDesc_t *sfd);
+    
+#endif      /* ENABLE_RELIABILITY */
+
+    virtual int ackStatus() {return ACKSTATUS_DATAGOOD;}
+
+    virtual void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
+                                       BaseSendFragDesc_t *sfd);
+    
 };
+
 
 
 /* base ack class */

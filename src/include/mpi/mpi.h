@@ -86,6 +86,7 @@ extern MPI_Datatype MPI_DOUBLE_PRECISION;
 extern MPI_Datatype MPI_INTEGER1;
 extern MPI_Datatype MPI_INTEGER2;
 extern MPI_Datatype MPI_INTEGER4;
+extern MPI_Datatype MPI_INTEGER8;
 extern MPI_Datatype MPI_INTEGER;
 extern MPI_Datatype MPI_LOGICAL;
 extern MPI_Datatype MPI_REAL2;

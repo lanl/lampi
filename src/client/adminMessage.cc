@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -48,6 +48,8 @@
 #include "util/MemFunctions.h"
 #include "util/misc.h"
 #include "util/parsing.h"
+
+#define MAX_RETRY		10
 
 typedef struct {
     int                 tag;
@@ -407,7 +409,7 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
 
 bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout) 
 {
-    int sockbuf = 1, tag = INITMSG;
+    int sockbuf = 1, tag = INITMSG, connect_retry;
     int ok, recvAuthData[3];
     struct sockaddr_in server;
     ulm_iovec_t iovecs[5];
@@ -468,15 +470,30 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     }
 
     // attempt to connect
-    if (connect(socketToServer_m, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) < 0) {
-        if (timeout > 0) {
-            alarm(0);
-            sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+    for ( connect_retry = 0; connect_retry < MAX_RETRY ; connect_retry++ )
+    {
+        if (connect(socketToServer_m, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) < 0)
+        {
+            if ( (ETIMEDOUT == errno) || (ECONNREFUSED == errno) )
+            {
+                usleep(10);
+            }
+            else
+            {
+                if (timeout > 0) {
+                    alarm(0);
+                    sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+                }
+                ulm_err(("adminMessage::clientConnect connect to server %s TCP port %d failed!\n", hostname_m, port_m));
+                close(socketToServer_m);
+                socketToServer_m = -1;
+                return false;                
+            }
         }
-        ulm_err(("adminMessage::clientConnect connect to server %s TCP port %d failed!\n", hostname_m, port_m));
-        close(socketToServer_m);
-        socketToServer_m = -1;
-        return false;
+        else
+        {
+            break;
+        }
     }
 
     // now do the authorization handshake...send info
@@ -942,6 +959,18 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         ulm_err(("adminMessage::serverConnect timeout %d exceeded --"
                  " %d client sockets account for %d processes!\n",
                  timeout, hostcnt, np));
+	ulm_err(("\nmpirun was unable to start you application.\n"
+		"This may be caused by several things \n"
+		"- the application may not exist on the remote node\n"
+		"- the application may not be executable on the remote node\n"
+		"- the loader may not be able to find the dynamic libraries \n"
+		"needed to run the application.\n"
+		"Check to see that your remote LD_LIBRARY_PATH points to the \n"
+		"correct MPI library, and to any other dynamic libraries your \n"
+		"application needs. \n"
+		"- make sure that the mpirun you are using goes with the MPI \n"
+		"library you are trying to use.\n"));
+		
         for (int i = 0; i < nhosts_m; i++) {
             if (ranks[i] >= 0)
             {
@@ -1767,6 +1796,18 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             ulm_err(("adminMessage::serverConnect timeout %d exceeded --"
                      " %d client sockets account for %d processes!\n",
                      timeout, clientSocketCount(), clientProcessCount()));
+	    ulm_err(("\n\nmpirun was unable to start you application.\n"
+        	"This may be caused by several things \n"
+             	"- the application may not exist on the remote node\n"
+                 "- the application may not be executable on the remote node\n"
+                 "- the loader may not be able to find the dynamic libraries \n"
+                 "  needed to run the application.\n"
+                 "- check to see that your remote LD_LIBRARY_PATH points to the \n"
+                 "  correct MPI library, and to any other dynamic libraries your \n"
+                 "  application needs. \n"
+                 "- make sure that the mpirun you are using goes with the MPI \n"
+                 "  library you are trying to use.\n\n"));
+		 
             for (int i = 0; i < largestClientSocket_m; i++) {
                 if (clientSocketActive_m[i]) {
 #ifdef __linux__

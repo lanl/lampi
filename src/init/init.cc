@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -156,7 +156,7 @@ void lampi_init(void)
     lampi_init_prefork_ip_addresses(&_ulm);
 
     if (lampiState.hostid == 0) {
-        ulm_notice(("*** LA-MPI: Copyright 2001-2003, "
+        ulm_notice(("*** LA-MPI: Copyright 2001-2004, "
                     "ACL, Los Alamos National Laboratory ***\n"));
     }
 
@@ -367,7 +367,8 @@ void lampi_init_postfork_globals(lampiState_t *s)
     }
 
     lampiState.local_rank = lampiState.memLocalityIndex = s->local_rank;
-    s->client->setLocalProcessRank(s->local_rank);
+    if ( s->client )
+        s->client->setLocalProcessRank(s->local_rank);
 }
 
 

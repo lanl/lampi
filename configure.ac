@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.4.7,lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.X,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -123,6 +123,7 @@ DLLEXT="so"
 
 romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
+ROMIO_CONFIG_OPTIONS=""
               
 # Default features
 
@@ -567,6 +568,14 @@ if test "$enable_reliability" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_RELIABILITY"
 fi
 
+AC_ARG_ENABLE(large_file_support,
+              AC_HELP_STRING([--enable-large-file-support], [enable large file support]))
+echo "feature LARGE_FILE_SUPPORT... ${enable_large_file_support:-no}"
+if test "$enable_large_file_support" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -D_LARGEFILE_SOURCE=1"
+   ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -D_LARGEFILE_SOURCE=1'"
+fi
+
 AC_ARG_ENABLE(ct,
               AC_HELP_STRING([--enable-ct], [enable control topology]))
 echo "feature CT... ${enable_ct:-no}"
@@ -623,5 +632,6 @@ AC_SUBST(enable_static)
 AC_SUBST(with_romio)
 AC_SUBST(romiodir)
 AC_SUBST(ROMIO_FS)
+AC_SUBST(ROMIO_CONFIG_OPTIONS)
 
 AC_OUTPUT([Makefile])

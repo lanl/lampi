@@ -43,15 +43,12 @@ class gmSendFragDesc : public BaseSendFragDesc_t {
 
 protected:
     bool	didRecvAck_m;
-    bool	sendDidComplete_m;
 
 public:
 
     // data members
 
-    int globalDestProc_m;
     int dev_m;
-    long long fragSeq_m;
     bool initialized_m;
     
     // methods
@@ -89,14 +86,11 @@ public:
             return gmState.localDevList[dev_m].remoteDevList[globalDestProc_m].port_id;
         }
 
-    void freeResources();
+    void freeResources(double timeNow, SendDesc_t *bsd);
     
+            
     bool didReceiveAck() {return didRecvAck_m;}
     void setDidReceiveAck(bool tf) {didRecvAck_m = tf;}
-
-    bool sendDidComplete() {return sendDidComplete_m;}
-    void setSendDidComplete(bool tf) {sendDidComplete_m = tf;}    
-            
 };
 
 #endif // GM_SENDFRAG_H

@@ -76,20 +76,23 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p = (gmHeaderDataAck *) &(buf->header.dataAck);
 
     p->thisFragSeq = seq_m;
-
-
-
-    if (0 && OPT_RELIABILITY) {  // bypass for now!!!
+        
+    if ( OPT_RELIABILITY ) {
 
 	    Communicator *pg = communicators[ctx_m];
 	    unsigned int glSourceProcess =  pg->remoteGroup->
 		    mapGroupProcIDToGlobalProcID[srcProcID_m];
 	    /* process the deliverd sequence number range */
-	    int returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
+	    int returnValue = processRecvDataSeqs(p, glSourceProcess, reliabilityInfo);
 	    if (returnValue != ULM_SUCCESS)
 		    return false;
     }
 
+    // start debug
+    if ( p->ackStatus == ACKSTATUS_DATACORRUPT )
+        ulm_warn(("proc %d: Recvd corrupt data!\n", myproc()));
+    // end debug
+        
     // fill in other fields of header
 
     p->type = MESSAGE_DATA_ACK;
@@ -97,10 +100,16 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p->src_proc = myproc();
     p->dest_proc = gmHeader_m->data.senderID;
     p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
-    p->thisFragSeq = 0;
     p->checksum = 0;
 
-
+#ifdef ENABLE_RELIABILITY
+    if ( gmState.doChecksum )
+    {
+        p->checksum = BasePath_t::headerChecksum((gmHeader *)p, sizeof(gmHeader) - sizeof(ulm_uint32_t),
+                                                 GM_HDR_WORDS);        
+    }
+#endif
+    
     // only send if we have an implicit send token
     if (usethreads()) {
         gmState.localDevList[dev_m].Lock.lock();
@@ -118,7 +127,6 @@ bool gmRecvFragDesc::AckData(double timeNow)
     }
 
     // send the ACK
-
     gm_send_with_callback(gmState.localDevList[dev_m].gmPort,
 		    p, gmState.log2Size, sizeof(gmHeader),
 		    GM_LOW_PRIORITY,
@@ -172,12 +180,12 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 
 // Free send resources on reception of a data ACK
 
-void gmRecvFragDesc::msgDataAck()
+void gmRecvFragDesc::msgDataAck(double timeNow)
 {
     gmSendFragDesc		*sfd;
     SendDesc_t 			*bsd;
-
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
+
     sfd = (gmSendFragDesc *)p->ptrToSendDesc.ptr;
     bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
@@ -190,12 +198,16 @@ void gmRecvFragDesc::msgDataAck()
     if (usethreads())
         bsd->Lock.lock();
 
-    // revisit this when reliability is implemented!!!!
-    (bsd->NumAcked)++;
-
-    sfd->setDidReceiveAck(true);
-    if ( sfd->sendDidComplete() )
-        sfd->freeResources();
+#ifdef ENABLE_RELIABILITY
+    if (checkForDuplicateAndNonSpecificAck(sfd)) {
+        bsd->Lock.unlock();
+        ReturnDescToPool(0);
+        return;
+    }
+#endif
+    handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
+    if ( ACKSTATUS_DATAGOOD == p->ackStatus )
+        sfd->setDidReceiveAck(true);
 
     if (usethreads())
         bsd->Lock.unlock();
@@ -204,7 +216,6 @@ void gmRecvFragDesc::msgDataAck()
 }
 
 // Initialize descriptor with data from fragment data header
-
 void gmRecvFragDesc::msgData(double timeNow)
 {
     gmHeaderData *p = &(gmHeader_m->data);
@@ -219,7 +230,8 @@ void gmRecvFragDesc::msgData(double timeNow)
     seq_m = p->frag_seq;
     seqOffset_m = p->dataSeqOffset;
     msgLength_m = p->msgLength;
-    fragIndex_m = seqOffset_m / gmState.bufSize;
+    fragIndex_m = seqOffset_m / gmState.bufSize;    
+                                                                        
     if (0) { // debug
         ulm_warn(("%d received frag from %d (length %ld)\n"
                   "%d\tgmFragBuffer_m %p gmHeader_m %p addr_m %p sizeof(gmHeader) %ld dev_m %d Dest %d\n"
@@ -238,4 +250,6 @@ void gmRecvFragDesc::msgData(double timeNow)
 
     communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
 }
+
+
 

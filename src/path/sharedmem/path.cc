@@ -240,7 +240,7 @@ bool sharedmemPath::init(SendDesc_t *message)
     // "done, and synchronous send are done when the first frag
     // is acknowledged)
     if ((message->messageDone==REQUEST_INCOMPLETE) &&
-        (message->NumSent == message->numfrags) && 
+        ( (unsigned)message->NumSent == message->numfrags) && 
 	(message->sendType != ULM_SEND_SYNCHRONOUS)) {
         message->messageDone = REQUEST_COMPLETE;
     }
@@ -418,14 +418,14 @@ bool sharedmemPath::send(SendDesc_t *message, bool *incomplete,
         }                       // end ndesc loop
     }                           // end NumFragDescAllocated < numfrags
 
-    if(message->NumSent == message->numfrags )
+    if((unsigned)message->NumSent == message->numfrags )
 	    *incomplete=false;
 
     // check to see if send is done (buffered sends are already "done";
     // and synchronous sends are done when the first frag is
     // acked (and everything else has been sent...)
     if ((message->messageDone==REQUEST_INCOMPLETE) &&
-        (message->NumSent == message->numfrags) &&
+        ((unsigned)message->NumSent == message->numfrags) &&
         (message->sendType != ULM_SEND_SYNCHRONOUS)) {
         message->messageDone = REQUEST_COMPLETE;
     }

@@ -42,7 +42,7 @@ FreeListPrivate_t<TCPSendFrag> TCPSendFrag::TCPSendFrags;
 //  that is called at startup.
 //
 
-int TCPSendFrag::init()
+int TCPSendFrag::initialize()
 {
     int nFreeLists = local_nprocs();
 
@@ -77,6 +77,8 @@ int TCPSendFrag::init()
 
 int TCPSendFrag::init(TCPPeer *tcpPeer, SendDesc_t *message) 
 {
+    BaseSendFragDesc_t::init();
+    
     this->tcpPeer = tcpPeer;
     this->thisProc = tcpPeer->getLocalProc();
     this->peerProc = tcpPeer->getProc();

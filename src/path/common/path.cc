@@ -79,3 +79,96 @@ void BasePath_t::ReturnDesc(SendDesc_t *message, int poolIndex)
     // return descriptor to pool -- always freed by allocating process!
     _ulm_SendDescriptors.returnElement(message, 0);
 }
+
+#ifdef ENABLE_RELIABILITY
+
+bool BasePath_t::resend(SendDesc_t *message, int *errorCode)
+{
+    bool returnValue = false;
+    
+    // move the timed out frags from FragsToAck back to
+    // FragsToSend
+    BaseSendFragDesc_t *FragDesc = 0;
+    BaseSendFragDesc_t *TmpDesc = 0;
+    double              curTime = 0;
+    int                 globalDestProc = 0;
+    unsigned long long  received_seq_no, delivered_seq_no;
+    bool                free_send_resources;
+    
+    *errorCode = ULM_SUCCESS;
+    
+    // reset send descriptor earliestTimeToResend
+    message->earliestTimeToResend = -1;
+    
+    for (FragDesc = (BaseSendFragDesc_t *) message->FragsToAck.begin();
+         FragDesc != (BaseSendFragDesc_t *) message->FragsToAck.end();
+         FragDesc = (BaseSendFragDesc_t *) FragDesc->next)
+    {
+        
+        // reset TmpDesc
+        TmpDesc = 0;
+        
+        // obtain current time
+        curTime = dclock();
+        
+        // retrieve received_largest_inorder_seq
+        globalDestProc = FragDesc->globalDestProc();
+        received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+            [globalDestProc].received_largest_inorder_seq;
+        delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+            [globalDestProc].delivered_largest_inorder_seq;
+        
+        free_send_resources = false;
+        
+        // move frag if timed out and not sitting at the
+        // receiver
+        if (delivered_seq_no >= FragDesc->fragSequence()) 
+        {
+            // an ACK must have been dropped somewhere along the way...or
+            // it hasn't been processed yet...
+            TmpDesc = (BaseSendFragDesc_t *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+            // free all of the other resources after we unlock the frag
+            free_send_resources = true;
+        } 
+        else
+        {
+            unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+            (1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
+            if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
+                // resend this frag...
+                returnValue = true;
+                FragDesc->WhichQueue = fragSendQueue();
+                TmpDesc = (BaseSendFragDesc_t *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+                message->FragsToSend.AppendNoLock(FragDesc);
+                FragDesc->setSendDidComplete(false);
+                (message->NumSent)--;                    
+                FragDesc = TmpDesc;
+                continue;
+            }
+            else
+            {
+                double timeToResend = FragDesc->timeSent_m + (RETRANS_TIME * max_multiple);
+                if (message->earliestTimeToResend == -1) {
+                    message->earliestTimeToResend = timeToResend;
+                } else if (timeToResend < message->earliestTimeToResend) {
+                    message->earliestTimeToResend = timeToResend;
+                } 
+            }
+        }
+        
+        if ( free_send_resources )
+        {
+            freeResources(message, FragDesc);
+        }
+        
+        // reset FragDesc to previous value, if appropriate, to iterate over list correctly...
+        if (TmpDesc) {
+            FragDesc = TmpDesc;
+        }
+    } // end FragsToAck frag descriptor loop
+    
+    return returnValue;
+}
+
+#endif  /* ENABLE_RELIABILITY */
+

@@ -149,14 +149,38 @@ public:
     // destructor
     virtual ~quadricsRecvFragDesc() {}
 
-#ifdef ENABLE_RELIABILITY
-    // check to see if an ACK is a duplicate or non-specific only
-    bool checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd);
-#endif
-
-    void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
-                               quadricsSendFragDesc *sfd);
-
+    unsigned long long ackFragSequence()
+    {
+        quadricsDataAck_t *p = &(envelope.msgDataAck);
+        return p->thisFragSeq;
+    }
+    
+    unsigned long long ackDeliveredFragSeq()
+    {
+        quadricsDataAck_t *p = &(envelope.msgDataAck);
+        return p->deliveredFragSeq;
+    }
+    
+    unsigned long long ackReceivedFragSeq()
+    {
+        quadricsDataAck_t *p = &(envelope.msgDataAck);
+        return p->receivedFragSeq;
+    }
+    
+    /* returns the global Proc ID of sending process */
+    int ackSourceProc()
+    {
+        quadricsDataAck_t *p = &(envelope.msgDataAck);
+        return p->src_proc;
+    }
+    
+    int ackStatus()
+    {
+        quadricsDataAck_t *p = &(envelope.msgDataAck);
+        return p->ackStatus;
+    }
+    
+    
     // process the received data as...
     void msgData(double timeNow);
     void msgDataAck(double timeNow);

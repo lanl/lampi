@@ -34,11 +34,13 @@
 #include "path/udp/sendFrag.h"
 #include "path/udp/state.h"
 #include "path/udp/UDPNetwork.h"
+#include "path/udp/UDPEarlySend.h"
 #include "client/ULMClient.h"
 #include "queue/globals.h"	// for communicators
 
-void udpSendFragDesc::init()
+bool udpSendFragDesc::init()
 {
+    BaseSendFragDesc_t::init();
     bzero(&toAddr, sizeof(toAddr));		// filled in for each send
     bzero((char*) &msgHdr, sizeof(msgHdr));
 
@@ -53,10 +55,79 @@ void udpSendFragDesc::init()
 #ifdef _DEBUGQUEUES
     WhichQueue = UDPFRAGFREELIST;
 #endif
-    timeSent = -1;
-    numTransmits = 0;
+    timeSent_m = -1;
+    numTransmits_m = 0;
     nonContigData = 0;
+    
+    return true;
 }
+
+void udpSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
+{
+    int DescPoolIndex = 0;
+    short whichQueue = WhichQueue;
+    
+	// register frag as acked
+	bsd->clearToSend_m = true;
+        
+	// reset WhichQueue flag
+	WhichQueue = UDPFRAGFREELIST;
+    
+	// remove frag descriptor from list of frags to be acked
+	if (whichQueue == UDPFRAGSTOACK) {
+	    bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
+	}
+#ifdef ENABLE_RELIABILITY
+	else if (whichQueue == UDPFRAGSTOSEND) {
+	    bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
+	    // increment NumSent since we were going to send this again...
+	    (bsd->NumSent)++;
+	}
+#endif
+	else {
+	    ulm_exit((-1, "udpRecvFragDesc::processAck: Frag on %d queue\n",
+                  WhichQueue));
+	}
+    
+#ifdef ENABLE_RELIABILITY
+	// set frag_seq value to 0/null/invalid to detect duplicate ACKs
+	fragSeq_m = 0;
+#endif
+    
+	// reset send descriptor pointer
+	parentSendDesc_m = 0;
+    
+	//  the header holds the global proc id
+    DescPoolIndex = global_to_local_proc((header.src_proc));
+    
+    // free iovecs array possibly associated with the send frag descriptor;
+	if (nonContigData) {
+	    free(nonContigData);
+	    nonContigData = 0;
+	}
+    
+    if (earlySend != NULL && earlySend_type != -9 ) {
+        int index = getMemPoolIndex();
+        if (earlySend_type ==  EARLY_SEND_SMALL) { 
+            earlySend_type = -9; 
+            UDPEarlySendData_small.returnElement((Links_t*)(earlySend), index);
+        } else if (earlySend_type ==  EARLY_SEND_MED) {
+            earlySend_type = -9; 
+            UDPEarlySendData_med.returnElement((Links_t*)(earlySend), index);
+        } else if (earlySend_type ==  EARLY_SEND_LARGE) {
+            earlySend_type = -9; 
+            UDPEarlySendData_large.returnElement((Links_t*)(earlySend), index);
+        } else {
+            ulm_warn(("no size match 2\n"));
+            return;
+        }
+    }
+    
+	// return frag descriptor to free list
+	//   the header holds the global proc id
+	udpSendFragDescs.returnElement(this, DescPoolIndex);
+}
+
 
 //-----------------------------------------------------------------------------
 //! Convert the header from host order to network byte order.  The udpio

@@ -42,12 +42,12 @@
 class TCPPeer;
 
 
-class TCPSendFrag : public Links_t, public Reactor::Listener {
+class TCPSendFrag : public BaseSendFragDesc_t, public Reactor::Listener {
 public:
     TCPSendFrag() {}
     TCPSendFrag(int) {}
 
-    static int init();  // one-time initialization
+    static int initialize();  // one-time initialization
     static TCPSendFrag* getElement(int& retval) 
         { return TCPSendFrags.getElement(getMemPoolIndex(), retval); }
 

@@ -55,23 +55,23 @@ extern int ULMRunSpawnedClients;
 
 /* indices into the exec args */
 enum {
-    PRUN,
-    NODES,
-    PROCS,
-    RMS_TAG,
-    RMS_SPAWN,
-    PROG_NAME,
-    PROG_ARGS
+    PRUN = 0,
+    NODES = 1,
+    PROCS = 2,
+    RMS_TAG = 3,
+    RMS_SPAWN = 4,
+    PROG_NAME = 5,
+    PROG_ARGS = 6
 };
 
 /* indices into the admin. environment variables */
 enum {
-    IP_ADDR,
-    PORT,
-    AUTH0,
-    AUTH1,
-    AUTH2,
-    ADMIN_END
+    IP_ADDR = 0,
+    PORT = 1,
+    AUTH0 = 2,
+    AUTH1 = 3,
+    AUTH2 = 4,
+    ADMIN_END = 5
 };
 
 static int quadricsNRails(int railmask)

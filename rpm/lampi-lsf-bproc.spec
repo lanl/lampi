@@ -48,7 +48,7 @@
 %define	compiler	%{nil}
 %endif
 
-%define version 1.4.6
+%define version 1.4.11
 %define name lampi
 %define release 1
 
@@ -155,25 +155,26 @@ export PATH CC CFLAGS CXX CXXFLAGS FC F77 FFLAGS F90 F90FLAGS
 
 %global _prefix		%{rootdir}/lampi-%{compiler}%{version}/%{dev}
 
-./configure		--prefix=%{_prefix} \
-%{?_with_debug:		--enable-debug}		%{?_without_debug:	--disable-debug} \
-%{?_with_static:	--enable-static} 	%{?_without_static	--disable-static} \
-%{?_with_dynamic:	--enable-dynamic}	%{?_without_dynamic:	--disable-dynamic} \
-%{?_with_lsf:		--enable-lsf}		%{?_without_lsf:	--disable-lsf} \
-%{?_with_rms:		--enable-rms}		%{?_without_rms:	--disable-rms} \
-%{?_with_bproc:		--enable-bproc}		%{?_without_bproc:	--disable-bproc} \
-%{?_with_tcp:		--enable-tcp}		%{?_without_tcp:	--disable-tcp} \
-%{?_with_udp:		--enable-udp}		%{?_without_udp:	--disable-udp} \
-%{?_with_qsnet:		--enable-qsnet}		%{?_without_qsnet:	--disable-qsnet} \
-%{?_with_gm:		--enable-gm}		%{?_without_gm:		--disable-gm} \
-%{?_with_ib:		--enable-ib}		%{?_without_ib:		--disable-ib} \
-%{?_with_shared-memory:	--enable-shared-memory}	%{?_without_shared-memory:--disable-shared-memory} \
-%{?_with_reliability:	--enable-reliability}	%{?_without_reliability:--disable-reliability} \
-%{?_with_ct:		--enable-ct}		%{?_without_ct:		--disable-ct} \
-%{?_with_check-api-args:--enable-check-api-args}%{?_without_check-api-args:--disable-check-api-args} \
-%{?_with_dbg:		--enable-dbg}		%{?_without_dbg:	--disable-dbg} \
-%{?_with_memprofile:	--enable-memprofile}	%{?_without_memprofile:	--disable-memprofile} \
-%{?_with_romio:		--with-romio}		%{?_without_romio:	--without-romio} \
+./configure		        --prefix=%{_prefix} \
+%{?_with_bproc:                 --enable-bproc}                 %{?_without_bproc:              --disable-bproc} \
+%{?_with_check_api_args:        --enable-check-api-args}        %{?_without_check_api_args:     --disable-check-api-args} \
+%{?_with_ct:                    --enable-ct}                    %{?_without_ct:                 --disable-ct} \
+%{?_with_dbg:                   --enable-dbg}                   %{?_without_dbg:                --disable-dbg} \
+%{?_with_debug:                 --enable-debug}                 %{?_without_debug:              --disable-debug} \
+%{?_with_dynamic:               --enable-dynamic}               %{?_without_dynamic:            --disable-dynamic} \
+%{?_with_gm:                    --enable-gm}                    %{?_without_gm:                 --disable-gm} \
+%{?_with_ib:                    --enable-ib}                    %{?_without_ib:                 --disable-ib} \
+%{?_with_large_file_support:    --enable-large-file-support}    %{?_without_large_file_support: --disable-large-file-support} \
+%{?_with_lsf:                   --enable-lsf}                   %{?_without_lsf:                --disable-lsf} \
+%{?_with_memprofile:            --enable-memprofile}            %{?_without_memprofile:         --disable-memprofile} 
+%{?_with_qsnet:                 --enable-qsnet}                 %{?_without_qsnet:              --disable-qsnet} \
+%{?_with_reliability:           --enable-reliability}           %{?_without_reliability:        --disable-reliability} \
+%{?_with_rms:                   --enable-rms}                   %{?_without_rms:                --disable-rms} \
+%{?_with_romio:                 --with-romio}                   %{?_without_romio:              --without-romio} \
+%{?_with_shared_memory:         --enable-shared-memory}         %{?_without_shared_memory:      --disable-shared-memory} \
+%{?_with_static:                --enable-static}                %{?_without_static              --disable-static} \
+%{?_with_tcp:                   --enable-tcp}                   %{?_without_tcp:                --disable-tcp} \
+%{?_with_udp:                   --enable-udp}                   %{?_without_udp:                --disable-udp} \
 
 %{__make}
 
