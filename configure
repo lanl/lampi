@@ -9513,7 +9513,7 @@ LIBEXT="a"
 DLLEXT="so"
 RMS_BROKEN_PREFIX=""
 
-romiodir=romio-1.2.4.1
+romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
 
 enable_dynamic=${enable_dynamic:-yes}
