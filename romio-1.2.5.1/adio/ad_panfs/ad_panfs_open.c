@@ -17,7 +17,9 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
 #endif
 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    /*
     if(rank ==0 ) fprintf(stderr,"ad_panfs_open.c: using PANFS\n");
+    */
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.4.8,lampi-support@lanl.gov)
+AC_INIT(lampi,1.4.9,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -123,6 +123,7 @@ DLLEXT="so"
 
 romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
+ROMIO_CONFIG_OPTIONS=""
               
 # Default features
 
@@ -179,6 +180,7 @@ i?86-pc-linux*)
 
         #default ROMIO filesystems:
         ROMIO_FS="ufs nfs panfs"
+        ROMIO_CONFIG_OPTIONS="-cflags='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE'"
 
 	;;
 
@@ -622,5 +624,6 @@ AC_SUBST(enable_static)
 AC_SUBST(with_romio)
 AC_SUBST(romiodir)
 AC_SUBST(ROMIO_FS)
+AC_SUBST(ROMIO_CONFIG_OPTIONS)
 
 AC_OUTPUT([Makefile])

@@ -19,6 +19,8 @@ FILENAME=test
 #FILENAME=romiotest
 # a unix file:  
 #FILENAME=/local/romiotest
+# a panfs file:
+#FILENAME=/panfs/ll/home/taylorm/romiotest
 
 
 # Using shifts should remove args from the list.
