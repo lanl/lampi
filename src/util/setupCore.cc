@@ -28,8 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #ifdef __mips
 
 #include <sys/types.h>
@@ -68,7 +66,7 @@ int setupCore()
         return ULM_ERROR;
     }
 
-#elif LINUX
+#elif __linux__
 
     /*
      * On GNU/Linux, unique corefile names can be set using sysctl:
