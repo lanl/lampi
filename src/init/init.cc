@@ -1833,7 +1833,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         lampi_init_print("lampi_init_prefork_stdio");
     }
 
-    /* do nothing if stdio is not being managed */
+    /* allocate pipe for determining when all processes have exited... */
+    if(pipe(s->commonAlivePipe) < 0) {
+        ulm_err(("Error: pipe(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
+
+    /* do nothing else if stdio is not being managed */
     if (!s->interceptSTDio) {
         return;
     }
@@ -1864,12 +1871,13 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     }
 
     if (ENABLE_PTY_STDIO) {
-        /* use a pty for stdout to avoid application buffering */
+        /* use a pty for stdin to avoid application buffering */
         if (openpty(&fd[1], &fd[0], NULL, NULL, NULL) < 0) {
             ulm_err(("Error: openpty(): errno = %d\n", errno));
             s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
             return;
         }
+
     } else {
         if(pipe(fd) < 0) {
             ulm_err(("Error: pipe(): errno = %d\n", errno));
@@ -1925,6 +1933,7 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
         return;
     }
+    close(fd[1]);
 
     if (pipe(fd) < 0) {
         ulm_err(("Error: pipe(): errno = %d\n", errno));
@@ -1938,6 +1947,7 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
         return;
     }
+    close(fd[1]);
 
     /*
      * setup array holding prefix data for stdio data coming from
@@ -1968,7 +1978,17 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_stdio");
     }
 
-    /* do nothing if stdio is not being managed */
+    /* daemon holds read end of pipe...all other process hold write end together */
+    if (s->iAmDaemon) {
+        close(s->commonAlivePipe[1]);
+        s->commonAlivePipe[1] = -1;
+    }
+    else {
+        close(s->commonAlivePipe[0]);
+        s->commonAlivePipe[0] = -1;
+    }
+
+    /* do nothing else if stdio is not being managed */
     if (!s->interceptSTDio) {
         return;
     }
@@ -2001,6 +2021,9 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         } else {
             s->STDINfdToChild = stdin_parent;
             close(stdin_child);
+            if (ENABLE_PTY_STDIO) {
+                tty_noecho(stdin_parent);
+            }
         }
 
         /* close all write stderr/stdout pipe fd's ) */
@@ -2020,12 +2043,11 @@ void lampi_init_postfork_stdio(lampiState_t *s)
                 s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
                 return;
             }
-            close(stdin_parent);
         } else {
             close(STDIN_FILENO);
-            close(stdin_parent);
-            close(stdin_child);
         }
+        close(stdin_parent);
+        close(stdin_child);
 
         /* setup "application process" handling of stdout/stderr */
         if (dup2(stdout_child[s->local_rank], STDOUT_FILENO) < 0) {
@@ -2033,21 +2055,27 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
             return;
         }
+
+        if (ENABLE_PTY_STDIO) {
+            tty_raw(STDOUT_FILENO);
+        }
+
         if (dup2(stderr_child[s->local_rank], STDERR_FILENO) < 0) {
             ulm_err(("Error: dup2(): errno = %d\n", errno));
             s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
             return;
         }
+
         for (int i = 0; i < s->local_size; i++) {
-            /* close read side of pipe on child */
-            if (i != s->local_rank) {
-                close(stdout_child[i]);
-                close(stderr_child[i]);
-            } else {
-                close(stdout_parent[i]);
-                close(stderr_parent[i]);
-            }
+            /* close all extra descriptors */
+            close(stdout_child[i]);
+            close(stderr_child[i]);
+            close(stdout_parent[i]);
+            close(stderr_parent[i]);
         }
+        /* don't forget the daemon's std. out/err pipes to itself */
+        close(s->STDERRfdsFromChildren[s->local_size]);
+        close(s->STDOUTfdsFromChildren[s->local_size]);
     }
 
     ulm_delete(stdout_parent);

@@ -130,6 +130,10 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
             nfds++;
         }
     }
+    if (state->commonAlivePipe[0] >= 0) {
+        FD_SET(state->commonAlivePipe[0], &ReadSet);
+        nfds++;
+    }
 
     if (nfds == 0)
         return 0;
@@ -137,6 +141,15 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
     if (RetVal <= 0)
         return RetVal;
+
+    if ((state->commonAlivePipe[0] >= 0) && (FD_ISSET(state->commonAlivePipe[0], &ReadSet))) {
+        /* all processes must have exited...pipe has been closed */
+        for (i = 0; i < (NFDs - 1); i++) {
+            state->IAmAlive[i] = 0;
+        }
+        close(state->commonAlivePipe[0]);
+        state->commonAlivePipe[0] = -1;
+    }
 
     /* read data from standard error */
     for (i = 0; i < NFDs; i++)
@@ -165,7 +178,6 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                 // lenR <= 0
                 close(ClientStderrFDs[i]);
                 ClientStderrFDs[i] = -1;
-                lampiState.IAmAlive[i] = 0;
             }
         }
     }
@@ -196,7 +208,6 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
             {
                 close(ClientStdoutFDs[i]);
                 ClientStdoutFDs[i] = -1;
-                lampiState.IAmAlive[i] = 0;
             }
         }
     }

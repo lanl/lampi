@@ -102,6 +102,9 @@ void lampi_daemon_loop(lampiState_t *s)
         if (STDERRfdsFromChildren[i] > MaxDescriptor)
             MaxDescriptor = STDERRfdsFromChildren[i];
     }
+    if (s->commonAlivePipe[0] > MaxDescriptor) {
+        MaxDescriptor = s->commonAlivePipe[0];
+    }
     MaxDescriptor++;
 
     /* change heartbeat timeout period, if being debuged */
@@ -133,7 +136,7 @@ void lampi_daemon_loop(lampiState_t *s)
             s->AbnormalExit->flag = 2;
             shuttingDown = true;
         }
-        /* handle stdio */
+        /* handle stdio and check commonAlivePipe */
         ClientScanStdoutStderr(STDOUTfdsFromChildren,
                                STDERRfdsFromChildren,
                                &ServerSocketFD,

@@ -890,6 +890,17 @@ void ibPath::finalize(void)
         locked_here = true;
     }
 
+    // make sure finalize is only executed once
+    if (ib_state.finalized) {
+        if (locked_here) {
+            ib_state.lock.unlock();
+            return;
+        }
+    }
+    else {
+        ib_state.finalized = true;
+    }
+
     // free resources associated with RC communication
     ib_state.mr_cache.deregister_all_mr();
 

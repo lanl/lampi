@@ -128,6 +128,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_SOCKET[MAXBUFFERLEN];
     char LAMPI_AUTH[MAXBUFFERLEN];
     char LAMPI_SERVER[MAXBUFFERLEN];
+    struct bproc_io_t io[3];
 
     /* initialize some values */
     memset(LAMPI_SOCKET, 0, MAXBUFFERLEN);
@@ -202,6 +203,21 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
+    for (i=0; i < 3; i++) {
+        io[i].fd = i;
+        io[i].type = BPROC_IO_FILE;
+#if BPROC_MAJOR_VERSION < 4
+        io[i].send_info = 0;
+#else
+        io[i].flags = 0;
+#endif
+        io[i].d.file.offset = 0;
+        strcpy(io[i].d.file.name, "/dev/null");
+    }
+    io[0].d.file.flags = O_RDONLY; /* in */
+    io[1].d.file.flags = O_WRONLY; /* out */
+    io[2].d.file.flags = O_WRONLY; /* err */
+
     /*
      * Running mpirun within a debug environment, e.g. Totalview, can
      * cause a SIGSTOP to be generated, which causes
@@ -209,7 +225,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      * ugly fix is to add sleep() to catch the SIGSTOP.
      */
     sleep(1);
-    if (bproc_vexecmove(nHosts, nodes, pids, exec_args[EXEC_NAME],
+    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
                         argv + (FirstAppArgument - 1), environ) < 0) {
         ulm_err(("SpawnBproc: bproc_vexecmove: error %s\n",
                  bproc_strerror(errno)));

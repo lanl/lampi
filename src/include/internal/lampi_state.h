@@ -138,6 +138,7 @@ typedef struct {
 
     int interceptSTDio;             /* will library handle standard I/O? */
     int STDINfdToChild;
+    int commonAlivePipe[2];            /* pipe used by daemon to determine when all procs have exited */
     int *STDERRfdsFromChildren;     /* stderr file descriptors to redirect */
     int *STDOUTfdsFromChildren;     /* stdout file descriptors to redirect */
     int output_prefix;              /* prepend informative prefix to stdout/stderr ? */
