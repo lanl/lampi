@@ -320,6 +320,7 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     struct child_process *p = 0;
     struct child_process *ptmp;
     struct sigaction action;
+    sigset_t signals;
     int child_rank;
 
     process_rank = 0; /* file scope for handlers */
@@ -334,8 +335,8 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
      * 1) Allocate and initialize child_list for keeping track of my
      * children
      *
-     * 2) Install a SIGCHLD handler, unless SIGCHLD is being
-     * ignored.  Set the mask to block all signals while the
+     * 2) Install a SIGCHLD handler.
+     * Set the mask to block all signals while the
      * handler runs.
      *
      * 3) Install a fatal signal handler, so that I can kill my
@@ -369,22 +370,25 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
         p->status = 0;
     }
 
+     /*
+      * clear process mask
+      */
+     sigfillset(&signals);
+     if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
+         perror("sigprocmask failed");
+         abort();
+     }
+
     /*
      * Install SIGCHLD handler
      */
 
-    if (sigaction(SIGCHLD, NULL, &action) < 0) {
+    action.sa_handler = sigchld_handler;
+    sigfillset(&action.sa_mask);
+    action.sa_flags = SA_NOCLDSTOP;
+    if (sigaction(SIGCHLD, &action, NULL) < 0) {
         perror("sigaction failed");
         abort();
-    }
-    if (action.sa_handler != SIG_IGN) {
-        action.sa_handler = sigchld_handler;
-        sigfillset(&action.sa_mask);
-        action.sa_flags = SA_NOCLDSTOP;
-        if (sigaction(SIGCHLD, &action, NULL) < 0) {
-            perror("sigaction failed");
-            abort();
-        }
     }
 
     /*
@@ -538,8 +542,8 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         /*
          * I have children, so:
          *
-         * 1) Install a SIGCHLD handler, unless SIGCHLD is being
-         * ignored.  Set the mask to block all signals while the
+         * 1) Install a SIGCHLD handler.
+         * Set the mask to block all signals while the
          * handler runs.
          *
          * 2) Install a fatal signal handler, so that I can kill my
@@ -550,23 +554,27 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
          */
 
         struct sigaction action;
+        sigset_t signals;
+
+        /*
+         * clear process mask
+         */
+        sigfillset(&signals);
+        if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
+            perror("sigprocmask failed");
+            abort();
+        }
 
         /*
          * Install SIGCHLD handler
          */
 
-        if (sigaction(SIGCHLD, NULL, &action) < 0) {
+        action.sa_handler = sigchld_handler;
+        sigfillset(&action.sa_mask);
+        action.sa_flags = SA_NOCLDSTOP;
+        if (sigaction(SIGCHLD, &action, NULL) < 0) {
             perror("sigaction failed");
             abort();
-        }
-        if (action.sa_handler != SIG_IGN) {
-            action.sa_handler = sigchld_handler;
-            sigfillset(&action.sa_mask);
-            action.sa_flags = SA_NOCLDSTOP;
-            if (sigaction(SIGCHLD, &action, NULL) < 0) {
-                perror("sigaction failed");
-                abort();
-            }
         }
 
         /*
