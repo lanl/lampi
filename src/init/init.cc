@@ -356,7 +356,12 @@ void lampi_init_prefork_resource_management(lampiState_t *s)
         lampi_init_print("lampi_init_resource_management");
     }
     /* initialize data */
+#ifdef BPROC
+    /* send current node id instead of doing scan of addresses on master */
+    s->hostid = bproc_currnode();
+#else
     s->hostid = adminMessage::UNKNOWN_HOST_ID;
+#endif
     s->local_size = adminMessage::UNKNOWN_N_PROCS;
 
     /* check to see if RMS is in use */
