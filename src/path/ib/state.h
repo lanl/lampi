@@ -34,4 +34,14 @@
 #ifndef IB_STATE_H
 #define IB_STATE_H
 
+#include <vapi.h>
+
+typedef struct {
+    u_int32_t num_hcas;
+    VAPI_hca_id_t *hca_ids;
+    VAPI_hca_hndl_t *hca_handles;
+} ib_state_t;
+
+extern ib_state_t ib_state;
+
 #endif

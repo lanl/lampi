@@ -34,6 +34,8 @@
 #ifndef IB_INIT_H
 #define IB_INIT_H
 
+#include <vapi.h>
+#include <vapi_common.h>
 #include "internal/state.h"
 
 void ibSetup(lampiState_t *s);

@@ -32,8 +32,52 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "path/ib/init.h"
+#include "path/ib/state.h"
+#include "internal/malloc.h"
 
 void ibSetup(lampiState_t *s)
 {
+    VAPI_ret_t vapi_result;
+    int i;
+
+    // get the number of available InfiniBand HCAs
+    ib_state.num_hcas = 0;
+    vapi_result = EVAPI_list_hcas(0, &ib_state.num_hcas, (VAPI_hca_id_t *)NULL);
+    
+    // no available HCAs...active_port is zero, exchange info now
+    if (!ib_state.num_hcas) {
+        goto exchange_info;
+    }
+
+    // allocate array large enough to hold ids
+    ib_state.hca_ids = (VAPI_hca_id_t *)ulm_malloc(sizeof(VAPI_hca_id_t) * ib_state.num_hcas);
+    
+    // get ids
+    vapi_result = EVAPI_list_hcas(
+        sizeof(VAPI_hca_id_t) * ib_state.num_hcas,
+        &ib_state.num_hcas,
+        ib_state.hca_ids);
+    if (vapi_result != VAPI_OK) {
+        ulm_err(("ibSetup: EVAPI_list_hcas() returned %s\n", 
+            VAPI_strerror(vapi_result)));
+        exit(1);
+    }
+
+    // allocate array large enough to hold all of the handles
+    ib_state.hca_handles = (VAPI_hca_hndl_t *)ulm_malloc(sizeof(VAPI_hca_hndl_t) * ib_state.num_hcas);
+
+    // get handles
+    for (i = 0; i < (int)ib_state.num_hcas; i++) {
+        vapi_result = EVAPI_get_hca_hndl(ib_state.hca_ids[i], &ib_state.hca_handles[i]);
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: EVAPI_get_hca_hndl() for HCA %d returned %s\n",
+                i, VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+    }
+
+exchange_info:
+
+    return;
 }
 
