@@ -52,13 +52,13 @@ extern "C" {
 }
 
 #include "ulm/ulm.h"   // error macros
-#include "fetchAndOp.h"
+#include "os/IRIX/SN0/fetchAndOp.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
 #include "internal/types.h"
 #include "client/ULMClient.h"
-#include "MD_acquireGlobals.h"
+#include "os/IRIX/SN0/MD_acquireGlobals.h"
 
 class
 acquire : public MI_acquire {
