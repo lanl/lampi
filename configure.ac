@@ -335,6 +335,7 @@ x86_64-unknown-linux*)
 
         #default ROMIO filesystems:
         ROMIO_FS="ufs nfs panfs"
+        ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='-fPIC'"
 
 	;;
 
