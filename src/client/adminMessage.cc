@@ -1685,8 +1685,9 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
         lastRecvSocket_m = sockfd;
     } else {
         returnValue = (s == 0) ? TIMEOUT : ERROR;
-        if (returnValue == ERROR)
+        if (returnValue == ERROR) {
             *errorCode = errno;
+        }
         return returnValue;
     }
 

@@ -117,6 +117,7 @@ int ClientCheckForControlMsgs(lampiState_t *s)
              /* recieve request to teminate immediately */
              message = ACKTERMINATENOW;
              NotifyServer = 1;
+             ClientScanStdoutStderr(s);
              ClientAbort(s, message, NotifyServer);
              break;
 

@@ -69,6 +69,9 @@ void lampi_daemon_loop(lampiState_t *s)
 
     for (;;) {
 
+        /* handle stdio and check commonAlivePipe */
+        ClientScanStdoutStderr(s);
+
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
             CleanupOnAbnormalChildTermination(s);
@@ -79,9 +82,6 @@ void lampi_daemon_loop(lampiState_t *s)
             s->AbnormalExit->flag = 2;
             shuttingDown = true;
         }
-
-        /* handle stdio and check commonAlivePipe */
-        ClientScanStdoutStderr(s);
 
         /* handle stdin */
         if (s->STDINfdToChild >= 0)  {
