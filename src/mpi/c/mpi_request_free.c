@@ -43,12 +43,11 @@ int PMPI_Request_free(MPI_Request *request)
     int rc;
 
     if (*request == MPI_REQUEST_NULL || *request == _mpi.proc_null_request) {
-        *request=MPI_REQUEST_NULL;
+        *request = MPI_REQUEST_NULL;
         return MPI_SUCCESS;
     }
 
     rc = ulm_request_free((ULMRequest_t *) request);
-
     rc =  (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
     if (rc != MPI_SUCCESS) {

@@ -71,7 +71,7 @@ extern "C" int ulm_testall(ULMRequest_t *requestArray, int numRequests,
         /*
          * if request is NULL, follow MPI conventions and return success
          */
-        if (*requestArray == NULL) {
+        if (*requestArray == NULL || *requestArray == ULM_REQUEST_NULL) {
             numComplete++;
             requestArray++;
             continue;

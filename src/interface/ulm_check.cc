@@ -60,6 +60,8 @@ extern "C" int ulm_invalid_request(ULMRequest_t *request)
     if (*request == NULL) {
         /* this is valid ! */
         return 0;
+    } else if (*request == ULM_REQUEST_NULL) {
+        return 0;
     } else if (*request == _mpi.proc_null_request) {
         return 0;
     } else if (r->requestType != REQUEST_TYPE_RECV &&

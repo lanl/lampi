@@ -29,16 +29,19 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #ifndef _ULM_CONSTANTS_H_
 #define _ULM_CONSTANTS_H_
+
+#include "ulm/types.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#define ULM_REQUEST_NULL	0
+extern void *ulm_request_null_location;
+
+#define ULM_REQUEST_NULL   ((ULMRequest_t) &ulm_request_null_location)
 
 enum {
 
