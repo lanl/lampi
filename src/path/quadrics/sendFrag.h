@@ -301,7 +301,7 @@ public:
                 quadricsThrottle->freeEventBlk(rail, srcEventBlk, &srcEventBlk);
                 srcEventBlk = 0;
             }
-            flags = QSF_INITONCE_COMPLETE;
+            flags &= QSF_INITONCE_COMPLETE;
         }
 
     // wrapper around elan3_putdma() to allow path timeout check...
