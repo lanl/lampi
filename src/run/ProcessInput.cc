@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -85,9 +89,9 @@ int MPIrunProcessInput(int argc, char **argv,
 
     /* schedulers to try (determined at compile time) */
 
-    RunParameters->UseLSF = OPT_LSF;
-    RunParameters->UseBproc = OPT_BPROC;
-    RunParameters->UseRMS = OPT_RMS;
+    RunParameters->UseLSF = ENABLE_LSF;
+    RunParameters->UseBproc = ENABLE_BPROC;
+    RunParameters->UseRMS = ENABLE_RMS;
 
     /* find an available scheduler, and make sure only one is enabled */
 
@@ -131,10 +135,10 @@ int MPIrunProcessInput(int argc, char **argv,
     }
 
     RunParameters->UseCRC = 0;
-    if (OPT_RELIABILITY) {
+    if (ENABLE_RELIABILITY) {
         RunParameters->quadricsDoAck = 1;
         RunParameters->quadricsDoChecksum = 1;
-#ifdef ENABLE_GM
+#if ENABLE_GM
         RunParameters->Networks.GMSetup.doAck = 1;
         RunParameters->Networks.GMSetup.doChecksum = 1;
 #endif
@@ -151,7 +155,7 @@ int MPIrunProcessInput(int argc, char **argv,
         RunParameters->TVDebugApp = 1;
     }
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     RunParameters->Networks.UseSharedMemory = 1;
     RunParameters->Networks.SharedMemSetup.PagesPerProc = NULL;
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.outOfResourceAbort = NULL;
@@ -160,7 +164,8 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxPagesPerContext_m = NULL;
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxTotalPages_m = NULL;
 #endif
-#ifdef ENABLE_INFINIBAND
+
+#if ENABLE_INFINIBAND
     RunParameters->Networks.IBSetup.ack = 1;
     RunParameters->Networks.IBSetup.checksum = 0;
 #endif
@@ -202,33 +207,44 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.UseQSW = 0;
     RunParameters->Networks.UseIB = 0;
 
-#ifdef ENABLE_GM
+#if ENABLE_SHARED_MEMORY
+    RunParameters->Networks.UseSharedMemory = 1;
+    RunParameters->Networks.SharedMemSetup.PagesPerProc = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.outOfResourceAbort = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.retries_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.minPagesPerContext_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxPagesPerContext_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxTotalPages_m = NULL;
+#endif
+
+#if ENABLE_GM
     RunParameters->Networks.GMSetup.NGMHosts = 0;
 #endif
-#ifdef ENABLE_INFINIBAND
+
+#if ENABLE_INFINIBAND
     RunParameters->Networks.IBSetup.NIBHosts = 0;
 #endif
 
     for (int j = 0; j < RunParameters->NHosts; j++) {
         for (int i = 0; i < RunParameters->NPathTypes[j]; i++) {
             switch (RunParameters->ListPathTypes[j][i]) {
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
             case PATH_UDP:     // UDP interface
                 RunParameters->Networks.UseUDP = 1;
                 break;
 #endif
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
             case PATH_TCP:     // TCP interface
                 RunParameters->Networks.UseTCP = 1;
                 break;
 #endif
-#ifdef ENABLE_GM
+#if ENABLE_GM
             case PATH_GM:
                 RunParameters->Networks.UseGM = 1;
                 RunParameters->Networks.GMSetup.NGMHosts++;
                 break;
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
             case PATH_IB:
                 RunParameters->Networks.UseIB = 1;
                 (RunParameters->Networks.IBSetup.NIBHosts)++;
@@ -242,7 +258,7 @@ int MPIrunProcessInput(int argc, char **argv,
         }
     }
 
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
     RunParameters->CpuList = NULL;
     RunParameters->CpuListLen = 0;
     RunParameters->nCpusPerNode = 0;

@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -128,7 +131,7 @@ void lampi_daemon_loop(lampiState_t *s)
         DeltaTime = TimeInSeconds - LastTime;
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
-#ifdef ENABLE_CT
+#if ENABLE_CT
             daemonAbnormalChildTermination(s->AbnormalExit->pid,
                                            NChildren, ChildPIDs, IAmAlive,
                                            s);
@@ -153,7 +156,7 @@ void lampi_daemon_loop(lampiState_t *s)
                                StdoutBytesWritten, NewLineLast, s);
 
         /* send heartbeat to Server */
-#ifdef ENABLE_CT
+#if ENABLE_CT
         if ( (DeltaTime > HEARTBEATINTERVAL) && (!shuttingDown) ){
             daemonSendHeartbeat(s);
             LastTime = TimeInSeconds;
@@ -178,7 +181,7 @@ void lampi_daemon_loop(lampiState_t *s)
                                   ServerSocketFD, s);
             }
         }
-#ifdef ENABLE_CT
+#if ENABLE_CT
         checkForRunControlMsgs(&HeartBeatTime, ProcessCount, &numDaemonChildren,
                                hostIndex, ChildPIDs,
                                STDOUTfdsFromChildren,
@@ -203,7 +206,7 @@ void lampi_daemon_loop(lampiState_t *s)
             ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut) && (!shuttingDown) )
         {
             NotifyServer = 0;
-#ifdef ENABLE_CT
+#if ENABLE_CT
             daemonAbortLocalHost(ProcessCount, hostIndex,
                            ChildPIDs, Message, NotifyServer, s);
 #else						   

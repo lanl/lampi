@@ -31,7 +31,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mpi/constants.h"
 #include "os/atomic.h"
@@ -42,13 +44,12 @@
 //! compare communcator1 and communictor2
 //
 
-#include "internal/options.h"
 
 extern "C" int ulm_comm_compare(int comm1, int comm2, int *result)
 {
     int returnValue = MPI_SUCCESS;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 	if ((comm1 < 0 && comm1 != MPI_COMM_NULL) ||
 	    communicators[comm1] == 0L) {
 	    ulm_err(("Error: ulm_group_compare: bad communicator %d\n",

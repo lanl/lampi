@@ -28,8 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "init/init.h"
-#include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/gm/init.h"
 #include "path/gm/path.h"
@@ -187,7 +190,7 @@ void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
      *  pool RUNPARAMS exchange read the start of input parameters tag
      */
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     lampi_init_prefork_receive_setup_msg_gm(s);
     return;
 #endif

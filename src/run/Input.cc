@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Misc functions needed for reading in input data
  */
@@ -41,10 +45,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #include "internal/constants.h"
 #include "internal/log.h"
@@ -1271,7 +1271,7 @@ void setUseSSH(const char *InfoStream)
 }
 
 
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
 
 /*
  * Fill in number of cpus per node to use
@@ -1517,7 +1517,7 @@ void parseQuadricsFlags(const char *InfoStream)
 
 void parseMyrinetFlags(const char *InfoStream)
 {
-#ifdef ENABLE_GM
+#if ENABLE_GM
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
     char *endptr;
@@ -1555,7 +1555,7 @@ void parseMyrinetFlags(const char *InfoStream)
 
 void parseIBFlags(const char *InfoStream)
 {
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
 
@@ -1586,7 +1586,7 @@ void parseIBFlags(const char *InfoStream)
 }
 
 
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
 
 void parseTCPMaxFragment(const char *InfoStream)
 {

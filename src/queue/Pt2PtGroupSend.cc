@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #include "client/ULMClient.h"
@@ -132,7 +136,7 @@ int Communicator::isend_start(SendDesc_t **pSendDesc)
     SendDesc->messageDone =
         ((SendDesc->sendType == ULM_SEND_BUFFERED) && !(SendDesc->persistent))
         ? REQUEST_COMPLETE : REQUEST_INCOMPLETE;
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     SendDesc->earliestTimeToResend = -1.0;
 #endif
     SendDesc->freeCalled = 0;

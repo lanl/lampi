@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +44,7 @@
 #include <netdb.h>
 #include <string.h>
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 #include <sys/bproc.h>
 #endif
 
@@ -79,7 +81,7 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
                sizeof(int));
 
     TmpHost = gethostbyname(ServerHost);
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     if (TmpHost == (struct hostent *)NULL) {
         int size = sizeof(struct sockaddr);
         RetVal = bproc_nodeaddr(BPROC_NODE_MASTER,

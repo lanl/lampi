@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -44,7 +46,7 @@ void mpi_alltoall_f(void *sendbuf,
                        recvbuf, *recvcount, c_recvtype, *comm);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_ALLTOALL = mpi_alltoall_f
 #pragma weak pmpi_alltoall = mpi_alltoall_f

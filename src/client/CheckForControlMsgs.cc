@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -208,9 +212,6 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
     }
     return 0;
 }
-
-
-
 
 /*
  * this routine receives and process control messages from the server

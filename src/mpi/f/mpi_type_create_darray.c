@@ -28,11 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_CREATE_DARRAY = mpi_type_create_darray_f
 #pragma weak pmpi_type_create_darray = mpi_type_create_darray_f

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * This file contains generic socket based communications routines to be used
  *  by mpirun and libmpi.  The basic model employed is that all send/recv

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/uio.h>
@@ -47,9 +51,9 @@
 int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *server)
 {
     int NFailed = 0;
-#ifndef ENABLE_RMS
+#if ENABLE_RMS == 0
     int Tag;
-#ifdef ENABLE_CT
+#if ENABLE_CT
     int errorCode;
 #else
     int i;
@@ -60,7 +64,7 @@ int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *serve
     /* send abort message to each host */
     NFailed = 0;
     Tag = TERMINATENOW;
-#ifdef ENABLE_CT
+#if ENABLE_CT
     server->reset(adminMessage::SEND);
     if ( false == server->broadcastMessage(Tag, &errorCode) )
     {

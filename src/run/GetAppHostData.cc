@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +41,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 #include <sys/utsname.h>  // needed for uname
 #endif
 /* debug */
@@ -84,15 +86,12 @@ void GetAppHostCount(const char *InfoStream)
     RunParameters.NHostsSet = true;
 }
 
-
-
-
 /*
  * get the primary name of this host from gethostname, if none is specified
  */
 void GetMpirunHostnameNoInput(const char *InfoStream)
 {
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
   /* gives a hostname of "n-1", which fails later */
     int node = bproc_currnode();
     sprintf(RunParameters.mpirunName, "n%d", node);

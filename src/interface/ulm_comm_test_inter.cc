@@ -28,11 +28,12 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "ulm/ulm.h"
 #include "internal/log.h"
@@ -44,7 +45,7 @@
  */
 extern "C" int ulm_comm_test_inter(int comm, int *isInterComm)
 {
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 
 	if( (comm > communicatorsArrayLen) || ( comm < 0 ) ) {
 	    ulm_err(("Error: ulm_comm_test_inter: bad communicator %d\n",

@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <strings.h>
 
@@ -77,7 +80,7 @@ void udpSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
 	if (whichQueue == UDPFRAGSTOACK) {
 	    bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
 	}
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 	else if (whichQueue == UDPFRAGSTOSEND) {
 	    bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
 	    // increment NumSent since we were going to send this again...
@@ -89,7 +92,7 @@ void udpSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
                   WhichQueue));
 	}
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 	// set frag_seq value to 0/null/invalid to detect duplicate ACKs
 	fragSeq_m = 0;
 #endif

@@ -43,9 +43,11 @@
 #include "internal/linkage.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
+#include "internal/no_weak_symbols.h"
 #include "internal/ptr_table.h"
 #include "mpi/mpi.h"
 #include "ulm/ulm.h"
+
 
 CDECL_BEGIN
 
@@ -234,13 +236,6 @@ struct errhandler_t {
     int freed;
     int refcount;
 };
-
-/* 
- * include this file if weak symbols are not supported 
- */
-#if defined (__APPLE__) || defined (__CYGWIN__)
-#include "internal/mpi_ppc.h"
-#endif
 
 /*
  * function prototypes

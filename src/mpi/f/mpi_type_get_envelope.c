@@ -28,11 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_GET_ENVELOPE = mpi_type_get_envelope_f
 #pragma weak pmpi_type_get_envelope = mpi_type_get_envelope_f

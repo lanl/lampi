@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * This routine is used to finish TotalView debugger setup - if need
@@ -71,7 +73,7 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
             MPIR_proctable[cnt].executable_name =
                 (char *) (RunParameters.ExeList[HostID]);
             MPIR_proctable[cnt].pid = PIDsOfAppProcs[HostID][ProcID];
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
             /* spawn xterm/gdb session to attach to remote process -- works in bproc env. only! */
             if (RunParameters.GDBDebug) {
                 char title[64];
@@ -108,7 +110,7 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
         }
     }
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     /* if debugging with xterm/gdb in bproc env., then continue on... */
     if (RunParameters.GDBDebug) {
         return;

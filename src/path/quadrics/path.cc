@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <strings.h>			// for bzero
 #include <elan3/elan3.h>
 
@@ -106,7 +110,7 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
             if (OKToSend) {
                 /* enqueue DMA */
                 if (sfd->enqueue(timeNow, errorCode)) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                     sfd->timeSent_m = timeNow;
                     (sfd->numTransmits_m)++;
 #endif
@@ -658,7 +662,7 @@ bool quadricsPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         if (OKToSend) {
             /* enqueue DMA */
             if (sfd->enqueue(timeNow, errorCode)) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 sfd->timeSent_m = timeNow;
                 (sfd->numTransmits_m)++;
                 unsigned long long max_multiple =
@@ -925,7 +929,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 else {
                     // checksum BAD, then abort or return descriptor to pool if
                     // ENABLE_RELIABILITY is defined
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                     if (quadricsDoAck) {
                         if (usecrc()) {
                             ulm_warn(("quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",

@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <strings.h>
 
@@ -49,7 +53,7 @@
 #include "path/common/InitSendDescriptors.h"
 #include "ulm/ulm.h"
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif                          // SHARED_MEMORY
 
@@ -180,7 +184,7 @@ int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr,
 {
 	int returnValue=ULM_SUCCESS;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 	if( !isDuplicate_m ) {
 		/* 
@@ -472,7 +476,7 @@ void RecvDesc_t::DeliveredToAppLock(unsigned long bytesCopied, unsigned long byt
 }
 
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 
 int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
                                    unsigned long fragLen, void *fragAddr,
@@ -548,7 +552,7 @@ void RecvDesc_t::requestFree(void)
 }
 
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 
 bool BaseRecvFragDesc_t::checkForDuplicateAndNonSpecificAck(BaseSendFragDesc_t *sfd)

@@ -33,7 +33,7 @@
 
 #include "internal/types.h"
 
-#ifndef ENABLE_NUMA
+#if ENABLE_NUMA == 0
 
 inline bool setAffinity(void *addr, size_t size, affinity_t affinity)
 {

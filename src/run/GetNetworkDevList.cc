@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  *  This routine is used to get the list of "computational" network
@@ -65,23 +67,23 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 {
 	/* create default defive type count */
     int cnt = 0;
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
     cnt++;
 #endif
 
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
     cnt++;
 #endif
 
-#ifdef  ENABLE_QSNET
+#if ENABLE_QSNET
     cnt++;
 #endif
 
-#ifdef ENABLE_GM
+#if ENABLE_GM
     cnt++;
 #endif
 
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
     cnt++;
 #endif
 
@@ -98,20 +100,20 @@ void GetNetworkDevListNoInput(const char *InfoStream)
             RunParameters.ListPathTypes[i] = 0;
         }
         /* fill in list */
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_UDP;
 #endif
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_TCP;
 #endif
-#ifdef  ENABLE_QSNET
+#if ENABLE_QSNET
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_QUADRICS;
 	    RunParameters.Networks.UseQSW=1;
 #endif
-#ifdef ENABLE_GM
+#if ENABLE_GM
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_GM;
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_IB;
 #endif
 

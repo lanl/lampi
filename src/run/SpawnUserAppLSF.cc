@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +74,7 @@ void HostBuildEnvList(int, char *, unsigned int *, int, ULMRunParams_t *);
 void HostBuildExecArg(int, ULMRunParams_t *, int, int, char **);
 
 
-#ifdef ENABLE_LSF
+#if ENABLE_LSF
 extern "C" {
 #include <lsf/lsf.h>
 }
@@ -126,7 +128,7 @@ bool canExecute(struct stat *rstat) {
 
 void handleLsfTasks(int signo)
 {
-#ifdef ENABLE_LSF
+#if ENABLE_LSF
     int i, taskID;
     LS_WAIT_T status;
 
@@ -169,7 +171,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     int RetVal, dupSTDERRfd, dupSTDOUTfd;
     struct sigaction action;
     int NHostsStarted=0;
-#ifdef ENABLE_LSF
+#if ENABLE_LSF
     struct stat rstat;
 
     if (ls_initrex(RunParameters->NHosts, 0) < 0) {
@@ -196,7 +198,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     }
 
 	nEnviron = 0;
-#ifdef ENABLE_LSF
+#if ENABLE_LSF
     /*
      * Pre-calculate the number of entires and maxi space needed for
      * the environment variable list that global to all hosts.
@@ -258,7 +260,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
 
-#ifdef  ENABLE_LSF
+#if ENABLE_LSF
         if ((RetVal = ls_chdir(RunParameters->HostList[host],
              RunParameters->WorkingDirList[host])) < 0) {
             dup2(dupSTDERRfd, STDERR_FILENO);
@@ -356,7 +358,7 @@ void HostBuildEnvList(int host, char *localHostName,
      * Allocate and fill in all the individual environment variables.
      */
 
-#ifdef ENABLE_LSF
+#if ENABLE_LSF
     for (envVar = 0; envVar < nEnviron; envVar++) {
         AllocateAndFillEnv(envVar, environ[envVar]);
     }

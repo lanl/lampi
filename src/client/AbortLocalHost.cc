@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,7 +94,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
                     int *NewLineLast, lampiState_t *state)
 {
     int i, NumChildren, MaxDesc, NFDs;
-#ifndef ENABLE_CT
+#if ENABLE_CT == 0
     ulm_iovec_t IOVec;
     ssize_t IOReturn;
 #else
@@ -124,7 +126,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
     MaxDesc++;
 
     /* drain standard I/O of children */
-#ifdef ENABLE_CT
+#if ENABLE_CT
     if ( 1 ) {
 #else
     if (ServerSocketFD >= 0) {
@@ -154,7 +156,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
 
     /* notify server of termination */
     if (Notify) {
-#ifdef ENABLE_CT
+#if ENABLE_CT
         state->client->reset(adminMessage::SEND);
         if (false ==
             state->client->sendMessage(0, MessageType, state->channelID,
@@ -175,7 +177,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
 #endif
     }
 
-#ifndef ENABLE_CT
+#if ENABLE_CT == 0
     exit(2);
 #endif
 }

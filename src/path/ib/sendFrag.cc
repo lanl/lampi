@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #include <vapi_common.h>
 }
@@ -247,7 +251,7 @@ inline bool ibSendFragDesc::ud_init(void)
             return false;
     }
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     // assign fragment sequence number(s) if we need them...
     frag_seq_m = 0;
 
@@ -458,7 +462,7 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
             }
         }
     }
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     else if ((state_m & LOCALACKED) != 0) {
         // try to get tokens and resend...
         if ((h->ud.sq_tokens >= 1) && (h->send_cq_tokens >= 1)) {

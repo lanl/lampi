@@ -28,11 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "run/parse_cmdln_bproc.h"
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 static struct option long_opts[] = {
     {"debug", no_argument, 0, 'd'},
     {"help", no_argument, 0, 'h'},
@@ -64,7 +66,7 @@ void print_help()
 #endif
 int parse_cmdln_bproc(int argc, char **argv, ULMRunParams_t *parameters)
 {
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     int opt_index = 0;
     int c;
     int debugSet = 0;

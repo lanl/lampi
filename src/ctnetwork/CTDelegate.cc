@@ -38,5 +38,9 @@
  *  Created by Rob Aulwes on Tue Jan 14 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "CTDelegate.h"
 

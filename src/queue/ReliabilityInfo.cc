@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <new>
 #include <strings.h>
 
@@ -40,7 +44,7 @@
 
 ReliabilityInfo::ReliabilityInfo()
 {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
     /* Point-to-Point information initialization */
 
@@ -214,7 +218,7 @@ ReliabilityInfo::ReliabilityInfo()
 
 ReliabilityInfo::~ReliabilityInfo()
 {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     if (next_frag_seqs) {
         ulm_delete(next_frag_seqs);
         next_frag_seqs = 0;

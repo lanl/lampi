@@ -28,11 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_GET_ELEMENTS = mpi_get_elements_f
 #pragma weak pmpi_get_elements = mpi_get_elements_f

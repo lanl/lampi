@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/malloc.h"
 #include "internal/mpif.h"
 
@@ -75,7 +79,7 @@ void mpi_type_struct_f(MPI_Fint *count,
     ulm_free(c_disp_array);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_STRUCT = mpi_type_struct_f
 #pragma weak pmpi_type_struct = mpi_type_struct_f

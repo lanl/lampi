@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <elan/elan.h>
 #include <elan/version.h>
@@ -43,7 +47,6 @@
 #include "init/environ.h"
 #include "init/init.h"
 #include "internal/malloc.h"
-#include "internal/options.h"
 #include "queue/globals.h"
 
 

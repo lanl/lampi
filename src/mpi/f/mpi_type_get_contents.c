@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/malloc.h"
 #include "internal/mpif.h"
 
@@ -86,7 +90,7 @@ void mpi_type_get_contents_f(MPI_Fint *datatype,
 }
 
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_GET_CONTENTS = mpi_type_get_contents_f
 #pragma weak pmpi_type_get_contents = mpi_type_get_contents_f

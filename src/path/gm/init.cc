@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <gm.h>
 
 #include "init/init.h"
@@ -360,7 +364,7 @@ void gmSetup(lampiState_t *s)
             maxDevs = nDevsPerProc[i];
     }
 
-#ifndef ENABLE_CT
+#if ENABLE_CT == 0
     if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) ||
                             (!s->useDaemon && (local_myproc() == 0)))) {
         /* send maxDevs to mpirun */

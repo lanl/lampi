@@ -28,8 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "init/init.h"
-#include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/path.h"
@@ -45,7 +48,7 @@ void lampi_init_prefork_shared_memory(lampiState_t *s)
         lampi_init_print("lampi_init_prefork_shared_memory");
     }
 
-    if (OPT_SHARED_MEMORY) {
+    if (ENABLE_SHARED_MEMORY) {
         InitSMPSharedMemDescriptors(s->local_size);
     }
 }
@@ -60,7 +63,7 @@ void lampi_init_postfork_shared_memory(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_shared_memory");
     }
 
-    if (OPT_SHARED_MEMORY) {
+    if (ENABLE_SHARED_MEMORY) {
 
         /*
          * Add Shared_Memory path to global pathContainer
@@ -197,7 +200,7 @@ void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *s)
     int recvd;
     int tag;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     lampi_init_prefork_receive_setup_msg_shared_memory(s);
     return;
 #endif

@@ -65,7 +65,7 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
         void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd, 
             ibSendFragDesc *sfd, bool already_locked);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         bool checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd, double timeNow);
 #endif
 

@@ -35,6 +35,10 @@
  *  Created by Rob Aulwes on Thu Jan 02 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "CTController.h"
 
 

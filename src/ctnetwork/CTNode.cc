@@ -38,6 +38,10 @@
  *  Created by Rob Aulwes on Tue Jan 07 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <strings.h>
 
 #include "CTNode.h"
@@ -101,9 +105,6 @@ void *CTNode::neighbor(unsigned int label)
 {
     return neighbors_m.valueForKey(label);
 }
-
-
-
 
 /*
  *
@@ -810,9 +811,6 @@ unsigned int **HypercubeNode::scatterList(char *controlData, unsigned int *label
         
     return scatterList;
 }
-
-
-
 
 char *HypercubeNode::controlDataForSending(char *controlData, unsigned int link, unsigned int *sz)
 {

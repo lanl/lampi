@@ -43,11 +43,11 @@
 #include "mem/ULMMallocMacros.h"
 #include "mem/ZeroAlloc.h"
 
-#ifdef ENABLE_GM
+#if ENABLE_GM
 #include <gm.h>
 #endif 
 
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
 extern bool ib_register_chunk(int hca_index, void *addr, size_t size);
 #endif
 
@@ -75,10 +75,10 @@ public:
     size_t PageSize;            // page size
     ChunkDesc_t *ChunkDesc;     // array of information about each chunk
     long NextAvailChunk;        // next available chunk
-#ifdef ENABLE_GM
+#if ENABLE_GM
     struct gm_port *gmPort;     // for mlocking Myrinet memory buffers
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
     int hca_index;              // true index into ib_state.hca array for IB state
 #endif
 
@@ -86,10 +86,10 @@ public:
 
     MemoryPool_t()
         {
-#ifdef ENABLE_GM
+#if ENABLE_GM
             gmPort = 0;
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
             hca_index = -1;
 #endif
         }
@@ -142,7 +142,7 @@ public:
                     Lock.unlock();
                     return ReturnPtr;
                 }
-#ifdef ENABLE_GM
+#if ENABLE_GM
                 if (gmPort) {
                     gm_status_t returnValue =
                         gm_register_memory(gmPort,
@@ -155,7 +155,7 @@ public:
                     }
                 }
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
                 if ((hca_index >= 0) && 
                     (!ib_register_chunk(hca_index, ChunkDesc[NPoolChunks].BasePtr, ChunkSize))) {
                     ulm_err(("Error: Unable to register memory for IB (HCA real index %d)\n", hca_index));
@@ -252,7 +252,7 @@ public:
 
                 // set base pointer
                 if (TmpPtr) {
-#ifdef ENABLE_GM
+#if ENABLE_GM
                     if (gmPort) {
                         gm_status_t returnValue =
                             gm_register_memory(gmPort,

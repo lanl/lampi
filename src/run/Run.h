@@ -199,7 +199,7 @@ void setNoLSF(const char *InfoStream);
 void setThreads(const char *InfoStream);
 void setUseSSH(const char *InfoStream);
 
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
 void parseTCPMaxFragment(const char* infoStream);
 void parseTCPEagerSend(const char* infoStream);
 void parseTCPConnectRetries(const char *InfoStream);

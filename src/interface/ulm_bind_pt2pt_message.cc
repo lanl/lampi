@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include "internal/profiler.h"
@@ -43,7 +47,7 @@
 #include "path/common/pathContainer.h"
 #include "path/common/InitSendDescriptors.h"
 #include "path/common/pathGlobals.h"
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif /* SHARED_MEMORY */
 

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/errno.h>
 #include <unistd.h>
 #include <elan3/elan3.h>
@@ -50,8 +54,6 @@
 #define ELAN_ALIGNUP(x,a)       (((uintptr_t)(x) + ((a)-1)) & (-(a)))
 /* 'a' power of 2 */
 #endif
-
-#define INSTANTIATE_QUADRICS_GLOBALS
 
 void quadricsInitRecvDescs() {
     long minPagesPerList = 4;

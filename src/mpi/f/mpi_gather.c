@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -44,7 +47,7 @@ void mpi_gather_f(void *sendbuf,
                      recvbuf, *recvcount, c_recvtype, *root, *comm);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_GATHER = mpi_gather_f
 #pragma weak pmpi_gather = mpi_gather_f

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "util/MemFunctions.h"
 #include "internal/types.h"
 #include "path/gm/sendFrag.h"
@@ -114,7 +118,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         headerp->dataLength = length_m;
         headerp->msgLength = parentSendDesc_m->posted_m.length_m;
         fragSeq_m = 0;  // fix later for reliability!!!!
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         parentSendDesc_m->path_m->initFragSeq(this);
 #endif
         headerp->frag_seq = fragSeq_m;
@@ -207,7 +211,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         headerp->dataChecksum = csum;
     }
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     if ( gmState.doChecksum )
     {
         headerp->checksum = BasePath_t::headerChecksum(headerp, sizeof(gmHeader) - sizeof(ulm_uint32_t),
@@ -231,7 +235,7 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
     if (WhichQueue == GMFRAGSTOACK) {
         bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
     }
-    else if (OPT_RELIABILITY && WhichQueue == GMFRAGSTOSEND) {
+    else if (ENABLE_RELIABILITY && WhichQueue == GMFRAGSTOSEND) {
         bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
         // increment NumSent since we were going to send this again...
         (bsd->NumSent)++;
@@ -242,7 +246,7 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
                   WhichQueue));
     }
 
-    if (OPT_RELIABILITY) {
+    if (ENABLE_RELIABILITY) {
         // set frag_seq value to 0/null/invalid to detect duplicate ACKs
         fragSeq_m = 0;
     }

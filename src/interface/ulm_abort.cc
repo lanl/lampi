@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
@@ -74,7 +78,7 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
 
     fflush(stdout);
     fflush(stderr);
-#ifdef ENABLE_RMS
+#if ENABLE_RMS
     raise(SIGHUP);
 #else
     exit(error);

@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -48,7 +50,7 @@ void mpi_alltoallv_f(void *sendbuf,
 }
 
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_ALLTOALLV = mpi_alltoallv_f
 #pragma weak pmpi_alltoallv = mpi_alltoallv_f

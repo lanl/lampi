@@ -28,12 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 
 #include "internal/log.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "ulm/ulm.h"
 #include "mpi/constants.h"
@@ -44,7 +45,7 @@
  */
 extern "C" int ulm_comm_remote_size(int comm, int *size)
 {
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 	if (communicators[comm] == 0L) {
 	    ulm_err(("Error: ulm_comm_remote_size: bad communicator %d\n",
 		     comm));

@@ -82,9 +82,6 @@ class HashKeyString : public HashKey
         virtual size_t keyLength() { return (kval_m != 0) ? strlen(kval_m) : 0; }
 };
 
-
-
-
 /*
  *
  *		Class HashValue

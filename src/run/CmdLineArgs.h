@@ -290,7 +290,7 @@ InputParameters_t ULMInputOptions[] =
      parseMaxSMPDataPages,
      "Max shared memory data pages", 0, "\0"
     },
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
     {"-cpuspernode", "CpusPerNode",
      STRING_ARGS, NoOpFunction, parseCpusPerNode, "Number of CPU's per node to use", 0, "\0"},
     {"-resrcaffinity", "ResourceAffinity",

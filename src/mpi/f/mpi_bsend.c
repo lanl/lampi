@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -41,7 +43,7 @@ void mpi_bsend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
     *rc = MPI_Bsend(buf, *count, c_type, *dest, *tag, *comm);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_BSEND = mpi_bsend_f
 #pragma weak pmpi_bsend = mpi_bsend_f

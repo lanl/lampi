@@ -28,8 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/log.h"
-#include "internal/options.h"
 #include "path/gm/recvFrag.h"
 #include "util/dclock.h"
 
@@ -77,7 +80,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
     p->thisFragSeq = seq_m;
         
-    if ( OPT_RELIABILITY ) {
+    if ( ENABLE_RELIABILITY ) {
 
 	    Communicator *pg = communicators[ctx_m];
 	    unsigned int glSourceProcess =  pg->remoteGroup->
@@ -102,7 +105,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
     p->checksum = 0;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     if ( gmState.doChecksum )
     {
         p->checksum = BasePath_t::headerChecksum((gmHeader *)p, sizeof(gmHeader) - sizeof(ulm_uint32_t),
@@ -198,7 +201,7 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
     if (usethreads())
         bsd->Lock.lock();
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     if (checkForDuplicateAndNonSpecificAck(sfd)) {
         bsd->Lock.unlock();
         ReturnDescToPool(0);

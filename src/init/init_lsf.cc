@@ -28,10 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "init/init.h"
-#include "internal/options.h"
 
 
 void lampi_init_prefork_lsf(lampiState_t *s)
@@ -43,7 +44,7 @@ void lampi_init_prefork_lsf(lampiState_t *s)
 	lampi_init_print("lampi_init_prefork_lsf");
     }
 
-    if (OPT_LSF) {
+    if (ENABLE_LSF) {
 	s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
 	return;
     }
@@ -59,7 +60,7 @@ void lampi_init_postfork_lsf(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_lsf");
     }
 
-    if (OPT_LSF) {
+    if (ENABLE_LSF) {
 	s->error = ERROR_LAMPI_INIT_POSTFORK_RESOURCE_MANAGEMENT;
 	return;
     }
@@ -75,7 +76,7 @@ void lampi_init_allforked_lsf(lampiState_t *s)
         lampi_init_print("lampi_init_allforked_lsf");
     }
 
-    if (OPT_LSF) {
+    if (ENABLE_LSF) {
 	s->error = ERROR_LAMPI_INIT_ALLFORKED_RESOURCE_MANAGEMENT;
 	return;
     }

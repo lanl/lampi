@@ -39,7 +39,6 @@
 #include "util/Links.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
-#include "internal/options.h"
 #include "internal/types.h"
 #include "mem/MemoryPool.h"
 #include "mem/FixedSharedMemPool.h"
@@ -104,7 +103,7 @@ public:
                 }
             }
 
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 // print out log info
                 mem_log();
 
@@ -198,7 +197,7 @@ public:
             nLists_m = nLists;
 
             // initialize data for memory profiling
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 elementsOut = (int *) ulm_malloc(nLists_m * sizeof(int));
                 elementsMax = (int *) ulm_malloc(nLists_m * sizeof(int));
                 elementsSum = (int *) ulm_malloc(nLists_m * sizeof(int));
@@ -373,7 +372,7 @@ public:
             // exceed the amount allowed
             long long sizeToAdd = memoryPool_m->ChunkSize;
 
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 chunksRequested[ListIndex]++;
             }
 
@@ -423,7 +422,7 @@ public:
             // this far in the code.
             freeLists_m[ListIndex]->consecReqFail_m = 0;
 
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 chunksReturned[ListIndex]++;
             }
 
@@ -545,7 +544,7 @@ public:
                     goto RETRYTAG;
                 }
             }
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 elementsOut[listIndex]++;
                 elementsSum[listIndex] += elementsOut[listIndex];
                 numEvents[listIndex]++;
@@ -594,7 +593,7 @@ public:
                     goto RETRYTAG;
                 }
             }
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 elementsOut[listIndex]++;
                 elementsSum[listIndex] += elementsOut[listIndex];
                 numEvents[listIndex]++;
@@ -611,7 +610,7 @@ public:
         {
             freeLists_m[ListIndex]->freeList_m.Append(e);
 
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 elementsOut[ListIndex]--;
             }
 
@@ -625,7 +624,7 @@ public:
             freeLists_m[ListIndex]->freeList_m.AppendNoLock(e);
             mb();
 
-            if (OPT_MEMPROFILE) {
+            if (ENABLE_MEMPROFILE) {
                 elementsOut[ListIndex]--;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/mpi.h"
 
 #ifdef HAVE_PRAGMA_WEAK
@@ -42,17 +46,6 @@ int PMPI_Wait(MPI_Request *request, MPI_Status *status)
     ULMStatus_t stat;
     int rc;
 
-    if (request && *request == _mpi.proc_null_request) {
-	if (status) {
-	    status->MPI_ERROR = MPI_SUCCESS;
-	    status->MPI_SOURCE = MPI_PROC_NULL;
-	    status->MPI_TAG = MPI_ANY_TAG;
-	    status->_count = 0;
-	    status->_persistent = 0;
-	}
-	return MPI_SUCCESS;
-    }
-
     if (_mpi.check_args) {
         rc = MPI_SUCCESS;
         if (_mpi.finalized) {
@@ -63,6 +56,17 @@ int PMPI_Wait(MPI_Request *request, MPI_Status *status)
         if (rc != MPI_SUCCESS) {
             goto ERRHANDLER;
         }
+    }
+
+    if (*request == _mpi.proc_null_request) {
+	if (status) {
+	    status->MPI_ERROR = MPI_SUCCESS;
+	    status->MPI_SOURCE = MPI_PROC_NULL;
+	    status->MPI_TAG = MPI_ANY_TAG;
+	    status->_count = 0;
+	    status->_persistent = 0;
+	}
+	return MPI_SUCCESS;
     }
 
     rc = ulm_wait((ULMRequest_t *) request, &stat);

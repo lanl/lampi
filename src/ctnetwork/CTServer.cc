@@ -38,6 +38,10 @@
  *  Created by Rob Aulwes on Thu Jan 02 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <strings.h>
 
 #include "CTServer.h"
@@ -571,9 +575,6 @@ bool CTServer::synchronize(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSi
 
 
 
-
-
-
 /*
  *              Message routing
  */
@@ -702,7 +703,7 @@ void CTServer::handleNetMsg(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSi
     ncmd = msg->networkCommand();
 
     // get handler method from vtable.
-    if ( (ncmd < ADMIN_VTBL_SZ) && (fn = admin_vtbl[ncmd]) )
+    if ( (ncmd < ADMIN_VTBL_SZ) && (fn = admin_vtbl[(int) ncmd]) )
     {
         (this->*fn)(chnl, msg, ctrlSize, ctrl);
     }
@@ -1134,9 +1135,6 @@ CTMessage *CTServer::getServerInfoMessage()
     return msg;
 }
 
-
-
-
 bool CTServer::start()
 {
     bool        success = true;
@@ -1397,9 +1395,6 @@ CTChannelStatus CTServer::allgather(unsigned int numParticipants, unsigned int d
 
     return status;
 }
-
-
-
 
 CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int sendlen,
                                      char *sendBuf, int *recvLens, char *recvBuf)

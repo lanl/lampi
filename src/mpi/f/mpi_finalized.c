@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -37,7 +39,7 @@ void mpi_finalized_f(MPI_Fint *flag, MPI_Fint *rc)
     *rc = MPI_Finalized(flag);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_FINALIZED = mpi_finalized_f
 #pragma weak pmpi_finalized = mpi_finalized_f

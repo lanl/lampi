@@ -28,10 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 
 #include "queue/globals.h"
-#include "internal/options.h"
 #include "path/gm/path.h"
 #include "os/atomic.h"
 
@@ -214,7 +217,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
             void *addr = &(((gmFragBuffer *) sfd->currentSrcAddr_m)->header);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             sfd->initResendInfo(message, timeNow);
 #endif
 
@@ -334,7 +337,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 chksum = 0;
                 rf->gmHeader_m = (gmHeader *) gm_ntohp(event->recv.buffer);
                 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 if ( gmState.doChecksum )
                 {
                     chksum =  BasePath_t::headerChecksum(rf->gmHeader_m, sizeof(gmHeader) - sizeof(ulm_uint32_t),
@@ -372,7 +375,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 {
                     // checksum BAD, then abort or return descriptor to pool if
                     // ENABLE_RELIABILITY is defined
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                     if ( gmState.doAck ) {
                         if (usecrc()) {
                             ulm_warn(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",

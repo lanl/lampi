@@ -38,6 +38,10 @@
  *  Created by Rob Aulwes on Mon Jan 13 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <strings.h>
 
 #include "CTMessage.h"

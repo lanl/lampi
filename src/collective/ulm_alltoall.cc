@@ -31,7 +31,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <math.h>
@@ -39,7 +41,7 @@
 #include "internal/mpi.h"
 #include "internal/malloc.h"
 
-#ifdef ENABLE_QSNET
+#if ENABLE_QSNET
 
 /*
  * This is a simple implementation based on a sequence of gathers.

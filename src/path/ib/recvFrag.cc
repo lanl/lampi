@@ -273,7 +273,7 @@ void ibRecvFragDesc::msgData(double timeNow)
     msgLength_m = msg_m->header.msgLength;
     length_m = msg_m->header.dataLength;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     isDuplicate_m = UNIQUE_FRAG;
 #endif
 
@@ -327,7 +327,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
             return;
         }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         if (checkForDuplicateAndNonSpecificAck(sfd, timeNow)) {
             ((SendDesc_t *)bsd)->Lock.unlock();
             ReturnDescToPool(getMemPoolIndex());
@@ -342,7 +342,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
     return;
 }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd, double timeNow)
 {
@@ -416,7 +416,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         if (whichQueue == IBFRAGSTOACK) {
             bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
         }
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         else if (whichQueue == IBFRAGSTOSEND) {
             bsd->FragsToSend.RemoveLinkNoLock((Links_t *)sfd);
             // increment NumSent since we were going to send this again...
@@ -431,7 +431,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         // reset WhichQueue flag
         sfd->WhichQueue = IBFRAGFREELIST;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         // set seq_m value to 0/null/invalid to detect duplicate ACKs
         sfd->frag_seq_m = 0;
 #endif

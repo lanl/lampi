@@ -40,7 +40,7 @@
 #undef PAGESIZE
 #include "path/ib/state.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
@@ -85,7 +85,7 @@ class ibPath : public BasePath_t {
         void finalize(void);
         void checkSendCQs(void);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         bool retransmitP(SendDesc_t *message) {
             if (!ib_state.ack || (ib_state.retrans_time == -1) || (message->earliestTimeToResend == -1)
                 || (message->FragsToAck.size() == 0))

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/mpif.h"
 
 void mpi_type_free_f(MPI_Fint *f_type, MPI_Fint *rc)
@@ -41,7 +45,7 @@ void mpi_type_free_f(MPI_Fint *f_type, MPI_Fint *rc)
     }
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_FREE = mpi_type_free_f
 #pragma weak pmpi_type_free = mpi_type_free_f

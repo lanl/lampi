@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/mpif.h"
 
 void mpi_query_thread_f(MPI_Fint *provided, MPI_Fint *rc)
@@ -38,7 +42,7 @@ void mpi_query_thread_f(MPI_Fint *provided, MPI_Fint *rc)
     *rc = MPI_Query_thread(provided);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_QUERY_THREAD = mpi_query_thread_f
 #pragma weak pmpi_query_thread = mpi_query_thread_f

@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mpi.h"
 #include <stdio.h>
@@ -67,9 +69,6 @@ int MPI_Init(int *argc, char ***argv)
     fprintf(stderr, "MPI Profiling Interface\n");
     return result;
 }
-
-
-
 
 //      The collective Functions
 

@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/malloc.h"
 #include "internal/mpif.h"
@@ -76,7 +79,7 @@ void mpi_waitsome_f(MPI_Fint *count,
     }
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_WAITSOME = mpi_waitsome_f
 #pragma weak pmpi_waitsome = mpi_waitsome_f

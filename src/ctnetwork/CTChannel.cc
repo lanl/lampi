@@ -38,6 +38,10 @@
  *  Created by Rob Aulwes on Thu Jan 02 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <netdb.h>
 #include <signal.h>
 #include <strings.h>
@@ -194,9 +198,6 @@ bool CTChannel::addChannelConstructor(const char *chnlClass, CTChannel *(*factor
 
     return ret;
 }
-
-
-
 
 /*
  *
@@ -555,9 +556,6 @@ CTChannelStatus CTTCPChannel::receiveAtMost(char *buffer, long int len, long int
     return status;
 }
 
-
-
-
 /* msg-oriented methods. */
 
 CTChannelStatus CTTCPChannel::getMessage(CTMessage **msg)
@@ -748,9 +746,6 @@ bool CTTCPChannel::openChannel(int timeoutSecs)
 
     return success;
 }
-
-
-
 
 void CTTCPChannel::closeChannel()
 {
@@ -1107,9 +1102,6 @@ CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTTCPChannel
 
     return status;
 }
-
-
-
 
 void CTTCPSvrChannel::setChannelsToCheckForRead(struct link_t *channels)
 {

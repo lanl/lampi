@@ -35,7 +35,7 @@
 #define _ULMMALLOCSHAREDLOCAL
 
 // new this for placement new
-#include <new.h>
+#include <new>
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/errno.h>

@@ -28,8 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "init/init.h"
-#include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/ib/init.h"
 #undef PAGESIZE
@@ -119,7 +122,7 @@ void lampi_init_prefork_receive_setup_params_ib(lampiState_t * s)
         return;
     }
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     lampi_init_prefork_receive_setup_msg_ib(s);
     return;
 #endif

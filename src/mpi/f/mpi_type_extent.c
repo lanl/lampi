@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -42,7 +45,7 @@ void mpi_type_extent_f(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
     *f_extent = (int) c_extent & 0xffffffff;
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_EXTENT = mpi_type_extent_f
 #pragma weak pmpi_type_extent = mpi_type_extent_f

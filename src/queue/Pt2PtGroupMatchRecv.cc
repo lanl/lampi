@@ -31,9 +31,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/path.h"
 #endif // SHARED_MEMORY
@@ -61,7 +65,7 @@ void Communicator::checkFragListsForWildMatch(RecvDesc_t * IRDesc)
          ProcWithData++) {
 
         // continue if no frags to match
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         if ((privateQueues.OkToMatchRecvFrags[ProcWithData]->size() == 0)
             && (privateQueues.OkToMatchSMPFrags[ProcWithData]->size() ==
                 0)) {
@@ -78,7 +82,7 @@ void Communicator::checkFragListsForWildMatch(RecvDesc_t * IRDesc)
             // match found
             return;
         }
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         if (matchAgainstSMPFragList(IRDesc, ProcWithData)) {
             // match found
             return;
@@ -117,7 +121,7 @@ void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
     // check to see if there are any frags to match
     int SourceProc = IRDesc->posted_m.peer_m;
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     if ((privateQueues.OkToMatchRecvFrags[SourceProc]->size() == 0) &&
         (privateQueues.OkToMatchSMPFrags[SourceProc]->size() == 0)) {
         IRDesc->WhichQueue = POSTEDIRECV;
@@ -139,7 +143,7 @@ void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
         // match found
         return;
     }
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     if (matchAgainstSMPFragList(IRDesc, SourceProc)) {
         // match found
         return;
@@ -296,7 +300,7 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
 }
 
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 
 //
 // this routine tries to match the receiver.  If a match is found, it

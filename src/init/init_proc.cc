@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -41,8 +45,6 @@
 #include "util/misc.h"
 
 #include "ctnetwork/CTNetwork.h"
-
-
 
 
 /*
@@ -89,20 +91,8 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
     /* 
      * initialize admin network
      */
-#ifdef ENABLE_CT	 
+#if ENABLE_CT	 
 	CTNetworkInit();
 #endif
-
-
-    // set up pipes to redirect stderr/stdout so that even the daemon's
-    // output is directed through the admin network.
-    if ((pipe(s->daemonSTDERR) < 0) || (pipe(s->daemonSTDOUT) < 0)) {
-            ulm_err(("Host %s (pid = %d): Unable to create pipes for daemon.\n", _ulm_host(), getpid()));
-    } else {
-        if ( (dup2(s->daemonSTDERR[1], STDERR_FILENO) < 0) ||
-             (dup2(s->daemonSTDOUT[1], STDOUT_FILENO) < 0) ) {
-                ulm_err(("Host %s (pid = %d): Unable to redirect stdio for daemon.\n", _ulm_host(), getpid()));
-        }
-    }
 }
 

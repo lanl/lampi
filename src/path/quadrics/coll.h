@@ -276,7 +276,7 @@ typedef struct quadrics_channel
     int	               index;          /* index in the queue */
     int	               send_mode;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     /* Retransmission Stuff */
     double             time_started;   
     double             time_resend;   

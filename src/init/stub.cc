@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * device specific functions default to noop if they are not defined
@@ -41,20 +43,20 @@ static void noop(lampiState_t *s)
     return;
 }
 
-#ifndef ENABLE_RMS
+#if ENABLE_RMS == 0
 lampi_init_func_t lampi_init_prefork_rms = noop;
 lampi_init_func_t lampi_init_postfork_rms = noop;
 lampi_init_func_t lampi_init_allforked_rms = noop;
 #endif
 
-#ifndef ENABLE_GM
+#if ENABLE_GM == 0
 lampi_init_func_t lampi_init_prefork_gm = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_gm = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_gm = noop;
 lampi_init_func_t lampi_init_postfork_gm = noop;
 #endif
 
-#ifndef  ENABLE_QSNET
+#if ENABLE_QSNET == 0
 lampi_init_func_t lampi_init_prefork_quadrics = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_quadrics = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics = noop;
@@ -65,7 +67,7 @@ lampi_init_func_t lampi_init_postfork_coll_setup = noop;
 #endif
 #endif
 
-#ifndef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY == 0
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_shared_memory = noop;
@@ -74,19 +76,19 @@ lampi_init_func_t lampi_init_allforked_local_coll = noop;
 lampi_init_func_t lampi_init_allforked_shared_memory = noop;
 #endif
 
-#ifndef ENABLE_UDP
+#if ENABLE_UDP == 0
 lampi_init_func_t lampi_init_prefork_udp = noop;
 lampi_init_func_t lampi_init_postfork_udp = noop;
 lampi_init_func_t lampi_init_allforked_udp = noop;
 #endif
 
-#ifndef ENABLE_TCP
+#if ENABLE_TCP == 0
 lampi_init_func_t lampi_init_prefork_tcp = noop;
 lampi_init_func_t lampi_init_postfork_tcp = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_tcp = noop;
 #endif
 
-#ifndef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND == 0
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_ib = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_ib = noop;
 lampi_init_func_t lampi_init_postfork_ib = noop;

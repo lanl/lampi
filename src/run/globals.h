@@ -49,7 +49,7 @@ extern int *HostDoneWithSetup;
 /* argument index of application binary on command line */
 extern int _ulm_AppArgsIndex;
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
 extern int ULMRunUDPSetupDone;
 #endif
 

@@ -41,21 +41,21 @@ public:
     int wdir_argc_m;
     const char **wdir_argv_m;
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
     struct {
         int doack_m;
         int dochecksum_m;
     } udp;
 #endif
 
-#ifdef ENABLE_QSNET
+#if ENABLE_QSNET
     struct {
         int doack_m;
         int dochecksum_m;
     } quadrics;
 #endif
 
-#ifdef ENABLE_GM
+#if ENABLE_GM
     struct {
         int doack_m;
         int dochecksum_m;

@@ -31,10 +31,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #include "internal/profiler.h"
-#include "internal/options.h"
 #include "ulm/ulm.h"
 #include "ulm/constants.h"
 #include "internal/log.h"

@@ -28,8 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "init/init.h"
-#include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/quadrics/path.h"
 #include "path/quadrics/state.h"
@@ -289,7 +292,7 @@ void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
      */
 
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     lampi_init_prefork_receive_setup_msg_quadrics(s);
     return;
 #endif

@@ -28,12 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 
 #include "internal/profiler.h"
-#include "internal/options.h"
 #include "ulm/ulm.h"
 #include "mpi/mpi.h"
 #include "internal/log.h"
@@ -55,7 +56,7 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
     int returnValue;
     int groupSize,nMyColor, cnt;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 
 	if( (comm > communicatorsArrayLen) || ( comm < 0 ) ) {
 	    ulm_err(("Error: ulm_comm_create: bad communicator %d\n",
@@ -71,7 +72,7 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
 	    goto BarrierTag;
 	}
 
-    } // end OPT_CHECK_API_ARGS
+    } // end ENABLE_CHECK_API_ARGS
 
     // get new contextID
     returnValue=communicators[comm]->getNewContextID(newComm);

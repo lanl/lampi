@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1408,7 +1412,8 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
 
   START_MARK;
   ctx         = quadrics_Glob_Mem_Info->ctx;
-#ifdef ENABLE_RELIABILITY
+
+#if ENABLE_RELIABILITY
   /* Take the timestamp of the ulm_request */
   if (channel->repeats < 1 )
     channel->time_started = 
@@ -1438,7 +1443,7 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
   }
   else 
   {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     double   time_now = 0;
     volatile E3_int32 * done_recv = 
       (E3_int32*)& ctrl->recv_blk_main[index]->eb_done;
@@ -1516,7 +1521,7 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
   ELAN3_CTX             *ctx;
   START_MARK;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   /* Take the timestamp of the ulm_request */
   if (channel->repeats < 1 )
     channel->time_started = 
@@ -1801,7 +1806,7 @@ Broadcaster::check_channels()
     return ULM_SUCCESS;
   }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   if ( faulted )
     return ULM_ERR_BCAST_SYNC;
 #endif
@@ -1813,7 +1818,7 @@ Broadcaster::check_channels()
       /* Need to check all the outstanding send channels */
       if ( channels[index]->send_mode == BCAST_SEND_CHANNEL )
       {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 	volatile E3_int32 * done_word;
 	done_word = (volatile E3_int32 *)	
 	  & ctrl->recv_blk_main[index]->eb_done;
@@ -1840,7 +1845,7 @@ Broadcaster::check_channels()
 	 localGroup->mapGroupProcIDToHostID[self] ) &&
 	(self_vp == local_master_vp )))
     {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
       if (timed_out)
 	E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
 	  S2E(sync->nack_event[index])); 
@@ -1874,7 +1879,7 @@ Broadcaster::sync_parent(int errorcode)
 
   /* The master checked the current status of outstanding channels,
    * then it updates others about its conclusion */
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   int nack_detected = 0;
 #endif
 
@@ -1893,7 +1898,7 @@ Broadcaster::sync_parent(int errorcode)
   index = i % total_channels;
   blk = sync->recv_blk_main[index];
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   {
     volatile E3_int32 * sync_word;
     volatile E3_int32 * nack_word;
@@ -1970,7 +1975,7 @@ Broadcaster::sync_parent(int errorcode)
   /* Reset the index */
   ((ulm_coll_env_t*) sync->glob_env)->desc_index  = 0;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   if ( nack_detected || timed_out)
   {
     /* Complete all bcast_request_t upto toqueue */
@@ -2015,7 +2020,7 @@ Broadcaster::sync_leaves(int errorcode)
     new_ack = ((E3_uint32 *)&((ulm_coll_env_t*) 
 	  sync->glob_env)->desc_index);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     coll_type = ((E3_uint32 *)&((ulm_coll_env_t*) 
 	  sync->glob_env)->coll_type);
     index = (toqueue - 1) % total_channels;
@@ -2055,7 +2060,8 @@ Broadcaster::sync_leaves(int errorcode)
   return ULM_SUCCESS;
 }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
+
 /* A function to retransmit the outstanding broadcast when the
  * hw/bcast is still available */
 int 
@@ -2126,7 +2132,7 @@ Broadcaster::make_progress_bcast()
     errorcode = sync_leaves(errorcode);
   }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   while ( errorcode != ULM_SUCCESS && errorcode != ULM_ERR_BCAST_FAIL)
   {
     double time_now = 0;
@@ -2202,7 +2208,7 @@ Communicator::bcast_bind(bcast_request_t * ulm_req, int self,
       return ULM_ERR_BCAST_FAIL;
     }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     /* 
      * Trigger the progress, before running out of channels.
      */
@@ -2322,7 +2328,7 @@ int Communicator::ibcast_start( bcast_request_t * ulm_req)
   START_MARK;
   channel = (quadrics_channel_t*)ulm_req->channel;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   /* Record the timestamp. */
   ulm_req->time_started = dclock(); 
 #endif
@@ -2366,7 +2372,7 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
       rc = bcaster->bcast_recv(channel);
   }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
   /* Must sync before sharing. To avoid the situation
    * when the other processes are waiting to share the data,
    * but comm_root is waiting for the retransmission of the data 
@@ -2470,7 +2476,7 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   if ( !ulm_req->messageDone )
     ulm_req->messageDone = true;
 
-#ifndef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY == 0
   /* Sync after sharing */
   if ((channel->count * channel->data_type->packed_size)> BCAST_SMALLMESG)
   {

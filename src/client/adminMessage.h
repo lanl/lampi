@@ -60,7 +60,7 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 #include <sys/bproc.h>
 #endif
 
@@ -200,7 +200,7 @@ typedef struct {
 } shared_mem_intput_params;
 
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
 class adminMessage : public CTDelegate {
 #else
 class adminMessage {
@@ -233,7 +233,7 @@ public:
         NPATHTYPES,             /* number of network device types */
         GMMAXDEVS,      /* maximum number of opened Myrinet/GM devices */
         IBMAXACTIVE,    /* 3 integers: max. active HCAs, max. active ports/HCA, sizeof(ib_ud_peer_info_t) */
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
         CPULIST,        /* list of cpus for resource affinity */
         NCPUSPERNODE,   /* number of cpus per node */
         USERESOURCEAFFINITY, /* user resource affinity */
@@ -542,7 +542,7 @@ public:
      *      CTDelegate implementations
      */
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     virtual void messageDidArrive(CTServer *server, CTMessage *msg);
     virtual void nodeDidFail(/* node specific info. */);
 #endif

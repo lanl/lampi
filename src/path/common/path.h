@@ -249,7 +249,7 @@ public:
         return ONNOLIST;
     }
     
-#ifdef ENABLE_RELIABILITY    
+#if ENABLE_RELIABILITY    
     
     virtual void initFragSeq(BaseSendFragDesc_t *frag)
     {
