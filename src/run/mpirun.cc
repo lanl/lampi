@@ -543,7 +543,7 @@ static void *connectThread(void *arg)
         rc = -1;
     }
 
-    return (void *) rc;
+    return int_to_ptr(rc);
 }
 
 
@@ -762,12 +762,13 @@ int mpirun(int argc, char **argv)
             hptr = gethostbyaddr(hptr->h_addr, hptr->h_length, AF_INET);
             if (!hptr) {
                 perror("gethostbyaddr");
+            } else {
+                strncpy(name, hptr->h_name, sizeof(name));
+                if ((dot = strchr(name, '.')) != NULL) {
+                    *dot = '\0';
+                }
+                fprintf(stderr, " %d*%s", RunParams.ProcessCount[h], name);
             }
-            strncpy(name, hptr->h_name, sizeof(name));
-            if ((dot = strchr(name, '.')) != NULL) {
-                *dot = '\0';
-            }
-            fprintf(stderr, " %d*%s", RunParams.ProcessCount[h], name);
         }
         fprintf(stderr, "\n");
     }
