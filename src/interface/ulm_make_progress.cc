@@ -172,7 +172,7 @@ extern "C" int ulm_make_progress(void)
     int pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
     for (i = 0; i < pathCount; i++) {
         if (pathArray[i]->needsPush()) {
-            if (pathArray[i]->push(now, &returnValue)) {
+            if (!pathArray[i]->push(now, &returnValue)) {
                 if (returnValue == ULM_ERR_OUT_OF_RESOURCE
                     || returnValue == ULM_ERR_FATAL)
                     return returnValue;
