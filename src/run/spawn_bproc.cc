@@ -225,6 +225,12 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      * ugly fix is to add sleep() to catch the SIGSTOP.
      */
     sleep(1);
+    /*
+     * Put a template for BPROC_RANK into the environment.
+     * For bproc version >= 3.2.0 this gets filled in with the node rank
+     * 0000000, 0000001, 0000002, etc.
+     */	
+    putenv("BPROC_RANK=XXXXXXX");
     if (bproc_vexecmove_io(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
                         argv + (FirstAppArgument - 1), environ) < 0) {
         ulm_err(("SpawnBproc: bproc_vexecmove: error %s\n",
