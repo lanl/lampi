@@ -245,7 +245,7 @@ void gmRecvFragDesc::msgDataAck()
     SendDesc_t 			*bsd;
 
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
-    sfd = (gmSendFragDesc *)p->sendFragDescPtr.ptr;
+    sfd = (gmSendFragDesc *)p->ptrToSendDesc.ptr;
     bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
     if ( NULL == bsd )
