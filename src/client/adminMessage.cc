@@ -2953,9 +2953,11 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
     return success;
 #endif
 
+    int	len;
+    char	*dotted;
     int sockfd = (hostrank == -1) ? socketToServer_m : clientRank2FD(hostrank);
     struct sockaddr_in addr;
-    struct hostent *h;
+    //struct hostent *h;
 #ifdef __linux__
     socklen_t addrlen = sizeof(struct sockaddr_in);
 #else
@@ -2969,6 +2971,18 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
         return false;
     }
 
+    dotted = inet_ntoa(addr.sin_addr);
+    len = strlen(dotted);
+    bzero(dst, bytes);
+    if (len <= (size_t)(bytes - 1)) {
+        strcpy(dst, dotted);
+    }
+    else
+    {
+        return false;
+    }
+    
+    /*
     h = gethostbyaddr((char *)(&addr.sin_addr.s_addr), 4, AF_INET);
     dst[0] = '\0';
     if (h != (struct hostent *)NULL) {
@@ -2990,7 +3004,8 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
             return false;
         }
     }
-
+    */
+    
     return true;
 }
 
