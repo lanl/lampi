@@ -226,7 +226,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	    //! if match not found, place on privateQueues.OkToMatchRecvFrags list
 	    //!
 	    DataHeader->WhichQueue = UNMATCHEDFRAGS;
-	    privateQueues.OkToMatchRecvFrags[fragSrc]->Append(DataHeader);
+	    privateQueues.OkToMatchRecvFrags[fragSrc]->AppendNoLock(DataHeader);
 
 	}
 	//!
@@ -254,11 +254,17 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	// This message comes after the next expected, so it
 	// is ahead of sequence.  Save it for later.
 	//
+
+    if (usethreads()) {
+        recvLock[fragSrc].lock();
+    }
+
 	DataHeader->WhichQueue = AHEADOFSEQUENCEFRAGS;
 	privateQueues.AheadOfSeqRecvFrags[fragSrc]->AppendNoLock(DataHeader);
 
 	//! grant other threads access to frags
         if( usethreads() )
+            recvLock[fragSrc].unlock();
             next_expected_isendSeqsLock[fragSrc].unlock();
     }
 
@@ -425,11 +431,17 @@ RecvDesc_t* Communicator::matchReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	// This message comes after the next expected, so it
 	// is ahead of sequence.  Save it for later.
 	//
+
+    if (usethreads()) {
+        recvLock[fragSrc].lock();
+    }
+
 	DataHeader->WhichQueue = AHEADOFSEQUENCEFRAGS;
 	privateQueues.AheadOfSeqRecvFrags[fragSrc]->AppendNoLock(DataHeader);
 
 	//! grant other threads access to frags
         if( usethreads() )
+            recvLock[fragSrc].unlock();
             next_expected_isendSeqsLock[fragSrc].unlock();
     }
     return MatchedPostedRecvHeader;
