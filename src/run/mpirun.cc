@@ -452,6 +452,8 @@ void *server_connect(void *arg)
         pthread_exit((void *)0);
     }
     pthread_exit((void *)1);
+
+    return NULL;
 }
 
 int main(int argc, char **argv)

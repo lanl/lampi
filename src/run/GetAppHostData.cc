@@ -86,7 +86,7 @@ void GetAppHostCount(const char *InfoStream)
  */
 void GetMpirunHostnameNoInput(const char *InfoStream)
 {
-#ifdef BPROC
+#ifdef WITH_BPROC
     int node = bproc_currnode();
     sprintf(RunParameters.mpirunName, "n%d", node);
 #else

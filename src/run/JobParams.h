@@ -37,10 +37,10 @@
 
 #include "internal/types.h"
 #include "client/adminMessage.h"
-#ifdef UDP
+#ifdef WITH_UDP
 # include "path/udp/setupInfo.h"
 #endif
-#ifdef GM
+#ifdef WITH_GM
 # include "path/gm/setupInfo.h"
 #endif
 #include "client/SocketAdminNetwork.h"
@@ -68,13 +68,13 @@ typedef struct ULMRunNetworkTypes {
 
     /* structure for UDP setup */
     int UseUDP;
-#ifdef UDP
+#ifdef WITH_UDP
     UDPNetworkSetupInfo UDPSetup;
 #endif
 
     /* structure for GM setup */
     int UseGM;
-#ifdef GM
+#ifdef WITH_GM
     GMNetworkSetupInfo GMSetup;
 #endif
 

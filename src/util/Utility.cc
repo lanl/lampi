@@ -241,7 +241,11 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     ssize_t IOReturn;
     int i;
     struct timeval WaitTime;
+#ifdef WITH_BPROC
+    ulm_fd_set_t WriteSet;
+#else
     fd_set WriteSet;
+#endif
     ulm_iovec_t IOVec[2];
 
     tag = HEARTBEAT;
@@ -251,12 +255,16 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 0;
 
+#ifdef WITH_BPROC
+    bzero(&WriteSet, sizeof(WriteSet));
+#else
     FD_ZERO(&WriteSet);
+#endif
     for (i = 0; i < NHosts; i++)
         if (ClientSocketFDList[i] >= 0)
-            FD_SET(ClientSocketFDList[i], &WriteSet);
+            FD_SET(ClientSocketFDList[i], (fd_set *)&WriteSet);
 
-    RetVal = select(MaxDescriptor, NULL, &WriteSet, NULL, &WaitTime);
+    RetVal = select(MaxDescriptor, NULL, (fd_set *)&WriteSet, NULL, &WaitTime);
     if (RetVal < 0)
         return (int) RetVal;
 
@@ -264,7 +272,7 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     if (RetVal > 0) {
         for (i = 0; i < NHosts; i++) {
             if ((ClientSocketFDList[i] >= 0)
-                && (FD_ISSET(ClientSocketFDList[i], &WriteSet))) {
+                && (FD_ISSET(ClientSocketFDList[i], (fd_set *)&WriteSet))) {
                 IOReturn =
                     _ulm_Send_Socket(ClientSocketFDList[i], 1, IOVec);
                 if (IOReturn < 0)

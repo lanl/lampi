@@ -94,7 +94,7 @@ static int match_msg(void *arg, void *ctx)
 int nodeIDToHostRank(int numHosts, HostName_t *hostList, int nodeid)
 {
     int hostIndex = numHosts;
-#ifdef BPROC
+#ifdef WITH_BPROC
     int j;
 
     for (j = 0; j < numHosts; j++) {
@@ -116,12 +116,12 @@ int socketToHostRank(int numHosts, HostName_t* hostList,
                    int *hostsAssigned)
 {
     int j;
-#ifndef BPROC
+#ifndef WITH_BPROC
     int RetVal;
     struct hostent *TmpHost;
 #endif
     int hostIndex=adminMessage::UNKNOWN_HOST_ID;
-#ifdef BPROC
+#ifdef WITH_BPROC
     int size = sizeof(struct sockaddr);
     int nodeID = bproc_nodenumber((struct sockaddr *) client, size);
     /* find order in list */
@@ -324,7 +324,7 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
     struct hostent *serverHost;
 
     serverHost = gethostbyname(hostname_m);
-#ifdef BPROC
+#ifdef WITH_BPROC
     if (serverHost == (struct hostent *)NULL) {
         /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
         int size = sizeof(struct sockaddr);
@@ -442,7 +442,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     setsockopt(socketToServer_m, IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
 
     serverHost = gethostbyname(hostname_m);
-#ifdef BPROC
+#ifdef WITH_BPROC
     if (serverHost == (struct hostent *)NULL) {
         /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
         int size = sizeof(struct sockaddr);
@@ -695,7 +695,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     CTTCPChannel            *daemon;
     struct timeval          endtime, curtime;
 
-#ifndef BPROC
+#ifndef WITH_BPROC
     int assignNewId;
 #endif
         
@@ -825,7 +825,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             continue;
         }
                
-#ifdef BPROC
+#ifdef WITH_BPROC
         /* BPROC node id from remote bproc_currnode() call must be translated */
         hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
         if (hostrank == numHosts) {
@@ -1291,15 +1291,15 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
             if( !bReturnValue )
                 return ULM_ERROR;
                                 
-            totalBytes=totalNProcesses_m*bytesToCopy;
-            bReturnValue=send(-1,adminMessage::ALLGATHER,&returnCode);
+            totalBytes = totalNProcesses_m*bytesToCopy;
+            bReturnValue = send(-1, adminMessage::ALLGATHER, &returnCode);
             if( !bReturnValue )
                 return returnCode;
         
             /* receive the data from mpirun */
             /* compute how much data to receive */
-            reset(adminMessage::RECEIVE);
-            bReturnValue=receive(-1,&typeTag,&returnCode);
+            reset(adminMessage::RECEIVE, totalBytes);
+            bReturnValue = receive(-1,&typeTag,&returnCode);
             if( !bReturnValue )
                 return returnCode;
             if(typeTag != adminMessage::ALLGATHER ){
@@ -1309,7 +1309,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
                 return returnCode;
             }
         
-            bReturnValue= unpack(sharedBuffer_m, BYTE, totalBytes);
+            bReturnValue = unpack(sharedBuffer_m, BYTE, totalBytes);
             if( !bReturnValue ){
                 ulm_err(("Error: unpack returned error in allgatherMultipleStripes\n"));
                 return returnCode;
@@ -1473,16 +1473,16 @@ ServerCode:
         }  /* end while (nHostsArrived<nhosts_m) loop */
 
         /* broadcast the data to the clients */
-        bReturnValue=reset(adminMessage::SEND);
+        totalBytes = bytesToHandle*totalNProcesses_m;
+        bReturnValue = reset(adminMessage::SEND, totalBytes);
         if( !bReturnValue )
             return ULM_ERROR;
 
-        totalBytes=bytesToHandle*totalNProcesses_m;
-        bReturnValue=pack(aggregateData,BYTE,totalBytes);
+        bReturnValue = pack(aggregateData, BYTE, totalBytes);
         if( !bReturnValue )
             return ULM_ERROR;
 
-        bReturnValue=broadcast(ALLGATHER,&returnCode);
+        bReturnValue = broadcast(ALLGATHER, &returnCode);
         if( !bReturnValue ) {
             ulm_err(("Error: from broadcast in adminMessage::allgather (%d)\n",
                      returnCode));
@@ -1727,6 +1727,7 @@ void *server_connect_accept(void *arg)
         server->socketsToProcess_m[sockfd] = true;
         pthread_testcancel();
     }
+    return NULL;
 }
 
 /* (server) initialize socket and wait for all connections from clients
@@ -1743,7 +1744,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     pid_t daemonPid;
     pthread_t sca_thread;
 
-#ifndef BPROC
+#ifndef WITH_BPROC
     int assignNewId;
 #ifdef __linux__
     socklen_t addrlen;
@@ -1861,7 +1862,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             continue;
         }
 
-#ifdef BPROC
+#ifdef WITH_BPROC
         /* BPROC node id from remote bproc_currnode() call must be translated */
         hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
         if (hostrank == numHosts) {
@@ -2836,7 +2837,11 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
     recvResult returnValue = OK;
     int sockfd = -1, maxfd = 0,s;
     struct timeval t;
+#ifdef WITH_BPROC
+    ulm_fd_set_t fds;
+#else
     fd_set fds;
+#endif
     ulm_iovec_t iovecs;
 
     reset(RECEIVE);
@@ -2851,15 +2856,19 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
         t.tv_usec = microseconds;
     }
 
+#ifdef WITH_BPROC
+    bzero(&fds, sizeof(fds));
+#else
     FD_ZERO(&fds);
+#endif
     if ((client_m) && (socketToServer_m >= 0)) {
-        FD_SET(socketToServer_m, &fds);
+        FD_SET(socketToServer_m, (fd_set *)&fds);
         maxfd = socketToServer_m;
     }
     if (server_m) {
         for (int i = 0; i <= largestClientSocket_m; i++) {
             if (clientSocketActive_m[i]) {
-                FD_SET(i, &fds);
+                FD_SET(i, (fd_set *)&fds);
                 if (i > maxfd) {
                     maxfd = i;
                 }
@@ -2867,12 +2876,12 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
         }
     }
 
-    if ((s = select(maxfd+1, &fds, (fd_set *)NULL, (fd_set *)NULL,
+    if ((s = select(maxfd+1, (fd_set *)&fds, (fd_set *)NULL, (fd_set *)NULL,
                     (timeout < 0) ? (struct timeval *)NULL : &t)) > 0) {
         iovecs.iov_base = tag;
         iovecs.iov_len = sizeof(int);
         for (int i = 0; i <= maxfd; i++) {
-            if (FD_ISSET(i, &fds)) {
+            if (FD_ISSET(i, (fd_set *)&fds)) {
                 sockfd = i;
                 *rank = clientFD2Rank(i);
                 break;

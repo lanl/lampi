@@ -11,7 +11,7 @@ ifneq (,$(findstring SHARED_MEMORY, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_shared_memory.cc
 endif
 
-ifneq (,$(findstring UDP, $(CPPFLAGS)))
+ifneq (,$(findstring WITH_UDP, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_udp.cc
 endif
 
@@ -19,7 +19,7 @@ ifneq (,$(findstring QUADRICS, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_quadrics.cc init/init_rms.cc
 endif
 
-ifneq (,$(findstring -DGM, $(CPPFLAGS)))
+ifneq (,$(findstring WITH_GM, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_gm.cc
 endif
 

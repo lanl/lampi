@@ -8,8 +8,8 @@
 # Standard macros
 CC		:= cc
 CXX		:= g++
-CFLAGS		+= -finline-functions -fno-common -no-cpp-precomp -UHAVE_PRAGMA_WEAK
-CPPFLAGS	+= -Wall -Wno-long-double -Wno-deprecated -I. -Iinclude
+CFLAGS		+= -finline-functions -fno-common -no-cpp-precomp
+CPPFLAGS	+= -Wall -Wno-long-double -Wno-deprecated -UHAVE_PRAGMA_WEAK -I. -Iinclude
 ifdef ULMDEBUG
 CFLAGS		+= -g
 else
@@ -40,7 +40,7 @@ MODULES_OS	+= os/DARWIN/powerpc
 
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
-CPPFLAGS	+= -DUDP
+CPPFLAGS	+= -DWITH_UDP
 
 #GM support
 ifdef USE_GM
@@ -48,7 +48,7 @@ ifdef USE_GM
 # the default location is /opt/gm 
 #
 GM_PREFIX	:= /opt/gm
-CPPFLAGS	+= -DGM
+CPPFLAGS	+= -DWITH_GM
 CPPFLAGS	+= -I$(GM_PREFIX)/include
 LDFLAGS_LIBMPI	+= -L$(GM_PREFIX)/lib
 LDLIBS_LIBMPI	+= -lgm
@@ -67,7 +67,7 @@ endif
 # BPROC support
 #USE_BPROC		:= 1
 ifdef USE_BPROC
-CPPFLAGS	+= -DBPROC
+CPPFLAGS	+= -DWITH_BPROC
 LDLIBS		+= -lbproc
 endif
 

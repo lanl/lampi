@@ -356,7 +356,7 @@ void lampi_init_prefork_resource_management(lampiState_t *s)
         lampi_init_print("lampi_init_resource_management");
     }
     /* initialize data */
-#ifdef BPROC
+#ifdef WITH_BPROC
     /* send current node id instead of doing scan of addresses on master */
     s->hostid = bproc_currnode();
 #else

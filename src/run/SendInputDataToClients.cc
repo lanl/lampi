@@ -984,7 +984,7 @@ int SendGMInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server)
 {
     int returnValue = ULM_SUCCESS;
-#ifdef GM
+#ifdef WITH_GM
     int tag,errorCode;
 
     if (RunParameters->Networks.GMSetup.NGMHosts == 0) {

@@ -43,7 +43,7 @@
 #include "mem/ULMMallocMacros.h"
 #include "mem/ZeroAlloc.h"
 
-#ifdef GM
+#ifdef WITH_GM
 #include <gm.h>
 #endif
 
@@ -72,7 +72,7 @@ public:
     size_t PageSize;            // page size
     ChunkDesc_t *ChunkDesc;     // array of information about each chunk
     long NextAvailChunk;        // next available chunk
-#ifdef GM
+#ifdef WITH_GM
     struct gm_port *gmPort;     // for mlocking Myrinet memory buffers
 #endif
 
@@ -80,7 +80,7 @@ public:
 
     MemoryPool_t()
         {
-#ifdef GM
+#ifdef WITH_GM
             gmPort = 0;
 #endif
         }
@@ -133,7 +133,7 @@ public:
                     Lock.unlock();
                     return ReturnPtr;
                 }
-#ifdef GM
+#ifdef WITH_GM
                 if (gmPort) {
                     gm_status_t returnValue =
                         gm_register_memory(gmPort,
@@ -236,7 +236,7 @@ public:
 
                 // set base pointer
                 if (TmpPtr) {
-#ifdef GM
+#ifdef WITH_GM
                     if (gmPort) {
                         gm_status_t returnValue =
                             gm_register_memory(gmPort,

@@ -69,7 +69,7 @@ endif
 #endif
 
 # include UDP/IP support if UDP is defined
-ifneq (,$(findstring UDP, $(CPPFLAGS)))
+ifneq (,$(findstring WITH_UDP, $(CPPFLAGS)))
 MODULES_LIBMPI	+= path/udp
 endif
 
@@ -79,7 +79,7 @@ MODULES_LIBMPI	+= path/quadrics
 endif
 
 # include GM if GM is defined
-ifneq (,$(findstring -DGM, $(CPPFLAGS)))
+ifneq (,$(findstring WITH_GM, $(CPPFLAGS)))
 MODULES_LIBMPI	+= path/gm
 endif
 

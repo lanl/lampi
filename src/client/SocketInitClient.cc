@@ -42,7 +42,7 @@
 #include <netdb.h>
 #include <string.h>
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 #include <sys/bproc.h>
 #endif
 
@@ -79,7 +79,7 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
                sizeof(int));
 
     TmpHost = gethostbyname(ServerHost);
-#ifdef BPROC
+#ifdef WITH_BPROC
     if (TmpHost == (struct hostent *)NULL) {
         int size = sizeof(struct sockaddr);
         RetVal = bproc_nodeaddr(BPROC_NODE_MASTER,

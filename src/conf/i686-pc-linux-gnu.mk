@@ -51,7 +51,7 @@ MODULES_OS	+= os/LINUX/i686
 
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
-CPPFLAGS	+= -DUDP
+CPPFLAGS	+= -DWITH_UDP
 #debug queues
 CPPFLAGS	+= -D_DEBUGQUEUES
 
@@ -74,7 +74,7 @@ ifdef USE_GM
 # the default location is /opt/gm 
 #
 GM_PREFIX	:= /opt/gm-1.6.3
-CPPFLAGS	+= -DGM
+CPPFLAGS	+= -DWITH_GM
 CPPFLAGS	+= -I$(GM_PREFIX)/include
 LDFLAGS_LIBMPI	+= -L$(GM_PREFIX)/lib
 LDLIBS_LIBMPI	+= -lgm
@@ -95,7 +95,7 @@ LDLIBS		+= -lpthread
 # BPROC support
 #USE_BPROC	:= 1
 ifdef USE_BPROC
-CPPFLAGS	+= -DBPROC
+CPPFLAGS	+= -DWITH_BPROC
 LDLIBS		+= -lbproc
 endif
 

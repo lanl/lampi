@@ -54,7 +54,7 @@
 
 #include "init/environ.h"
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 #include <sys/un.h>
 #include <sys/bproc.h>
 #endif
@@ -67,7 +67,7 @@
 #endif
 
 /// nehal's copy
-#ifdef BPROC
+#ifdef WITH_BPROC
 extern char **environ;
 static int ERROR_LINE = 0;
 static char *ERROR_FILE = NULL;
@@ -84,7 +84,7 @@ enum {
 
 #endif
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 
 static void set_non_block(int fd)
 {
@@ -149,7 +149,7 @@ static int setup_socket(struct sockaddr_in *listenaddr)
 
 #endif
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 
 static int *pids = 0;
 static int iosock_fd[2];
@@ -249,7 +249,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 		       int **ListHostsStarted, ULMRunParams_t * RunParameters,
 		       int FirstAppArgument, int argc, char **argv)
 {
-#ifdef BPROC
+#ifdef WITH_BPROC
     /*     Strings with pre-assigned values  */
     char *execName = NULL;
     char *exec_args[END+1];

@@ -79,6 +79,18 @@ typedef struct {
     size_t iov_len;
 } ulm_iovec_t;
 
+/* we need to allow a larger number of file descriptors. This is a (hopefully) temporary
+fix for bproc. */
+
+#ifndef ULM_FD_SETSIZE
+#define ULM_FD_SETSIZE		4096
+#endif
+
+typedef struct {
+    ulm_uint32_t fds_bits[ULM_FD_SETSIZE / NFDBITS];
+} ulm_fd_set_t;
+
+
 #define ulm_readv(fd, iov, iovc) \
 		readv((fd), (const struct iovec *)(iov), (iovc))
 #define ulm_writev(fd, iov, iovc) \

@@ -60,7 +60,7 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 #include <sys/bproc.h>
 #endif
 
@@ -907,7 +907,11 @@ public:
             int sockfd = (rank == -1) ? socketToServer_m : clientRank2FD(rank);
             int s;
             struct timeval t;
+#ifdef WITH_BPROC
+            ulm_fd_set_t fds;
+#else
             fd_set fds;
+#endif
             ulm_iovec_t iovecs;
 
             reset(RECEIVE);
@@ -930,10 +934,14 @@ public:
                 t.tv_usec = microseconds;
             }
 
+#ifdef WITH_BPROC
+            bzero(&fds, sizeof(fds));
+#else
             FD_ZERO(&fds);
-            FD_SET(sockfd, &fds);
+#endif
+            FD_SET(sockfd, (fd_set *)&fds);
 
-            if ((s = select(sockfd + 1, &fds, (fd_set *) NULL, (fd_set *) NULL,
+            if ((s = select(sockfd + 1, (fd_set *)&fds, (fd_set *) NULL, (fd_set *) NULL,
                             (timeout < 0) ? (struct timeval *) NULL : &t)) == 1) {
                 iovecs.iov_base = tag;
                 iovecs.iov_len = sizeof(int);

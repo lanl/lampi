@@ -39,7 +39,7 @@ MODULES_OS	+= os/IRIX
 
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
-CPPFLAGS	+= -DUDP
+CPPFLAGS	+= -DWITH_UDP
 
 # LSF support
 USE_LSF		:= 1

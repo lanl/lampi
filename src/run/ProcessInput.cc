@@ -89,7 +89,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->quadricsRailMask = 0;
 
     RunParameters->UseLSF = 0;
-#ifdef BPROC
+#ifdef WITH_BPROC
     RunParameters->UseBproc = 1;
 #else
     RunParameters->UseBproc = 0;
@@ -179,22 +179,22 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.UseUDP = 0;
     RunParameters->Networks.UseGM = 0;
     RunParameters->Networks.UseQSW=0;
-#ifdef UDP
+#ifdef WITH_UDP
     RunParameters->Networks.UDPSetup.NUDPHosts=0;
 #endif                          // UDP
-#ifdef GM
+#ifdef WITH_GM
     RunParameters->Networks.GMSetup.NGMHosts=0;
 #endif
     for (j = 0; j < RunParameters->NHosts; j++) {
         for (i = 0; i < RunParameters->NPathTypes[j]; i++) {
             switch (RunParameters->ListPathTypes[j][i]) {
-#ifdef UDP
+#ifdef WITH_UDP
             case PATH_UDP:          // UDP interface
 		RunParameters->Networks.UseUDP = 1;
                 (RunParameters->Networks.UDPSetup.NUDPHosts)++;
                 break;
 #endif                          // UDP
-#ifdef GM
+#ifdef WITH_GM
 	    case PATH_GM:
 		RunParameters->Networks.UseGM = 1;
 		RunParameters->Networks.GMSetup.NGMHosts++;

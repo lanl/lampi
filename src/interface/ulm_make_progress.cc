@@ -42,7 +42,7 @@
 #include "path/common/pathContainer.h"
 #include "ulm/ulm.h"
 
-#ifdef UDP
+#ifdef WITH_UDP
 # include "path/udp/UDPNetwork.h"
 #endif // UDP
 

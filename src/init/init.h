@@ -145,7 +145,7 @@ extern lampi_init_func_t lampi_init_postfork_rms;
 extern lampi_init_func_t lampi_init_allforked_rms;
 #endif
 
-#ifdef GM
+#ifdef WITH_GM
 void lampi_init_prefork_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_gm(lampiState_t *);
@@ -181,7 +181,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory;
 extern lampi_init_func_t lampi_init_postfork_shared_memory;
 #endif
 
-#ifdef UDP
+#ifdef WITH_UDP
 void lampi_init_prefork_udp(lampiState_t *);
 void lampi_init_postfork_udp(lampiState_t *);
 #else

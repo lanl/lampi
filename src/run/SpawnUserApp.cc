@@ -77,7 +77,7 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                              RunParameters, FirstAppArgument, argc, argv);
 #endif
 
-#ifdef BPROC
+#ifdef WITH_BPROC
     return mpirun_spawn_bproc(AuthData, ReceivingSocket, ListHostsStarted,
                               RunParameters, FirstAppArgument, argc, argv);
 #endif

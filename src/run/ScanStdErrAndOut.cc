@@ -54,31 +54,39 @@ int mpirunScanStdErrAndOut(int *STDERRfds, int *STDOUTfds, int NHosts,
 {
     int i, RetVal;
     ssize_t DataBytes;
+#ifdef WITH_BPROC
+    ulm_fd_set_t ReadSet;
+#else
     fd_set ReadSet;
+#endif
     struct timeval WaitTime;
 
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 10000;
 
     /* check to see if there is any data to read */
+#ifdef WITH_BPROC
+    bzero(&ReadSet, sizeof(ReadSet));
+#else
     FD_ZERO(&ReadSet);
+#endif
     for (i = 0; i < NHosts; i++)
         if (STDERRfds[i] > 0)
-            FD_SET(STDERRfds[i], &ReadSet);
+            FD_SET(STDERRfds[i], (fd_set *)&ReadSet);
     for (i = 0; i < NHosts; i++)
         if (STDOUTfds[i] > 0)
-            FD_SET(STDOUTfds[i], &ReadSet);
+            FD_SET(STDOUTfds[i], (fd_set *)&ReadSet);
 
-    RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
+    RetVal = select(MaxDescriptor, (fd_set *)&ReadSet, NULL, NULL, &WaitTime);
     if (RetVal < 0)
         return RetVal;
 
     /* read data and write to mpirun stdout/stderr */
     if (RetVal > 0) {
         for (i = 0; i < NHosts; i++) {
-            if ((STDERRfds[i] > 0) && (FD_ISSET(STDERRfds[i], &ReadSet))) {
+            if ((STDERRfds[i] > 0) && (FD_ISSET(STDERRfds[i], (fd_set *)&ReadSet))) {
                 /* clear this descriptor from ReadSet in case it is also STDOUTfds[i] */
-                FD_CLR(STDERRfds[i], &ReadSet);
+                FD_CLR(STDERRfds[i], (fd_set *)&ReadSet);
                 /* now read this descriptor... */
                 DataBytes = mpirunRecvAndWriteData(STDERRfds[i], stderr);
                 StderrBytesRead += DataBytes;
@@ -90,7 +98,7 @@ int mpirunScanStdErrAndOut(int *STDERRfds, int *STDOUTfds, int NHosts,
         }                       /* end loop over stderr descriptors */
 
         for (i = 0; i < NHosts; i++) {
-            if ((STDOUTfds[i] > 0) && (FD_ISSET(STDOUTfds[i], &ReadSet))) {
+            if ((STDOUTfds[i] > 0) && (FD_ISSET(STDOUTfds[i], (fd_set *)&ReadSet))) {
                 DataBytes = mpirunRecvAndWriteData(STDOUTfds[i], stdout);
                 if (DataBytes == 0) {
                     close(STDOUTfds[i]);

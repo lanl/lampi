@@ -263,7 +263,11 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                               pid_t ** PIDsOfAppProcs,
                               double *TimeFirstCheckin, int *ActiveClients)
 {
+#ifdef WITH_BPROC
+    ulm_fd_set_t ReadSet;
+#else
     fd_set ReadSet;
+#endif
     int i, j, RetVal, error;
     ssize_t ExpetctedData[2], IOReturn;
     unsigned int *Inp, Tag;
@@ -284,19 +288,23 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
     WaitTime.tv_usec = 0;
 
 
+#ifdef WITH_BPROC
+    bzero(&ReadSet, sizeof(ReadSet));
+#else
     FD_ZERO(&ReadSet);
+#endif
     for (i = 0; i < NHosts; i++)
         if (ClientSocketFDList[i] > 0) {
-            FD_SET(ClientSocketFDList[i], &ReadSet);
+            FD_SET(ClientSocketFDList[i], (fd_set *)&ReadSet);
         }
 
-    RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
+    RetVal = select(MaxDescriptor, (fd_set *)&ReadSet, NULL, NULL, &WaitTime);
     if (RetVal < 0)
         return RetVal;
     if (RetVal > 0) {
         for (i = 0; i < NHosts; i++) {
             if ((ClientSocketFDList[i] > 0)
-                && (FD_ISSET(ClientSocketFDList[i], &ReadSet))) {
+                && (FD_ISSET(ClientSocketFDList[i], (fd_set *)&ReadSet))) {
                 /* Read tag value */
 #ifdef PURIFY
                 Tag = 0;

@@ -1493,7 +1493,7 @@ void parseQuadricsFlags(const char *InfoStream)
 
 void parseMyrinetFlags(const char *InfoStream)
 {
-#ifdef GM
+#ifdef WITH_GM
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
     char *endptr;

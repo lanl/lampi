@@ -75,7 +75,7 @@ public:
     void unlock()
         {
             assert(inited_m == 1);
-	    spinunlock(&ctlData_m);
+            spinunlock(&ctlData_m);
         }
 
     int trylock()

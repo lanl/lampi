@@ -58,7 +58,7 @@ MODULES_OS	:= os
 MODULES_OS	+= os/TRU64
 
 # hardware defines and modules
-CPPFLAGS	+= -DUDP
+CPPFLAGS	+= -DWITH_UDP
 CPPFLAGS	+= -DQUADRICS
 CPPFLAGS	+= -DSHARED_MEMORY
 
@@ -91,7 +91,7 @@ endif
 # BPROC support
 #USE_BPROC		:= 1
 ifdef USE_BPROC
-CPPFLAGS	+= -DBPROC
+CPPFLAGS	+= -DWITH_BPROC
 LDLIBS		+= -lbproc
 endif
 

@@ -47,7 +47,7 @@ lampi_init_func_t lampi_init_postfork_rms = noop;
 lampi_init_func_t lampi_init_allforked_rms = noop;
 #endif
 
-#ifndef GM
+#ifndef WITH_GM
 lampi_init_func_t lampi_init_prefork_gm = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_gm = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_gm = noop;
@@ -71,7 +71,7 @@ lampi_init_func_t lampi_init_allforked_local_coll = noop;
 lampi_init_func_t lampi_init_allforked_shared_memory = noop;
 #endif
 
-#ifndef UDP
+#ifndef WITH_UDP
 lampi_init_func_t lampi_init_prefork_udp = noop;
 lampi_init_func_t lampi_init_postfork_udp = noop;
 lampi_init_func_t lampi_init_allforked_udp = noop;

@@ -53,13 +53,13 @@ void mpi_comm_compare_f(MPI_Comm *comm1, MPI_Comm *comm2,
 #else
 
 void PMPI_COMM_COMPARE(MPI_Comm *comm1, MPI_Comm *comm2,
-                        MPI_Fint *result, MPI_Fint *rc)
+                       MPI_Fint *result, MPI_Fint *rc)
 {
     *rc = MPI_Comm_compare(*comm1, *comm2, result);
 }
 
 void pmpi_comm_compare(MPI_Comm *comm1, MPI_Comm *comm2,
-                        MPI_Fint *result, MPI_Fint *rc)
+                       MPI_Fint *result, MPI_Fint *rc)
 {
     *rc = MPI_Comm_compare(*comm1, *comm2, result);
 }
@@ -71,7 +71,31 @@ void pmpi_comm_compare_(MPI_Comm *comm1, MPI_Comm *comm2,
 }
 
 void pmpi_comm_compare__(MPI_Comm *comm1, MPI_Comm *comm2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_compare(*comm1, *comm2, result);
+}
+
+void MPI_COMM_COMPARE(MPI_Comm *comm1, MPI_Comm *comm2,
+                       MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_compare(*comm1, *comm2, result);
+}
+
+void mpi_comm_compare(MPI_Comm *comm1, MPI_Comm *comm2,
+                       MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_compare(*comm1, *comm2, result);
+}
+
+void mpi_comm_compare_(MPI_Comm *comm1, MPI_Comm *comm2,
                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_compare(*comm1, *comm2, result);
+}
+
+void mpi_comm_compare__(MPI_Comm *comm1, MPI_Comm *comm2,
+                         MPI_Fint *result, MPI_Fint *rc)
 {
     *rc = MPI_Comm_compare(*comm1, *comm2, result);
 }

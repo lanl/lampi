@@ -48,14 +48,14 @@
 
 static bool gotClientProcessCount = false;
 
-#ifdef BPROC
+#ifdef WITH_BPROC
 #include <sys/bproc.h>
 #include "init/environ.h"
 #endif
 
 void getBJSNodes(void) 
 {
-#ifdef BPROC
+#ifdef WITH_BPROC
     int *nodes = 0;
     int nNodes = 0;
     char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
@@ -136,7 +136,7 @@ void getBJSNodes(void)
 
 void pickNodesFromList(int cnt)
 {
-#ifdef BPROC
+#ifdef WITH_BPROC
     int i, j = 0, tmp_node;
 
     if (RunParameters.HostListSize > 0) {
@@ -184,7 +184,7 @@ void pickNodesFromList(int cnt)
 
 void pickCurrentNode(void)
 {
-#ifdef BPROC
+#ifdef WITH_BPROC
     /* use the current node only */
     RunParameters.HostList = ulm_new(HostName_t, 1);
     RunParameters.HostListSize = 1;
