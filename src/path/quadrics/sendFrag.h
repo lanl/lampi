@@ -646,8 +646,10 @@ private:
         srcEventBlk = quadricsThrottle->getEventBlk(rail, &srcEventBlk);
 
         // if we don't get it, then return without sending
-        if (!srcEventBlk)
+        if (!srcEventBlk) {
+            flags &= ~QSF_DMA_ENQUEUED;
             return false;
+        }
 
 
         // reinitialize and reprime the appropriate events

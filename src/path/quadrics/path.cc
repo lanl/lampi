@@ -829,6 +829,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                         quadricsQueue[i].rcvLock.unlock();
                     return true;
                 }
+                rd->Init();
 
                 // copy and calculate checksum...if wanted...
                 if (!quadricsDoChecksum) {
@@ -1023,7 +1024,7 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 	    FragDesc->parentSendDesc = 0;
 	    // free all of the other resources after we unlock the frag
 	    free_send_resources = true;
-	} else if (received_seq_no < FragDesc->frag_seq) {
+	} else {
 	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
 		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
 	    if ((curTime - FragDesc->timeSent) >= (RETRANS_TIME * max_multiple)) {
@@ -1036,18 +1037,8 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
                 FragDesc=TmpDesc;
 		continue;
 	    }
-	} else {
-	    // simply recalculate the next time to look at this send descriptor for retransmission
-	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
-	    if (message->earliestTimeToResend == -1) {
-                message->earliestTimeToResend = timeToResend;
-            } else if (timeToResend < message->earliestTimeToResend) {
-                message->earliestTimeToResend = timeToResend;
-            }
-	}
-
+    }
+    
 	if (free_send_resources) {
 	    message->clearToSend_m=true;
 	    (message->NumAcked)++;

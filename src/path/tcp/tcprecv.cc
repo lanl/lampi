@@ -75,6 +75,7 @@ int TCPRecvFrag::init()
 
 void TCPRecvFrag::init(TCPPeer* tcpPeer)
 {
+    this->Init();
     this->tcpPeer = tcpPeer;
     this->thisProc = tcpPeer->getLocalProc();
     this->peerProc = tcpPeer->getProc();

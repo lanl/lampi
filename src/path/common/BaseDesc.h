@@ -362,6 +362,12 @@ public:
             poolIndex_m = plIndex;
         }
 
+    virtual bool Init()
+    {
+        isDuplicate_m = UNIQUE_FRAG;
+        return true;
+    }
+    
     // send ack
     virtual bool AckData(double timeNow = -1.0)
         {
