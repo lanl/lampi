@@ -186,8 +186,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char *hostname = NULL;
     char *tmp_args = NULL;
     char hostList[MAXHOSTNAMELEN];
-    int *nodes;
-    int *pids;
+    int *nodes = 0;
+    int *pids = 0;
     int argsUsed = 0;
     int i = 0;
     int nHosts = 0;

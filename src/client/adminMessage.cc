@@ -91,8 +91,9 @@ int socketToNodeId(int numHosts, HostName_t* hostList,
                    struct sockaddr_in *client, int assignNewId,
                    int *hostsAssigned)
 {
-    int j,RetVal;
+    int j;
 #ifndef BPROC
+    int RetVal;
     struct hostent *TmpHost;
 #endif
     int hostIndex=adminMessage::UNKNOWN_HOST_ID;
