@@ -70,7 +70,7 @@ enum { NO_ARGS, STRING_ARGS };
 void Usage(FILE *stream);
 int MatchOption(char *StringToMatch, InputParameters_t *ULMInputOptions,
                 int SizeOfInputOptionsDB);
-void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
+void FillIntData(ParseString *InputObj, int SizeOfArray, int *Array,
                  InputParameters_t *ULMInputOptions, int OptionIndex,
                  int MinVal);
 void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength);

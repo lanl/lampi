@@ -1,6 +1,10 @@
 SRC_MPIRUN += \
 	src/init/environ.cc \
 	src/run/Abort.cc \
+	src/run/AbortAllHosts.cc \
+	src/run/CheckForControlMsgs.cc \
+	src/run/CheckHeartBeat.cc \
+	src/run/Daemonize.cc \
 	src/run/GetAppDir.cc \
 	src/run/GetAppHostData.cc \
 	src/run/GetClientApp.cc \
@@ -8,37 +12,32 @@ SRC_MPIRUN += \
 	src/run/GetClientProcessCount.cc \
 	src/run/GetClientWorkingDirectory.cc \
 	src/run/GetDebugData.cc \
-	src/run/GetLSFResource.cc \
 	src/run/GetInterfaces.cc \
+	src/run/GetLSFResource.cc \
 	src/run/GetNetworkDevList.cc \
 	src/run/Input.cc \
+	src/run/InstallSigHandler.cc \
+	src/run/KillAppProcs.cc \
 	src/run/ProcessInput.cc \
+	src/run/RearrangeHostList.cc \
 	src/run/SendInputDataToClients.cc \
 	src/run/SetCheckArgsFalse.cc \
 	src/run/SetOutputPrefixTrue.cc \
 	src/run/SetupClientHostInfo.cc \
-	src/run/SpawnUserApp.cc \
-	src/run/SpawnUserAppLSF.cc \
-	src/run/SpawnUserAppRSH.cc \
-	src/run/TerminateClients.cc \
 	src/run/TVSetUp.cc \
 	src/run/TVSetUpApp.cc \
-	src/run/Daemonize.cc \
-	src/run/InstallSigHandler.cc \
+	src/run/TerminateClients.cc \
 	src/run/VerifyLsfResources.cc \
-	src/run/RearrangeHostList.cc \
-	src/run/AbortAllHosts.cc \
-	src/run/CheckForControlMsgs.cc \
-	src/run/CheckHeartBeat.cc \
-	src/run/KillAppProcs.cc \
-	src/run/sigalarm.cc \
 	src/run/coprocess.cc \
-	src/run/fix_RunParameters.cc \
-	src/run/lampirun_init_proc.cc \
+	src/run/FixRunParameters.cc \
+	src/run/InitProc.cc \
 	src/run/main.cc \
 	src/run/mpirun.cc \
-	src/run/mpirun_spawn_bproc.cc \
-	src/run/mpirun_spawn_exec.cc \
-	src/run/mpirun_spawn_prun.cc \
 	src/run/parseEnvironmentSettings.cc \
-	src/run/parse_cmdln_bproc.cc
+	src/run/sigalarm.cc \
+	src/run/spawn.cc \
+	src/run/spawn_bproc.cc \
+	src/run/spawn_exec.cc \
+	src/run/spawn_lsf.cc \
+	src/run/spawn_rms.cc \
+	src/run/spawn_rsh.cc

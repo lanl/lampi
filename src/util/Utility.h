@@ -36,13 +36,13 @@
 
 #include "util/DblLinkList.h"
 /* function prototypes */
-int _ulm_ParseString(char ***ArgList, const char *InputBuffer,
-                     const int NSeparators, const char *SeparatorList);
-void _ulm_FreeStringMem(char ***ArgList, int NArgs);
-int _ulm_NStringArgs(char *InputBuffer, int NSeparators,
-                     char *SeparatorList);
-int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
-                       int MaxDescriptor);
+int parseString(char ***ArgList, const char *InputBuffer,
+                const int NSeparators, const char *SeparatorList);
+void FreeStringMem(char ***ArgList, int NArgs);
+int NStringArgs(char *InputBuffer, int NSeparators,
+                char *SeparatorList);
+int SendHeartBeat(int *ClientSocketFDList, int NHosts,
+                  int MaxDescriptor);
 void poisonMemory(void *ptr, ssize_t lenInBytes, int pattern);
 int createDoubleLinkList(SharedMemDblLinkList **);
 void bcopy2(const void *source, void *destination, unsigned long copylen);

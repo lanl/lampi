@@ -180,7 +180,7 @@ template<class TYPE>
 Vector<TYPE>& Vector<TYPE>::operator=(const Vector<TYPE>& array)
    {
    if(size(array.len) == false)
-       exit(-1);
+       exit(EXIT_FAILURE);
    for(size_t i=0; i<array.len; i++)
        ptr[i] = array[i];
    return *this;
@@ -190,7 +190,7 @@ template<class TYPE>
 Vector<TYPE>& Vector<TYPE>::operator=(const TYPE& element)
    {
    if(size(1) == false)
-      exit(-1);
+      exit(EXIT_FAILURE);
    ptr[0] = element;
    return *this;
    }

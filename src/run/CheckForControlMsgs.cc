@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -59,15 +62,15 @@
 static int NumHostPIDsRecved = 0;
 
 							  
-int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
-                              int NHosts, double *HeartBeatTime,
-                              int *HostsNormalTerminated,
-                              ssize_t * StderrBytesRead,
-                              ssize_t * StdoutBytesRead, 
-                              int *HostsAbNormalTerminated,
-                              int *ActiveHosts, int *ProcessCnt,
-                              pid_t ** PIDsOfAppProcs,
-                              double *TimeFirstCheckin, int *ActiveClients)
+int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
+                        int NHosts, double *HeartBeatTime,
+                        int *HostsNormalTerminated,
+                        ssize_t * StderrBytesRead,
+                        ssize_t * StdoutBytesRead, 
+                        int *HostsAbNormalTerminated,
+                        int *ActiveHosts, int *ProcessCnt,
+                        pid_t ** PIDsOfAppProcs,
+                        double *TimeFirstCheckin, int *ActiveClients)
 {
     ulm_fd_set_t ReadSet;
     int i, j, RetVal, error;
@@ -108,8 +111,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                 Tag = 0;
                 error = 0;
 #endif
-                IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i], &Tag,
-                                            sizeof(unsigned int), &error);
+                IOReturn = RecvSocket(ClientSocketFDList[i], &Tag,
+                                      sizeof(unsigned int), &error);
                 /* one end of pipe closed */
                 if (IOReturn == 0 || error != ULM_SUCCESS) {
                     ulm_dbg(("IOReturn = 0 host %d, error = %d\n", i,
@@ -147,9 +150,9 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     error = 0;
 #endif
                     IOReturn =
-                        _ulm_Recv_Socket(ClientSocketFDList[i],
-                                         ExpetctedData,
-                                         2 * sizeof(ssize_t), &error);
+                        RecvSocket(ClientSocketFDList[i],
+                                   ExpetctedData,
+                                   2 * sizeof(ssize_t), &error);
                     if (IOReturn < 0 || error != ULM_SUCCESS) {
                         ulm_err(("Error: Reading ExpectedData. "
                                  "RetVal = %ld, error = %d\n",
@@ -162,7 +165,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
                     /* send ack */
                     IOReturn =
-                        _ulm_Send_Socket(ClientSocketFDList[i], 1, &IOVec);
+                        SendSocket(ClientSocketFDList[i], 1, &IOVec);
                     if (IOReturn < 0) {
                         ulm_err(("Error: sending ACKNORMALTERM. RetVal: %ld\n",
                                  (long) IOReturn));
@@ -187,8 +190,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                             if (ClientSocketFDList[j] > 0) {
                                 ulm_dbg(("sending ALLHOSTSDONE to host %d\n", j));
                                 IOReturn =
-                                    _ulm_Send_Socket(ClientSocketFDList[j],
-                                                     1, &IOVec);
+                                    SendSocket(ClientSocketFDList[j],
+                                               1, &IOVec);
                                 /* if IOReturn <= 0 assume connection no longer available */
                                 if (IOReturn <= 0) {
                                     if (ActiveHosts[i])
@@ -213,8 +216,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     error = 0;
 #endif
                     IOReturn =
-                        _ulm_Recv_Socket(ClientSocketFDList[i], ReadBuffer,
-                                         5 * sizeof(unsigned int), &error);
+                        RecvSocket(ClientSocketFDList[i], ReadBuffer,
+                                   5 * sizeof(unsigned int), &error);
                     if (IOReturn > 0 || error != ULM_SUCCESS) {
                         Inp = (unsigned int *) ReadBuffer;
                         ulm_err(("Abnormal termination: "
@@ -228,7 +231,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     IOVec.iov_base = (char *) &Tag;
                     IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
                     IOReturn =
-                        _ulm_Send_Socket(ClientSocketFDList[i], 1, &IOVec);
+                        SendSocket(ClientSocketFDList[i], 1, &IOVec);
                     if (IOReturn <= 0) {
                         /* assume connection no longer available */
                         ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", i));
@@ -245,8 +248,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                         /* send request if socket still open */
                         if ((j != i) && (ClientSocketFDList[j] > 0)) {
                             IOReturn =
-                                _ulm_Send_Socket(ClientSocketFDList[j], 1,
-                                                 &IOVec);
+                                SendSocket(ClientSocketFDList[j], 1,
+                                           &IOVec);
                             /* if IOReturn <= 0 assume connection no longer available */
                             if (IOReturn <= 0) {
                                 if (ActiveHosts[i])
@@ -278,10 +281,10 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     error = 0;
 #endif
                     IOReturn =
-                        _ulm_Recv_Socket(ClientSocketFDList[i],
-                                         PIDsOfAppProcs[i],
-                                         ProcessCnt[i] * sizeof(pid_t),
-                                         &error);
+                        RecvSocket(ClientSocketFDList[i],
+                                   PIDsOfAppProcs[i],
+                                   ProcessCnt[i] * sizeof(pid_t),
+                                   &error);
                     if (IOReturn !=
                         (ssize_t) (ProcessCnt[i] * sizeof(pid_t))
                         || error != ULM_SUCCESS) {
@@ -298,12 +301,12 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                         MPIrunTVSetUpApp(PIDsOfAppProcs);
                     break;
                 case STDIOMSG:
-                    {
+                {
                     int StdioFD;
-                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
-                        &StdioFD,
-                        sizeof(StdioFD),
-                        &error);
+                    IOReturn = RecvSocket(ClientSocketFDList[i],
+                                          &StdioFD,
+                                          sizeof(StdioFD),
+                                          &error);
                     if (IOReturn != sizeof(StdioFD) || error != ULM_SUCCESS) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
@@ -311,10 +314,10 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     }
 
                     int bytes;
-                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
-                        &bytes,
-                        sizeof(bytes),
-                        &error);
+                    IOReturn = RecvSocket(ClientSocketFDList[i],
+                                          &bytes,
+                                          sizeof(bytes),
+                                          &error);
                     if (IOReturn != sizeof(bytes) || error != ULM_SUCCESS || bytes == 0) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
@@ -322,10 +325,10 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     }
                     
                     char *buff = (char*)malloc(bytes);
-                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
-                        buff,
-                        bytes,
-                        &error);
+                    IOReturn = RecvSocket(ClientSocketFDList[i],
+                                          buff,
+                                          bytes,
+                                          &error);
                     if (IOReturn != bytes || error != ULM_SUCCESS) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
@@ -335,7 +338,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     write(StdioFD, buff, bytes);
                     free(buff);
                     break;
-                    }
+                }
                 default:
                     ulm_err(("Error: Unrecognized control message : %d ", Tag));
                     Abort();

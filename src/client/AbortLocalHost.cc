@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
- * National Laboratory, which is operated by the University of California for
- * the U.S. Department of Energy. The Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years after
- * October 10,2002 subject to additional five-year worldwide renewals, the
- * Government is granted for itself and others acting on its behalf a paid-up,
- * nonexclusive, irrevocable worldwide license in this material to reproduce,
- * prepare derivative works, distribute copies to the public, perform publicly
- * and display publicly, and to permit others to do so. NEITHER THE UNITED
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the License,
- * or any later version.  Accordingly, this program is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,8 +54,7 @@
  * Server of this event.
  */
 void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
-                    pid_t *ChildPIDs, unsigned int MessageType,
-                    int Notify)
+                    pid_t *ChildPIDs, unsigned int MessageType, int Notify)
 {
     int i, NumChildren;
     ulm_iovec_t IOVec;
@@ -74,7 +76,7 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
     if (Notify) {
         IOVec.iov_base = (char *) &MessageType;
         IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-        IOReturn = _ulm_Send_Socket(ServerSocketFD, 1, &IOVec);
+        IOReturn = SendSocket(ServerSocketFD, 1, &IOVec);
         if (IOReturn < 0) {
             ulm_exit((-1,
                       "Error: reading Tag in AbortLocalHost.  "
@@ -83,15 +85,18 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
     }
 
     /*  !!!!!!!!!  may want to do some cleanup here first */
-    exit(2);
+    exit(EXIT_FAILURE);
 }
 
-void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
-                            pid_t *ChildPIDs, unsigned int MessageType,
-                            int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
-                            PrefixName_t *IOPrefix,
-                            int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
-                            int *NewLineLast, lampiState_t *state)
+
+void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount,
+                            int hostIndex, pid_t *ChildPIDs,
+                            unsigned int MessageType, int Notify,
+                            int *ClientStdoutFDs, int *ClientStderrFDs,
+                            PrefixName_t * IOPrefix, int *LenIOPreFix,
+                            size_t *StderrBytesWritten,
+                            size_t *StdoutBytesWritten, int *NewLineLast,
+                            lampiState_t * state)
 {
     int i, NumChildren, MaxDesc, NFDs;
     ulm_iovec_t IOVec;
@@ -126,7 +131,8 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
         while (again) {
             ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
                                    &ServerSocketFD, NFDs, MaxDesc,
-                                   IOPrefix, LenIOPreFix, StderrBytesWritten, StdoutBytesWritten,
+                                   IOPrefix, LenIOPreFix,
+                                   StderrBytesWritten, StdoutBytesWritten,
                                    NewLineLast, state);
 
             again = false;
@@ -150,7 +156,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
     if (Notify) {
         IOVec.iov_base = (char *) &MessageType;
         IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-        IOReturn = _ulm_Send_Socket(ServerSocketFD, 1, &IOVec);
+        IOReturn = SendSocket(ServerSocketFD, 1, &IOVec);
         if (IOReturn < 0) {
             ulm_exit((-1,
                       "Error: reading Tag in AbortAndDrainLocalHost.  "
@@ -158,5 +164,5 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
         }
     }
 
-    exit(2);
+    exit(EXIT_FAILURE);
 }

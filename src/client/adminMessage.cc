@@ -49,7 +49,6 @@
 #include "queue/globals.h"
 #include "util/MemFunctions.h"
 #include "util/misc.h"
-#include "util/parsing.h"
 
 #define MAX_RETRY		100
 

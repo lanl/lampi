@@ -65,7 +65,6 @@
 #endif
 
 #include "util/Lock.h"
-#include "util/linked_list.h"
 
 class adminMessage;
 

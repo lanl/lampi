@@ -46,7 +46,7 @@
  * This routine sets the signal handling for mpirun
  */
 
-int MPIrunInstallSigHandler(void)
+int InstallSigHandler(void)
 {
     struct sigaction sa;
 
@@ -60,7 +60,7 @@ int MPIrunInstallSigHandler(void)
      * SIGALRM - all signals will be blocked while execution is
      *            proceeding.
      */
-    sa.sa_handler = mpirunsigalarm;
+    sa.sa_handler = Sigalarm;
     sigfillset(&sa.sa_mask);
     sa.sa_flags = 0;
     if (sigaction(SIGINT, &sa, NULL)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -35,19 +35,35 @@
 #include "config.h"
 #endif
 
-/*
- *  RCObject.cc
- *  LampiProject
- *
- *  Created by Rob Aulwes on Mon Mar 10 2003.
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
+
+#include "run/Run.h"
+#include "util/misc.h"
+
+/* this routine is used to set up some of mpirun's process
+ *   characteristics
  */
-
-#include "RCObject.h"
-
-void RCObject::retain() {cnt_m++;}
-
-void RCObject::release()
+void InitProc(void)
 {
-    if ( 0 == --cnt_m )
-        delete this;
+    /*
+     * Reset the max number of file descriptors which may be used by
+     * the client daemon
+     */
+    struct rlimit rl;
+    getrlimit(RLIMIT_NOFILE, &rl);
+    rl.rlim_cur = rl.rlim_max;
+    setrlimit(RLIMIT_NOFILE, &rl);
+
+    /*
+     * Initialize TerminateInitiated to false...
+     */
+    SetTerminateInitiated(0);
+        
+    /*
+     * Install signal handlers
+     */
+    set_sa_restart();
+    InstallSigHandler();
 }

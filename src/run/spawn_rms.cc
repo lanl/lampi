@@ -78,6 +78,7 @@ enum {
     ADMIN_END = 5
 };
 
+
 static int quadricsNRails(int railmask)
 {
     int result = 0;
@@ -92,9 +93,10 @@ static int quadricsNRails(int railmask)
     return result;
 }
 
-int mpirun_spawn_prun(unsigned int *AuthData, int port,
-                      ULMRunParams_t *RunParameters,
-                      int FirstAppArgument, int argc, char **argv)
+
+int SpawnRms(unsigned int *AuthData, int port,
+             ULMRunParams_t *RunParameters,
+             int FirstAppArgument, int argc, char **argv)
 {
     char **exec_args;
     char **env_vars = 0;

@@ -36,12 +36,11 @@
 
 #include <sys/types.h>
 
-#include "util/ParseString.h"
-#include "internal/new.h"
 #include "internal/new.h"
 #include "run/JobParams.h"
 #include "run/Input.h"
 #include "client/adminMessage.h"
+#include "util/ParseString.h"
 
 #ifndef ULM_GLOBAL_DEFINE
 #define EXTERN extern
@@ -51,75 +50,23 @@
 
 /* prototypes */
 
-int IsTVDebug(void);
-int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendQuadricsInputToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendGMInputToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendIBInputToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendTCPInputToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SendInterfaceListToClients(ULMRunParams_t *RunParameters,
-		adminMessage *server);
-int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
-                 int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		 int FirstAppArgument, int argc, char **argv);
-int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
-                    int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		    int FirstAppArgument, int argc, char **argv);
-int SpawnUserAppRSH(unsigned int *AuthData, int ReceivingSocket,
-                    int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		    int FirstAppArgument, int argc, char **argv);
-int MPIrunProcessInput(int argc, char **argv, int *NULMArgs,
-                       int **IndexULMArgs, ULMRunParams_t *RunParameters,
-                       int *FirstAppArgument);
-int MPIrunInstallSigHandler(void);
-int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *server);
-int mpirunCheckForControlMsgs(int MaxDescriptor,
-                              int *ClientSocketFDList, int NHosts,
-                              double *HeartBeatTime,
-                              int *HostsNormalTerminated,
-                              ssize_t *StderrBytesRead,
-                              ssize_t *StdoutBytesRead, 
-                              int *HostsAbNormalTerminated,
-                              int *ActiveHosts, int *ProcessCnt,
-                              pid_t ** PIDsOfAppProcs,
-                              double *TimeFirstCheckin,
-                              int *ActiveClients);
-int mpirunCheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
-                         int *ActiveHosts, int HeartBeatTimeOut);
-int mpirunScanStdErrAndOut(int *STDERRfds, int *STDOUTfds, int NHosts,
-                           int MaxDescriptor, ssize_t *StderrBytesRead,
-                           ssize_t *StdoutBytesRead);
-int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
-                       int **ListHostsStarted, ULMRunParams_t *RunParameters,
-                       int FirstAppArgument, int argc, char **argv);
-int mpirun_spawn_exec(unsigned int *AuthData, int ReceivingSocket,
-                      int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		      int FirstAppArgument, int argc, char **argv);
-int mpirun_spawn_prun(unsigned int *AuthData, int port, 
-		ULMRunParams_t *RunParameters, int FirstAppArgument, 
-		int argc, char **argv);
-int mpirun_spawn_rsh(unsigned int *AuthData, char *sock_ip,
-                     int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		     int FirstAppArgument, int argc, char **argv);
-int parse_cmdln_bproc(int, char **, ULMRunParams_t *);
-ssize_t mpirunRecvAndWriteData(int ReadFD, FILE * WriteFile);
-void lampirun_init_proc();
-void AbortFunction(const char *, int);
 #define Abort() AbortFunction(__FILE__, __LINE__)
+int AbortAllHosts(int *ClientSocketFDList, int NHosts,
+                  adminMessage *server);
+void AbortFunction(const char *, int);
+int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
+                        int NHosts, double *HeartBeatTime,
+                        int *HostsNormalTerminated,
+                        ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
+                        int *HostsAbNormalTerminated, int *ActiveHosts,
+                        int *ProcessCnt, pid_t **PIDsOfAppProcs,
+                        double *TimeFirstCheckin, int *ActiveClients);
+int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
+                   int *ActiveHosts, int HeartBeatTimeOut);
+void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
+               ULMRunParams_t *RunParameters);
 void GetAppDir(const char *InfoStream);
 void GetAppHostCount(const char *InfoStream);
-void GetMpirunHostnameNoInput(const char *InfoStream);
-void GetMpirunHostname(const char *InfoStream);
-void GetInterfaceCount(const char *InfoStream);
-void GetInterfaceList(const char *InfoStream);
-void GetInterfaceNoInput(const char *InfoStream);
 void GetAppHostData(const char *InfoStream);
 void GetAppHostDataFromMachineFile(const char *InfoStream);
 void GetAppHostDataNoInputRSH(const char *InfoStream);
@@ -129,31 +76,49 @@ void GetClientProcessCount(const char *InfoStream);
 void GetClientProcessCountNoInput(const char *InfoStream);
 void GetClientWorkingDirectory(const char *InfoStream);
 void GetClientWorkingDirectoryNoInp(const char *InfoStream);
-void GetLSFResource();
-void GetNetworkDevListNoInput(const char *InfoStream);
-void GetNetworkDevList(const char *InfoStream);
-void GetTVAll(const char *InfoStream);
 void GetGDB(const char *InfoStream);
+void GetInterfaceCount(const char *InfoStream);
+void GetInterfaceList(const char *InfoStream);
+void GetInterfaceNoInput(const char *InfoStream);
+void GetLSFResource();
+void GetMpirunHostname(const char *InfoStream);
+void GetMpirunHostnameNoInput(const char *InfoStream);
+void GetNetworkDevList(const char *InfoStream);
+void GetNetworkDevListNoInput(const char *InfoStream);
+void GetTVAll(const char *InfoStream);
 void GetTVDaemon(const char *InfoStream);
+int InstallSigHandler(void);
+int IsTVDebug(void);
+void KillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs);
+int ProcessInput(int argc, char **argv, int *NULMArgs, int **IndexULMArgs,
+                 ULMRunParams_t *RunParameters, int *FirstAppArgument);
+void RearrangeHostList(const char *InfoStream);
 void ScanInput(int argc, char **argv);
+int SendGMInputToClients(ULMRunParams_t *RunParameters,
+                         adminMessage *server);
+int SendIBInputToClients(ULMRunParams_t *RunParameters,
+                         adminMessage *server);
+int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
+                                  adminMessage *server);
+int SendInterfaceListToClients(ULMRunParams_t *RunParameters,
+                               adminMessage *server);
+int SendQuadricsInputToClients(ULMRunParams_t *RunParameters,
+                               adminMessage *server);
+int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
+                                adminMessage *server);
+int SendTCPInputToClients(ULMRunParams_t *RunParameters,
+                          adminMessage *server);
+void SetTerminateInitiated(int a);
+void Sigalarm(int Signal);
 void TerminateClients(int NClientsAccepted, int *ListClientsAccepted,
                       ULMRunParams_t RunParameters);
-void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
-                     ULMRunParams_t *RunParameters);
 void VerifyLsfResources(const ULMRunParams_t *RunParameters);
-void RearrangeHostList(const char *InfoStream);
-void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts);
-void mpirunDrainStdioData(int *STDERRfds, int *STDOUTfds,
-                          ssize_t *StderrBytesRead,
-                          ssize_t *StdoutBytesRead,
-                          ssize_t ExpectedStderrBytesRead,
-                          ssize_t ExpectedStdoutBytesRead);
-void mpirunKillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs);
-void mpirunSetTerminateInitiated(int a);
-void mpirunsigalarm(int Signal);
+void FixRunParameters(ULMRunParams_t *RunParameters, int nhosts);
+void InitProc(void);
 void parseCpusPerNode(const char *InfoStream);
 void parseDefaultAffinity(const char *InfoStream);
 void parseEnvironmentSettings(const char *InfoStream);
+void parseIBFlags(const char *InfoStream);
 void parseMandatoryAffinity(const char *InfoStream);
 void parseMaxComms(const char *InfoStream);
 void parseMaxRetries(const char *InfoStream);
@@ -167,21 +132,38 @@ void parseMinSMPISendDescPages(const char *InfoStream);
 void parseMinSMPRecvDescPages(const char *InfoStream);
 void parseMinSMPStrdISendDescPages(const char *InfoStream);
 void parseMinStrdIRecvDescPages(const char *InfoStream);
-void parseOutOfResourceContinue(const char *InfoStream);
-void parseQuadricsRails(const char *InfoStream);
-void parseUseCRC(const char *InfoStream);
-void parseQuadricsFlags(const char *InfoStream);
 void parseMyrinetFlags(const char *InfoStream);
-void parseIBFlags(const char *InfoStream);
+void parseOutOfResourceContinue(const char *InfoStream);
+void parseQuadricsFlags(const char *InfoStream);
+void parseQuadricsRails(const char *InfoStream);
 void parseResourceAffinity(const char *InfoStream);
 void parseSMDescMemPerProc(const char *InfoStream);
 void parseTotalIRecvDescPages(const char *InfoStream);
 void parseTotalSMPDataPages(const char *InfoStream);
 void parseTotalSMPISendDescPages(const char *InfoStream);
 void parseTotalSMPRecvDescPages(const char *InfoStream);
+void parseUseCRC(const char *InfoStream);
 void setNoLSF(const char *InfoStream);
 void setThreads(const char *InfoStream);
 void setUseSSH(const char *InfoStream);
+int Spawn(unsigned int *AuthData, int ReceivingSocket,
+          int **ListHostsStarted, ULMRunParams_t *RunParameters,
+          int FirstAppArgument, int argc, char **argv);
+int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
+               int **ListHostsStarted, ULMRunParams_t *RunParameters,
+               int FirstAppArgument, int argc, char **argv);
+int SpawnExec(unsigned int *AuthData, int ReceivingSocket,
+              int **ListHostsStarted, ULMRunParams_t *RunParameters,
+              int FirstAppArgument, int argc, char **argv);
+int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
+             int **ListHostsStarted, ULMRunParams_t *RunParameters,
+             int FirstAppArgument, int argc, char **argv);
+int SpawnRms(unsigned int *AuthData, int port,
+             ULMRunParams_t *RunParameters, int FirstAppArgument,
+             int argc, char **argv);
+int SpawnRsh(unsigned int *AuthData, int ReceivingSocket,
+             int **ListHostsStarted, ULMRunParams_t *RunParameters,
+             int FirstAppArgument, int argc, char **argv);
 
 #if ENABLE_TCP
 void parseTCPMaxFragment(const char* infoStream);
@@ -200,7 +182,7 @@ void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n",
+        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n"
                  "\tNumber or arguments specified is %d, "
                  "but should be either 1 or %d\n"
                  "\tInput line: %s\n",

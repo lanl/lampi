@@ -85,7 +85,8 @@ extern char **environ;
 #define NGROUPS_MAX 20
 #endif
 
-bool extraGidsMatch(int n, gid_t grp, gid_t *list) {
+bool extraGidsMatch(int n, gid_t grp, gid_t *list)
+{
     bool result = false;
 
     for (int i = 0; i < n; i++) {
@@ -96,7 +97,9 @@ bool extraGidsMatch(int n, gid_t grp, gid_t *list) {
     return result;
 }
 
-bool canExecute(struct stat *rstat) {
+
+bool canExecute(struct stat *rstat)
+{
     bool result = false;
     uid_t realuid, effuid;
     gid_t realgid, effgid, extragids[NGROUPS_MAX];
@@ -115,9 +118,9 @@ bool canExecute(struct stat *rstat) {
             result = true;
     }
     else if ((realgid == rstat->st_gid) || (effgid == rstat->st_gid) || 
-        extraGidsMatch(numExtraGids, rstat->st_gid, extragids)) {
-            if (rstat->st_mode & S_IXGRP)
-                result = true;
+             extraGidsMatch(numExtraGids, rstat->st_gid, extragids)) {
+        if (rstat->st_mode & S_IXGRP)
+            result = true;
     } 
     else if (rstat->st_mode & S_IXOTH) {
         result = true;
@@ -125,6 +128,7 @@ bool canExecute(struct stat *rstat) {
     
     return result;
 }
+
 
 void handleLsfTasks(int signo)
 {
@@ -153,6 +157,7 @@ void handleLsfTasks(int signo)
     return;
 }
 
+
 /*
  * Use LSF to spawn master process on remote host.  This routine also
  * connects standard out and standard error to one end of a pipe - one
@@ -161,10 +166,9 @@ void handleLsfTasks(int signo)
  * ULMRun, and processed.  ULMRun in turn will redirect this output to
  * its own stdout and stderr files - in this case the controlling tty.
  */
-
-int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket, 
-		int **ListHostsStarted, ULMRunParams_t *RunParameters,
-                    int FirstAppArgument, int argc, char **argv)
+int SpawnLsf(unsigned int *AuthData, int ReceivingSocket, 
+             int **ListHostsStarted, ULMRunParams_t *RunParameters,
+             int FirstAppArgument, int argc, char **argv)
 {
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
     int idx, host;
@@ -197,7 +201,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         Abort();
     }
 
-	nEnviron = 0;
+    nEnviron = 0;
 #if ENABLE_LSF
     /*
      * Pre-calculate the number of entires and maxi space needed for
@@ -262,35 +266,35 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 
 #if ENABLE_LSF
         if ((RetVal = ls_chdir(RunParameters->HostList[host],
-             RunParameters->WorkingDirList[host])) < 0) {
+                               RunParameters->WorkingDirList[host])) < 0) {
             dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: can't LSF remote change directory, ls_chdir(\"%s\",\"%s\") returned %d lserrno %d (error: %s)!\n", 
-                RunParameters->HostList[host], RunParameters->WorkingDirList[host], RetVal, lserrno, ls_sysmsg()));
+                     RunParameters->HostList[host], RunParameters->WorkingDirList[host], RetVal, lserrno, ls_sysmsg()));
             Abort();
         }
 
         if (ls_rstat(RunParameters->HostList[host],
-            RunParameters->ExeList[host], &rstat) < 0) {
+                     RunParameters->ExeList[host], &rstat) < 0) {
             dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s (error: %s)\n",
-                RunParameters->ExeList[host], RunParameters->HostList[host], strerror(errno)));
+                     RunParameters->ExeList[host], RunParameters->HostList[host], strerror(errno)));
             Abort();
         }
         else if (!S_ISREG(rstat.st_mode)) {
             dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s shows that the file is not a regular file!\n",
-                RunParameters->ExeList[host], RunParameters->HostList[host]));
+                     RunParameters->ExeList[host], RunParameters->HostList[host]));
             Abort();
         }
         else if (!canExecute(&rstat)) {
             dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s -- no execute permission!\n",
-                RunParameters->ExeList[host], RunParameters->HostList[host]));
+                     RunParameters->ExeList[host], RunParameters->HostList[host]));
             Abort();
         }
 
         if ((lsfTasks[host] = ls_rtaske(RunParameters->HostList[host], ExecArgs,
-                      REXF_CLNTDIR, EnvList)) < 0) {
+                                        REXF_CLNTDIR, EnvList)) < 0) {
             dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: can't start job on host %s\n",
                      RunParameters->HostList[host]));

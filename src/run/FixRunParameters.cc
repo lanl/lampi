@@ -43,7 +43,7 @@
 #include "run/globals.h"
 #include "run/Run.h"
 
-void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts)
+void FixRunParameters(ULMRunParams_t *RunParameters, int nhosts)
 {
 	int				h,*tmpNProc,host,nProcs;
 	pid_t 			*tmpPIDs;

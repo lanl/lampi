@@ -143,7 +143,7 @@ void lampi_daemon_loop(lampiState_t *s)
 
         /* send heartbeat to Server */
         if (DeltaTime > HEARTBEATINTERVAL) {
-            _ulm_SendHeartBeat(&ServerSocketFD, 1, ServerSocketFD + 1);
+            SendHeartBeat(&ServerSocketFD, 1, ServerSocketFD + 1);
             LastTime = TimeInSeconds;
         }
 

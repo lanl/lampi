@@ -46,7 +46,7 @@
 /*
  * This routine  is used to handle Client's SIGALRM
  */
-void mpirunsigalarm(int Signal)
+void Sigalarm(int Signal)
 {
     switch (Signal) {
 
@@ -55,8 +55,8 @@ void mpirunsigalarm(int Signal)
 
         break;
     case SIGINT:
-        mpirunAbortAllHosts(RunParameters.Networks.TCPAdminstrativeNetwork.
-                            SocketsToClients, RunParameters.NHosts, RunParameters.server);
+        AbortAllHosts(RunParameters.Networks.TCPAdminstrativeNetwork.
+                      SocketsToClients, RunParameters.NHosts, RunParameters.server);
         break;
     }
 }

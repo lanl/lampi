@@ -93,6 +93,7 @@ with_romio			:= @with_romio@
 
 ifeq "$(with_romio)" "yes"
 ROMIODIR	:= @romiodir@
+ROMIOMAKEFILE	:= @romiodir@/Makefile 
 ROMIOLIB	:= $(PWD)/$(ROMIODIR)/objects/romio.$(LIBEXT)
 OBJ_ROMIO	:= $(ROMIODIR)/objects/*.$(OBJEXT)
 ROMIOCONFIGURE  := $(abs_srcdir)/$(ROMIODIR)/configure
@@ -169,7 +170,7 @@ endif
 all: $(TARGET)
 
 clean:
-	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT) $(ROMIODIR)/Makefile
+	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT) $(ROMIOMAKEFILE)
 
 
 distclean: clean

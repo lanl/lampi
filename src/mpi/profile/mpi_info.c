@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
 	fprintf(stderr, "Usage:  a.out #_of_data_files\n");
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
     howManyProfiles = atoi(argv[1]);
     profileData = (MPI_Stats *) mallocWrapper(sizeof(MPI_Stats) * howManyProfiles);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	    num_tokens++;
 	}
 	if ((strcmp(queryLine, "q") == 0) || strcmp(queryLine, "quit") == 0) {
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	// process tokesn
 	for (i = 0; i < num_tokens; i++) {
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 		    data = INDDATA;
 		else {
 		    printf("Error in data field\n");
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 	    }			// whichField == 'd'
 

@@ -8,13 +8,10 @@ SRC_LIBMPI += \
 	src/util/createDoubleLinkList.cc \
 	src/util/dclock.cc \
 	src/util/misc.c \
-	src/util/parsing.c \
-	src/util/linked_list.c \
 	src/util/setupCore.cc \
 	src/util/timing.cc \
 	src/util/CommandArg.cc \
 	src/util/HashNode.cc \
 	src/util/HashTable.cc \
-	src/util/RCObject.cc \
 	src/util/Reactor.cc \
 	src/util/if.cc

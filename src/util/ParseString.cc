@@ -48,23 +48,21 @@
 ParseString::ParseString(const char *InputBuffer, const int NSeparators,
                          const char *SeparatorList)
 {
-    NumberOfSubStrings = ::_ulm_ParseString(&SubStrings, InputBuffer,
-                                           NSeparators, SeparatorList);
+    NumberOfSubStrings = ::parseString(&SubStrings, InputBuffer,
+                                       NSeparators, SeparatorList);
 }
 
 void ParseString::Init(const char *InputBuffer, const int NSeparators,
                        const char *SeparatorList)
 {
-    NumberOfSubStrings = ::_ulm_ParseString(&SubStrings, InputBuffer,
-                                           NSeparators, SeparatorList);
+    NumberOfSubStrings = ::parseString(&SubStrings, InputBuffer,
+                                       NSeparators, SeparatorList);
 }
 
 ParseString::~ParseString()
 {
-
-
     if (NumberOfSubStrings > 0)
-        ::_ulm_FreeStringMem(&SubStrings, NumberOfSubStrings);
+        ::FreeStringMem(&SubStrings, NumberOfSubStrings);
 }
 
 ParseString::iterator ParseString::begin()

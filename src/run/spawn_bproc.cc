@@ -62,10 +62,10 @@
 
 #if ENABLE_BPROC == 0
 
-int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
-                       int **ListHostsStarted,
-                       ULMRunParams_t *RunParameters,
-                       int FirstAppArgument, int argc, char **argv)
+int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
+               int **ListHostsStarted,
+               ULMRunParams_t *RunParameters,
+               int FirstAppArgument, int argc, char **argv)
 {
     return 0;
 }
@@ -104,10 +104,10 @@ enum {
 static int *pids = 0;
 
 
-int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
-                       int **ListHostsStarted,
-                       ULMRunParams_t * RunParameters,
-                       int FirstAppArgument, int argc, char **argv)
+int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
+               int **ListHostsStarted,
+               ULMRunParams_t * RunParameters,
+               int FirstAppArgument, int argc, char **argv)
 {
     char *execName = NULL;
     char *exec_args[END + 1];
@@ -211,7 +211,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     sleep(1);
     if (bproc_vexecmove(nHosts, nodes, pids, exec_args[EXEC_NAME],
                         argv + (FirstAppArgument - 1), environ) < 0) {
-        ulm_err(("mpirun_spawn_bproc: bproc_vexecmove: error %s\n",
+        ulm_err(("SpawnBproc: bproc_vexecmove: error %s\n",
                  bproc_strerror(errno)));
         ret_status = errno;
         goto CLEANUP_ABNORMAL;
@@ -220,7 +220,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     /* Check the returned pids are OK */
     for (i = 0; i < nHosts; i++) {
         if (pids[i] <= 0) {
-            ulm_err(("mpirun_spawn_bproc: "
+            ulm_err(("SpawnBproc: "
                      "failed to start process on node %d: "
                      "error %s\n", nodes[i], bproc_strerror(pids[i])));
             ret_status = pids[i];
@@ -246,7 +246,7 @@ CLEANUP_ABNORMAL:
         free(nodes);
         free(pids);
     }
-    ulm_err(("mpirun_spawn_bproc: Abnormal termination"));
+    ulm_err(("SpawnBproc: Abnormal termination"));
     return -1;
 }
 

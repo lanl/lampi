@@ -50,7 +50,7 @@
  * processes.
  */
 
-void mpirunKillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs)
+void KillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs)
 {
     int RetStat, i;
     char CommandString[ULM_MAX_COMMAND_STRING];

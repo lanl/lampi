@@ -61,11 +61,11 @@
  * ULMRun, and processed.  ULMRun in turn will redirect this output to
  * its own stdout and stderr files - in this case the controlling tty.
  */
-int SpawnUserAppRSH(unsigned int *AuthData,
-                    int ReceivingSocket,
-                    int **ListHostsStarted,
-                    ULMRunParams_t *RunParameters,
-                    int FirstAppArgument, int argc, char **argv)
+int SpawnRsh(unsigned int *AuthData,
+             int ReceivingSocket,
+             int **ListHostsStarted,
+             ULMRunParams_t *RunParameters,
+             int FirstAppArgument, int argc, char **argv)
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
     int i, offset, LenList;
@@ -327,7 +327,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         if ((Child = fork()) == -1) {
             printf(" Error forking child\n");
             perror(" fork ");
-            exit(-1);
+            exit(EXIT_FAILURE);
         } else if (Child == 0) {        /* child process */
             sprintf(ExecArgs[HostEntry], "%s", RunParameters->HostList[i]);
             sprintf(ExecArgs[WorkingDirEntry], "%s",

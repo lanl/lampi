@@ -62,10 +62,10 @@ extern int MPIR_being_debugged;
  * parse the command line arguments, and setup the data to be sent to
  * the clients
  */
-int MPIrunProcessInput(int argc, char **argv,
-                       int *NULMArgs, int **IndexULMArgs,
-                       ULMRunParams_t *RunParameters,
-                       int *FirstAppArgument)
+int ProcessInput(int argc, char **argv,
+                 int *NULMArgs, int **IndexULMArgs,
+                 ULMRunParams_t *RunParameters,
+                 int *FirstAppArgument)
 {
     RunParameters->UserAppDirList = NULL;
     RunParameters->HostList = NULL;

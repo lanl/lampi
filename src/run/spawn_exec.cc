@@ -50,16 +50,16 @@
 #include "run/coprocess.h"
 
 /*
- * mpirun spawner for the case where server and clients are all on one host,
- * so we can create the jobs using fork/exec
+ * mpirun spawner for the case where server and clients are all on one
+ * host, so we can create the jobs using fork/exec
  *
  * Mainly intended for debugging on a single system.
  */
-int mpirun_spawn_exec(unsigned int *auth_data,
-                      int socket,
-                      int **hosts_started,
-                      ULMRunParams_t *RunParameters,
-                      int FirstAppArgument, int argc, char **argv)
+int SpawnExec(unsigned int *auth_data,
+              int socket,
+              int **hosts_started,
+              ULMRunParams_t *RunParameters,
+              int FirstAppArgument, int argc, char **argv)
 {
     enum {
         DEBUG = 1,
@@ -70,7 +70,7 @@ int mpirun_spawn_exec(unsigned int *auth_data,
     int rc;
 
     if (DEBUG) {
-        fprintf(stderr, "mpirun_spawn_exec\n");
+        fprintf(stderr, "SpawnExec\n");
         fflush(stderr);
     }
 
@@ -79,7 +79,7 @@ int mpirun_spawn_exec(unsigned int *auth_data,
      */
 
     if (RunParameters->NHosts != 1) {
-        perror("mpirun_spawn_exec only valid for 1 host");
+        perror("SpawnExec only valid for 1 host");
         return -1;
     }
     *hosts_started = (int *) ulm_malloc(sizeof(int));

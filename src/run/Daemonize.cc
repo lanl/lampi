@@ -55,24 +55,25 @@
 /*
  * Read from stdin and create an admin message to host rank 0.
  */
-int mpirunScanStdIn(int fdin)
+static int ScanStdIn(int fdin)
 {
     char buff[512];
     int rc = ULM_SUCCESS;
     int cnt = read(fdin, buff, sizeof(buff));
-    if(cnt == 0) {
-        if(isatty(fdin))
+    if (cnt == 0) {
+        if (isatty(fdin))
             return ULM_SUCCESS;
-        rc = ULM_ERROR; // send 0 byte message then close descriptors
+        rc = ULM_ERROR;         // send 0 byte message then close descriptors
     }
 
-    if(cnt < 0) {
-        switch(errno) {
+    if (cnt < 0) {
+        switch (errno) {
         case EINTR:
         case EAGAIN:
             return ULM_SUCCESS;
         default:
-            ulm_err(("mpirunScanStdIn: read(stdin) failed with errno=%d\n", errno));
+            ulm_err(("mpirunScanStdIn: read(stdin) failed with errno=%d\n",
+                     errno));
             return ULM_ERROR;
         }
     }
@@ -80,19 +81,19 @@ int mpirunScanStdIn(int fdin)
     adminMessage *server = RunParameters.server;
     server->reset(adminMessage::SEND);
     server->pack(&cnt, adminMessage::INTEGER, 1);
-    if(cnt > 0)
+    if (cnt > 0)
         server->pack(buff, adminMessage::BYTE, cnt);
 
     if (false == server->send(0, STDIOMSG, &rc)) {
-	ulm_err(("mpirunScanStdIn: error sending STDIOMSG: errno=%d\n", rc));
+        ulm_err(("ScanStdIn: error sending STDIOMSG: errno=%d\n", rc));
         return ULM_ERROR;
     }
     return rc;
 }
 
 
-void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
-                     ULMRunParams_t *RunParameters)
+void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
+               ULMRunParams_t *RunParameters)
 {
     int ActiveClients;
     int i, MaxDescriptorCtl, RetVal;
@@ -100,26 +101,27 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         TimeFirstCheckin;
     int *ClientSocketFDList, NHosts, *ProcessCnt;
     HostName_t *HostList;
-    adminMessage	*server;
-    
+    adminMessage *server;
+
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
 #endif                          /* LINUX */
-    int *ActiveHosts;           /* if ActiveHost[i] == 1, app still running on that host
+    int *ActiveHosts;           /* if ActiveHost[i] == 1, app still running
                                  *                    -1, Client init not done
-                                 *                     0, Client terminated ok */
+                                 *                     0, Client terminated ok
+                                 */
     pid_t **PIDsOfAppProcs;     /* list of PID's for all Client's children */
 
     /* Initialization */
-    mpirunSetTerminateInitiated(0);
+    SetTerminateInitiated(0);
     server = RunParameters->server;
     NHosts = RunParameters->NHosts;
     ProcessCnt = RunParameters->ProcessCount;
     HostList = RunParameters->HostList;
     ActiveClients = RunParameters->NHosts;
-    ClientSocketFDList = 
+    ClientSocketFDList =
         RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients;
 
     /* setup list of active hosts */
@@ -159,40 +161,40 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     HostsAbNormalTerminated = 0;
 
     /* setup stdin file descriptor to be non-blocking */
-    if(RunParameters->STDINfd >= 0) {
+    if (RunParameters->STDINfd >= 0) {
         /* input from terminal */
-        if(isatty(RunParameters->STDINfd)) {
-         
+        if (isatty(RunParameters->STDINfd)) {
+
             struct termios term;
-            if(tcgetattr(RunParameters->STDINfd, &term) != 0) {
-                ulm_err(("tcgetattr(%d) failed with errno=%d\n", 
-                         RunParameters->STDINfd,errno));
+            if (tcgetattr(RunParameters->STDINfd, &term) != 0) {
+                ulm_err(("tcgetattr(%d) failed with errno=%d\n",
+                         RunParameters->STDINfd, errno));
                 RunParameters->STDINfd = -1;
             }
             term.c_lflag &= ~ICANON;
             term.c_cc[VMIN] = 0;
             term.c_cc[VTIME] = 0;
-            if(tcsetattr(RunParameters->STDINfd, TCSANOW, &term) != 0) {
-                ulm_err(("tcsetattr(%d) failed with errno=%d\n", 
-                         RunParameters->STDINfd,errno));
+            if (tcsetattr(RunParameters->STDINfd, TCSANOW, &term) != 0) {
+                ulm_err(("tcsetattr(%d) failed with errno=%d\n",
+                         RunParameters->STDINfd, errno));
                 RunParameters->STDINfd = -1;
             }
             /* input from pipe or file */
         } else {
             struct stat sbuf;
-            if(fstat(RunParameters->STDINfd, &sbuf) != 0) {
-                ulm_err(("stat(%d) failed with errno=%d\n", RunParameters->STDINfd, errno));
+            if (fstat(RunParameters->STDINfd, &sbuf) != 0) {
+                ulm_err(("stat(%d) failed with errno=%d\n",
+                         RunParameters->STDINfd, errno));
             } else if (S_ISFIFO(sbuf.st_mode)) {
                 int flags;
-                if(fcntl(RunParameters->STDINfd, F_GETFL, &flags) != 0) {
-                    ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n", 
-                             RunParameters->STDINfd,errno));
+                if (fcntl(RunParameters->STDINfd, F_GETFL, &flags) != 0) {
+                    ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n",
+                             RunParameters->STDINfd, errno));
                     RunParameters->STDINfd = -1;
                 }
                 flags |= O_NONBLOCK;
                 if (fcntl(RunParameters->STDINfd, F_SETFL, flags) != 0) {
-                    ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", 
-                             RunParameters->STDINfd,errno));
+                    ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", RunParameters->STDINfd, errno));
                     RunParameters->STDINfd = -1;
                 }
             }
@@ -203,8 +205,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     for (;;) {
 
         /* check to see if there is any stdin/stdout/stderr data to read and then write */
-	if( RunParameters->handleSTDio && RunParameters->STDINfd >= 0) {
-            if(mpirunScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
+        if (RunParameters->handleSTDio && RunParameters->STDINfd >= 0) {
+            if (ScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
                 close(RunParameters->STDINfd);
                 RunParameters->STDINfd = -1;
             }
@@ -223,22 +225,21 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         DeltaTime = TimeInSeconds - LastTime;
         if (DeltaTime >= HEARTBEATINTERVAL) {
             LastTime = TimeInSeconds;
-			
-            RetVal =
-                _ulm_SendHeartBeat(ClientSocketFDList, NHosts,
+
+            RetVal = SendHeartBeat(ClientSocketFDList, NHosts,
                                    MaxDescriptorCtl);
         }
 
         /* check if any messages have arrived and process */
         RetVal =
-            mpirunCheckForControlMsgs(MaxDescriptorCtl, ClientSocketFDList,
-                                      NHosts, HeartBeatTime,
-                                      &HostsNormalTerminated,
-                                      StderrBytesRead, StdoutBytesRead,
-                                      &HostsAbNormalTerminated,
-                                      ActiveHosts, ProcessCnt,
-                                      PIDsOfAppProcs, &TimeFirstCheckin,
-                                      &ActiveClients);
+            CheckForControlMsgs(MaxDescriptorCtl, ClientSocketFDList,
+                                NHosts, HeartBeatTime,
+                                &HostsNormalTerminated,
+                                StderrBytesRead, StdoutBytesRead,
+                                &HostsAbNormalTerminated,
+                                ActiveHosts, ProcessCnt,
+                                PIDsOfAppProcs, &TimeFirstCheckin,
+                                &ActiveClients);
 
         /* exit if all hosts have terminated normally */
         if (!ActiveClients) {
@@ -251,41 +252,40 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
             && (HostsAbNormalTerminated > 0)) {
             /* last check if any messages have arrived and process */
             RetVal =
-                mpirunCheckForControlMsgs(MaxDescriptorCtl,
-                                          ClientSocketFDList, NHosts,
-                                          HeartBeatTime,
-                                          &HostsNormalTerminated,
-                                          StderrBytesRead, StdoutBytesRead,
-                                          &HostsAbNormalTerminated,
-                                          ActiveHosts, ProcessCnt,
-                                          PIDsOfAppProcs,
-                                          &TimeFirstCheckin,
-                                          &ActiveClients);
+                CheckForControlMsgs(MaxDescriptorCtl,
+                                    ClientSocketFDList, NHosts,
+                                    HeartBeatTime,
+                                    &HostsNormalTerminated,
+                                    StderrBytesRead, StdoutBytesRead,
+                                    &HostsAbNormalTerminated,
+                                    ActiveHosts, ProcessCnt,
+                                    PIDsOfAppProcs,
+                                    &TimeFirstCheckin, &ActiveClients);
 
             // Terminate all hosts
             ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));
             Abort();
-            exit(15);
+            exit(EXIT_FAILURE);
         }
 
         /* check to see if any hosts have timed out - the first
-         * host to time out it the return value of mpirunCheckHeartBeat
+         * host to time out it the return value of CheckHeartBeat
          */
         if (DeltaTime >= HEARTBEATINTERVAL) {
             RetVal =
-                mpirunCheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
-                                     ActiveHosts,
-                                     RunParameters->HeartBeatTimeOut);
+                CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
+                               ActiveHosts,
+                               RunParameters->HeartBeatTimeOut);
 
             if (RetVal < NHosts) {
                 /* send TERMINATENOW message to remaining hosts */
                 ulm_err(("Error: Host %d is no longer participating in the job\n", RetVal));
                 ClientSocketFDList[RetVal] = -1;
-                mpirunKillAppProcs(HostList[RetVal], ProcessCnt[RetVal],
-                                   PIDsOfAppProcs[RetVal]);
+                KillAppProcs(HostList[RetVal], ProcessCnt[RetVal],
+                             PIDsOfAppProcs[RetVal]);
                 HostsAbNormalTerminated++;
                 HostsAbNormalTerminated +=
-                    mpirunAbortAllHosts(ClientSocketFDList, NHosts, server);
+                    AbortAllHosts(ClientSocketFDList, NHosts, server);
             }
         }
 

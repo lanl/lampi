@@ -85,7 +85,7 @@
  */
 ULMRunParams_t RunParameters;   // Job description
 int *HostDoneWithSetup = NULL;  // Lists hosts are done with setup
-int *ListHostsStarted;          // List of host for which SpawnUserApp ran ok
+int *ListHostsStarted;          // List of host for which Spawn ran ok
 int HostsAbNormalTerminated = 0;        // Number of hosts that terminated abnormally
 int HostsNormalTerminated = 0;  // Number of hosts that terminated normally
 int NHostsStarted;              // Number of hosts succesfully spawned
@@ -474,6 +474,7 @@ void *server_connect(void *arg)
     return NULL;
 }
 
+
 int mpirun(int argc, char **argv)
 {
     int i, rc, NULMArgs, ErrorReturn, FirstAppArgument;
@@ -486,7 +487,7 @@ int mpirun(int argc, char **argv)
     sigset_t newsignals, oldsignals;
     
     /* setup process characteristics */
-    lampirun_init_proc();
+    InitProc();
     
     /*
      * Read in environment
@@ -496,7 +497,7 @@ int mpirun(int argc, char **argv)
     /*
      * Read in mpirun arguments
      */
-    rc = MPIrunProcessInput(argc, argv, &NULMArgs, &IndexULMArgs,
+    rc = ProcessInput(argc, argv, &NULMArgs, &IndexULMArgs,
                             &RunParameters, &FirstAppArgument);
     if (rc < 0) {
         ulm_err(("Error: Parsing command line\n"));
@@ -553,8 +554,8 @@ int mpirun(int argc, char **argv)
     /*
      * Spawn user app
      */
-    rc = SpawnUserApp(AuthData, ReceivingSocket, &ListHostsStarted,
-                      &RunParameters, FirstAppArgument, argc, argv);
+    rc = Spawn(AuthData, ReceivingSocket, &ListHostsStarted,
+               &RunParameters, FirstAppArgument, argc, argv);
     if( rc != ULM_SUCCESS ) {
         char **p;
 
@@ -629,7 +630,7 @@ int mpirun(int argc, char **argv)
      * reset host information based on the number of hosts that
      *   were actually started
      */
-    fix_RunParameters(&RunParameters, server->nhosts());
+    FixRunParameters(&RunParameters, server->nhosts());
     /* temporary fix */
     int *ClientSocketFDList =
         (int *) ulm_malloc(sizeof(int) * RunParameters.NHosts);
@@ -724,7 +725,7 @@ int mpirun(int argc, char **argv)
         int term_status;
         wait(&term_status);
     } else {
-        MPIrunDaemonize(StderrBytesRead, StdoutBytesRead, &RunParameters);
+        Daemonize(StderrBytesRead, StdoutBytesRead, &RunParameters);
     }
 
     return EXIT_SUCCESS;

@@ -101,7 +101,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (NHostInfoFound == 0) {
         if (ReadNPFromFile) {
             printf(" Unable to get number of processes per host.\n");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         *NHosts = 1;
         RetVal = gethostname(LocalHostName, ULM_MAX_HOSTNAME_LEN);
@@ -109,7 +109,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
             printf
                 (" Error: gethostname() call failed - unable to get local host name.\n");
             perror(" gethostname() call failed ");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         NetEntry = gethostbyname(LocalHostName);
         len = strlen(NetEntry->h_name);
@@ -117,7 +117,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
             printf
                 (" Error: Host name too long for library buffer, length = %ld\n",
                  (long) len);
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         (*HostList) = ulm_new(HostName_t,  1);
         sprintf((char *) HostList[0], NetEntry->h_name, len);
@@ -140,7 +140,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 if (IndxTPStart > argc) {
                     printf
                         ("Error: No hosts specified for host list (option -tph).\n");
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 IndxTPEnd = argc - 1;
             }
@@ -150,23 +150,23 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (CommandLineHostList) {
         if (ReadNPFromFile) {
             printf(" Unable to get number of processes per host.\n");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         /* parse the data */
         *NHosts = 0;
         for (i = IndxTPStart; i <= IndxTPEnd; i++) {
             NArgs =
-                _ulm_ParseString(&ArgList, argv[i], NSeparators,
+                parseString(&ArgList, argv[i], NSeparators,
                                  SeparatorList);
             (*NHosts) += NArgs;
-            _ulm_FreeStringMem(&ArgList, NArgs);
+            FreeStringMem(&ArgList, NArgs);
         }
         /* allocate space for host list, and reparse list */
         (*HostList) = ulm_new(HostName_t,  (*NHosts));
         cnt = 0;
         for (i = IndxTPStart; i <= IndxTPEnd; i++) {
             NArgs =
-                _ulm_ParseString(&ArgList, argv[i], NSeparators,
+                parseString(&ArgList, argv[i], NSeparators,
                                  SeparatorList);
             for (j = 0; j < NArgs; j++) {
                 NetEntry = gethostbyname(ArgList[j]);
@@ -174,14 +174,14 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     printf("Error: Unrecognized host name %s\n",
                            ArgList[j]);
                     perror(" gethostbyname ");
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 len = strlen(NetEntry->h_name);
                 if (len > ULM_MAX_HOSTNAME_LEN) {
                     printf
                         (" Error: Host name too long for library buffer, length = %ld\n",
                          (long) len);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 sprintf((char *) (*HostList)[cnt], NetEntry->h_name, len);
                 cnt++;
@@ -207,7 +207,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (InputHostList == NULL) {
         printf("Error: opening hostlist file: %s\n", argv[i]);
         perror(" Open Error ");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     ExeIndex = 3;
     if (!ExeListFound) {
@@ -229,15 +229,15 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     Found = 0;
     while (fgets(buf, sizeof(buf), InputHostList)) {
         /* check for comment lines */
-        NArgs = _ulm_NStringArgs(buf, 3, " ,\n");
+        NArgs = NStringArgs(buf, 3, " ,\n");
         if (NArgs == 0)
             continue;
         sscanf(buf, "%s", buf1[0]);
         if (!(buf1[0][0] == '#')) {
             /* check to see if line specifying number of hosts exists */
-            NArgs = _ulm_NStringArgs(buf, 2, " =");
+            NArgs = NStringArgs(buf, 2, " =");
             if ((cnt == 0) && (NArgs == 2)) {
-                NArgs = _ulm_ParseString(&ArgList, buf, 2, " =");
+                NArgs = parseString(&ArgList, buf, 2, " =");
                 if (strncmp(ArgList[0], "nhosts", 5) == 0) {
                     *NHosts = atoi(ArgList[1]);
                     if ((*NHosts) == 0) {
@@ -245,7 +245,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                             ("Error: getting number of Hosts from host file.\n");
                         printf(" String Parsed %s\n", ArgList[1]);
                         perror(" Error in atoi ");
-                        exit(-1);
+                        exit(EXIT_FAILURE);
                     }
                 }
                 free(ArgList[0]);
@@ -260,21 +260,21 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 printf("  %d arguments expeted, but got only %d\n",
                        ExpectNArgs, NArgs);
                 printf(" Input line:: %s", buf);
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
-            n = _ulm_ParseString(&ArgList, buf, 3, " ,\n");
+            n = parseString(&ArgList, buf, 3, " ,\n");
             NetEntry = gethostbyname(ArgList[0]);
             if (NetEntry == NULL) {
                 printf("Error: Unrecognized host name %s\n", buf1[0]);
                 perror(" gethostbyname ");
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
             len = strlen(NetEntry->h_name);
             if (len > ULM_MAX_HOSTNAME_LEN) {
                 printf
                     (" Error: Host name too long for library buffer, length = %ld\n",
                      (long) len);
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
 
             if (ReadNPFromFile) {
@@ -283,7 +283,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     printf
                         ("Error: reading in number of process.\n  Input line:: %s",
                          buf1[1]);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
             }
             for (i = 0; i < n; i++)
@@ -300,7 +300,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (Found && (cnt1 < *NHosts)) {
         printf("Error:  Found %d hosts in host_file, but expected %d\n",
                cnt1, *NHosts);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     /* rewind and readin the data  - error already checked for */
     *NHosts = cnt1;
@@ -318,7 +318,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     cnt = 0;
     cnt1 = 0;
     while (fgets(buf, sizeof(buf), InputHostList)) {
-        NArgs = _ulm_NStringArgs(buf, 3, " ,\n");
+        NArgs = NStringArgs(buf, 3, " ,\n");
         if (NArgs == 0)
             continue;
         /* check for comment lines */
@@ -329,7 +329,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 cnt++;
                 continue;
             }
-            n = _ulm_ParseString(&ArgList, buf, 3, " ,\n");
+            n = parseString(&ArgList, buf, 3, " ,\n");
             NetEntry = gethostbyname(ArgList[0]);
             len = strlen(NetEntry->h_name);
             sprintf((char *) (*HostList)[cnt1], NetEntry->h_name, len);
@@ -351,7 +351,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     if (getcwd(DirName, ULM_MAX_PATH_LEN) == NULL) {
                         printf("getcwd() call failed\n");
                         perror(" getcwd ");
-                        exit(-1);
+                        exit(EXIT_FAILURE);
                     }
                     sprintf((char *) (*WorkingDirList)[cnt1], "%s/%s",
                             DirName, ArgList[j]);

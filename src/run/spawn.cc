@@ -67,9 +67,9 @@
 #define GRP_OWN(fs) \
 ( (getgid() == fs.st_gid) && (S_IXGRP & fs.st_mode) )
 
-int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket, 
-                 int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-                 int FirstAppArgument, int argc, char **argv)
+int Spawn(unsigned int *AuthData, int ReceivingSocket, 
+          int **ListHostsStarted, ULMRunParams_t *RunParameters, 
+          int FirstAppArgument, int argc, char **argv)
 {
     int isLocal, isValid;
     char *execName = NULL;
@@ -101,30 +101,30 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
      */
     lampi_environ_find_integer("LAMPI_LOCAL", &isLocal);
     if ( (RunParameters->NHosts == 1) && (1 == isLocal) ) {
-        return mpirun_spawn_exec(AuthData, ReceivingSocket,
-                                 ListHostsStarted, RunParameters,
-                                 FirstAppArgument, argc, argv);
+        return SpawnExec(AuthData, ReceivingSocket,
+                         ListHostsStarted, RunParameters,
+                         FirstAppArgument, argc, argv);
     }
 #if ENABLE_RMS
-    return mpirun_spawn_prun(AuthData, ReceivingSocket,
-                             RunParameters, FirstAppArgument, argc, argv);
+    return SpawnRms(AuthData, ReceivingSocket,
+                    RunParameters, FirstAppArgument, argc, argv);
 #endif
 
 #if ENABLE_BPROC
-    return mpirun_spawn_bproc(AuthData, ReceivingSocket, ListHostsStarted,
-                              RunParameters, FirstAppArgument, argc, argv);
+    return SpawnBproc(AuthData, ReceivingSocket, ListHostsStarted,
+                      RunParameters, FirstAppArgument, argc, argv);
 #endif
 
     if (RunParameters->UseLSF) {
-        return SpawnUserAppLSF(AuthData, ReceivingSocket, 
-                               ListHostsStarted, RunParameters,
-                               FirstAppArgument, argc, argv);
+        return SpawnLsf(AuthData, ReceivingSocket, 
+                        ListHostsStarted, RunParameters,
+                        FirstAppArgument, argc, argv);
     }
 
     /*
      * Default: use rsh to spawn
      */
-    return SpawnUserAppRSH(AuthData, ReceivingSocket, 
-                           ListHostsStarted, RunParameters,
-                           FirstAppArgument, argc, argv);
+    return SpawnRsh(AuthData, ReceivingSocket, 
+                    ListHostsStarted, RunParameters,
+                    FirstAppArgument, argc, argv);
 }

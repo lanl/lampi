@@ -52,27 +52,27 @@
 #include "util/Utility.h"
 #include "client/SocketGeneric.h"
 
-int _ulm_ParseString(char ***ArgList,
-                     const char* InputBuffer,
-                     const int NSeparators,
-		     const char *SeparatorList)
+int parseString(char ***ArgList,
+                const char* InputBuffer,
+                const int NSeparators,
+                const char *SeparatorList)
 {
     /*
-       This function will parse the input string in InputBuffer and
-       return an array of substrings that are separated by the characters
-       identified by SeparatorList.
-       PRE:     SeparatorList is an array of length NSeparators where each
-       character is a delimiter for InputBuffer.
-       ArgList is a reference parameter for an array of strings.
-       POST:    function will create an array of substrings that are
-       delimited by the chars in SeparatorList.  Caller is responsible
-       for freeing the memory.
-     */
+      This function will parse the input string in InputBuffer and
+      return an array of substrings that are separated by the characters
+      identified by SeparatorList.
+      PRE:     SeparatorList is an array of length NSeparators where each
+      character is a delimiter for InputBuffer.
+      ArgList is a reference parameter for an array of strings.
+      POST:    function will create an array of substrings that are
+      delimited by the chars in SeparatorList.  Caller is responsible
+      for freeing the memory.
+    */
 
     /*
-       Example: InputBuffer = "foo:bar/moo;cow", SeparatorList = ":;/'", NSeparators = 4
-       The function returns the array {"foo", "bar", "moo", cow"} in ArgList.
-     */
+      Example: InputBuffer = "foo:bar/moo;cow", SeparatorList = ":;/'", NSeparators = 4
+      The function returns the array {"foo", "bar", "moo", cow"} in ArgList.
+    */
 
     int i, j, cnt, InString;
     size_t len;
@@ -126,7 +126,7 @@ int _ulm_ParseString(char ***ArgList,
         printf("Error: can't allocate memory in parser. Len %ld\n",
                (long) (sizeof(char *) * cnt));
         perror(" Memory allocation failure ");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     cnt = 0;
     InString = 0;
@@ -181,8 +181,8 @@ int _ulm_ParseString(char ***ArgList,
 }
 
 
-int _ulm_NStringArgs(char *InputBuffer, int NSeparators,
-                     char *SeparatorList)
+int NStringArgs(char *InputBuffer, int NSeparators,
+                char *SeparatorList)
 {
     int i, j, cnt;
     int InString;
@@ -223,7 +223,7 @@ int _ulm_NStringArgs(char *InputBuffer, int NSeparators,
     return cnt;
 }
 
-void _ulm_FreeStringMem(char ***ArgList, int NArgs)
+void FreeStringMem(char ***ArgList, int NArgs)
 {
     int i;
     for (i = 0; i < NArgs; i++)
@@ -237,8 +237,8 @@ void _ulm_FreeStringMem(char ***ArgList, int NArgs)
  * end supplies the time stamp.
  */
 
-int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
-                       int MaxDescriptor)
+int SendHeartBeat(int *ClientSocketFDList, int NHosts,
+                  int MaxDescriptor)
 {
     unsigned int tag;
     long RetVal;
@@ -270,7 +270,7 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
             if ((ClientSocketFDList[i] >= 0)
                 && (FD_ISSET(ClientSocketFDList[i], (fd_set *)&WriteSet))) {
                 IOReturn =
-                    _ulm_Send_Socket(ClientSocketFDList[i], 1, IOVec);
+                    SendSocket(ClientSocketFDList[i], 1, IOVec);
                 if (IOReturn < 0)
                     return (int) IOReturn;
             }
