@@ -13,6 +13,7 @@ SRC_LIBMPI += \
 	src/collective/ulm_barrier_intrahost.cc \
 	src/collective/ulm_bcast.cc \
 	src/collective/ulm_bcast_interhost.cc \
+	src/collective/ulm_collective.cc \
 	src/collective/ulm_gather.cc \
 	src/collective/ulm_gather_interhost.cc \
 	src/collective/ulm_gatherv.cc \

@@ -85,6 +85,9 @@ CDECL_BEGIN
 /* Array of collective operations */
 extern coll_op_t ulm_coll_ops[];
 
+/* Lookup function to dynamically choose the appropriate collective implementation. */
+int ulm_comm_get_collective(MPI_Comm comm, int key, void **func);
+
 /* 
  * Collective definitions utilizing the underlying hardware
  * support on quadrics.
