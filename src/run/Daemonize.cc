@@ -80,7 +80,9 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     int *ClientSocketFDList, NHosts, *STDERRfds, *STDOUTfds, *ProcessCnt;
     HostName_t *HostList;
 	adminMessage	*server;
+#ifdef USE_CT
     int		terminateMsgSent = 0;
+#endif
     
 #if defined (__linux__) || defined (__APPLE__)
     struct timeval Time;
