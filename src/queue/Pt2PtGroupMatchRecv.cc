@@ -319,6 +319,11 @@ bool Communicator::matchAgainstSMPFragList(RecvDesc_t * receiver,
     if (privateQueues.OkToMatchSMPFrags[sourceProcess]->size() == 0) {
         return FragFound;
     }
+
+    if (usethreads()) {
+        receiver->Lock.lock();
+    }
+
     int tag = receiver->posted_m.tag_m;
     // loop over list of frags - upper level manages thread safety
 
@@ -347,6 +352,10 @@ bool Communicator::matchAgainstSMPFragList(RecvDesc_t * receiver,
             break;
 
         }                   // end of matched region
+    }
+
+    if (usethreads()) {
+        receiver->Lock.unlock();
     }
 
     return FragFound;
