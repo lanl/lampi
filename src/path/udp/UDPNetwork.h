@@ -38,6 +38,7 @@
 #include <netinet/in.h>
 #include <strings.h>		// for bzero
 
+#include "util/Lock.h"
 
 class UDPNetwork;
 class adminMessage;
@@ -49,6 +50,7 @@ public:
     static const int NPortsPerProc = 2;	// one for short messages and one for long.
     static UDPNetwork* UDPNet;
     static bool checkLongMessageSocket;
+    static Locks longMessageLock;
 
 private:
 

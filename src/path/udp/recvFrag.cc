@@ -119,6 +119,10 @@ int udpRecvFragDesc::pullFrags(int &retVal)
     int longsock = UDPGlobals::UDPNet->getLocalSocket(false);
     maxfdp1 = 1 + longsock;
 
+    if (usethreads()) {
+        UDPGlobals::longMessageLock.lock();
+    }
+
     while (UDPGlobals::checkLongMessageSocket) {
 	FD_ZERO(&readmask);
 	FD_SET(longsock, &readmask);
@@ -140,6 +144,10 @@ int udpRecvFragDesc::pullFrags(int &retVal)
 	else {
 	    break;
 	}
+    }
+
+    if (usethreads()) {
+        UDPGlobals::longMessageLock.unlock();
     }
 
     return bytesRecvd;

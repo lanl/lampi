@@ -60,6 +60,7 @@ extern int initLocalUDPSetup();
 
 UDPNetwork *UDPGlobals::UDPNet = 0;
 bool UDPGlobals::checkLongMessageSocket = true;
+Locks UDPGlobals::longMessageLock;
 
 // executed by the client daemon process only
 int UDPNetwork::beginInitLocal(int num_hosts, int num_procs, int len_name,
