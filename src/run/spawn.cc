@@ -81,7 +81,7 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
     /*
      * Fix for VAPI shared libraries
      */
-    if (RunParameters->Networks.UseIB) {
+    if (RunParams.Networks.UseIB) {
         putenv("NO_IB_PREMAIN_INIT=1");
     }
 
