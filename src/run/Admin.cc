@@ -149,7 +149,7 @@ int CheckForControlMsgs(void)
     for (int host = 0; host < RunParams.NHosts; host++) {
 
         /* test for unexpected exit of daemon */
-        if (ENABLE_BPROC) {
+        if (ENABLE_BPROC && RunParams.ActiveHost[host]) {
             int status;
             pid_t pid = RunParams.DaemonPIDs[host];
 
