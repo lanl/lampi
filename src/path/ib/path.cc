@@ -769,6 +769,8 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
     bool resent_one = false;
+	// retrieve largest_inorder_seq sequence numbers
+	unsigned long long received_seq_no, delivered_seq_no;
 
     // move the timed out frags from FragsToAck back to
     // FragsToSend
@@ -777,14 +779,6 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 
 	// obtain current time
     double curTime = dclock();
-
-	// retrieve received_largest_inorder_seq
-	unsigned long long received_seq_no, delivered_seq_no;
-
-	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].received_largest_inorder_seq;
-	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
 
     *errorCode = ULM_SUCCESS;
 
@@ -799,6 +793,11 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	TmpDesc = 0;
 
 	bool free_send_resources = false;
+
+	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		[FragDesc->globalDestID_m].received_largest_inorder_seq;
+	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
 
 	// move frag if timed out and not sitting at the
 	// receiver
