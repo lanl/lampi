@@ -63,7 +63,7 @@ void GetClientApp(const char *InfoStream)
     int OptionIndex =
         MatchOption("BinaryName", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option BinaryName not found in input parameter database\n"));
+        ulm_err(("Error: Option BinaryName not found in input parameter database\n"));
         Abort();
     }
 
@@ -74,7 +74,7 @@ void GetClientApp(const char *InfoStream)
     /* Check to see if expected data is present */
     cnt = ExeData.GetNSubStrings();
     if ((cnt != 1) && (cnt != RunParameters.NHosts)) {
-        ulm_err(("mpirun: Error: Wrong number of data elements specified for %s or %s\n",
+        ulm_err(("Error: Wrong number of data elements specified for %s or %s\n",
                  ULMInputOptions[OptionIndex].AbreviatedName,
                  ULMInputOptions[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is %d -- should be 1 or %d\n",

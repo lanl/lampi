@@ -230,6 +230,6 @@ link_t *delitem(link_t *listp, int (*fn)(void*,void*),
 	}
 	prev = p;
     }
-    fprintf(stderr, "delitem: data not in list \n");
+    fprintf(stderr, "delitem: data not in list\n");
     return NULL;
 }

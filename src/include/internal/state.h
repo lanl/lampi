@@ -40,11 +40,14 @@
 extern lampiState_t lampiState;
 
 
-#ifdef __cplusplus
-
 /*
  * Accessor methods for state information
  */
+
+#define STATE(X)        lampiState.(X)
+#define SETSTATE(X,Y)  (lampiState.(X) = (Y))
+
+#ifdef __cplusplus
 
 inline int myproc()
 {

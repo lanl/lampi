@@ -222,7 +222,7 @@ void InitSMPSharedMemDevices(int NumLocalProcs)
                                                            &errCode, dev);
                 if (tmpPtr == (void *) (-1L)) {
                     ulm_exit((-1, "SMP Data Buffers::Init Unable to get "
-                              "memory from pool requested %ld bytes \n",
+                              "memory from pool requested %ld bytes\n",
                               SMPSharedMemDevs[dev].SharedPool->
                               PoolChunkSize));
                 }
@@ -259,13 +259,8 @@ void InitSMPSharedMemDevices(int NumLocalProcs)
     InitCollSharedMemDescriptors(NumLocalProcs);
 }
 
-// pool for isend headers
-FreeLists < DoubleLinkList, SMPSendDesc_t, MMAP_SHARED_PROT,
-            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPSendDescs;
-
-// pool for SMP frag descriptors
-FreeLists < DoubleLinkList, SMPSecondFragDesc_t, MMAP_SHARED_PROT,
-            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPFragPool;
+FreeListShared_t<SMPSendDesc_t> SMPSendDescs;
+FreeListShared_t<SMPSecondFragDesc_t> SMPFragPool;
 
 // first frags for which the payload buffers are not yet ready
 ProcessPrivateMemDblLinkList firstFrags;

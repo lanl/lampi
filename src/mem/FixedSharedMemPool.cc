@@ -1,43 +1,34 @@
 /*
- * This file is part of LA-MPI
- *
- * Copyright 2002 Los Alamos National Laboratory
- *
- * This software and ancillary information (herein called "LA-MPI") is
- * made available under the terms described here.  LA-MPI has been
- * approved for release with associated LA-CC Number LA-CC-02-41.
- * 
- * Unless otherwise indicated, LA-MPI has been authored by an employee
- * or employees of the University of California, operator of the Los
- * Alamos National Laboratory under Contract No.W-7405-ENG-36 with the
- * U.S. Department of Energy.  The U.S. Government has rights to use,
- * reproduce, and distribute LA-MPI. The public may copy, distribute,
- * prepare derivative works and publicly display LA-MPI without
- * charge, provided that this Notice and any statement of authorship
- * are reproduced on all copies.  Neither the Government nor the
- * University makes any warranty, express or implied, or assumes any
- * liability or responsibility for the use of LA-MPI.
- * 
- * If LA-MPI is modified to produce derivative works, such modified
- * LA-MPI should be clearly marked, so as not to confuse it with the
- * version available from LANL.
- * 
- * LA-MPI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * LA-MPI is distributed in the hope that it will be useful, but
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307 USA.
+ * Lesser General Public License for more details.
  */
-
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include <stdio.h>
@@ -52,8 +43,8 @@
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/mmap_params.h"
-#include "mem/ULMMallocUtil.h"
 #include "mem/FixedSharedMemPool.h"
+#include "mem/ZeroAlloc.h"
 #include "ulm/errors.h"
 #include "os/numa.h"
 
@@ -90,7 +81,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
     if (!memSegments_m) {
         ulm_exit((-1,
                   "FixedSharedMemPool::init Unable to allocate memory for "
-                  "memSegments_m, requested %ld bytes, errno %d \n",
+                  "memSegments_m, requested %ld bytes, errno %d\n",
                   sizeof(MemorySegment_t *) * nPools_m, errno));
     }
     // allocate nMemorySegments_m
@@ -98,7 +89,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
     if (!nMemorySegments_m) {
         ulm_exit((-1,
                   "FixedSharedMemPool::init Unable to allocate memory for "
-                  "nMemorySegments_m, requested %ld bytes, errno %d \n",
+                  "nMemorySegments_m, requested %ld bytes, errno %d\n",
                   sizeof(int) * nPools_m, errno));
     }
     for (int pool = 0; pool < nPools_m; pool++)
@@ -109,7 +100,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
     if (!nMemorySegmentsInArray_m) {
         ulm_exit((-1,
                   "FixedSharedMemPool::init Unable to allocate memory for "
-                  "nMemorySegmentsInArray, requested %ld bytes, errno %d \n",
+                  "nMemorySegmentsInArray, requested %ld bytes, errno %d\n",
                   sizeof(int) * nPools_m, errno));
     }
     for (int pool = 0; pool < nPools_m; pool++)
@@ -122,7 +113,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
         if (!memSegments_m[pool]) {
             ulm_exit((-1,
                       "FixedSharedMemPool::init Unable to allocate memory "
-                      "for memSegments_m[], requested %ld bytes, errno %d \n",
+                      "for memSegments_m[], requested %ld bytes, errno %d\n",
                       sizeof(MemorySegment_t) * nArrayElementsToAdd_m,
                       errno));
         }
@@ -146,7 +137,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
             if (!tmpPtr) {
                 ulm_exit((-1,
                           "FixedSharedMemPool::init Unable to allocate "
-                          "memory pool , requested %ld, errno %d \n",
+                          "memory pool , requested %ld, errno %d\n",
                           initialAllocation, errno));
             }
             // apply memory affinity
@@ -239,7 +230,7 @@ void *FixedSharedMemPool::getMemorySegment(size_t length,
             if (!tmpMemSeg) {
                 ulm_exit((-1,
                           "FixedSharedMemPool::getMemorySegment Unable to "
-                          "allocate memory for tmpMemSeg, errno %d \n",
+                          "allocate memory for tmpMemSeg, errno %d\n",
                           errno));
             }
             // copy old version of memSegments_m to tmp copy
@@ -275,7 +266,7 @@ void *FixedSharedMemPool::getMemorySegment(size_t length,
             ZeroAlloc(lenToAllocate, MMAP_SHARED_PROT, MMAP_SHARED_FLAGS);
         if (!tmpPtr) {
             ulm_exit((-1, "FixedSharedMemPool::getMemorySegment Unable to "
-                      "allocate memory pool \n"));
+                      "allocate memory pool\n"));
         }
         // apply memory affinity
         if (applyMemoryAffinity) {

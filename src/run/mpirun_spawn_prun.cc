@@ -119,7 +119,7 @@ enum {
 //    server->pack(&tag, (adminMessage::packType)sizeof(int), 1);
 //    server->pack(&(RunParameters->UseCRC), (adminMessage::packType)sizeof(bool), 1);
 //    if (!server->broadcast(adminMessage::RUNPARAMS, &errorCode)) {
-//        ulm_err(("unable to broadcast RUNPARAMS message (error %d)\n",
+//        ulm_err(("Error: Can't broadcast RUNPARAMS message (error %d)\n",
 //                 errorCode));
 //        Abort();
 //    }
@@ -209,7 +209,7 @@ enum {
 //                         (adminMessage::packType) sizeof(int),
 //                         RunParameters->NPathTypes[i]);
 //            if (!server->send(i, adminMessage::NETDEVS, &errorCode)) {
-//                ulm_err(("unable to send NETDEVS message (error %d)\n",
+//                ulm_err(("Error: Can't send NETDEVS message (error %d)\n",
 //                         errorCode));
 //                Abort();
 //            }
@@ -222,7 +222,7 @@ enum {
 //    // send end of input marker
 //    server->reset(adminMessage::SEND);
 //    if( !server->broadcast(adminMessage::ENDRUNPARAMS, &errorCode) ) {
-//        ulm_err(("unable to broadcast ENDRUNPARAMS message (error %d)\n",
+//        ulm_err(("Error: Can't broadcast ENDRUNPARAMS message (error %d)\n",
 //                 errorCode));
 //        Abort();
 //    }

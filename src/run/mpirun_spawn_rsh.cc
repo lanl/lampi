@@ -222,10 +222,10 @@ int mpirun_spawn_rsh(unsigned int *AuthData, char *sock_ip,
             perror("Error forking child for rsh");
             Abort();
         } else if (child == 0) {        /* child */
-            printf("exec_args before forking \n");
+            printf("exec_args before forking\n");
             fflush(stdout);
             for (i = 0; i < END; i++) {
-                printf("exec_args[%i] = %s \n", i, exec_args[i]);
+                printf("exec_args[%i] = %s\n", i, exec_args[i]);
                 fflush(stdout);
             }
 

@@ -78,7 +78,7 @@ while (<>) {
     
     if (not $summary and (exists($ele_data{$key}) 
         or exists($chunk_data{$key}))) {
-        print "Duplicate entries for $fields[0], key = $key \n";
+        print "Duplicate entries for $fields[0], key = $key\n";
         exit(0);
     }
     

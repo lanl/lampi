@@ -129,7 +129,7 @@ int ulm_bcast_interhost(void *buf, size_t count, ULMType_t * type,
             }
 
             if (0) {            /* debug */
-                ulm_warn(("comm %d tag %d peer %d \n", comm, tag, peer));
+                ulm_warn(("comm %d tag %d peer %d\n", comm, tag, peer));
             }
         }
     }

@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,7 +49,7 @@ class gmFragBuffer : public Links_t {
  public:
     gmFragBuffer *me;
     gmHeader header;
-    char payload[GMFRAG_DEFAULT_FRAGMENT_SIZE - sizeof(gmHeader)]; 
+    char payload[GMFRAG_DEFAULT_FRAGMENT_SIZE - sizeof(gmHeader)];
 
     gmFragBuffer(int poolIndex) {}
 };
@@ -67,9 +70,8 @@ public:
     gm_port *gmPort;
     char macAddress[LENMACADDR];
     remoteDevInfo_t *remoteDevList;
-    MemoryPool <MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> memPool;
-    FreeLists <DoubleLinkList, gmFragBuffer,
-               MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> bufList; 
+    MemoryPoolPrivate_t memPool;
+    FreeListPrivate_t <gmFragBuffer> bufList;
     bool devOK;
 
     localDevInfo_t() { devOK = true; }
@@ -99,7 +101,7 @@ public:
     /* list of reserved GM ports */
     int reservedPorts[NUM_RESERVED_PORTS];
 
-    /* upper limit on number of devices to open 
+    /* upper limit on number of devices to open
      *   -1 == as many as*/
     int maxGMDevs;
 
@@ -128,21 +130,12 @@ public:
     bool doChecksum;
 
     /* free list of GM send fragments */
-    FreeLists <
-        DoubleLinkList,
-        gmSendFragDesc,
-        MMAP_PRIVATE_PROT,
-        MMAP_PRIVATE_FLAGS,
-        MMAP_SHARED_FLAGS > sendFragList;
+    FreeListPrivate_t <gmSendFragDesc> sendFragList;
 
     /* free list of GM receive fragments */
-    FreeLists <
-        DoubleLinkList,
-        gmRecvFragDesc,
-        MMAP_PRIVATE_PROT,
-        MMAP_PRIVATE_FLAGS,
-        MMAP_SHARED_FLAGS > recvFragList;
-    gmState_t() 
+    FreeListPrivate_t <gmRecvFragDesc> recvFragList;
+
+    gmState_t()
 	{
             reservedPorts[0] = 0;
             reservedPorts[1] = 1;

@@ -74,16 +74,14 @@ ProcessPrivateMemDblLinkList UnackedPostedSends;
 ProcessPrivateMemDblLinkList UnprocessedAcks;
 
 // pool of contiguous Ireceive descriptors
-FreeLists < DoubleLinkList, RecvDesc_t, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > IrecvDescPool;
+FreeListPrivate_t <RecvDesc_t> IrecvDescPool;
 ssize_t maxPgsIn1IRecvDescDescList = -1;
 ssize_t minPgsIn1IRecvDescDescList = -1;
 long maxIRecvDescRetries = 1000;
 bool irecvDescDescAbortWhenNoResource = true;
 
 // pool of RequestDesc_ts
-FreeLists < DoubleLinkList, RequestDesc_t, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > ulmRequestDescPool;
+FreeListPrivate_t <RequestDesc_t> ulmRequestDescPool;
 
 // list of request objects that are potentially still being used
 ProcessPrivateMemDblLinkList _ulm_incompleteRequests;
@@ -129,9 +127,8 @@ groupPool grpPool;
 //
 int nIncreaseGroupArray;
 
+FreeListPrivate_t <ptrLink_t> pointerPool;
 
-FreeLists < DoubleLinkList, ptrLink_t, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > pointerPool;
 ssize_t npointerPoolPages = -1;
 ssize_t maxPgsIn1pointerPool = -1;
 ssize_t minPgsIn1pointerPool = -1;
@@ -169,20 +166,18 @@ extern ProcessPrivateMemDblLinkList UnackedPostedSends;
 extern ProcessPrivateMemDblLinkList UnprocessedAcks;
 
 // pool of Utsend descriptors
-extern FreeLists < DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
-                   MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UtsendDescriptors;
+extern FreeListShared_t <UtsendDesc_t> UtsendDescriptors;
 
 // pool of IReceive descriptors
-extern FreeLists < DoubleLinkList, RecvDesc_t, MMAP_PRIVATE_PROT,
-                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > IrecvDescPool;
+extern FreeListPrivate_t <RecvDesc_t> IrecvDescPool;
+
 extern ssize_t maxPgsIn1IRecvDescDescList;
 extern ssize_t minPgsIn1IRecvDescDescList;
 extern long maxIRecvDescRetries;
 extern bool irecvDescDescAbortWhenNoResource;
 
 // pool of RequestDesc_ts
-extern FreeLists < DoubleLinkList, RequestDesc_t, MMAP_PRIVATE_PROT,
-                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > ulmRequestDescPool;
+extern FreeListPrivate_t <RequestDesc_t> ulmRequestDescPool;
 
 // list of request objects that are potentially still being used
 extern ProcessPrivateMemDblLinkList _ulm_incompleteRequests;
@@ -227,8 +222,8 @@ extern groupPool grpPool;
 extern int nIncreaseGroupArray;
 
 // double link list of pointers pool
-extern FreeLists < DoubleLinkList, ptrLink_t, MMAP_PRIVATE_PROT,
-                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > pointerPool;
+extern FreeListPrivate_t <ptrLink_t> pointerPool;
+
 extern ssize_t npointerPoolPages;
 extern ssize_t maxPgsIn1pointerPool;
 extern ssize_t minPgsIn1pointerPool;
@@ -248,16 +243,14 @@ extern double lastCheckForRetransmits;
 extern FixedSharedMemPool PerProcSharedMemoryPools;
 
 // shared memory pool for descriptors
-extern MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-    MMAP_SHARED_FLAGS > *ShareMemDescPool;
+extern MemoryPoolShared_t *ShareMemDescPool;
 
 // mumber of bytes for shared memory descriptor pool - ShareMemDescPool
 extern ssize_t bytesPerProcess;
 
 // shared memory pool for larger objects - pool chunks will be larger for
 // more effcient allocation
-extern MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-    MMAP_SHARED_FLAGS > *largeShareMemDescPool;
+extern MemoryPoolShared_t *largeShareMemDescPool;
 
 // mumber of bytes for shared memory descriptor pool - ShareMemDescPool
 extern ssize_t largePoolBytesPerProcess;

@@ -139,8 +139,7 @@ public:
             num_used++;
         }
         if (num_used >= num_children) {
-            fprintf(stderr,
-                    "Warning: number of children exceed requested number..  resetting.\n");
+            ulm_warn(("Warning: number of children exceed requested number..  resetting.\n"));
             num_used = 0;
         }
         children[num_used] = pid;

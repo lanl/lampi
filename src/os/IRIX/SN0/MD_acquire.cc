@@ -81,9 +81,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 nummlds = numcpus;
                 mldnum = ulm_new(int, nummlds);
                 if (!mldnum) {
-                    fprintf(stderr,
-                            " error allocating mldnum.  nummlds = %d\n",
-                            nummlds);
+                    ulm_err(("Error: Out of memory\n"));
                     _emit_error_msg_and_exit();
                 }
                 //! set mld number and cpu number (0 always) for process i
@@ -94,9 +92,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 //! setup mlds
                 mld = ulm_new(pmo_handle_t, nummlds);
                 if (!mld) {
-                    fprintf(stderr,
-                            " error allocating mld.  nummlds = %d\n",
-                            nummlds);
+                    ulm_err(("Error: Out of memory\n"));
                     _emit_error_msg_and_exit();
                 }
                 for (i = 0; i < nummlds; i++) {
@@ -105,7 +101,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 //! setup mld set
                 mldset = mldset_create(mld, nummlds);
                 if (mldset == -1) {
-                    fprintf(stderr, " error crating mldset\n");
+                    ulm_err(("Error: Creating msdset\n"));
                     _emit_error_msg_and_exit();
                 }
             } else {
@@ -113,9 +109,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 nummlds = ((numcpus - 1) / 2) + 1;
                 mldnum = ulm_new(int, numcpus);
                 if (!mldnum) {
-                    fprintf(stderr,
-                            " error allocating mldnum.  nummlds = %d\n",
-                            nummlds);
+                    ulm_err(("Error: Out of memory\n"));
                     _emit_error_msg_and_exit();
                 }
                 //! set mld number and cpu number (0 always) for process i
@@ -127,9 +121,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 //! setup mlds
                 mld = ulm_new(pmo_handle_t, nummlds);
                 if (!mld) {
-                    fprintf(stderr,
-                            " error allocating mld.  nummlds = %d\n",
-                            nummlds);
+                    ulm_err(("Error: Out of memory\n"));
                     _emit_error_msg_and_exit();
                 }
                 for (i = 0; i < nummlds; i++) {
@@ -138,7 +130,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 //! setup mld set
                 mldset = mldset_create(mld, nummlds);
                 if (mldset == -1) {
-                    fprintf(stderr, " error crating mldset\n");
+                    ulm_err(("Error: Creating mldset\n"));
                     _emit_error_msg_and_exit();
                 }
             }
@@ -148,9 +140,9 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 mldset_place(mldset, TOPOLOGY_FREE, NULL, 0,
                              RQMODE_MANDATORY);
             if (RetVal < 0) {
-                fprintf(stderr, "Warning: Could not place mldset\n");
+                ulm_warn(("Warning: Could not place mldset\n"));
                 if (affinityMandatory) {
-                    fprintf(stderr, " exiting\n");
+                    ulm_err(("Error: exiting\n"));
                     _emit_error_msg_and_exit();
                 }
             } else {
@@ -165,9 +157,8 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
 
             //! sanity check
             if (numcpus != numraffs) {
-                fprintf(stderr, " Error :: numcpus != numraffs.\n");
-                fprintf(stderr, "   numcpus = %d ,  numraffs = %d\n",
-                        numcpus, numraffs);
+                ulm_err(("Error: numcpus (%d) != numraffs (%d)\n",
+                         numcpus, numraffs));
                 _emit_error_msg_and_exit();
             }
             nummlds = numcpus;
@@ -181,15 +172,14 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                 //! figure out if this is cpu a or cpu b
                 char *cpuPtr = strstr("cpu", (char *) (raff->resource));
                 if (cpuPtr == NULL) {
-                    fprintf(stderr, " can''t find cpu string\n");
+                    ulm_err(("Error: Can't find cpu string\n"));
                     _emit_error_msg_and_exit();
                 }
                 int len = cpuPtr - (char *) (raff->resource);
                 len = len + 5;
                 if (len > raff->reslen) {
-                    fprintf(stderr,
-                            " can''t find which cpu in string :: %s\n",
-                            raff->resource);
+                    ulm_err(("Error: Can't find which cpu in string (%s)\n",
+                             raff->resource));
                     _emit_error_msg_and_exit();
                 }
 
@@ -202,8 +192,8 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
             //! setup mlds
             mld = ulm_new(pmo_handle_t, nummlds);
             if (!mld) {
-                fprintf(stderr, " error allocating mld.  nummlds = %d\n",
-                        nummlds);
+                ulm_err(("Error: Allocating mld. nummlds = %d\n",
+                         nummlds));
                 _emit_error_msg_and_exit();
             }
             for (i = 0; i < nummlds; i++) {
@@ -212,7 +202,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
             //! setup mld set
             mldset = mldset_create(mld, nummlds);
             if (mldset == -1) {
-                fprintf(stderr, " error crating mldset\n");
+                ulm_err(("Error: Creating mldset\n"));
                 _emit_error_msg_and_exit();
             }
             //! place mld
@@ -220,9 +210,8 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
                                       rafflist, numraffs,
                                       RQMODE_MANDATORY);
             if (RetVal < 0) {
-                fprintf(stderr, "Warning: Could not place mldset\n");
+                ulm_warn(("Warning: Could not place mldset\n"));
                 if (affinityMandatory) {
-                    fprintf(stderr, " exiting\n");
                     _emit_error_msg_and_exit();
                 }
             } else {
@@ -251,16 +240,6 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
         if (hwBarrier.nPools <= 0)
             useO2kFetchOpHardware = false;
     }
-#ifdef _BLAH_
-    for (int i = 0; i < numcpus; i++) {
-        char devName[100];
-        int len = 100;
-        dev_t devT = __mld_to_node(mld[mldnum[i]]);
-        char *name = dev_to_devname(devT, &(devName[0]), &len);
-        fprintf(stderr, "  xx path %s len %d\n", name, len);
-        fflush(stderr);
-    }
-#endif                          // _BLAH_
 
     //! setup policy module
     numpms = 0;
@@ -278,7 +257,7 @@ bool acquire::init_base(int p, bool cpu2node, pmo_handle_t * mldlist,
             ps.placement_policy_args = (void *) mld[mldnum[cpu]];
             pm[cpu] = pm_create(&ps);
             if (pm[cpu] == -1) {
-                fprintf(stderr, " error returned from pm_create\n");
+                ulm_err(("Error: pm_create\n"));
                 _emit_error_msg_and_exit();
             }
         }
@@ -565,7 +544,7 @@ int acquire::allocO2kFetchOpbarrierPools()
                 (barrierFetchOpData *)
                 ulm_malloc(sizeof(barrierFetchOpData));
             if (!(hwBarrier.pool[pl][ele].barrierData)) {
-                ulm_exit((-1, "Aborting \n"));
+                ulm_exit((-1, "Aborting\n"));
             }
             // mark element as available
             (hwBarrier.pool[pl][ele]).inUse = false;
@@ -599,10 +578,7 @@ int acquire::nodeListFromCpuList(int nCpus, int *nNodes,
         int lenNodeName = 1024;
         dev_t devT = __mld_to_node(mld[mldnum[cpu]]);
         char *name = dev_to_devname(devT, &(devName[0]), &lenNodeName);
-/* debug
-   fprintf(stderr, "  xx path %s len %d\n",name, lenNodeName);
-   fflush(stderr);
-   end debug */
+
         if (name == NULL)
             return ULM_ERR_BAD_PARAM;
 
@@ -700,13 +676,6 @@ int acquire::nodeListFromCpuList(int nCpus, int *nNodes,
         }
 
     }                           // end loop over cpus
-/* debug
-   fprintf(stderr, " Node list :: nodeNumber %d\n",nodeNumber);
-   for(int i=0 ; i < nodeNumber ; i++ ){
-   fprintf(stderr, " Node number :: %d :: name %s\n",
-   i, (*nodeRaffList)[i].resource);
-   }
-   end debug */
 
     return ULM_SUCCESS;
 }

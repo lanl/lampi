@@ -78,7 +78,7 @@ void quadricsInitRecvDescs() {
 	    );
 
     if ( retVal ) {
-	ulm_err(("Unable to initialize quadricsRecvFragDescs freelists!\n"));
+	ulm_err(("Error: Can't initialize quadricsRecvFragDescs freelists!\n"));
 	exit(1);
     }
 
@@ -113,7 +113,7 @@ void quadricsInitSendFragDescs() {
 	  0, quadricsSendFragDescsDescAbortWhenNoResource);
 
     if ( retVal ) {
-        ulm_err(("Unable to initialize quadricsSendFragDescs freelists!\n"));
+        ulm_err(("Error: Can't initialize quadricsSendFragDescs freelists!\n"));
         exit(1);
     }
 

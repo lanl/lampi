@@ -28,8 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -46,16 +44,16 @@ static int TerminateInitiated;
 /*
  * abort a user application
  */
-void Abort(void)
+void AbortFunction(const char *file, int line)
 {
-    /* abort if no Clients forked yet */
+    _ulm_set_file_line(file, line);
     if (!ULMRunSpawnedClients) {
-        ulm_err(("mpirun exiting (no clients spawned)\n"));
+        _ulm_err("mpirun exiting: (no clients spawned)\n");
         if (RunParameters.CmdLineOK == 0) {
             Usage(stderr);
         }
     } else if (TerminateInitiated == 0) {
-        ulm_err(("mpirun exiting (aborting clients)\n"));
+        _ulm_err("mpirun exiting: (aborting clients)\n");
         TerminateInitiated = 1;
         mpirunAbortAllHosts(RunParameters.Networks.
                             TCPAdminstrativeNetwork.SocketsToClients,
@@ -64,10 +62,12 @@ void Abort(void)
     exit(EXIT_FAILURE);
 }
 
+
 int mpirunGetTerminateInitiated(void)
 {
     return TerminateInitiated;
 }
+
 
 void mpirunSetTerminateInitiated(int val)
 {

@@ -118,7 +118,7 @@ void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
     if (RunParameters->TVDebugApp != 0)
         return;
     /* debug */
-    fprintf(stderr," debugging deamons \n");
+    fprintf(stderr," debugging deamons\n");
     fflush(stderr);
     /* end debug */
 
@@ -148,7 +148,7 @@ void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
 extern "C" void MPIR_Breakpoint(void)
 {
     if (TVDummy != 0) {
-        fprintf(stderr, " TVDummy != 0\n");
+        ulm_err(("Error: Debugger setup: TVDummy != 0\n"));
         Abort();
     }
     while (TVDummy == 1) ;

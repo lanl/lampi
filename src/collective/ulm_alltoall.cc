@@ -79,8 +79,8 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 
     sendRequest = (ULMRequestHandle_t *)ulm_malloc(sizeof(ULMRequestHandle_t) * comm_size);
     if (!sendRequest) {
-	fprintf(stderr, "ulm_alltoall: unable to allocate send request array memory!\n");
-	exit(-1);
+	ulm_err(("Error: Out of memory\n"));
+	return MPI_ERR_INTERN;
     }
 
     if (comm_size > 100)

@@ -230,7 +230,7 @@ ssize_t _ulm_Recv_Socket(int SourceFD, void *OutputBuffer,
         RetVal = ulm_readv(SourceFD, RecvIovec, 1);
         if ((RetVal < 0) && (errno != EINTR)) {
             *error = errno;
-            ulm_err(("return from readv %d errno %d pid %u \n", RetVal, errno,getpid()));
+            ulm_err(("return from readv %d errno %d pid %u\n", RetVal, errno,getpid()));
             break;
         }
         else if (RetVal == 0) {

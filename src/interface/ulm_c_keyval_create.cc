@@ -70,7 +70,7 @@ extern "C" int ulm_c_keyval_create(MPI_Copy_function *copyFunction,
 						      sizeof(attributes_t)*
 						      ( attribPool.poolSize+Communicator::ATTRIBUTE_CACHE_GROWTH_INCREMENT ) );
 	if( !attribPool.attributes) {
-	    ulm_err((" Error allocating space for attribPool.attributes\n"));
+	    ulm_err(("Error: allocating space for attribPool.attributes\n"));
 	    attribPool.poolLock.unlock();
 	    return MPI_ERR_BUFFER;
 	}

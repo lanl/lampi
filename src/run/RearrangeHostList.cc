@@ -73,8 +73,7 @@ void _ulm_RearrangeHostList(const char *InfoStream)
     int OptionIndex =
         MatchOption("MasterHost", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "Option TotalViewDebugStartup not found in Input parameter data base\n");
+        ulm_err(("Error: Option TotalViewDebugStartup not found\n"));
         Abort();
     }
     /* parse MasterHost data */
@@ -83,9 +82,8 @@ void _ulm_RearrangeHostList(const char *InfoStream)
 
     i = MHData.GetNSubStrings();
     if (i != 1) {
-        fprintf(stderr,
-                "Incorrect number of host listed for MastterHost.\n");
-        fprintf(stderr, "  Number listed %d, but should be 1.\n", i);
+        ulm_err(("Error: Incorrect number of host listed for MasterHost.\n"
+                 "\tNumber listed %d, but should be 1.\n", i));
         Abort();
     }
 
@@ -93,8 +91,8 @@ void _ulm_RearrangeHostList(const char *InfoStream)
     /* get host name */
     NetEntry = gethostbyname(*(MHData.begin()));
     if (NetEntry == NULL) {
-        fprintf(stderr, "Error: Unrecognized host name %s\n",
-                *(MHData.begin()));
+        ulm_err(("Error: Unrecognized host name %s\n",
+                *(MHData.begin())));
         perror(" gethostbyname ");
         Abort();
     }

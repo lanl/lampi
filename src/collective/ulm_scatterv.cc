@@ -74,7 +74,7 @@ extern "C" int ulm_scatterv(void *sendbuf, int *sendcounts, int *displs,
     int myLocalRank = commPtr->localGroup->onHostProcID;
     if (commPtr->sharedCollectiveData->max_length <
         (sizeof(size_t) * nProcs)) {
-        ulm_err(("Error: in ulm_gatherv - not enough space for interhost broadcast \n"));
+        ulm_err(("Error: in ulm_gatherv - not enough space for interhost broadcast\n"));
         commPtr->releaseCollectiveSMBuffer(collDesc);
         return ULM_ERR_OUT_OF_RESOURCE;
     }
@@ -94,10 +94,7 @@ extern "C" int ulm_scatterv(void *sendbuf, int *sendcounts, int *displs,
     returnValue =
         ulm_bcast_interhost(bpc, len, (ULMType_t *) MPI_BYTE, root, comm);
     if (returnValue != ULM_SUCCESS) {
-        fprintf(stderr, " ulm_bcast_interhost returned error %d \n",
-                returnValue);
-        fflush(stderr);
-        ulm_err(("Error: ulm_bcast_interhost returned error %d \n",
+        ulm_err(("Error: ulm_bcast_interhost returned error %d\n",
                  returnValue));
         commPtr->releaseCollectiveSMBuffer(collDesc);
         return returnValue;
@@ -260,7 +257,7 @@ extern "C" int ulm_scatterv(void *sendbuf, int *sendcounts, int *displs,
                                                    interhostGatherScatterTree),
                                                  dataToSendNow, root, tag);
             if (returnValue != ULM_SUCCESS) {
-                ulm_err(("Error: error returned from ulm_scatterv_interhost %d \n", returnValue));
+                ulm_err(("Error: error returned from ulm_scatterv_interhost %d\n", returnValue));
                 commPtr->releaseCollectiveSMBuffer(collDesc);
                 return returnValue;
             }
@@ -324,7 +321,7 @@ extern "C" int ulm_scatterv(void *sendbuf, int *sendcounts, int *displs,
                               &recv_type_index, &recv_map_index,
                               &recv_map_offset);
                 if (returnValue < 0 ) {
-                    ulm_err(("Error: ulm_scatterv : error returned from type_pack :: %d \n", returnValue));
+                    ulm_err(("Error: ulm_scatterv : error returned from type_pack :: %d\n", returnValue));
                     commPtr->releaseCollectiveSMBuffer(collDesc);
                     return ULM_ERROR;
                 }

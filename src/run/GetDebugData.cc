@@ -52,7 +52,7 @@ void GetTVDaemon(const char *InfoStream)
     int OptionIndex = MatchOption("TotalViewDebugStartup", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option TotalViewDebugStartup not found in Input parameter database\n"));
+        ulm_err(("Error: Option TotalViewDebugStartup not found in Input parameter database\n"));
         Abort();
     }
     RunParameters.TVDebug = 1;

@@ -106,7 +106,7 @@ public:
     inline int
         get_max_resource(resource_type rt) {
         if (!(rt < R_NUM_RESOURCES)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         return max_resources[rt];
     }
@@ -114,7 +114,7 @@ public:
     inline int
         get_num_resource(resource_type rt) {
         if (!(rt < R_NUM_RESOURCES)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         return(rreq[rt]);
     }
@@ -125,7 +125,7 @@ public:
     inline resource_info *
         get_resource(resource_type rt) {
         if (!(rt < R_NUM_RESOURCES)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         return resources[rt];
     }
@@ -136,10 +136,10 @@ public:
     inline void
         add_constraint(resource_type rt, int n) {
         if (!((rt < R_TOTAL_RESOURCES) && (rt != R_NUM_RESOURCES))) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         if (!(n <= max_resources[rt])) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         /***
             if (rreq[rt] != 0) {
@@ -155,13 +155,13 @@ public:
     inline void
         add_constraint(resource_type rt, topology *t) {
         if (!((rt < R_TOTAL_RESOURCES) && (rt != R_NUM_RESOURCES))) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         if (!(t)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         if (!(t->get_num_nodes() <= max_resources[rt])) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         /***
             if (rreq[rt] != 0) {
@@ -179,10 +179,10 @@ public:
         add_constraint(resource_type rt, int n, constraint_info *c) {
         int i;
         if (!((rt < R_TOTAL_RESOURCES) && (rt != R_NUM_RESOURCES))) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         if (!(c)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         for (i = 0; i < n; i++) {
             MD_add_constraint(rt, &c[i]);

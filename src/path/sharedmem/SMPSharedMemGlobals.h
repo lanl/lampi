@@ -98,13 +98,10 @@ extern long maxSMPCollFragDescRetries;
 extern bool SMPCollFragDescAbortWhenNoResource;
 
 //! SMP send descriptor list
-
-extern FreeLists<DoubleLinkList, SMPSendDesc_t, MMAP_SHARED_PROT, 
-                 MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> SMPSendDescs;
+extern FreeListShared_t <SMPSendDesc_t> SMPSendDescs;
 
 //! SMP frag descriptor list
-extern FreeLists<DoubleLinkList, SMPSecondFragDesc_t, MMAP_SHARED_PROT, 
-                 MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> SMPFragPool;
+extern FreeListShared_t <SMPSecondFragDesc_t> SMPFragPool;
 
 //! frag queue
 extern SharedMemDblLinkList **SMPincomingFrags;

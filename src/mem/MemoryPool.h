@@ -1,44 +1,36 @@
 /*
- * This file is part of LA-MPI
- *
- * Copyright 2002 Los Alamos National Laboratory
- *
- * This software and ancillary information (herein called "LA-MPI") is
- * made available under the terms described here.  LA-MPI has been
- * approved for release with associated LA-CC Number LA-CC-02-41.
- * 
- * Unless otherwise indicated, LA-MPI has been authored by an employee
- * or employees of the University of California, operator of the Los
- * Alamos National Laboratory under Contract No.W-7405-ENG-36 with the
- * U.S. Department of Energy.  The U.S. Government has rights to use,
- * reproduce, and distribute LA-MPI. The public may copy, distribute,
- * prepare derivative works and publicly display LA-MPI without
- * charge, provided that this Notice and any statement of authorship
- * are reproduced on all copies.  Neither the Government nor the
- * University makes any warranty, express or implied, or assumes any
- * liability or responsibility for the use of LA-MPI.
- * 
- * If LA-MPI is modified to produce derivative works, such modified
- * LA-MPI should be clearly marked, so as not to confuse it with the
- * version available from LANL.
- * 
- * LA-MPI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * LA-MPI is distributed in the hope that it will be useful, but
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307 USA.
+ * Lesser General Public License for more details.
  */
-
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
 
 #ifndef _MEMORYPOOL
 #define _MEMORYPOOL
@@ -49,288 +41,282 @@
 #include "util/Lock.h"
 #include "ulm/ulm.h"
 #include "mem/ULMMallocMacros.h"
-#include "mem/ULMMallocUtil.h"
+#include "mem/ZeroAlloc.h"
 
 #ifdef GM
 #include <gm.h>
 #endif
 
-//!
-//! This routine is used to create and manage a memory pool.
-//!   mmap of /dev/zero will be used so that this can be used
-//!   to allocate both process private and process shared 
-//!   memory.
-//!
 
-class PoolBlockData {
-public:
-    // usage flags
-    unsigned short flags;
-    // which bucket does this belong to
-    int BucketIndex;
-    // base pointer
-    void *BasePtr;
-};
+// Class used to manage a memory pool that is anonymously mmap-ed 
+// so that it can be both process private or process shared 
 
 template <int MemProt, int MemFlags, int SharedMemFlag>
-class MemoryPool 
+class MemoryPool_t
 {
+    class ChunkDesc_t {
+    public:
+        unsigned short flags;   // usage flags
+        int BucketIndex;        // which bucket does this belong to
+        void *BasePtr;          // base pointer
+    };
+
 public:
-    //! size of each chunk allocation - in bytes
-    unsigned long long ChunkSize;
-    
-    //! number of chunks
-    long NPoolChunks;
-    
-    //! maximum number of pool chunks
-    long maxNPoolChunks;
-    
-    //! lock
-    Locks Lock;
-    
-    //! page size - needed to adjust ChunkSize to be a multiple of this
-    size_t PageSize;
-    
-    //! array of information about each chunk
-    PoolBlockData *ChunkDescriptors;
-    
-    // next available chunk
-    long NextAvailChunk;
-   
+
+    // --STATE--
+
+    size_t ChunkSize;           // size of each chunk allocation - in bytes
+    long NPoolChunks;           // number of chunks
+    long maxNPoolChunks;        // maximum number of pool chunks
+    Locks Lock;                 // lock
+    size_t PageSize;            // page size
+    ChunkDesc_t *ChunkDesc;     // array of information about each chunk
+    long NextAvailChunk;        // next available chunk
 #ifdef GM
-    struct gm_port *gmPort;
+    struct gm_port *gmPort;     // for mlocking Myrinet memory buffers
 #endif
 
-    MemoryPool() 
-    { 
-#ifdef GM
-        gmPort = 0; 
-#endif
-    }
+    // --METHODS--
 
-    // d'tor
-    ~MemoryPool()
-    {
-        if (MemFlags != SharedMemFlag && ChunkDescriptors) {
-            ulm_delete(ChunkDescriptors);
-            ChunkDescriptors = 0;
+    MemoryPool_t()
+        {
+#ifdef GM
+            gmPort = 0;
+#endif
         }
-    }
 
-    //! request chunk of memory
+    ~MemoryPool_t()
+        {
+            if (MemFlags != SharedMemFlag && ChunkDesc) {
+                ulm_delete(ChunkDesc);
+                ChunkDesc = 0;
+            }
+        }
+
+    // request chunk of memory
     void *RequestChunk(int poolIndex)
         {
-            void *ReturnPtr=(void *)-1L;
-            
+            void *ReturnPtr = (void *) -1L;
+
             // grab lock on pool
             Lock.lock();
-            
-            //! Have we used all the allocated memory ?
-            if( NextAvailChunk == NPoolChunks ){
-                
-                //! can we increase the pool size ?  We currently won't grow a shared
-                //!  memory region
-                if( (MemFlags == SharedMemFlag ) || 
-                    ( (maxNPoolChunks > 0) && (maxNPoolChunks == maxNPoolChunks) ) ) {
+
+            // Have we used all the allocated memory ?
+            if (NextAvailChunk == NPoolChunks) {
+
+                // can we increase the pool size ?  We currently won't grow a shared
+                //  memory region
+                if ((MemFlags == SharedMemFlag) ||
+                    ((maxNPoolChunks > 0)
+                     && (maxNPoolChunks == maxNPoolChunks))) {
                     Lock.unlock();
                     return ReturnPtr;
                 }
-                
                 // allocate larger array of chunk descriptors
-                PoolBlockData *TmpDesc= ulm_new(PoolBlockData, NPoolChunks+1);
+                ChunkDesc_t *TmpDesc =
+                    ulm_new(ChunkDesc_t, NPoolChunks + 1);
                 // copy old array into new array
-                for( int desc=0 ; desc < NPoolChunks ; desc++ ) {
-                    TmpDesc[desc]=ChunkDescriptors[desc];
+                for (int desc = 0; desc < NPoolChunks; desc++) {
+                    TmpDesc[desc] = ChunkDesc[desc];
                 }
                 // free old array
-                ulm_delete(ChunkDescriptors);
+                ulm_delete(ChunkDesc);
                 // set old array pointer to point to new array
-                ChunkDescriptors=TmpDesc;
-                
+                ChunkDesc = TmpDesc;
+
                 // allocate new memory chunk
-                ChunkDescriptors[NPoolChunks].BasePtr=
-                    ZeroAlloc(ChunkSize, MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS);
-                if(!ChunkDescriptors[NPoolChunks].BasePtr){
-                    ulm_err(("Unable to allocate memory for process private "
-                             "descriptors \n"));
+                ChunkDesc[NPoolChunks].BasePtr =
+                    ZeroAlloc(ChunkSize, MMAP_PRIVATE_PROT,
+                              MMAP_PRIVATE_FLAGS);
+                if (!ChunkDesc[NPoolChunks].BasePtr) {
+                    ulm_err(("Error: Out of memory (ZeroAlloc)\n"));
                     Lock.unlock();
                     return ReturnPtr;
                 }
 #ifdef GM
                 if (gmPort) {
-                    gm_status_t returnValue = gm_register_memory(gmPort, 
-                        ChunkDescriptors[NPoolChunks].BasePtr, ChunkSize);
+                    gm_status_t returnValue =
+                        gm_register_memory(gmPort,
+                                           ChunkDesc[NPoolChunks].BasePtr,
+                                           ChunkSize);
                     if (returnValue != GM_SUCCESS) {
-                        ulm_err(("Unable to register memory for GM (returnValue = %d)\n",
-                            (int)returnValue));
+                        ulm_err(("Error: Unable to register memory for GM (returnValue = %d)\n",
+                                 (int) returnValue));
                         return ReturnPtr;
                     }
                 }
 #endif
-                
+
                 // reset pool chunk counter
                 NPoolChunks++;
             }
-            
             // grab chunk
-            ReturnPtr=ChunkDescriptors[NextAvailChunk].BasePtr;
-            ChunkDescriptors[NextAvailChunk].flags=ALLOCELEMENT_FLAG_INUSE;
-            ChunkDescriptors[NextAvailChunk].BucketIndex=poolIndex;
-            
+            ReturnPtr = ChunkDesc[NextAvailChunk].BasePtr;
+            ChunkDesc[NextAvailChunk].flags = ALLOCELEMENT_FLAG_INUSE;
+            ChunkDesc[NextAvailChunk].BucketIndex = poolIndex;
+
             // find next available chunk
-            bool freeChunkFound=false;
-            int NextChunkToUse=NextAvailChunk+1;
-            while ( NextChunkToUse < NPoolChunks ) {
-                
-                if ( ChunkDescriptors[NextChunkToUse].flags == ALLOCELEMENT_FLAG_AVAILABLE ){
-                    NextAvailChunk=NextChunkToUse;
-                    freeChunkFound=true;
+            bool freeChunkFound = false;
+            int NextChunkToUse = NextAvailChunk + 1;
+            while (NextChunkToUse < NPoolChunks) {
+
+                if (ChunkDesc[NextChunkToUse].flags ==
+                    ALLOCELEMENT_FLAG_AVAILABLE) {
+                    NextAvailChunk = NextChunkToUse;
+                    freeChunkFound = true;
                     break;
                 }
-                
+
                 NextChunkToUse++;
             }
             // if no chunks available set next chunk past end of list so that next
             // time around more memory will be allocated
-            if( !freeChunkFound ) {
-                NextAvailChunk=NPoolChunks;
+            if (!freeChunkFound) {
+                NextAvailChunk = NPoolChunks;
             }
-            
             // unlock pool
             Lock.unlock();
-            
+
             return ReturnPtr;
         }
-    
-    //! initialize memory pool
-    //! chunkSize is passed in as a page multiple.
-    int Init(unsigned long long PoolSize, long long maxLen, 
+
+    // initialize memory pool
+    // chunkSize is passed in as a page multiple.
+    int Init(unsigned long long PoolSize, long long maxLen,
              long long PoolChunkSize, size_t PgSize)
         {
             // set page size
-            PageSize=PgSize;
-            if( ( (PageSize/getpagesize())*getpagesize() ) != PageSize ) {
+            PageSize = PgSize;
+            if (((PageSize / getpagesize()) * getpagesize()) != PageSize) {
                 return ULM_ERR_BAD_PARAM;
             }
-            
-            
+
             // set chunksize - multiple of page size
-            ChunkSize=((((PoolChunkSize-1)/PageSize)+1)*PageSize);
-            if( ChunkSize == 0 ){
-                fprintf(stderr, " Chunksize is of length 0\n");
-                fflush(stderr);
+            ChunkSize = ((((PoolChunkSize - 1) / PageSize) + 1) * PageSize);
+            if (ChunkSize == 0) {
+                ulm_err(("Error: Chunksize == 0\n"));
                 return ULM_ERR_BAD_PARAM;
             }
-   
             // set upper limit on pool
-            if( maxLen < 0 ) {
+            if (maxLen < 0) {
                 // no upper limit on size
-                maxNPoolChunks=-1;
+                maxNPoolChunks = -1;
             } else {
-                maxNPoolChunks=((maxLen-1)/PageSize)+1;
-                if( maxNPoolChunks == 0 ){
-                    fprintf(stderr, " PoolSize is of length 0\n");
-                    fflush(stderr);
+                maxNPoolChunks = ((maxLen - 1) / PageSize) + 1;
+                if (maxNPoolChunks == 0) {
+                    ulm_err(("Error: maxNPoolChunks == 0\n"));
                     return ULM_ERR_BAD_PARAM;
                 }
             }
-      
+
             // round up pool size to multiple of page size
-            PoolSize = ((((PoolSize-1)/ChunkSize)+1)*ChunkSize);
-            if( PoolSize == 0 ){
-                fprintf(stderr, " PoolSize is of length 0\n");
-                fflush(stderr);
+            PoolSize = ((((PoolSize - 1) / ChunkSize) + 1) * ChunkSize);
+            if (PoolSize == 0) {
+                ulm_err(("Error: PoolSize == 0\n"));
                 return ULM_ERR_BAD_PARAM;
             }
-   
-            if( PoolSize < ChunkSize ) {
-                fprintf(stderr, "  PoolSize < ChunkSize\n");
-                fflush(stderr);
+
+            if (PoolSize < ChunkSize) {
+                ulm_err(("Error: PoolSize < ChunkSize\n"));
                 return ULM_ERR_BAD_PARAM;
             }
-   
-            char *TmpPtr=0; ssize_t WorkingSize=PoolSize;
+
+            char *TmpPtr = 0;
+            ssize_t WorkingSize = PoolSize;
             void *PoolBase = 0;
-            while( !TmpPtr && WorkingSize ) {
+            while (!TmpPtr && WorkingSize) {
                 // add red-zone pages
-                ssize_t SizeToAllocate=WorkingSize+2*PageSize;
-   
+                ssize_t SizeToAllocate = WorkingSize + 2 * PageSize;
+
                 // allocate memory
-                TmpPtr=(char *)ZeroAlloc(SizeToAllocate, MemProt, MemFlags);
-   
-                if (TmpPtr == 0 )
-                    WorkingSize/=2;
-   
+                TmpPtr = (char *) ZeroAlloc(SizeToAllocate, MemProt, MemFlags);
+
+                if (TmpPtr == 0)
+                    WorkingSize /= 2;
+
                 // set base pointer
-                if(TmpPtr) {
+                if (TmpPtr) {
 #ifdef GM
                     if (gmPort) {
-                        gm_status_t returnValue = gm_register_memory(gmPort, 
-                            TmpPtr + PageSize, WorkingSize);
+                        gm_status_t returnValue =
+                            gm_register_memory(gmPort,
+                                               TmpPtr + PageSize,
+                                               WorkingSize);
                         if (returnValue != GM_SUCCESS) {
-                            ulm_err(("Unable to register memory for GM (returnValue = %d)\n",
-                                (int)returnValue));
+                            ulm_err(("Error: Unable to register memory for GM (returnValue = %d)\n",
+                                     (int) returnValue));
                             return ULM_ERROR;
                         }
                     }
 #endif
-                    PoolBase=(void *)(TmpPtr+PageSize);
+                    PoolBase = (void *) (TmpPtr + PageSize);
                 }
-   
+
             }
             // reset pool size
-            PoolSize=WorkingSize;
-            NPoolChunks=((PoolSize-1)/ChunkSize)+1;
-            if( (NPoolChunks > maxNPoolChunks) && ( maxNPoolChunks >0 ) ) {
-                fprintf(stderr, " NPoolChunks > maxNPoolChunks :: NPoolChunks %ld maxNPoolChunks %ld\n", 
-                        NPoolChunks, maxNPoolChunks);
-                fflush(stderr);
+            PoolSize = WorkingSize;
+            NPoolChunks = ((PoolSize - 1) / ChunkSize) + 1;
+            if ((NPoolChunks > maxNPoolChunks) && (maxNPoolChunks > 0)) {
+                ulm_err(("Error: NPoolChunks (%ld) > maxNPoolChunks (%ld)\n",
+                         NPoolChunks, maxNPoolChunks));
                 return ULM_ERR_BAD_PARAM;
             }
-   
             // change memory protection for red zones
-            int retval=mprotect(TmpPtr, PageSize, PROT_NONE);
-            if( retval != 0 ) {
+            int retval = mprotect(TmpPtr, PageSize, PROT_NONE);
+            if (retval != 0) {
                 ulm_exit((-1, "Error in red zone 1 mprotect\n"));
             }
             // end red zone
-            retval=mprotect(TmpPtr+PageSize+WorkingSize, PageSize, PROT_NONE);
-            if( retval != 0 ) {
+            retval =
+                mprotect(TmpPtr + PageSize + WorkingSize, PageSize, PROT_NONE);
+            if (retval != 0) {
                 ulm_exit((-1, "Error in red zone 2 mprotect\n"));
             }
-             
             // initialize chunk descriptors
-            if( MemFlags == SharedMemFlag ) {
+            if (MemFlags == SharedMemFlag) {
                 // shared Memory allocation
-                size_t lenToAlloc=sizeof(PoolBlockData) * NPoolChunks;
-                ChunkDescriptors=(PoolBlockData *)ZeroAlloc(lenToAlloc, MemProt, MemFlags);
-                if( !ChunkDescriptors ) {
-                    fprintf(stderr, " Unable to ZeroAlloc memory for ChunkDescriptors\n");
-                    fflush(stderr);
+                size_t lenToAlloc = sizeof(ChunkDesc_t) * NPoolChunks;
+                ChunkDesc =
+                    (ChunkDesc_t *) ZeroAlloc(lenToAlloc, MemProt, MemFlags);
+                if (!ChunkDesc) {
+                    ulm_err(("Error: Out of memory (ZeroAlloc)\n"));
                     return ULM_ERROR;
                 }
             } else {
                 // process private Memory allocation
-                ChunkDescriptors = ulm_new(PoolBlockData, NPoolChunks);
-                if(! ChunkDescriptors ) {
-                    fprintf(stderr, " Unable to allocate memory for ChunkDescriptors\n");
+                ChunkDesc = ulm_new(ChunkDesc_t, NPoolChunks);
+                if (!ChunkDesc) {
+                    ulm_err(("Error: Out of memory\n"));
                     fflush(stderr);
                     return ULM_ERROR;
                 }
             }
-   
-            TmpPtr=(char *)PoolBase;
-            for (int chunk=0; chunk < NPoolChunks ; chunk++ ) {
-                ChunkDescriptors[chunk].flags=ALLOCELEMENT_FLAG_AVAILABLE;
-                ChunkDescriptors[chunk].BucketIndex=-1;
-                ChunkDescriptors[chunk].BasePtr=TmpPtr;
-                TmpPtr+=ChunkSize;
+
+            TmpPtr = (char *) PoolBase;
+            for (int chunk = 0; chunk < NPoolChunks; chunk++) {
+                ChunkDesc[chunk].flags = ALLOCELEMENT_FLAG_AVAILABLE;
+                ChunkDesc[chunk].BucketIndex = -1;
+                ChunkDesc[chunk].BasePtr = TmpPtr;
+                TmpPtr += ChunkSize;
             }
             // set next available chunk
-            NextAvailChunk=0;
-            
+            NextAvailChunk = 0;
+
             return ULM_SUCCESS;
         }
 };
+
+
+// More compact types ...
+
+class MemoryPoolShared_t 
+    : public MemoryPool_t <MMAP_SHARED_PROT,
+                           MMAP_SHARED_FLAGS,
+                           MMAP_SHARED_FLAGS> {};
+
+class MemoryPoolPrivate_t
+    : public MemoryPool_t <MMAP_PRIVATE_PROT,
+                           MMAP_PRIVATE_FLAGS,
+                           MMAP_SHARED_FLAGS> {};
     
 #endif /* !_MEMORYPOOL */

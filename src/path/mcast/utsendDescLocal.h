@@ -86,10 +86,8 @@ Links_t *UtsendDesc_t::allocLocalFrag(ULMMcastInfo_t & co)
 
 #ifdef _DEBUGQUEUES
     if (FragDesc->WhichQueue != SMPFREELIST) {
-        fprintf(stderr, " FragDesc->WhichQueue != SMPFREELIST "
-                " :: FragDesc->WhichQueue %d\n", FragDesc->WhichQueue);
-        fflush(stderr);
-        AbortTpclient();
+        ulm_exit((-1, "Error:  FragDesc->WhichQueue (%d) != SMPFREELIST\n",
+                  FragDesc->WhichQueue));
     }
 #endif
     assert(FragDesc->WhichQueue == SMPFREELIST);

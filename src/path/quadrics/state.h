@@ -82,13 +82,11 @@ extern int quadricsLastRail;
 extern int quadricsDoChecksum;
 extern int quadricsDoAck;
 extern quadricsQueueInfo_t *quadricsQueue;
-extern FreeLists<DoubleLinkList, quadricsSendFragDesc, MMAP_PRIVATE_PROT,
-                 MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> quadricsSendFragDescs;
+extern FreeListPrivate_t <quadricsSendFragDesc> quadricsSendFragDescs;
 extern long maxQuadricsSendFragsDescRetries;
 extern bool quadricsSendFragDescsDescRetryForResources;
 extern bool quadricsSendFragDescsDescAbortWhenNoResource;
-extern FreeLists<DoubleLinkList, quadricsRecvFragDesc, MMAP_SHARED_PROT,
-                 MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> quadricsRecvFragDescs;
+extern FreeListShared_t <quadricsRecvFragDesc> quadricsRecvFragDescs;
 extern long maxQuadricsRecvFragsDescRetries;
 extern bool quadricsRecvFragsDescRetryForResources;
 extern bool quadricsRecvFragsDescAbortWhenNoResource;

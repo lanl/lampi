@@ -61,7 +61,7 @@ void CTClient::getServerInfo()
         
     if ( kCTChannelOK == sendMessage(msg, 0, NULL) )
     {
-        fprintf(stderr, "Getting handshake response msg...\n");
+        ulm_err(("Error: Getting handshake response msg...\n"));
         if ( kCTChannelOK == channel_m->getMessage(&rmsg) )
         {
             //parse data for info:
@@ -73,7 +73,7 @@ void CTClient::getServerInfo()
                 sscanf(list[1], "Network=%u", &nodeType_m);     
                 sscanf(list[2], "NumNodes=%u", &numNodes_m);    
                                 
-                fprintf(stderr, "Label=%u;Network=%u;NumNodes=%u\n", nodeLabel_m, nodeType_m, numNodes_m);
+                ulm_err(("Label=%u;Network=%u;NumNodes=%u\n", nodeLabel_m, nodeType_m, numNodes_m));
             }
                                 
             free_double_carray(list, num);
@@ -331,7 +331,7 @@ bool CTClient::connect(int timeoutSecs)
         }
         else
         {
-            fprintf(stderr, "Client setting tag to %d\n", tag);
+            ulm_err(("Error: Client setting tag to %d\n", tag));
             channel_m->setTag(tag);
         }
     }

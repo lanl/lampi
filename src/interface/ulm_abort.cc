@@ -47,13 +47,12 @@
  * \param errorCode	Exit code to pass to exit()
  * \return		Function never returns
  */
-extern "C" int _ulm_abort(int comm, int errorCode, char *file, int line)
+extern "C" int _ulm_abort(int comm, int error, char *file, int line)
 {
     struct sigaction action, oldaction;
 
-    fprintf(stderr,
-            "%s:%d: LA-MPI Aborting: Calling ulm_abort(comm=%d, error=%d)\n",
-            file, line, comm, errorCode);
+    _ulm_set_file_line(file, line);
+    _ulm_err("Client aborting (comm=%d, error=%d)\n", comm, error);
 
     if (lampiState.AbnormalExit) {
         /* block SIGCHLD processing */
@@ -66,7 +65,7 @@ extern "C" int _ulm_abort(int comm, int errorCode, char *file, int line)
                 lampiState.AbnormalExit->flag = 1;
                 lampiState.AbnormalExit->pid = getpid();
                 lampiState.AbnormalExit->signal = 0;
-                lampiState.AbnormalExit->status = errorCode;
+                lampiState.AbnormalExit->status = error;
         }
         unlock(&(lampiState.AbnormalExit->lockData));
         /* unblock SIGCHLD processing */
@@ -78,8 +77,9 @@ extern "C" int _ulm_abort(int comm, int errorCode, char *file, int line)
 #ifdef __osf__
     raise(SIGHUP);
 #else
-    exit(errorCode);
+    exit(error);
 #endif
+
     // never reached but shuts up nosy compilers...
-    return errorCode;
+    return error;
 }

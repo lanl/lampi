@@ -55,9 +55,7 @@ void *allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
             // no chunk available
             if (tmpPtr == (void *) (-1L)) {
 #ifdef _DEBUGQUEUES
-                fprintf(stderr,
-                        " Unable to add memory to SMP data pool\n");
-                fflush(stderr);
+                ulm_err(("Error: Can't add memory to SMP data pool\n"));
 #endif                          /* _DEBUGQUEUES */
                 if ((*errorCode) == ULM_ERR_OUT_OF_RESOURCE) {
                     dev->lock_m.unlock();

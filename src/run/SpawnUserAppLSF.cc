@@ -200,7 +200,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     sigfillset(&action.sa_mask);
     action.sa_flags = 0;
     if (sigaction(SIGUSR1, &action, (struct sigaction *)NULL) < 0) {
-        ulm_err(("Unable to set SIGUSR1 handler to handleLsfTasks!\n"));
+        ulm_err(("Error: Can't set SIGUSR1 handler to handleLsfTasks!\n"));
         Abort();
     }
 

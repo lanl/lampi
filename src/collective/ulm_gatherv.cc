@@ -190,7 +190,7 @@ extern "C" int ulm_gatherv(void *sendbuf, int sendcount,
     int myLocalRank = commPtr->localGroup->onHostProcID;
     if (commPtr->sharedCollectiveData->max_length <
         (sizeof(size_t) * nProcs)) {
-        ulm_err(("Error: in ulm_gatherv - not enough space for interhost broadcast \n"));
+        ulm_err(("Error: in ulm_gatherv - not enough space for interhost broadcast\n"));
         commPtr->releaseCollectiveSMBuffer(collDesc);
         return ULM_ERR_OUT_OF_RESOURCE;
     }
@@ -210,10 +210,7 @@ extern "C" int ulm_gatherv(void *sendbuf, int sendcount,
     returnValue =
         ulm_bcast_interhost(bpc, len, (ULMType_t *) MPI_BYTE, root, comm);
     if (returnValue != ULM_SUCCESS) {
-        fprintf(stderr, " ulm_bcast_interhost returned error %d \n",
-                returnValue);
-        fflush(stderr);
-        ulm_err(("Error: ulm_bcast_interhost returned error %d \n",
+        ulm_err(("Error: ulm_bcast_interhost returned error %d\n",
                  returnValue));
         commPtr->releaseCollectiveSMBuffer(collDesc);
         return returnValue;
@@ -368,7 +365,7 @@ extern "C" int ulm_gatherv(void *sendbuf, int sendcount,
                                                  interhostGatherScatterTree),
                                                dataToSendNow, root, tag);
             if (returnValue != ULM_SUCCESS) {
-                ulm_err(("Error: error returned from ulm_gather_interhost %d \n",
+                ulm_err(("Error: error returned from ulm_gather_interhost %d\n",
                          returnValue));
                 commPtr->releaseCollectiveSMBuffer(collDesc);
                 return returnValue;

@@ -61,7 +61,7 @@ int Communicator::barrierInit(bool firstInstanceOfContext)
                                       &gotSMPresources,
                                       &gotNetworkResources);
     if (returnCode != ULM_SUCCESS) {
-        ulm_err(("Error: error returned from platformBarrierSetup \n"));
+        ulm_err(("Error: error returned from platformBarrierSetup\n"));
         return returnCode;
     }
 
@@ -75,7 +75,7 @@ SWBarrierTag:
             genericSMPBarrierSetup(firstInstanceOfContext,
                                    &gotSMPresources);
         if (returnCode != ULM_SUCCESS) {
-            ulm_err(("Error: error returned from genericSMPBarrierSetup \n"));
+            ulm_err(("Error: error returned from genericSMPBarrierSetup\n"));
             return returnCode;
         }
     }
@@ -298,9 +298,7 @@ int Communicator::barrierFree()
         break;
 
     default:
-        fprintf(stderr,
-                " barrierFree:: unrecoginzed SMP barrier type %d\n",
-                barrierType);
+        ulm_err(("Error: Unrecognized SMP barrier type (%d)\n", barrierType));
         return ULM_ERR_BAD_PARAM;
         break;
     }

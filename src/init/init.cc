@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
- * National Laboratory, which is operated by the University of California for
- * the U.S. Department of Energy. The Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years after
- * October 10,2002 subject to additional five-year worldwide renewals, the
- * Government is granted for itself and others acting on its behalf a paid-up,
- * nonexclusive, irrevocable worldwide license in this material to reproduce,
- * prepare derivative works, distribute copies to the public, perform publicly
- * and display publicly, and to permit others to do so. NEITHER THE UNITED
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the License,
- * or any later version.  Accordingly, this program is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -130,13 +133,15 @@ void lampi_init(void)
     /*
      * connect back to mpirun
      */
-    ulm_dbg( ("host %s: daemon %d: connecting to mpirun...\n", _ulm_host(), getpid()) );
+    ulm_dbg(("host %s: daemon %d: connecting to mpirun...\n",
+             _ulm_host(), getpid()));
     lampi_init_prefork_connect_to_mpirun(&lampiState);
 
     /*
      * receive initial input parameters
      */
-    ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
+    ulm_dbg(("host %s: node %u: recving setup params...\n",
+             _ulm_host(), lampiState.client->nodeLabel()));
     lampi_init_prefork_receive_setup_params(&lampiState);
 
     if (lampiState.hostid == 0) {
@@ -152,7 +157,8 @@ void lampi_init(void)
      * path initialization that needs to happen before the child
      * processes are created
      */
-    ulm_dbg( ("host %s: node %u: calling lampi_init_paths_prefork...\n", _ulm_host(), lampiState.client->nodeLabel()) );
+    ulm_dbg(("host %s: node %u: calling lampi_init_paths_prefork...\n",
+              _ulm_host(), lampiState.client->nodeLabel()));
     lampi_init_prefork_paths(&lampiState);
 
     /* if library is to handle stdio, prefork data is set up */
@@ -259,12 +265,12 @@ void lampi_init_check_for_error(lampiState_t *s)
     } else {
         for (i = 0; i < ERROR_LAMPI_INIT_MAX; i++) {
             if (s->error == lookup[i].error) {
-                fprintf(stderr, "lampi_init: Error: %s\n", lookup[i].string);
+                fprintf(stderr, "LA-MPI: lampi_init: Error: %s\n", lookup[i].string);
                 fflush(stderr);
                 exit(EXIT_FAILURE);
             }
         }
-        fprintf(stderr, "lampi_init: Error: Unknown error\n");
+        fprintf(stderr, "LA-MPI: lampi_init: Unknown error\n");
         fflush(stderr);
         exit(EXIT_FAILURE);
     }
@@ -578,7 +584,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
         (int *) ulm_malloc(sizeof(int) * lampiState.global_size);
     if (!lampiState.map_global_proc_to_on_host_proc_id) {
         ulm_exit((-1, "Unable to allocate space for "
-                  "lampiState.map_global_proc_to_on_host_proc_id \n"));
+                  "lampiState.map_global_proc_to_on_host_proc_id\n"));
     }
     int offset = 0;
     for (int h = 0; h < lampiState.nhosts; ++h) {
@@ -631,9 +637,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     /* !!!! threaded lock */
     int retryForMoreResources = 1;
     int memAffinityPool = getMemPoolIndex();
-    bool useInputPool = false;
-    MemoryPool < MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS,
-        MMAP_SHARED_FLAGS > *inputPool = NULL;
+    MemoryPoolPrivate_t *inputPool = NULL;
 
     int retVal =
         IrecvDescPool.Init(nFreeLists, nPagesPerList, poolChunkSize,
@@ -661,9 +665,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     /* !!! threaded lock */
     retryForMoreResources = 1;
     memAffinityPool = getMemPoolIndex();
-    useInputPool = false;
-    MemoryPool < MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS,
-        MMAP_SHARED_FLAGS > *inputPoolULMR = NULL;
+    MemoryPoolPrivate_t *inputPoolULMR = NULL;
 
     retVal = ulmRequestDescPool.Init
         (nFreeLists, nPagesPerList, poolChunkSize, pageSize, eleSize,
@@ -673,7 +675,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
          inputPoolULMR, irecvDescDescAbortWhenNoResource);
     if (retVal) {
         ulm_exit((-1, "FreeLists::Init Unable to initialize RequestDesc_t "
-                  "pool \n"));
+                  "pool\n"));
     }
     // Allocate memory for double link list of pointers
     //
@@ -687,9 +689,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     /* !!!! threaded lock */
     retryForMoreResources = 1;
     memAffinityPool = getMemPoolIndex();
-    useInputPool = false;
-    MemoryPool < MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS,
-        MMAP_SHARED_FLAGS > *inputPoolPtrL = NULL;
+    MemoryPoolPrivate_t *inputPoolPtrL = NULL;
 
     retVal = pointerPool.Init
         (nFreeLists, nPagesPerList, poolChunkSize, pageSize, eleSize,
@@ -1767,7 +1767,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
 void lampi_init_wait_for_start_message(lampiState_t *s)
 {
 #ifndef USE_CT
-    int tag, errorCode, goahead, recvd;
+    int tag, errorCode, goahead;
     bool r;
 #endif
 
@@ -1794,7 +1794,7 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
         r = s->client->reset(adminMessage::SEND);
         r = r && s->client->send(-1, adminMessage::BARRIER, &errorCode);
         r = r
-            && ((recvd = s->client->receive(-1, &tag, &errorCode)) ==
+            && (s->client->receive(-1, &tag, &errorCode) ==
                 adminMessage::OK);
         r = r && (tag == adminMessage::BARRIER)
             && s->client->unpack(&goahead,
@@ -1830,7 +1830,7 @@ void lampi_init_prefork_debugger(lampiState_t *s)
 
 void lampi_init_postfork_debugger(lampiState_t *s)
 {
-    int errorCode, sendPIDs;
+    int errorCode;
 
     if (s->error) {
         return;
@@ -1844,10 +1844,8 @@ void lampi_init_postfork_debugger(lampiState_t *s)
     }
 
     if (s->debug_location == 1) {
-        sendPIDs = 0;
         if ((s->useDaemon && s->iAmDaemon) ||
             (!s->useDaemon && (s->local_rank == 0))) {
-            sendPIDs = 1;
             // CLIENTPIDS exchange from local rank 0 process
             s->client->reset(adminMessage::SEND);
             s->client->pack((void *) s->local_pids,

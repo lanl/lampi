@@ -31,85 +31,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _ULMSTACK
-#define _ULMSTACK
+#ifndef ZEROALLOC_H_INCLUDED
+#define ZEROALLOC_H_INCLUDED
 
-#include <stdlib.h>
-#include <assert.h>
+extern void *ZeroAlloc(size_t size, int prot, int flags);
 
-#include "util/Lock.h"
-
-/*
- * Define parameters that will be used to construct compile time
- * parameters.
- */
-
-typedef void *STACKEL;
-
-template <long MaxStackElements>
-struct Stack
-{
-public:
-
-    // constructor
-    Stack()
-        {
-            // no data on stack
-            TopOfStack=-1;
-        }
-
-    ~Stack() {};
-
-    int push(STACKEL NewElement)
-        {
-            //
-
-            int retval = -1;
-            // lock stack
-            Lock.lock();
-
-            // check and make sure that there is room on the stack
-            if(TopOfStack == (MaxStackElements -1 ) ){
-                Lock.unlock();
-                return retval;
-            }
-
-            // move pointer
-            TopOfStack++;
-            stackel[TopOfStack] = NewElement;
-            Lock.unlock();
-
-            retval = 0;
-            return retval;
-        }
-
-    STACKEL pop()
-        {
-            STACKEL Return;
-
-            // lock stack
-            Lock.lock();
-
-            if( TopOfStack >= 0 ){
-                Return=stackel[TopOfStack];
-#ifdef _DEBUGMEMORYSTACKS
-                stackel[TopOfStack]=(void *)-1L;
-#endif /* _DEBUGMEMORYSTACKS */
-                TopOfStack--;
-            }
-            else
-                Return=((STACKEL)-1L);
-
-            // unlock stack
-            Lock.unlock();
-
-            return Return;
-        }
-
-    volatile long TopOfStack;         // When this is zero, nothing there.
-    STACKEL stackel[MaxStackElements];
-    Locks Lock;
-    enum { MaxStkElems = MaxStackElements };
-};
-
-#endif /* _ULMSTACK */
+#endif

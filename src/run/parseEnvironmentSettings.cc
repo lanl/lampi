@@ -268,10 +268,7 @@ void parseEnvironmentSettings(const char *InfoStream)
                 RunParameters.envVarsToSet[i].envString_m[0] =
                     (char *) ulm_malloc(strlen(val) + 1);
                 if (!RunParameters.envVarsToSet[i].envString_m[0]) {
-                    fprintf(stderr,
-                            "Error: allocating memory for envString_m\n"
-                            "  Memory requested %ld\n",
-                            (long) (strlen(val) + 1));
+                    ulm_err(("Error: Out of memory\n"));
                     Abort();
                 }
                 strcpy(RunParameters.envVarsToSet[i].envString_m[0], val);
@@ -287,10 +284,7 @@ void parseEnvironmentSettings(const char *InfoStream)
                             (char *) ulm_malloc(strlen(val) + 1);
                         if (!RunParameters.envVarsToSet[i].
                             envString_m[host]) {
-                            fprintf(stderr,
-                                    "Error: allocating memory for envString_m\n"
-                                    "  Memory requested %ld\n",
-                                    (long) (strlen(val) + 1));
+                            ulm_err(("Error: Out of memory\n"));
                             Abort();
                         }
                         strcpy(RunParameters.envVarsToSet[i].

@@ -128,7 +128,7 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
                              NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                              StderrBytesWritten, StdoutBytesWritten,
                              NewLineLast, *ServerSocketFD);
-            ulm_exit((-1, "Abnormal termination \n"));
+            ulm_exit((-1, "Abnormal termination\n"));
             break;
         case ALLHOSTSDONE:
             // set flag indicating "app" process can terminate
@@ -260,11 +260,11 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                 Message = ACKTERMINATENOW;
                 NotifyServer = 1;
                 AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
-                               ChildPIDs, (unsigned int) Message,
-                               NotifyServer, STDOUTfdsFromChildren,
-                               STDERRfdsFromChildren, StdoutFD, StderrFD,
-                               IOPreFix, LenIOPreFix, StderrBytesWritten, 
-                               StdoutBytesWritten, NewLineLast);
+                                       ChildPIDs, (unsigned int) Message,
+                                       NotifyServer, STDOUTfdsFromChildren,
+                                       STDERRfdsFromChildren, StdoutFD, StderrFD,
+                                       IOPreFix, LenIOPreFix, StderrBytesWritten, 
+                                       StdoutBytesWritten, NewLineLast);
                 break;
             case ACKABNORMALTERM:
                 Tag = ACKACKABNORMALTERM;
@@ -287,7 +287,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                                  NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                                  StderrBytesWritten, StdoutBytesWritten,
                                  NewLineLast, *ServerSocketFD);
-                ulm_exit((-1, "Abnormal termination \n"));
+                ulm_exit((-1, "Abnormal termination\n"));
                 break;
             case ALLHOSTSDONE:
                 // set flag indicating "app" process can terminate
@@ -321,8 +321,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                 exit(0);
                 break;
             default:
-                ulm_exit((-1, "Client: Unrecognized control "
-                          "Message : %u\n", Tag));
+                ulm_exit((-1, "Error: Unrecognized control message (%u)\n", Tag));
             }                   /* end switch */
         }
     }

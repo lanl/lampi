@@ -78,7 +78,7 @@ void TerminateClients(int NClientsAccepted,
             _ulm_Send_Socket(SocketToClients[listIndex], 1, SendIoVec);
         } else {
             /* if connection not established : write information to stderr */
-            ulm_err(("Unable to connect to host : %s\n",
+            ulm_err(("Error: Can't connect to host : %s\n",
                      RunParameters.HostList[hostIndex]));
         }
         /* end loop over hosts */

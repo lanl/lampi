@@ -32,7 +32,6 @@ SRC_MPIRUN += \
 	run/CheckHeartBeat.cc \
 	run/DrainStdioData.cc \
 	run/KillAppProcs.cc \
-	run/NormalTermination.cc \
 	run/ScanStdErrAndOut.cc \
 	run/sigalarm.cc \
 	run/coprocess.cc \

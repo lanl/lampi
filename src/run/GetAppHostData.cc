@@ -67,7 +67,7 @@ void GetAppHostCount(const char *InfoStream)
     int OptionIndex =
         MatchOption("HostCount", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option HostCount not found in input parameter database\n"));
+        ulm_err(("Error: Option HostCount not found in input parameter database\n"));
         Abort();
     }
 
@@ -90,11 +90,11 @@ void GetMpirunHostnameNoInput(const char *InfoStream)
     struct hostent *localHostInfo;
     tmp[ULM_MAX_HOSTNAME_LEN - 1] = '\0';
     if (gethostname(tmp, ULM_MAX_HOSTNAME_LEN - 1) == -1) {
-        ulm_err(("mpirun: Error: Can't find local hostname!\n"));
+        ulm_err(("Error: Can't find local hostname!\n"));
         Abort();
     }
     if ((localHostInfo = gethostbyname(tmp)) == NULL) {
-        ulm_err(("mpirun: Error: Hostname look-up failed for %s\n", tmp));
+        ulm_err(("Error: Hostname look-up failed for %s\n", tmp));
         Abort();
     }
     strncpy(RunParameters.mpirunName,
@@ -119,13 +119,13 @@ void GetMpirunHostname(const char *InfoStream)
     int OptionIndex = MatchOption("MpirunHostname", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option MpirunHostname not found in input parameter database\n"));
+        ulm_err(("Error: Option MpirunHostname not found in input parameter database\n"));
         Abort();
     }
 
     myName[ULM_MAX_HOSTNAME_LEN - 1] = '\0';
     if (gethostname(myName, ULM_MAX_HOSTNAME_LEN - 1) == -1) {
-        ulm_err(("mpirun: Error: Can't find local hostname!\n"));
+        ulm_err(("Error: Can't find local hostname!\n"));
         Abort();
     }
 
@@ -215,7 +215,7 @@ void GetAppHostData(const char *InfoStream)
     int OptionIndex =
         MatchOption("HostList", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option HostList not found in input parameter database\n"));
+        ulm_err(("Error: Option HostList not found in input parameter database\n"));
         Abort();
     }
 
@@ -235,12 +235,12 @@ void GetAppHostData(const char *InfoStream)
          i++) {
         NetEntry = gethostbyname(*i);
         if (NetEntry == NULL) {
-            ulm_err(("mpirun: Error: Hostname look-up failed for %s\n", *i));
+            ulm_err(("Error: Hostname look-up failed for %s\n", *i));
             Abort();
         }
         len = strlen(NetEntry->h_name);
         if (len > ULM_MAX_HOSTNAME_LEN) {
-            ulm_err(("mpirun: Error: Hostname too long for library buffer, length = %ld\n", len));
+            ulm_err(("Error: Hostname too long for library buffer, length = %ld\n", len));
             Abort();
         }
         sprintf((char *) RunParameters.HostList[cnt], NetEntry->h_name,
@@ -266,7 +266,7 @@ void GetAppHostDataNoInputRSH(const char *InfoStream)
     /* fill in host information */
     RetVal = gethostname(LocalHostName, ULM_MAX_HOSTNAME_LEN);
     if (RetVal < 0) {
-        ulm_err(("mpirun: Error: Can't find local hostname!\n"));
+        ulm_err(("Error: Can't find local hostname!\n"));
         Abort();
     }
     /* debug */
@@ -274,19 +274,19 @@ void GetAppHostDataNoInputRSH(const char *InfoStream)
 TRY_AGN:
     /* end debug */
     if ((NetEntry = gethostbyname(LocalHostName)) == NULL) {;
-        ulm_err(("mpirun: Error: Hostname look-up failed for %s\n", LocalHostName));
+        ulm_err(("Error: Hostname look-up failed for %s\n", LocalHostName));
 	/* debug */
 	if( h_errno == NO_RECOVERY )
-	       	ulm_err((" NO_RECOVERY :: h_errno %d \n",h_errno));
+	       	ulm_err(("Error: NO_RECOVERY :: h_errno %d\n",h_errno));
 	else if( h_errno == NO_ADDRESS )
-	       	ulm_err((" NO_ADDRESS :: h_errno %d \n",h_errno));
+	       	ulm_err(("Error: NO_ADDRESS :: h_errno %d\n",h_errno));
 	else if( h_errno == NO_DATA )
-	       	ulm_err((" NO_DATA :: h_errno %d \n",h_errno));
+	       	ulm_err(("Error: NO_DATA :: h_errno %d\n",h_errno));
 	else if( h_errno == HOST_NOT_FOUND )
-	       	ulm_err((" HOST_NOT_FOUND :: h_errno %d \n",h_errno));
+	       	ulm_err(("Error: HOST_NOT_FOUND :: h_errno %d\n",h_errno));
 	else if( h_errno == TRY_AGAIN ){
 		failureCount++;
-	       	ulm_err((" TRY_AGAIN :: h_errno %d \n",h_errno));
+	       	ulm_err(("Error: TRY_AGAIN :: h_errno %d\n",h_errno));
 		if( failureCount < 5 )
 			goto TRY_AGN;
 	}
@@ -295,7 +295,7 @@ TRY_AGN:
     }
     len = strlen(NetEntry->h_name);
     if (len > ULM_MAX_HOSTNAME_LEN) {
-        ulm_err(("mpirun: Error: Host name too long for library buffer, length = %ld\n", len));
+        ulm_err(("Error: Host name too long for library buffer, length = %ld\n", len));
         Abort();
     }
     sprintf((char *) RunParameters.HostList[0], NetEntry->h_name, len);

@@ -31,85 +31,21 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _ULMSTACK
-#define _ULMSTACK
+#ifndef POOLCHUNKS_H_INCLUDED
+#define POOLCHUNKS_H_INCLUDED
 
-#include <stdlib.h>
-#include <assert.h>
-
-#include "util/Lock.h"
-
-/*
- * Define parameters that will be used to construct compile time
- * parameters.
- */
-
-typedef void *STACKEL;
-
-template <long MaxStackElements>
-struct Stack
+// Pool block's management data
+class PoolChunks_t
 {
 public:
+    // usage flags
+    unsigned short flags;
 
-    // constructor
-    Stack()
-        {
-            // no data on stack
-            TopOfStack=-1;
-        }
+    // which bucket is this in?
+    short bucketindex;
 
-    ~Stack() {};
-
-    int push(STACKEL NewElement)
-        {
-            //
-
-            int retval = -1;
-            // lock stack
-            Lock.lock();
-
-            // check and make sure that there is room on the stack
-            if(TopOfStack == (MaxStackElements -1 ) ){
-                Lock.unlock();
-                return retval;
-            }
-
-            // move pointer
-            TopOfStack++;
-            stackel[TopOfStack] = NewElement;
-            Lock.unlock();
-
-            retval = 0;
-            return retval;
-        }
-
-    STACKEL pop()
-        {
-            STACKEL Return;
-
-            // lock stack
-            Lock.lock();
-
-            if( TopOfStack >= 0 ){
-                Return=stackel[TopOfStack];
-#ifdef _DEBUGMEMORYSTACKS
-                stackel[TopOfStack]=(void *)-1L;
-#endif /* _DEBUGMEMORYSTACKS */
-                TopOfStack--;
-            }
-            else
-                Return=((STACKEL)-1L);
-
-            // unlock stack
-            Lock.unlock();
-
-            return Return;
-        }
-
-    volatile long TopOfStack;         // When this is zero, nothing there.
-    STACKEL stackel[MaxStackElements];
-    Locks Lock;
-    enum { MaxStkElems = MaxStackElements };
+    // index of object block loaned to
+    int IndexLoanedTo;
 };
 
-#endif /* _ULMSTACK */
+#endif

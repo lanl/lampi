@@ -41,7 +41,7 @@
 do { \
     if (OPT_DBG) { \
         _ulm_set_file_line( __FILE__, __LINE__) ; \
-            _ulm_dbg x ; \
+        _ulm_dbg x ; \
     } \
 } while (0)
 
@@ -49,28 +49,28 @@ do { \
 do { \
     if (OPT_DBG) { \
         _ulm_set_file_line( __FILE__, __LINE__) ; \
-            _ulm_fdbg x ; \
+        _ulm_fdbg x ; \
     } \
 } while (0)
 
 #define ulm_dbg_fp(fp, x) \
 do { \
     if (OPT_DBG) { \
-		fprintf(fp, "%s:%d: (pid = %d): ", __FILE__, __LINE__, getpid());  \
-		fprintf(fp, x); \
+        fprintf(fp, "%s:%d: (pid = %d): ", __FILE__, __LINE__, getpid()); \
+        fprintf(fp, x); \
     } \
 } while (0)
 
 #define ulm_err(x) \
 do { \
     _ulm_set_file_line(__FILE__, __LINE__) ; \
-        _ulm_err x ; \
+    _ulm_err x ; \
 } while (0)
 
 #define ulm_ferr(x) \
 do { \
     _ulm_set_file_line(__FILE__, __LINE__) ; \
-        _ulm_fdbg x ; \
+    _ulm_fdbg x ; \
 } while (0)
 
 #define ulm_warn(x) \

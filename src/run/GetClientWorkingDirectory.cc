@@ -58,7 +58,7 @@ void GetClientWorkingDirectoryNoInp(const char *InfoStream)
     int OptionIndex =
         MatchOption("WorkingDir", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option WorkingDir not found in Input parameter database\n"));
+        ulm_err(("Error: Option WorkingDir not found in Input parameter database\n"));
         Abort();
     }
 
@@ -67,7 +67,7 @@ void GetClientWorkingDirectoryNoInp(const char *InfoStream)
         ulm_new(DirName_t, RunParameters.NHosts);
 
     if (getcwd(DirName, ULM_MAX_PATH_LEN) == NULL) {
-        ulm_err(("mpirun: Error: getcwd() call failed\n"));
+        ulm_err(("Error: getcwd() call failed\n"));
         perror(" getcwd ");
         Abort();
     }

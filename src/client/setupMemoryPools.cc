@@ -42,26 +42,21 @@
 
 ssize_t bytesPerProcess;
 
-MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-             MMAP_SHARED_FLAGS > *ShareMemDescPool;
+MemoryPoolShared_t *ShareMemDescPool;
 
 // shared memory pool for larger objects - pool chunks will be larger for
 //   more effcient allocation
-MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-             MMAP_SHARED_FLAGS > *largeShareMemDescPool;
+MemoryPoolShared_t *largeShareMemDescPool;
+
 // mumber of bytes for shared memory descriptor pool - ShareMemDescPool
 ssize_t largePoolBytesPerProcess;
-
 
 // setup memory pools
 void setupMemoryPools()
 {
-    size_t lenToAlloc =
-        sizeof(MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-               MMAP_SHARED_FLAGS >);
+    size_t lenToAlloc = sizeof(MemoryPoolShared_t);
     ShareMemDescPool =
-        (MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-         MMAP_SHARED_FLAGS > *)
+        (MemoryPoolShared_t *) 
         SharedMemoryPools.getMemorySegment(lenToAlloc,
                                            CACHE_ALIGNMENT);
     if (!ShareMemDescPool) {
@@ -69,9 +64,7 @@ void setupMemoryPools()
                   "Error: initializing  ShareMemDescPool memory pool\n"));
     }
     // run constructor
-    new(ShareMemDescPool)
-        MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-        MMAP_SHARED_FLAGS >;
+    new(ShareMemDescPool) MemoryPoolShared_t;
 
     // setup pool for shared memory descriptors
     ssize_t bytesToAllocate = bytesPerProcess * local_nprocs();
@@ -90,12 +83,9 @@ void setupMemoryPools()
                   "Error: initializing  ShareMemDescPool memory pool\n"));
     }
 
-    lenToAlloc =
-        sizeof(MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-               MMAP_SHARED_FLAGS >);
+    lenToAlloc = sizeof(MemoryPoolShared_t);
     largeShareMemDescPool =
-        (MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-         MMAP_SHARED_FLAGS > *)
+        (MemoryPoolShared_t *)
         SharedMemoryPools.getMemorySegment(lenToAlloc,
                                            CACHE_ALIGNMENT);
     if (!largeShareMemDescPool) {
@@ -103,9 +93,7 @@ void setupMemoryPools()
                   "Error: initializing  ShareMemDescPool memory pool\n"));
     }
     // run constructor
-    new(largeShareMemDescPool)
-        MemoryPool < MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-        MMAP_SHARED_FLAGS >;
+    new(largeShareMemDescPool) MemoryPoolShared_t;
 
     // setup pool for shared memory descriptors
     bytesToAllocate = largePoolBytesPerProcess * local_nprocs();

@@ -309,7 +309,7 @@ bool adminMessage::clientInitialize(int *authData, char *hostname, int port)
 
     if ( false == daemon_m->start() )
     {
-        ulm_err( ("Unable to start daemon server. Exiting...\n") );
+        ulm_err( ("Error: Can't start daemon server. Exiting...\n") );
         return false;
     }
 #endif
@@ -339,7 +339,7 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
 #ifdef BPROC
     int size = sizeof(struct sockaddr);
     if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
-        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d \n",errno));
+        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
         return false;
     }
 #else
@@ -455,7 +455,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
 #ifdef BPROC
     int size = sizeof(struct sockaddr);
     if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
-        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d \n",errno));
+        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
         return false;
     }
 #else
@@ -614,7 +614,7 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
                IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
     if ( false == svrChannel_m->setupToAcceptConnections() )
     {
-        ulm_err( ("Unable to setup for connections..\n") );
+        ulm_err( ("Error: Can't setup for connections..\n") );
         return false;
     }
     *port = ((CTTCPChannel *)svrChannel_m->channel())->port();
@@ -692,7 +692,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         if( !hostsAssigned || !connectInfo_m || !labels2Rank_m 
             || !scatterHosts_m || !scatterLen_m ) 
         {
-            ulm_err((" Unable to allocate memory for hostsAssigned list \n"));
+            ulm_err(("Error: Can't allocate memory for hostsAssigned list\n"));
             free(hostsAssigned);
             free(connectInfo_m);
             free(scatterHosts_m);
@@ -762,7 +762,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                 ulm_err( ("Timed out while waiting for connections.\n")  );
             }
             else
-                ulm_err( ("Error while waiting for connections. status = %d\n", status) );
+                ulm_err( ("Error: while waiting for connections. status = %d\n", status) );
                                 
             // check for timeout
             gettimeofday(&curtime, NULL);
@@ -787,7 +787,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                 ulm_err( ("Timed out while receiving daemon info.\n")  );
             }
             else
-                ulm_err( ("Error while receiving daemon info. status = %d\n", status) );
+                ulm_err( ("Error: while receiving daemon info. status = %d\n", status) );
                                 
             success = false;
             // check for timeout
@@ -805,7 +805,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             hostrank = socketToNodeId(numHosts,hostList, daemon->socketAddress(),
                                       assignNewId,hostsAssigned);
             if( hostrank == UNKNOWN_HOST_ID ){
-                ulm_err((" adminMessage::serverConnect UNKNOWN_HOST_ID \n"));
+                ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID\n"));
                 success = false;
             }
         }
@@ -875,7 +875,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                     ulm_err( ("Timed out while sending authOK to daemon.\n")  );
                 }
                 else
-                    ulm_err( ("Error while sending authOK to daemon. status = %d\n", status) );
+                    ulm_err( ("Error: while sending authOK to daemon. status = %d\n", status) );
                                         
                 success = false;
                 // check for timeout
@@ -900,7 +900,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                 if( !hostsAssigned || !connectInfo_m || !labels2Rank_m
                     || !scatterHosts_m || !scatterLen_m )
                 {
-                    ulm_err((" Unable to allocate memory for hostsAssigned list \n"));
+                    ulm_err(("Error: Can't allocate memory for hostsAssigned list\n"));
                     free(hostsAssigned);
                     free(connectInfo_m);
                     free(scatterHosts_m);
@@ -967,14 +967,14 @@ bool adminMessage::linkNetwork()
         chnl = (CTTCPChannel *)CTChannel::createChannel("CTTCPChannel", connectInfo_m[0]);
         if ( !chnl )
         {
-            ulm_err( ("Unable to create channel to node 0.\n") );
+            ulm_err( ("Error: Can't create channel to node 0.\n") );
             return false;
         }
         netconn_m = new CTClient(chnl);
     }
     if ( false == netconn_m->connect(10) )
     {
-        ulm_err( ("Unable to connect to node 0.\n") );
+        ulm_err( ("Error: Can't connect to node 0.\n") );
         return false;
     }
         
@@ -990,7 +990,7 @@ bool adminMessage::linkNetwork()
         
     if ( kCTChannelOK != status)
     {
-        ulm_err( ("Unable to broadcast msg to link network. status = %d.\n", status) );
+        ulm_err( ("Error: Can't broadcast msg to link network. status = %d.\n", status) );
         return false;
     }
 #endif
@@ -1103,15 +1103,15 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
     }
     ssize_t localStripeSize=lenSharedMemoryBuffer_m/nhosts_m;
     if(localStripeSize < 0 ) {
-        fprintf(stderr," in adminMessage::allgather localStripeSize = %lld \n",
-                (long long)localStripeSize);
-        returnCode=ULM_ERROR;
+        ulm_err(("Error: adminMessage::allgather, localStripeSize = %lld\n",
+                 (long long)localStripeSize));
+        returnCode = ULM_ERROR;
         return returnCode;
     }
     ssize_t perRankStripeSize=localStripeSize/maxLocalProcs;
     if(perRankStripeSize < 0 ) {
-        fprintf(stderr," in adminMessage::allgather perRankStripeSize = %lld \n",
-                (long long)perRankStripeSize);
+        ulm_err(("Error: adminMessage::allgather, perRankStripeSize = %lld\n",
+                 (long long)perRankStripeSize));
         returnCode=ULM_ERROR;
         return returnCode;
     }
@@ -1235,11 +1235,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
                 if ( bytesLeftPerHost[host] < nLocalProcs*perRankStripeSize )
                     recvlens_m[clientRank2Daemon(host)] = bytesLeftPerHost[host];
             }
-
-
 #else
-
-
             /* send data to mpirun */
             bReturnValue=reset(adminMessage::SEND);
             if( !bReturnValue )
@@ -1264,17 +1260,15 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
             if( !bReturnValue )
                 return returnCode;
             if(typeTag != adminMessage::ALLGATHER ){
-                fprintf(stderr," unexpected tag in subroutine allgatherMultipleStripes \n"
-                        " tag received %d expected tag %d \n",
-                        typeTag,adminMessage::ALLGATHER);
-                fflush(stderr);
+                ulm_err(("Error: unexpected tag in allgatherMultipleStripes.\n"
+                        "\ttag received %d expected tag %d\n",
+                        typeTag,adminMessage::ALLGATHER));
                 return returnCode;
             }
         
             bReturnValue= unpack(sharedBuffer_m, BYTE, totalBytes);
             if( !bReturnValue ){
-                fprintf(stderr," unpack returned error in subtoutine allgatherMultipleStripes \n");
-                fflush(stderr);
+                ulm_err(("Error: unpack returned error in allgatherMultipleStripes\n"));
                 return returnCode;
             }
         
@@ -1394,8 +1388,8 @@ ServerCode:
                 /* error */
                 if( recvReturnCode == ERROR ) {
                     returnCode=ULM_ERROR;
-                    fprintf(stderr," error returned from receive in subroutine adminMessage::allgather %d \n",returnCode);
-                    fflush(stderr);
+                    ulm_err(("Error: from receive in adminMessage::allgather (%d)\n",
+                             returnCode));
                     return recvReturnCode;
                 }
 
@@ -1403,7 +1397,7 @@ ServerCode:
                 if( recvReturnCode == OK ) {
                     /* make sure data is allgather data */
                     if( typeTag != ALLGATHER ) {
-                        fprintf(stderr," Unexpected data type in routine adminMessage::allgather \n");
+                        ulm_err(("Error: Unexpected data type in adminMessage::allgather\n"));
                         return ULM_ERROR;
                     }
 
@@ -1411,14 +1405,13 @@ ServerCode:
                     bReturnValue=unpack(&tmpTag,
                                         (adminMessage::packType)sizeof(long long), 1);
                     if( !bReturnValue ) {
-                        fprintf(stderr," In routine adminMessage::allgather error returned from unpack \n");
-                        fflush(stderr);
+                        ulm_err(("Error: from unpack in adminMessage::allgather\n"));
                         return ULM_ERROR;
                     }
                     if( tmpTag != tag ) {
-                        fprintf(stderr," Tag mismatch in adminMessage::allgather "
-                                " Expected %lld - Arrived %lld \n",
-                                tag,tmpTag);
+                        ulm_err(("Error: Tag mismatch in adminMessage::allgather\n"
+                                 "\t Expected %lld - Arrived %lld\n",
+                                 tag, tmpTag));
                     }
                     /* unpack data */
                     offsetIntoAggregateData=0;
@@ -1430,8 +1423,7 @@ ServerCode:
                     totalBytes=groupHostData_m[host].nGroupProcIDOnHost*bytesToHandle;
                     bReturnValue=unpack(dest,BYTE,totalBytes);
                     if( !bReturnValue ) {
-                        fprintf(stderr," In routine adminMessage::allgather error returned from unpacking data from host %d \n",host);
-                        fflush(stderr);
+                        ulm_err(("Error: from unpack in adminMessage::allgather\n"));
                         return ULM_ERROR;
                     }
 
@@ -1453,9 +1445,8 @@ ServerCode:
 
         bReturnValue=broadcast(ALLGATHER,&returnCode);
         if( !bReturnValue ) {
-            fprintf(stderr," In routine adminMessage::allgather error returned from broadcast error code %d\n",
-                    returnCode);
-            fflush(stderr);
+            ulm_err(("Error: from broadcast in adminMessage::allgather (%d)\n",
+                     returnCode));
             return ULM_ERROR;
         }
 
@@ -1674,7 +1665,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     if( numHosts > 0 ) { 
         hostsAssigned=(int *)ulm_malloc(numHosts*sizeof(int));
         if( !hostsAssigned ) {
-            ulm_err((" Unable to allocate memory for hostsAssigned list \n"));
+            ulm_err(("Error: Can't allocate memory for hostsAssigned list\n"));
             return false;
         }
         for(int i=0 ; i < numHosts ; i++ )
@@ -1752,7 +1743,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
         if ((size=ulm_readv(sockfd, iovecs, 5)) != 
             6*sizeof(int)+sizeof(pid_t)) {
             ulm_err(("adminMessage::serverConnect read from client socket failed!\n"));
-            ulm_err((" received %d expected %d \n",size,6*sizeof(int)+sizeof(pid_t)));
+            ulm_err(("Error: received %d expected %d\n",size,6*sizeof(int)+sizeof(pid_t)));
             close(sockfd);
             continue;
         }
@@ -1762,7 +1753,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             hostrank=socketToNodeId(numHosts,hostList,&addr,
                                     assignNewId,hostsAssigned);
             if( hostrank == UNKNOWN_HOST_ID ){
-                ulm_err((" adminMessage::serverConnect UNKNOWN_HOST_ID \n"));
+                ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID\n"));
                 return false;
             }
         }
@@ -1932,7 +1923,7 @@ bool adminMessage::broadcastMessage(int tag, int *errorCode)
                 
         if ( kCTChannelOK != status )
         {
-            ulm_err( ("Error while broadcasting msg. status = %d.\n", status) );
+            ulm_err( ("Error: while broadcasting msg. status = %d.\n", status) );
             success = false;
         }
                  
@@ -2120,7 +2111,7 @@ bool adminMessage::sendMessage(int rank, int tag, unsigned int channelID, int *e
                 
         if ( kCTChannelOK != status )
         {
-            ulm_err( ("Error while sending msg. status = %d.\n", status) );
+            ulm_err( ("Error: while sending msg. status = %d.\n", status) );
             success = false;
         }
                  

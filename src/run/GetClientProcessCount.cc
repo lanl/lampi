@@ -121,13 +121,13 @@ void GetClientProcessCount(const char *InfoStream)
     /* find Procs or ProcsAlias index in option list */
     int OptionIndex = MatchOption("Procs", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option Procs not found in Input parameter database\n"));
+        ulm_err(("Error: Option Procs not found in Input parameter database\n"));
         Abort();
     }
     if (strlen(ULMInputOptions[OptionIndex].InputData) == 0) {
         OptionIndex = MatchOption("ProcsAlias", ULMInputOptions, SizeOfInputOptionsDB);
         if (OptionIndex < 0) {
-            ulm_err(("mpirun: Error: Option ProcsAlias not found in Input parameter database\n"));
+            ulm_err(("Error: Option ProcsAlias not found in Input parameter database\n"));
             Abort();
         }
     }
@@ -144,13 +144,13 @@ void GetClientProcessCount(const char *InfoStream)
             nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
             if (nhosts > LSFNumHosts) {
 #ifndef __osf__
-                ulm_err(("mpirun: Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
+                ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                     nhosts, LSFNumHosts));
                 Abort();
 #endif
             }
             else if (nhosts < 1) {
-                ulm_err(("mpirun: Error: -N option specifies less than 1 host (%d).\n",
+                ulm_err(("Error: -N option specifies less than 1 host (%d).\n",
                     nhosts));
                 Abort();
             }
@@ -199,7 +199,7 @@ void GetClientProcessCount(const char *InfoStream)
                 RunParameters.NHosts = RunParameters.HostListSize;
             }
             else if (RunParameters.NHosts != 1) {
-                ulm_err(("mpirun: Error: -N option did not specify 1 host (machine) "
+                ulm_err(("Error: -N option did not specify 1 host (machine) "
                     "but there is no host (-H) information.\n"));
                 Abort();
             }
@@ -220,7 +220,7 @@ void GetClientProcessCount(const char *InfoStream)
     if (totalProcsSpecified) {
         int totalProcs = atoi(*(ProcData.begin()));
         if (totalProcs < 1) {
-            ulm_err(("mpirun: Error: -np/-n option must specify at least one process.\n"));
+            ulm_err(("Error: -np/-n option must specify at least one process.\n"));
             Abort();
         }
 #ifdef __osf__
@@ -248,7 +248,7 @@ void GetClientProcessCount(const char *InfoStream)
                 }
             }
             if (totalProcs != procsAllocated) {
-                ulm_err(("mpirun: Error: unable to allocate %d processes "
+                ulm_err(("Error: unable to allocate %d processes "
                     "(allocated %d processes) across %d hosts.\n",
                     totalProcs, procsAllocated, RunParameters.NHosts));
                 Abort();
@@ -295,7 +295,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     }
 
     if (!RunParameters.UseLSF) {
-        ulm_err(("mpirun: Error: No input data provided for -np/-n.\n"));
+        ulm_err(("Error: No input data provided for -np/-n.\n"));
         Abort();
     }
 
@@ -304,13 +304,13 @@ void GetClientProcessCountNoInput(const char *InfoStream)
         nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
         if (nhosts > LSFNumHosts) {
 #ifndef __osf__
-            ulm_err(("mpirun: Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
+            ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                 nhosts, LSFNumHosts));
             Abort();
 #endif
         }
         else if (nhosts < 1) {
-            ulm_err(("mpirun: Error: -N option specifies less than 1 host (%d).\n",
+            ulm_err(("Error: -N option specifies less than 1 host (%d).\n",
                 nhosts));
             Abort();
         }
@@ -349,7 +349,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
             }
         }                       /* end of for loop for LSF */
         if (LSFHost >= LSFNumHosts) {
-            ulm_err(("mpirun: Error: There is no PE allocated on machine %s\n", RunParameters.HostList[Host]));
+            ulm_err(("Error: There is no PE allocated on machine %s\n", RunParameters.HostList[Host]));
             Abort();
         }
     }                           /* end of for loop for RunParameters->NHosts */

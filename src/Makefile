@@ -202,7 +202,7 @@ libmpiandio.$(SOSUFFIX): $(VERSION) $(OBJ_LIBMPI) $(MPIO_LIB)
 		-o $@ $(OBJ_LIBMPI) $(MPIO_OBJECTS) $(LDLIBS) $(LDLIBS_LIBMPI)
 
 libmpiandio.a: $(VERSION) $(OBJ_LIBMPI) $(MPIO_LIB)
-	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '-'`; ln -sf $$f src.$$l; done
+	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '.'`; ln -sf $$f src.$$l; done
 	$(AR) $(ARFLAGS) $@ src.*.o
 	@$(RM) src.*.o
 	$(AR) $(ARFLAGS) $@ $(MPIO_OBJECTS)

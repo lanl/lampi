@@ -93,13 +93,13 @@ void GetLSFResource()
         } else {                /* fill in the host name */
             NetEntry = gethostbyname(*i);
             if (NetEntry == NULL) {
-                ulm_err(("mpirun: Error: Unrecognized host name %s\n",
+                ulm_err(("Error: Unrecognized host name %s\n",
                          *i));
                 Abort();
             }
             len = strlen(NetEntry->h_name);
             if (len > ULM_MAX_HOSTNAME_LEN) {
-                ulm_err(("mpirun: Error: Host name too long for library buffer, length = %ld\n", len));
+                ulm_err(("Error: Host name too long for library buffer, length = %ld\n", len));
                 Abort();
             }
             strcpy((char *) LSFHostList[Host], NetEntry->h_name);

@@ -231,7 +231,7 @@ public:
         /*** WARNING *** WARNING ***/
         /*** THIS WILL BREAK IF sizeof(char) > 1 BYTE ***/
         if (!(sizeof(char)==1)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         max = static_cast<char *>(ptr) + len;
         for (c = 0, p = ptr; p < max; c = ++c % numcpus, p = next) {
@@ -337,7 +337,7 @@ private:
         /*** sungeun *** yuck is all i can say ***/
         while (fscanf(pFP, "%s", str[pos%3]) != EOF) {
             if (!(strlen(str[pos%3])<256)) {
-                ulm_exit((-1, "Aborting \n"));
+                ulm_exit((-1, "Aborting\n"));
             }
             // looking for the "received" string to indicate success
             if (strncmp(str[pos%3], "received", 8) == 0) {

@@ -260,7 +260,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 
             if (RetVal < NHosts) {
                 /* send TERMINATENOW message to remaining hosts */
-                ulm_err(("mpirun: Error: Host %d is no longer participating in the job\n", RetVal));
+                ulm_err(("Error: Host %d is no longer participating in the job\n", RetVal));
                 ClientSocketFDList[RetVal] = -1;
                 mpirunKillAppProcs(HostList[RetVal], ProcessCnt[RetVal],
                                    PIDsOfAppProcs[RetVal]);
@@ -274,11 +274,11 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
          *  timeout period expired - abort */
         if (TimeFirstCheckin > 0
             && TimeInSeconds - TimeFirstCheckin > STARTUPINTERVAL) {
-            printf("mpirun terminating abnormally.\n");
-            printf("  Clients did not startup.  List: ");
+            ulm_err(("Error: mpirun terminating abnormally\n"));
+            printf("Clients did not startup.  List:");
             for (i = 0; i < NHosts; i++)
                 if (ActiveHosts[i] == -1)
-                    printf(" %d ", i);
+                    printf(" %d", i);
             printf("\n");
             Abort();
         }

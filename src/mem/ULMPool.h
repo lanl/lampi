@@ -1,49 +1,39 @@
 /*
- * This file is part of LA-MPI
- *
- * Copyright 2002 Los Alamos National Laboratory
- *
- * This software and ancillary information (herein called "LA-MPI") is
- * made available under the terms described here.  LA-MPI has been
- * approved for release with associated LA-CC Number LA-CC-02-41.
- * 
- * Unless otherwise indicated, LA-MPI has been authored by an employee
- * or employees of the University of California, operator of the Los
- * Alamos National Laboratory under Contract No.W-7405-ENG-36 with the
- * U.S. Department of Energy.  The U.S. Government has rights to use,
- * reproduce, and distribute LA-MPI. The public may copy, distribute,
- * prepare derivative works and publicly display LA-MPI without
- * charge, provided that this Notice and any statement of authorship
- * are reproduced on all copies.  Neither the Government nor the
- * University makes any warranty, express or implied, or assumes any
- * liability or responsibility for the use of LA-MPI.
- * 
- * If LA-MPI is modified to produce derivative works, such modified
- * LA-MPI should be clearly marked, so as not to confuse it with the
- * version available from LANL.
- * 
- * LA-MPI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * LA-MPI is distributed in the hope that it will be useful, but
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307 USA.
+ * Lesser General Public License for more details.
  */
-
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _ULMPool
 #define _ULMPool
 
-//#include "internal/profiler.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -54,9 +44,9 @@
 #include "internal/types.h"
 #include "client/ULMClient.h"
 #include "mem/ULMMallocMacros.h"
-#include "mem/ULMMallocUtil.h"
+#include "mem/PoolChunks.h"
 
-//! Fixed-size pool of shared memory
+// Fixed-size pool of shared memory
 /*!
  *  This class allocates and manages a fixed-size pool of shared
  *  memory.
@@ -64,7 +54,7 @@
 class ULMMemoryPool
 {
 public:
-    //! Constructor.  Note that all arguments are required
+    // Constructor.  Note that all arguments are required
     /*
      * Constructor - creates the shared memory pool which other objects
      * use.
@@ -82,20 +72,20 @@ public:
                   int Log2PageSize, int MProt, int MFlags,
                   ssize_t initPoolSize, bool shared = true);
 
-    //! Destructor, Unmaps the shared memory
+    // Destructor, Unmaps the shared memory
     ~ULMMemoryPool() {  DeletePool(); }
 
-    //! Request a chunk of memory
+    // Request a chunk of memory
     void *RequestChunk(int BucketIndex, bool IsLoaned, int LoanedTo);
 
-    //! Returns a chunk of memory to the pool to be reused
+    // Returns a chunk of memory to the pool to be reused
     /*
      * Returns a chunk of memory to the pool for reuse.
      * \param ChunkBaseAddress A pointer to the base address of the chunk
      */
     int ReturnChunk(void *ChunkBaseAddress);
 
-    //! Reset the size of the memory pool
+    // Reset the size of the memory pool
     /*!
      * Resets the size of the memory pool.
      * \param initPoolSize New size of the pool
@@ -106,36 +96,32 @@ public:
 
     void *GetPoolBase() {return PoolBase;}
 
-    PoolBlocks *GetPoolChunksPtr(){ return PoolChunks;}
+    PoolChunks_t *GetPoolChunksPtr(){ return PoolChunks;}
 
     void SetBucketIndex(int BucketIndex, int ChunkIndex)
         { PoolChunks[ChunkIndex].bucketindex=BucketIndex; }
 
-    int LogBase2PageSize; //!< Log base 2 of a page of memory
-    int LogBase2ChunkSize; //!< Size of the memory chuncks
-    long PageMask; //!< mask for pages
-    long PoolChunkSize; //!< Size of the pool memory chunks
-    int MemProt; //!< Memory protections for the pool
-    int MemFlags; //!< Memory flags for the pool
-    void *PoolBase; //!< base of memory pool
-    long long MaxPoolSize; //!< maximum memory in pool
-    long long PoolSize; //!< actual pool size
-    long MaxNPoolChunks; //!< maximum number of chunks
-    bool isShared; //!< flag indicating if pool exist in shared mem
+    int LogBase2PageSize;           // Log base 2 of a page of memory
+    int LogBase2ChunkSize;          // Size of the memory chuncks
+    long PageMask;                  // mask for pages
+    long PoolChunkSize;             // Size of the pool memory chunks
+    int MemProt;                    // Memory protections for the pool
+    int MemFlags;                   // Memory flags for the pool
+    void *PoolBase;                 // base of memory pool
+    long long MaxPoolSize;          // maximum memory in pool
+    long long PoolSize;             // actual pool size
+    long MaxNPoolChunks;            // maximum number of chunks
+    bool isShared;                  // flag indicating if pool exist in shared mem
+    PoolChunks_t *PoolChunks;       // information about each chunk
+    long NPoolChunks;               // number of chunks
+    int NextAvailChunk;             // next available chunk
+    Locks Lock;                     // Lock for pool
 
-    // information about each chunk
-    PoolBlocks *PoolChunks;
-
-    long NPoolChunks; // number of chunks
-    int NextAvailChunk;	// next available chunk
-
-    Locks Lock; //!< Lock for pool
-
-    //! Delete memory pool
+    // Delete memory pool
     void DeletePool();
 
 private:
-    //! Allocate memory pool
+    // Allocate memory pool
     int InitPool();
 };
 

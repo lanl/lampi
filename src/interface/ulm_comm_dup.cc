@@ -55,7 +55,6 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
     int i;
     int ndims;
     int topo_type;
-    int rc;
     int size_of_attr;
     Communicator *in_comm;
     ULMTopology_t *topology;
@@ -124,7 +123,7 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
     if (in_comm->topology != NULL) {
         topology = (ULMTopology_t *) ulm_malloc(sizeof(ULMTopology_t));
         if (topology == (ULMTopology_t *) NULL) {
-            rc = MPI_ERR_OTHER;
+            returnValue = MPI_ERR_OTHER;
             exit(-1);
         }
         topo_type = in_comm->topology->type;
@@ -171,7 +170,7 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
             }
 
         }
-        rc = ulm_set_topology(*outputContextID, topology);
+        returnValue = ulm_set_topology(*outputContextID, topology);
     }
     //
     // replicate communictor attributes

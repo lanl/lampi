@@ -70,7 +70,7 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
     /* open socket */
     (*ClientSocketFD) = socket(AF_INET, SOCK_STREAM, 0);
     if ((*ClientSocketFD) < 0) {
-        ulm_err((" error returned from the socket call :: %d \n",
+        ulm_err(("Error: from the socket call (%d)\n",
                  *ClientSocketFD));
         return -4;
     }
@@ -85,7 +85,7 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
         bproc_nodeaddr(BPROC_NODE_MASTER,
                        (struct sockaddr *) &ParentSockAddr, &size);
     if (RetVal != 0) {
-        ulm_err((" error returned from the bproc_nodeaddr call :: errno - %d \n", errno));
+        ulm_err(("Error: from bproc_nodeaddr (%d)\n", errno));
         return ULM_ERROR;
     }
 #else
@@ -104,7 +104,7 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
                      sizeof(struct sockaddr_in))) == -1)
            && (errno == EINTR));
     if (RetVal == -1) {
-        ulm_err((" error returned from the connect call :: %d fd %d errno %d \n", RetVal, *ClientSocketFD, errno));
+        ulm_err(("Error: returned from the connect call :: %d fd %d errno %d\n", RetVal, *ClientSocketFD, errno));
         return -5;
     }
     /* Hand Shake with server */

@@ -28,14 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
-#include "internal/profiler.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
 
 #include "internal/constants.h"
+#include "internal/log.h"
+#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
 
@@ -61,7 +60,7 @@ int MPIrunInstallSigHandler(void)
     sigfillset(&sa.sa_mask);
     sa.sa_flags = 0;
     if (sigaction(SIGINT, &sa, NULL)) {
-        printf(" Error trapping SIGINT\n ");
+        ulm_err(("Error: trapping SIGINT\n"));
         Abort();
     }
 

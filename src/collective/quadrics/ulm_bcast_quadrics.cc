@@ -68,18 +68,16 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
      */
     rc = communicators[comm]->getMcastVpid(0, &vpid);
     if (rc != ULM_SUCCESS || vpid < 0) {
-        fprintf(stderr, "comm=%d, proc=%d returned vpid=%d, rc=%d \n",
-                comm, self, vpid, rc);
-        fflush(stderr);
+        ulm_err(("Error: comm=%d, proc=%d returned vpid=%d, rc=%d\n",
+                 comm, self, vpid, rc));
         goto DEFAULT;
     }
 
     mcast_buf = (unsigned char *) 
         communicators[comm]->getMcastBuf(0, &mcast_buf_sz);
     if (mcast_buf == 0) {
-        fprintf(stderr, "comm=%d, proc=%d couldn't fetch mcast buf \n",
-                comm, self);
-        fflush(stderr);
+        ulm_err(("Error: comm=%d, proc=%d couldn't fetch mcast buf\n",
+                 comm, self));
         goto DEFAULT;
     }
 
@@ -94,13 +92,13 @@ int ulm_bcast_quadrics(void *buf, int count, ULMType_t * type,
     if (self == root) {
         rc = ulm_send(buf, count, type, -1, tag, comm, ULM_SEND_MULTICAST);
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error in multicast send, returned %d \n", rc));
+            ulm_err(("Error: in multicast send, returned %d\n", rc));
             return rc;
         }
     } else {
         rc = ulm_recv(buf, count, type, root, tag, comm, &status);
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error in multicast recv, returned %d \n", rc));
+            ulm_err(("Error: in multicast recv, returned %d\n", rc));
             return rc;
         }
     }

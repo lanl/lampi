@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 #include "internal/linkage.h"
+#include "internal/log.h"
 
 /*
  * Set ULM_MALLOC_DEBUG_LEVEL to
@@ -54,21 +55,18 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
 {
     void *addr = NULL;
 
+    _ulm_set_file_line(file, line);
     if (debug_level > 1) {
         if (size <= 0) {
-            fprintf(stderr,
-                    "%s:%d: Warning: ulm_malloc: Request for %ld bytes\n",
-                    file, line, (long) size);
-            fflush(stderr);
+            _ulm_warn("Warning: ulm_malloc: Request for %ld bytes\n",
+                      (long) size);
         }
     }
     addr = malloc((size_t) size);
     if (debug_level > 0) {
         if (addr == NULL) {
-            fprintf(stderr,
-                    "%s:%d: Error: ulm_malloc: Request for %ld bytes failed\n",
-                    file, line, (long) size);
-            fflush(stderr);
+            _ulm_err("Error: ulm_malloc: Request for %ld bytes failed\n",
+                     (long) size);
         }
     }
 
@@ -78,11 +76,9 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
 CDECL_STATIC_INLINE
 void _ulm_free(void *addr, int debug_level, char *file, int line)
 {
+    _ulm_set_file_line(file, line);
     if (debug_level > 1 && addr == NULL) {
-        fprintf(stderr,
-                "%s:%d: Warning: ulm_free: Invalid pointer %p\n",
-                file, line, addr);
-        fflush(stderr);
+        _ulm_warn("Warning: ulm_free: Invalid pointer %p\n", addr);
         return;
     }
     free(addr);

@@ -45,8 +45,7 @@
 #include "path/common/InitSendDescriptors.h"
 
 // instantiate globals in net/common/InitSendDescriptors.h
-FreeLists<DoubleLinkList, BaseSendDesc_t, MMAP_SHARED_PROT,
-	  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> _ulm_SendDescriptors;
+FreeListShared_t<BaseSendDesc_t> _ulm_SendDescriptors;
 ssize_t _ulm_nSendDescPages = -1;
 ssize_t _ulm_maxPgsIn1SendDescList = -1;
 ssize_t _ulm_minPgsIn1SendDescList = -1;

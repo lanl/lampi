@@ -142,18 +142,16 @@ extern "C" int ulm_make_progress(void)
         // process arriving on host frags
         returnValue = processSMPFrags();
         if (returnValue != ULM_SUCCESS) {
-            fprintf(stderr, " processSMPFrags returned %d\n",
-                    returnValue);
-            fflush(stderr);
+            ulm_err(("Error: processSMPFrags returned %d\n",
+                    returnValue));
             return returnValue;
         }
         // moves frags between SMPSendsToPost  and the fifo
         if (SMPSendsToPost[local_myproc()]->size() != 0) {
             returnValue = processUnsentSMPMessages();
             if (returnValue != ULM_SUCCESS) {
-                fprintf(stderr, " processUnsentSMPMessages returned %d\n",
-                        returnValue);
-                fflush(stderr);
+                ulm_err(("Error: processUnsentSMPMessages returned %d\n",
+                         returnValue));
                 return returnValue;
             }
         }
@@ -316,7 +314,7 @@ extern "C" int ulm_make_progress(void)
     }
 
     if (DEBUG_TIMES) {
-        ulm_err((" leaving ulm_make_progress \n"));
+        ulm_err(("Error: leaving ulm_make_progress\n"));
     }
 
     return returnValue;

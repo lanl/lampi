@@ -97,7 +97,7 @@ void _init_factories(void)
     _chnl_factories = (struct _chnl_cls_info **)malloc(sizeof(struct _chnl_cls_info *)*_CHNL_BLK_SIZE);
     if ( NULL == _chnl_factories )
     {
-        fprintf(stderr, "Error: unable to initialize _chnl_factories array.\n");
+        ulm_err(("Error: unable to initialize _chnl_factories array.\n"));
     }
     bzero(_chnl_factories, sizeof(struct _chnl_cls_info *)*_CHNL_BLK_SIZE);
     _factory_sz = _CHNL_BLK_SIZE;
@@ -164,7 +164,7 @@ bool CTChannel::addChannelConstructor(const char *chnlClass, CTChannel *(*factor
                                                 sizeof(struct _chnl_cls_info *)*(_tail + _CHNL_BLK_SIZE));
         if ( NULL == ptr )
         {
-            fprintf(stderr, "Error: Unable to resize _chnl_factories.\n");
+            ulm_err(("Error: Unable to resize _chnl_factories.\n"));
             ret = false;
         }
         else
@@ -185,7 +185,7 @@ bool CTChannel::addChannelConstructor(const char *chnlClass, CTChannel *(*factor
         }
         else
         {
-            fprintf(stderr, "Error: Unable to malloc for _chnl_cls_info item.\n");
+            ulm_err(("Error: Unable to malloc for _chnl_cls_info item.\n"));
             ret = false;
         }
     }
@@ -423,7 +423,7 @@ CTChannelStatus CTTCPChannel::sendData(const ulm_iovec_t *iov, int iovcnt, long 
     if ( slen < 0 )
     {
         status = _translate_err(errno);
-        fprintf(stderr, "Error in sending iovec. errno = %d\n", errno);
+        ulm_err(("Error: sending iovec. errno = %d\n", errno));
         // handle error
         closeChannel();
     }
@@ -461,7 +461,7 @@ CTChannelStatus CTTCPChannel::receive(char *buffer, long int len, long int *lenr
     if ( slen < 0 )
     {
         status = _translate_err(errno);
-        ulm_err(("Error in receiving. errno = %d\n", errno));
+        ulm_err(("Error: in receiving. errno = %d\n", errno));
         // handle error
         closeChannel();
     }
@@ -532,7 +532,7 @@ CTChannelStatus CTTCPChannel::receiveAtMost(char *buffer, long int len, long int
     if ( slen < 0 )
     {
         status = _translate_err(errno);
-        ulm_err(("Error in receiving. errno = %d\n", errno));
+        ulm_err(("Error: in receiving. errno = %d\n", errno));
         // handle error
         closeChannel();
     }
@@ -708,7 +708,7 @@ bool CTTCPChannel::openChannel(int timeoutSecs)
                 err = select(sockfd_m + 1, &rset, &wset, NULL, &to);
                 if ( err < 0 )
                 {
-                    fprintf(stderr, "Timed out connection error in connecting.\n");
+                    ulm_err(("Error: Timed out connection error in connecting.\n"));
                 }
                 else if ( 0 == err )
                 {
@@ -791,9 +791,9 @@ void CTTCPChannel::setTimeout(unsigned int secs)
         tval.tv_sec = secs;
         tval.tv_usec = 0;
         if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
-            ulm_err(("Unable to set recv timeout. errno = %d.\n", errno));
+            ulm_err(("Error: Can't set recv timeout. errno = %d.\n", errno));
         if ( setsockopt(sockfd_m, SOL_SOCKET, SO_SNDTIMEO, &tval, sizeof(tval)) < 0 )
-            ulm_err(("Unable to set send timeout. errno = %d.\n", errno));
+            ulm_err(("Error: Can't set send timeout. errno = %d.\n", errno));
     }
 }
 
@@ -838,7 +838,7 @@ bool CTTCPSvrChannel::setupToAcceptConnections()
     flg = 1;
     if ( setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flg, sizeof(flg)) < 0 )
     {
-        ulm_err(("Unable to set SO_REUSEADDR socket option!\n"));
+        ulm_err(("Error: Can't set SO_REUSEADDR socket option!\n"));
     }
 
     addr = tcpchannel->socketAddress();
@@ -901,7 +901,7 @@ CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTChannel **
             err = select(sockfd + 1, &rset, NULL, NULL, &to);
             if ( err < 0 )
             {
-                fprintf(stderr, "Error in accepting connections. errno = %d.\n", errno);
+                ulm_err(("Error: accepting connections. errno = %d.\n", errno));
                 status = kCTChannelError;
                 done = true;
             }

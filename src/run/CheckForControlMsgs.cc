@@ -28,9 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
-#include "internal/profiler.h"
 #include <stdio.h>
 #include <strings.h>
 #include <time.h>
@@ -42,12 +39,13 @@
 #include <errno.h>
 /* end debug*/
 
+#include "client/SocketGeneric.h"
 #include "internal/constants.h"
+#include "internal/log.h"
+#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "client/SocketGeneric.h"
 #include "run/TV.h"
-#include "internal/log.h"
 #include "ulm/errors.h"
 
 /*
@@ -57,23 +55,22 @@
 static int NumHostPIDsRecved = 0;
 
 int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
-                              int *HostsNormalTerminated,
-                              ssize_t *StderrBytesRead,
-                              ssize_t *StdoutBytesRead, int *STDERRfds,
-                              int *STDOUTfds, int *HostsAbNormalTerminated,
-                              int *ActiveHosts, int *ProcessCnt,
-                              pid_t ** PIDsOfAppProcs,
-                              int *ActiveClients,
-							  adminMessage *server)
+                             int *HostsNormalTerminated,
+                             ssize_t * StderrBytesRead,
+                             ssize_t * StdoutBytesRead, int *STDERRfds,
+                             int *STDOUTfds, int *HostsAbNormalTerminated,
+                             int *ActiveHosts, int *ProcessCnt,
+                             pid_t ** PIDsOfAppProcs,
+                             int *ActiveClients, adminMessage * server)
 {
-	/*
-		Control msg data layout:
-		<tag (int)><msg control data>
-	*/
-	int							rank, tag, i, errorCode;
-    ssize_t 					ExpetctedData[2];
-    unsigned int 				*Inp;
-    char 						ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
+    /*
+       Control msg data layout:
+       <tag (int)><msg control data>
+     */
+    int rank, tag, i, errorCode;
+    ssize_t ExpetctedData[2];
+    unsigned int *Inp;
+    char ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
 #if defined (__linux__) || defined (__APPLE__)
     struct timeval Time;
 #else
@@ -82,144 +79,142 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 
     rank = -1;
     tag = -1;
-	if ( true == server->receiveMessage(&rank, &tag, &errorCode, -1) )
-	{
-		switch (tag) 
-		{  /* process according to message type */
-		case HEARTBEAT:
+    if (true == server->receiveMessage(&rank, &tag, &errorCode, -1)) {
+        switch (tag) {          /* process according to message type */
+        case HEARTBEAT:
 #if defined (__linux__) || defined (__APPLE__)
-			gettimeofday(&Time, NULL);
-			HeartBeatTime[rank] =
-				(double) (Time.tv_sec) +
-				((double) Time.tv_usec) * 1e-6;
+            gettimeofday(&Time, NULL);
+            HeartBeatTime[rank] =
+                (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
 #else
-			clock_gettime(CLOCK_REALTIME, &Time);
-			HeartBeatTime[rank] =
-				(double) (Time.tv_sec) +
-				((double) Time.tv_nsec) * 1e-9;
+            clock_gettime(CLOCK_REALTIME, &Time);
+            HeartBeatTime[rank] =
+                (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif                          /* LINUX */
-			break;
-		case NORMALTERM:
-			ulm_dbg((" NormalTerm %d\n", rank));
+            break;
+        case NORMALTERM:
+            ulm_dbg((" NormalTerm %d\n", rank));
 #ifdef PURIFY
-			ExpetctedData[0] = 0;
-			ExpetctedData[1] = 0;
-			error = 0;
+            ExpetctedData[0] = 0;
+            ExpetctedData[1] = 0;
+            error = 0;
 #endif
-			server->unpackMessage(ExpetctedData, (adminMessage::packType) sizeof(ssize_t), 2);
+            server->unpackMessage(ExpetctedData,
+                                  (adminMessage::packType) sizeof(ssize_t),
+                                  2);
 
-			/* send ack msg */
-			tag = ACKNORMALTERM;
-			server->reset(adminMessage::SEND);
-			ulm_dbg(("mpirun: Sending ACKNORMALTERM to rank %d.\n", rank));
-			if ( false == server->sendMessage(rank, tag, server->channelID(), &errorCode) )
-			{
-				ulm_err( ("Error: sending ACKNORMALTERM.  RetVal: %ld\n",
-						(long) errorCode) );
-				Abort();
-			}
-			break;
-		case ACKACKNORMALTERM:
-			ulm_dbg(("ACKACKNORMALTERM host %d\n", rank));
+            /* send ack msg */
+            tag = ACKNORMALTERM;
+            server->reset(adminMessage::SEND);
+            ulm_dbg(("mpirun: Sending ACKNORMALTERM to rank %d.\n", rank));
+            if (false ==
+                server->sendMessage(rank, tag, server->channelID(),
+                                    &errorCode)) {
+                ulm_err(("Error: sending ACKNORMALTERM.  RetVal: %ld\n",
+                         (long) errorCode));
+                Abort();
+            }
+            break;
+        case ACKACKNORMALTERM:
+            ulm_dbg(("ACKACKNORMALTERM host %d\n", rank));
             if (ActiveHosts[rank])
-			    (*HostsNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			// if all hosts have terminated normally
-			//  notify all hosts, so that they can stop network processing
-			//  and shut down.
-			if ((*HostsNormalTerminated) == NHosts)
-			{
-				tag = ALLHOSTSDONE;
-				// broadcast ALLHOSTSDONE
-				server->reset(adminMessage::SEND);
-				if ( false == server->broadcastMessage(tag, &errorCode) )
-				{
-					ulm_err( ("Error: sending ALLHOSTSDONE.\n") );
-					Abort();
-				}
+                (*HostsNormalTerminated)++;
+            ActiveHosts[rank] = 0;
+            // if all hosts have terminated normally
+            //  notify all hosts, so that they can stop network processing
+            //  and shut down.
+            if ((*HostsNormalTerminated) == NHosts) {
+                tag = ALLHOSTSDONE;
+                // broadcast ALLHOSTSDONE
+                server->reset(adminMessage::SEND);
+                if (false == server->broadcastMessage(tag, &errorCode)) {
+                    ulm_err(("Error: sending ALLHOSTSDONE.\n"));
+                    Abort();
+                }
                 *ActiveClients = 0;
-			}           // end sending ALLHOSTSDONE
-			break;
-		case ACKALLHOSTSDONE:
-			ulm_dbg((" ACKALLHOSTSDONE host %d\n", rank));
-			(*ActiveClients)--;
-			break;
-		case CONFIRMABORTCHILDPROC:
-			break;
-			/* worker process died abnormally */
-		case ABNORMALTERM:
+            }                   // end sending ALLHOSTSDONE
+            break;
+        case ACKALLHOSTSDONE:
+            ulm_dbg((" ACKALLHOSTSDONE host %d\n", rank));
+            (*ActiveClients)--;
+            break;
+        case CONFIRMABORTCHILDPROC:
+            break;
+            /* worker process died abnormally */
+        case ABNORMALTERM:
 #ifdef PURIFY
-			bzero(ReadBuffer, 5 * sizeof(unsigned int));
-			error = 0;
+            bzero(ReadBuffer, 5 * sizeof(unsigned int));
+            error = 0;
 #endif
-			if ( false == server->unpackMessage(ReadBuffer, 
-							(adminMessage::packType) sizeof(unsigned int), 5) )
-			{
-				Inp = (unsigned int *) ReadBuffer;
-				printf
-					("Abnormal termination: Global Rank %u Local Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
-						*(Inp + 2), *(Inp + 1), *Inp, rank, *(Inp + 3),
-						*(Inp + 4));
-				fflush(stdout);
-			}
-			/* send ack to Client */
-			tag = ACKABNORMALTERM;
-			server->reset(adminMessage::SEND);
-			if ( false == server->sendMessage(rank, tag, server->channelID(), &errorCode) )
-			{
-				/* assume connection no longer available */
-				ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", rank));
+            if (false == server->unpackMessage(ReadBuffer,
+                                               (adminMessage::
+                                                packType) sizeof(unsigned
+                                                                 int),
+                                               5)) {
+                Inp = (unsigned int *) ReadBuffer;
+                ulm_err(("Abnormal termination: "
+                         "Global Rank %u Local Host Rank %u PID %u "
+                         "HostID %d Signal %d ExitStatus %d\n",
+                         *(Inp + 2), *(Inp + 1), *Inp, rank, *(Inp + 3),
+                         *(Inp + 4)));
+            }
+            /* send ack to Client */
+            tag = ACKABNORMALTERM;
+            server->reset(adminMessage::SEND);
+            if (false ==
+                server->sendMessage(rank, tag, server->channelID(),
+                                    &errorCode)) {
+                /* assume connection no longer available */
+                ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n",
+                         rank));
                 if (ActiveHosts[rank])
-				    (*HostsAbNormalTerminated)++;
-				ActiveHosts[rank] = 0;
-			}
-			/* notify all other clients to terminate immediately */
-			tag = TERMINATENOW;
-			server->reset(adminMessage::SEND);
-			if ( false == server->broadcastMessage(tag, &errorCode) )
-			{
-				ulm_err( ("Error: bcasting TERMINATENOW.\n") );
-				Abort();
-			}
-			break;
-		case ACKTERMINATENOW:
+                    (*HostsAbNormalTerminated)++;
+                ActiveHosts[rank] = 0;
+            }
+            /* notify all other clients to terminate immediately */
+            tag = TERMINATENOW;
+            server->reset(adminMessage::SEND);
+            if (false == server->broadcastMessage(tag, &errorCode)) {
+                ulm_err(("Error: bcasting TERMINATENOW.\n"));
+                Abort();
+            }
+            break;
+        case ACKTERMINATENOW:
             if (ActiveHosts[rank])
-			    (*HostsAbNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			break;
-		case ACKACKABNORMALTERM:
+                (*HostsAbNormalTerminated)++;
+            ActiveHosts[rank] = 0;
+            break;
+        case ACKACKABNORMALTERM:
             if (ActiveHosts[rank])
-			    (*HostsAbNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			break;
-		case APPPIDS:
-			/* read in app process pid's */
+                (*HostsAbNormalTerminated)++;
+            ActiveHosts[rank] = 0;
+            break;
+        case APPPIDS:
+            /* read in app process pid's */
 #ifdef PURIFY
-			bzero(PIDsOfAppProcs[rank],
-					ProcessCnt[rank] * sizeof(pid_t));
-			error = 0;
+            bzero(PIDsOfAppProcs[rank], ProcessCnt[rank] * sizeof(pid_t));
+            error = 0;
 #endif
-			if ( false == server->unpackMessage(PIDsOfAppProcs[rank], 
-							(adminMessage::packType) sizeof(pid_t), ProcessCnt[rank]) )
-			{
-				ulm_err( ("Error receiving PIDs.\n") );
-				Abort();
-			}
-			NumHostPIDsRecved++;
-			/* debug setup - if need be */
-			if (NumHostPIDsRecved == NHosts)
-				MPIrunTVSetUpApp(PIDsOfAppProcs);
-			break;
-		default:
-			printf("Unrecognized control Message : %d ", tag);
-			Abort();
-		}               /* end switch */
+            if (false == server->unpackMessage(PIDsOfAppProcs[rank],
+                                               (adminMessage::
+                                                packType) sizeof(pid_t),
+                                               ProcessCnt[rank])) {
+                ulm_err(("Error: receiving PIDs.\n"));
+                Abort();
+            }
+            NumHostPIDsRecved++;
+            /* debug setup - if need be */
+            if (NumHostPIDsRecved == NHosts)
+                MPIrunTVSetUpApp(PIDsOfAppProcs);
+            break;
+        default:
+            ulm_err(("Error: Unrecognized control message (%d)\n", tag));
+            Abort();
+        }                       /* end switch */
 
         /* drain stdio after all hosts terminate */
-        if (!(*ActiveClients))
-		{
-            for (i = 0; i < NHosts; i++)
-			{
+        if (!(*ActiveClients)) {
+            for (i = 0; i < NHosts; i++) {
                 if ((STDERRfds[i] > 0) || (STDOUTfds[i] > 0))
                     mpirunDrainStdioData(&(STDERRfds[i]), &(STDOUTfds[i]),
                                          &(StderrBytesRead[i]),
@@ -228,22 +223,20 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
                                          ExpetctedData[1]);
             }
         }
-	}
-	else if ( adminMessage::NOERROR != errorCode )
-	{
-		// we have an error
-		ulm_err( ("Error with connection to daemon 0. aborting...\n") );
-		Abort();
-	}
-	return 0;
+    } else if (adminMessage::NOERROR != errorCode) {
+        // we have an error
+        ulm_err(("Error: with connection to daemon 0. aborting...\n"));
+        Abort();
+    }
+    return 0;
 }
-							  
-							  
+
+
 int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                               int NHosts, double *HeartBeatTime,
                               int *HostsNormalTerminated,
-                              ssize_t *StderrBytesRead,
-                              ssize_t *StdoutBytesRead, int *STDERRfds,
+                              ssize_t * StderrBytesRead,
+                              ssize_t * StdoutBytesRead, int *STDERRfds,
                               int *STDOUTfds, int *HostsAbNormalTerminated,
                               int *ActiveHosts, int *ProcessCnt,
                               pid_t ** PIDsOfAppProcs,
@@ -300,10 +293,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     continue;
                 }
                 if (IOReturn < 0) {
-                    printf
-                        ("mpirun ctlmsgs: Error reading Tag.  RetVal: %ld\n",
-                         (long) IOReturn);
-                    perror(" Reading Tag ");
+                    ulm_err(("Error: Reading tag (%ld)\n", (long) IOReturn));
                     Abort();
                 }
                 switch (Tag) {  /* process according to message type */
@@ -332,9 +322,9 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                                          ExpetctedData,
                                          2 * sizeof(ssize_t), &error);
                     if (IOReturn < 0 || error != ULM_SUCCESS) {
-                        printf("Error: reading ExpectedData. "
-                               "RetVal = %ld, error = %d\n",
-                               (long) IOReturn, error);
+                        ulm_err(("Error: Reading ExpectedData. "
+                                 "RetVal = %ld, error = %d\n",
+                                 (long) IOReturn, error));
                         Abort();
                     }
 
@@ -345,9 +335,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     IOReturn =
                         _ulm_Send_Socket(ClientSocketFDList[i], 1, &IOVec);
                     if (IOReturn < 0) {
-                        printf
-                            ("Error: sending ACKNORMALTERM.  RetVal: %ld\n",
-                             (long) IOReturn);
+                        ulm_err(("Error: sending ACKNORMALTERM. RetVal: %ld\n",
+                                 (long) IOReturn));
                         Abort();
                     }
                     break;
@@ -399,11 +388,11 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                                          5 * sizeof(unsigned int), &error);
                     if (IOReturn > 0 || error != ULM_SUCCESS) {
                         Inp = (unsigned int *) ReadBuffer;
-                        printf
-                            ("Abnormal termination: Global Rank %u Local Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
-                             *(Inp + 2), *(Inp + 1), *Inp, i, *(Inp + 3),
-                             *(Inp + 4));
-                        fflush(stdout);
+                        ulm_err(("Abnormal termination: "
+                                 "Global Rank %u Local Host Rank %u PID %u "
+                                 "HostID %d Signal %d ExitStatus %d\n",
+                                 *(Inp + 2), *(Inp + 1), *Inp, i, *(Inp + 3),
+                                 *(Inp + 4)));
                     }
                     /* send ack to Client */
                     Tag = ACKABNORMALTERM;
@@ -467,12 +456,11 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     if (IOReturn !=
                         (ssize_t) (ProcessCnt[i] * sizeof(pid_t))
                         || error != ULM_SUCCESS) {
-                        printf
-                            ("Wrong number of PID's received for host %d.\n  "
-                             "%ld bytes received,  %ld expected., error = %d\n",
-                             i, (long) IOReturn,
-                             (long) (ProcessCnt[i] * sizeof(pid_t)),
-                             error);
+                        ulm_err(("Error: Wrong number of PID's received for host %d.\n "
+                                 "\t%ld bytes received,  %ld expected., error = %d\n",
+                                 i, (long) IOReturn,
+                                 (long) (ProcessCnt[i] * sizeof(pid_t)),
+                                 error));
                         Abort();
                     }
                     NumHostPIDsRecved++;
@@ -481,7 +469,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                         MPIrunTVSetUpApp(PIDsOfAppProcs);
                     break;
                 default:
-                    printf("Unrecognized control Message : %d ", Tag);
+                    ulm_err(("Error: Unrecognized control message : %d ", Tag));
                     Abort();
                 }               /* end switch */
             }

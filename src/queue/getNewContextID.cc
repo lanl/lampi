@@ -102,7 +102,7 @@ int Communicator::getNewContextID(int *outputContextID)
         returnValue = ulm_bcast(outputContextID, sizeof(int),
                                 (ULMType_t *) MPI_BYTE, 0, contextID);
         if (returnValue != ULM_SUCCESS) {
-            ulm_err((" Error returned in Communicator::getNewContextID from ulm_bcast :: %d \n", returnValue));
+            ulm_err(("Error: returned in Communicator::getNewContextID from ulm_bcast :: %d\n", returnValue));
         }
     } else {
         /* inter-communicator */
@@ -119,12 +119,12 @@ int Communicator::getNewContextID(int *outputContextID)
                                         remoteLeader, tag, contextID,
                                         &sendRequest, ULM_SEND_STANDARD);
                 if (returnValue != ULM_SUCCESS) {
-                    ulm_err((" Error returned in Communicator::getNewContextID from ulm_isend :: %d \n", returnValue));
+                    ulm_err(("Error: returned in Communicator::getNewContextID from ulm_isend :: %d\n", returnValue));
                     return returnValue;
                 }
                 returnValue = ulm_wait(&sendRequest, &sendStatus);
                 if (returnValue != ULM_SUCCESS) {
-                    ulm_err((" Error returned in Communicator::getNewContextID from send ulm_wait :: %d \n", returnValue));
+                    ulm_err(("Error: returned in Communicator::getNewContextID from send ulm_wait :: %d\n", returnValue));
                     return returnValue;
                 }
             } else {
@@ -137,12 +137,12 @@ int Communicator::getNewContextID(int *outputContextID)
                                         remoteLeader, tag, contextID,
                                         &recvRequest);
                 if (returnValue != ULM_SUCCESS) {
-                    ulm_err((" Error returned in Communicator::getNewContextID from ulm_irecv :: %d \n", returnValue));
+                    ulm_err(("Error: returned in Communicator::getNewContextID from ulm_irecv :: %d\n", returnValue));
                     return returnValue;
                 }
                 returnValue = ulm_wait(&recvRequest, &recvStatus);
                 if (returnValue != ULM_SUCCESS) {
-                    ulm_err((" Error returned in Communicator::getNewContextID from recv ulm_wait :: %d \n", returnValue));
+                    ulm_err(("Error: returned in Communicator::getNewContextID from recv ulm_wait :: %d\n", returnValue));
                     return returnValue;
                 }
             }

@@ -50,8 +50,7 @@
 // pool for collective frags - resides in process shared memory.  All
 // structures are initialized before the fork() and are not modified
 // there after.
-FreeLists<DoubleLinkList, LocalCollFragDesc, MMAP_SHARED_PROT,
-	  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> LocalCollFragDescriptors;
+FreeListShared_t <LocalCollFragDesc> LocalCollFragDescriptors;
 
 /* Initialize the Out of Order SMP shared memory descriptors */
 void InitCollSharedMemDescriptors(int NumLocalProcs)

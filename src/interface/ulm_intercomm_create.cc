@@ -69,7 +69,7 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
     // verify that localLeader is valid
     if (localLeader >= communicators[localComm]->localGroup->groupSize) {
         returnValue = MPI_ERR_ARG;
-	ulm_err(("Error: ulm_intercomm_create: bad localLeader.  localLeader %d groupSize %d \n",localLeader,communicators[localComm]->localGroup->groupSize));
+	ulm_err(("Error: ulm_intercomm_create: bad localLeader.  localLeader %d groupSize %d\n",localLeader,communicators[localComm]->localGroup->groupSize));
         goto BarrierTag;
     }
     // verify that the peer communictor is valid
@@ -90,11 +90,11 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
     if (remoteLeader >=
         communicators[peerComm]->remoteGroup->groupSize) {
         returnValue = MPI_ERR_ARG;
-	ulm_err(("Error: ulm_intercomm_create: Invalid remoteLeader - remoteLeader %d groupSize %d \n",remoteLeader,communicators[peerComm]->remoteGroup->groupSize));
+	ulm_err(("Error: ulm_intercomm_create: Invalid remoteLeader - remoteLeader %d groupSize %d\n",remoteLeader,communicators[peerComm]->remoteGroup->groupSize));
         goto BarrierTag;
     }
     if (communicators[peerComm]->remoteGroup->ProcID == remoteLeader) {
-	ulm_err(("Error: ulm_intercomm_create: Invalid remoteLeader II - remoteLeader %d ProcID %d \n",remoteLeader,communicators[peerComm]->remoteGroup->ProcID));
+	ulm_err(("Error: ulm_intercomm_create: Invalid remoteLeader II - remoteLeader %d ProcID %d\n",remoteLeader,communicators[peerComm]->remoteGroup->ProcID));
         returnValue = MPI_ERR_ARG;
         goto BarrierTag;
     }
@@ -235,13 +235,13 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
 				    (ULMType_t*)MPI_BYTE, remoteLeader, tag, peerComm, &sendRequest,
 				    ULM_SEND_STANDARD);
 		    if (errorCode != ULM_SUCCESS) {
-			    ulm_err((" Error returned in ulm_intercomm_create from ulm_isend :: %d \n",returnValue));
+			    ulm_err(("Error: returned in ulm_intercomm_create from ulm_isend :: %d\n",returnValue));
 		    	    errorCode = MPI_ERR_OTHER;
 		    	    goto BarrierTag;
 		    }
 		    errorCode = ulm_wait(&sendRequest, &sendStatus);
 		    if (errorCode != ULM_SUCCESS) {
-			    ulm_err((" Error returned in ulm_intercomm_create from send ulm_wait :: %d \n",returnValue));
+			    ulm_err(("Error: returned in ulm_intercomm_create from send ulm_wait :: %d\n",returnValue));
 		    	    errorCode = MPI_ERR_OTHER;
 		    	    goto BarrierTag;
 		    }
@@ -249,13 +249,13 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
 		    errorCode = ulm_irecv(&interCommContextID, sizeof(int), 
 				    (ULMType_t*)MPI_BYTE, remoteLeader, tag, peerComm, &recvRequest);
 		    if (errorCode != ULM_SUCCESS) {
-			    ulm_err((" Error returned in ulm_intercomm_create from ulm_irecv :: %d \n",returnValue));
+			    ulm_err(("Error: returned in ulm_intercomm_create from ulm_irecv :: %d\n",returnValue));
 		    	    errorCode = MPI_ERR_OTHER;
 		    	    goto BarrierTag;
 		    }
 		    errorCode = ulm_wait(&recvRequest, &recvStatus);
 		    if (errorCode != ULM_SUCCESS) {
-			    ulm_err((" Error returned in ulm_intercomm_create from recv ulm_wait :: %d \n",returnValue));
+			    ulm_err(("Error: returned in ulm_intercomm_create from recv ulm_wait :: %d\n",returnValue));
 		    	    errorCode = MPI_ERR_OTHER;
 		    	    goto BarrierTag;
 		    }
@@ -269,7 +269,7 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
                       localLeader, localComm);
         if (returnValue != ULM_SUCCESS) {
             returnValue = MPI_ERR_INTERN;
-    	ulm_err((" Error returned in ulm_intercomm_create from recv ulm_bcast :: %d \n",returnValue));
+    	ulm_err(("Error: returned in ulm_intercomm_create from recv ulm_bcast :: %d\n",returnValue));
             goto BarrierTag;
         }
     }

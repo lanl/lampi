@@ -119,7 +119,7 @@ void GetNetworkDevList(const char *InfoStream)
     int OptionIndex = MatchOption("NetworkDevices", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option HostList not found in Input parameter database\n"));
+        ulm_err(("Error: Option HostList not found in Input parameter database\n"));
         Abort();
     }
 
@@ -133,7 +133,7 @@ void GetNetworkDevList(const char *InfoStream)
                             " ,\t\n");
     NHostLists = HostDevData.GetNSubStrings();
     if ((NHostLists != 1) && (NHostLists != RunParameters.NHosts)) {
-        ulm_err(("mpirun: Error: Wrong number of arguments for NetworkDevices.\n"));
+        ulm_err(("Error: Wrong number of arguments for NetworkDevices.\n"));
         ulm_err(("Found %d arguments, but should be either 1 or %d\n",
                  NHostLists, RunParameters.NHosts));
         ulm_err(("Input String: %s\n",
@@ -167,7 +167,7 @@ void GetNetworkDevList(const char *InfoStream)
 		}
             }
             if (!Flag) {
-                ulm_err(("mpirun: Error: Unrecognized device type : %s ",
+                ulm_err(("Error: Unrecognized device type : %s ",
                          *Dev));
                 Abort();
             }
@@ -240,7 +240,7 @@ void GetNetworkDevList(const char *InfoStream)
 			} 
 		} /* end if (Flag) */
                 if (!Flag) {
-                    ulm_err(("mpirun: Error: Unrecognized device type : %s\n", *Dev));
+                    ulm_err(("Error: Unrecognized device type : %s\n", *Dev));
                     Abort();
                 }
             }

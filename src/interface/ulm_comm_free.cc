@@ -105,13 +105,13 @@ int ulm_communicator_really_free(int comm)
     // free associated groups
     returnCode = ulm_group_free(local_grp_id);
     if (returnCode != MPI_SUCCESS) {
-        ulm_err((" error freeing local group.  returnCode %d\n",
+        ulm_err(("Error: freeing local group.  returnCode %d\n",
                  returnCode));
         return MPI_ERR_OTHER;
     }
     returnCode = ulm_group_free(remote_grp_id);
     if (returnCode != MPI_SUCCESS) {
-        ulm_err((" error freeing remote group.  returnCode %d\n",
+        ulm_err(("Error: freeing remote group.  returnCode %d\n",
                  returnCode));
         return MPI_ERR_OTHER;
     }

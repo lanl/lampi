@@ -123,7 +123,8 @@ int mpirun_spawn_rsh(unsigned int *AuthData, char *sock_ip,
 int parse_cmdln_bproc(int, char **, ULMRunParams_t *);
 ssize_t mpirunRecvAndWriteData(int ReadFD, FILE * WriteFile);
 void lampirun_init_proc();
-void Abort();
+void AbortFunction(const char *, int);
+#define Abort() AbortFunction(__FILE__, __LINE__)
 void GetAppDir(const char *InfoStream);
 void GetAppHostCount(const char *InfoStream);
 void GetMpirunHostnameNoInput(const char *InfoStream);
@@ -155,8 +156,6 @@ void mpirunDrainStdioData(int *STDERRfds, int *STDOUTfds,
                           ssize_t ExpectedStderrBytesRead,
                           ssize_t ExpectedStdoutBytesRead);
 void mpirunKillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs);
-void mpirunNormalTermination(int NHosts, int *STDERRfds, int *STDOUTfds,
-                             int *ClientSocketFDList);
 void mpirunSetTerminateInitiated(int a);
 void mpirunsigalarm(int Signal);
 void parseCpusPerNode(const char *InfoStream);
@@ -200,16 +199,14 @@ void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        fprintf(stderr,
-                " Wrong number of data elements specified for  %s, or %s\n",
-                //ULMInputOptions[OptionIndex].FullName,
-                ULMInputOptions[OptionIndex].AbreviatedName,
-                ULMInputOptions[OptionIndex].FileName);
-        fprintf(stderr,
-                "  Number or arguments specified is :: %d , but should be either 1 or %d\n",
-                cnt, SizeOfArray);
-        fprintf(stderr, " Input line:: %s\n",
-                ULMInputOptions[OptionIndex].InputData);
+        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n",
+                 "\tNumber or arguments specified is %d, "
+                 "but should be either 1 or %d\n"
+                 "\tInput line: %s\n",
+                 ULMInputOptions[OptionIndex].AbreviatedName,
+                 ULMInputOptions[OptionIndex].FileName,
+                 cnt, SizeOfArray,
+                 ULMInputOptions[OptionIndex].InputData));
         Abort();
     }
 
@@ -218,15 +215,13 @@ void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
         /* 1 data element */
         Value = (T) strtol(*(InputObj->begin()), &TmpCharPtr, 10);
         if (TmpCharPtr == *(InputObj->begin())) {
-            fprintf(stderr,
-                    "Unable to convert data to integer.\n Data :: %s\n",
-                    *(InputObj->begin()));
+            ulm_err(("Error: Can't convert data (%s) to integer\n",
+                     *(InputObj->begin())));
             Abort();
         }
         if (Value < MinVal) {
-            fprintf(stderr,
-                    "Unexpected value.  Min value expected %ld and value %d\n",
-                    (long) MinVal, Value);
+            ulm_err(("Error: Unexpected value. Min value expected %ld and value %d\n",
+                     (long) MinVal, Value));
             Abort();
         }
         for (i = 0; i < SizeOfArray; i++)
@@ -238,15 +233,12 @@ void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
              j != InputObj->end(); j++) {
             Value = (T) strtol(*j, &TmpCharPtr, 10);
             if (TmpCharPtr == *j) {
-                fprintf(stderr,
-                        "Unable to convert data to integer.\n Data :: %s\n",
-                        *j);
+                ulm_err(("Error: Can't convert data (%s) to integer\n", *j));
                 Abort();
             }
             if (Value < MinVal) {
-                fprintf(stderr,
-                        "Unexpected value.  Min value expected %ld and value %d\n",
-                        (long) MinVal, Value);
+                ulm_err(("Error: Unexpected value. Min value expected %ld and value %d\n",
+                         (long) MinVal, Value));
                 Abort();
             }
             Array[i++] = Value;
@@ -265,9 +257,7 @@ void fillInputStructure(T **dataStorage, char *inputString,
     int OptionIndex =
         MatchOption(inputString, ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "Option %s not found in Input parameter database\n",
-                inputString);
+        ulm_err(("Error: Option %s not found\n", inputString));
         Abort();
     }
 

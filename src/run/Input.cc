@@ -143,7 +143,7 @@ static void Version(void)
 
 void FatalNoInput(const char *ErrorString)
 {
-    ulm_err(("mpirun: Error: No input data provided.\n%s\n", ErrorString));
+    ulm_err(("Error: No input data provided.\n%s\n", ErrorString));
     exit(EXIT_FAILURE);
 }
 
@@ -163,7 +163,7 @@ void NoOpFunction(const char *ErrorString)
  */
 void NotImplementedFunction(const char *ErrorString)
 {
-    ulm_err(("mpirun: Error: Function not implemented: %s\n",
+    ulm_err(("Error: Function not implemented: %s\n",
              ErrorString));
 }
 
@@ -198,7 +198,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
     NBytes =
         sprintf(ConfigFileName, "%s/etc/lampi.conf", getenv("MPI_ROOT"));
     if ((NBytes > (ULM_MAX_PATH_LEN - 1)) || (NBytes < 0)) {
-        ulm_err(("mpirun: Error: writing to ConfigFileName (%d)\n",
+        ulm_err(("Error: writing to ConfigFileName (%d)\n",
                  NBytes));
         Abort();
     }
@@ -224,7 +224,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
 
 
         /* parse input line */
-        ParseString InputData(InputBuffer, 3, " \n\t");
+        ParseString InputData(InputBuffer, 3, "\n\t");
         if (InputData.GetNSubStrings() == 0)
             continue;
 
@@ -232,7 +232,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
         OptionIndex = MatchOption(*InputData.begin(), ULMInputOptions,
                                   SizeOfInputOptionsDB);
         if (OptionIndex < 0) {
-            ulm_err(("mpirun: Error: Unrecognized option (%s)\n",
+            ulm_err(("Error: Unrecognized option (%s)\n",
                      *InputData.begin()));
             Abort();
         }
@@ -250,7 +250,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
                 ULMInputOptions[OptionIndex].fpToExecute =
                     ULMInputOptions[OptionIndex].fpProcessInput;
             } else {
-                ulm_err(("mpirun: Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
+                ulm_err(("Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
                 Abort();
             }
         }
@@ -273,13 +273,13 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
 
     LoginStruct = getpwuid(getuid());
     if (LoginStruct == NULL) {
-        ulm_err(("mpirun: Error: finding account information from uid %d\n", getuid()));
+        ulm_err(("Error: finding account information from uid %d\n", getuid()));
         Abort();
     }
     NBytes =
         sprintf(ConfigFileName, "%s/.lampi.conf", LoginStruct->pw_dir);
     if ((NBytes > (ULM_MAX_PATH_LEN - 1)) || (NBytes < 0)) {
-        ulm_err(("mpirun: Error: writing to ConfigFileName (%d)\n",
+        ulm_err(("Error: writing to ConfigFileName (%d)\n",
                  NBytes));
         Abort();
     }
@@ -305,7 +305,7 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
 
 
         /* parse input line */
-        ParseString InputData(InputBuffer, 3, " \n\t");
+        ParseString InputData(InputBuffer, 3, "\n\t");
         if (InputData.GetNSubStrings() == 0)
             continue;
 
@@ -313,7 +313,7 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
         OptionIndex = MatchOption(*InputData.begin(), ULMInputOptions,
                                   SizeOfInputOptionsDB);
         if (OptionIndex < 0) {
-            ulm_err(("mpirun: Error: Unrecognized option (%s)\n",
+            ulm_err(("Error: Unrecognized option (%s)\n",
                      *InputData.begin()));
             Abort();
         }
@@ -331,7 +331,7 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
                 ULMInputOptions[OptionIndex].fpToExecute =
                     ULMInputOptions[OptionIndex].fpProcessInput;
             } else {
-                ulm_err(("mpirun: Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
+                ulm_err(("Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
                 Abort();
             }
         }
@@ -374,7 +374,7 @@ static void ScanEnvironment(InputParameters_t * ULMInputOptions,
             ULMInputOptions[OptionIndex].fpToExecute =
                 ULMInputOptions[OptionIndex].fpProcessInput;
         } else {
-            ulm_err(("mpirun: Error: Cannot parse option %s\n",
+            ulm_err(("Error: Cannot parse option %s\n",
                      ULMInputOptions[OptionIndex].FileName));
             Abort();
         }
@@ -399,7 +399,7 @@ static void ScanCmdLine(int argc, char **argv,
     BinaryNameIndex =
         MatchOption("BinaryName", ULMInputOptions, SizeOfInputOptionsDB);
     if (BinaryNameIndex < 0) {
-        ulm_err(("mpirun: Error: Option BinaryName not found in Input parameter database\n"));
+        ulm_err(("Error: Option BinaryName not found\n"));
         Abort();
     }
 
@@ -443,7 +443,7 @@ static void ScanCmdLine(int argc, char **argv,
                         processedBinaryName = true;
                     }
                 } else {
-                    ulm_err(("mpirun: Error: Cannot parse option %s\n",
+                    ulm_err(("Error: Cannot parse option %s\n",
                              ULMInputOptions[OptionIndex].FileName));
                     Abort();
                 }
@@ -459,7 +459,7 @@ static void ScanCmdLine(int argc, char **argv,
                 break;
             } else {
                 if (argv[ArgvIndex][0] == '-') {
-                    ulm_err(("mpirun: Error: unrecognized option \'%s\'.\n", argv[ArgvIndex]));
+                    ulm_err(("Error: unrecognized option \'%s\'.\n", argv[ArgvIndex]));
                     Abort();
                 } else {
                     sprintf(ULMInputOptions[BinaryNameIndex].InputData,
@@ -560,7 +560,7 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("mpirun: Error: Wrong number of data elements specified for %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
+        ulm_err(("Error: Wrong number of data elements specified for %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
         ulm_err(("Number or arguments specified (%d) should be either 1 or %d\n", cnt, SizeOfArray));
         Abort();
     }
@@ -570,11 +570,11 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
         /* 1 data element */
         Value = (int) strtol(*(InputObj->begin()), &TmpCharPtr, 10);
         if (TmpCharPtr == *(InputObj->begin())) {
-            ulm_err(("mpirun: Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
+            ulm_err(("Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
             Abort();
         }
         if (Value < MinVal) {
-            ulm_err(("mpirun: Error: Unexpected value.  Min value expected %d and value %d\n", MinVal, Value));
+            ulm_err(("Error: Unexpected value.  Min value expected %d and value %d\n", MinVal, Value));
             Abort();
         }
         for (i = 0; i < SizeOfArray; i++)
@@ -586,11 +586,11 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
              j != InputObj->end(); j++) {
             Value = (int) strtol(*j, &TmpCharPtr, 10);
             if (TmpCharPtr == *j) {
-                ulm_err(("mpirun: Error: Unable to convert data to integer.\n Data :: %s\n", *j));
+                ulm_err(("Error: Unable to convert data to integer.\n Data :: %s\n", *j));
                 Abort();
             }
             if (Value < MinVal) {
-                ulm_err(("mpirun: Error: Unexpected value.  Min value expected %d and value %d\n", MinVal, Value));
+                ulm_err(("Error: Unexpected value.  Min value expected %d and value %d\n", MinVal, Value));
                 Abort();
             }
             Array[i++] = Value;
@@ -613,7 +613,7 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("mpirun: Error: Wrong number of data elements specified for  %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
+        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n", cnt, SizeOfArray));
         ulm_err(("Input line: %s\n",
                  ULMInputOptions[OptionIndex].InputData));
@@ -625,11 +625,11 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
         /* 1 data element */
         Value = (int) strtol(*(InputObj->begin()), &TmpCharPtr, 10);
         if (TmpCharPtr == *(InputObj->begin())) {
-            ulm_err(("mpirun: Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
+            ulm_err(("Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
             Abort();
         }
         if (Value < MinVal) {
-            ulm_err(("mpirun: Error: Unexpected value.  Min value expected %d and value %ld\n", MinVal, Value));
+            ulm_err(("Error: Unexpected value.  Min value expected %d and value %ld\n", MinVal, Value));
             Abort();
         }
         for (i = 0; i < SizeOfArray; i++)
@@ -641,11 +641,11 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
              j != InputObj->end(); j++) {
             Value = (int) strtol(*j, &TmpCharPtr, 10);
             if (TmpCharPtr == *j) {
-                ulm_err(("mpirun: Error: Unable to convert data (%s) to integer\n", *j));
+                ulm_err(("Error: Unable to convert data (%s) to integer\n", *j));
                 Abort();
             }
             if (Value < MinVal) {
-                ulm_err(("mpirun: Error: "
+                ulm_err(("Error: "
                          "Unexpected value.  Min value expected %d and value %ld\n",
                          MinVal, Value));
                 Abort();
@@ -673,7 +673,7 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("mpirun: Error: "
+        ulm_err(("Error: "
                  "Wrong number of data elements specified for %s, or %s\n",
                  ULMInputOptions[OptionIndex].AbreviatedName,
                  ULMInputOptions[OptionIndex].FileName));
@@ -688,11 +688,11 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
         /* 1 data element */
         Value = (int) strtol(*(InputObj->begin()), &TmpCharPtr, 10);
         if (TmpCharPtr == *(InputObj->begin())) {
-            ulm_err(("mpirun: Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
+            ulm_err(("Error: Unable to convert data (%s) to integer\n", *(InputObj->begin())));
             Abort();
         }
         if (Value < MinVal) {
-            ulm_err(("mpirun: Error: "
+            ulm_err(("Error: "
                      "Unexpected value.  Min value expected %d and value %ld\n",
                      MinVal, (long) Value));
             Abort();
@@ -706,11 +706,11 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
              j != InputObj->end(); j++) {
             Value = (int) strtol(*j, &TmpCharPtr, 10);
             if (TmpCharPtr == *j) {
-                ulm_err(("mpirun: Error: Unable to convert data (%s) to integer\n", *j));
+                ulm_err(("Error: Unable to convert data (%s) to integer\n", *j));
                 Abort();
             }
             if (Value < MinVal) {
-                ulm_err(("mpirun: Error: "
+                ulm_err(("Error: "
                          "Unexpected value.  Min value expected %d and value %ld\n",
                          MinVal, (long) Value));
                 Abort();
@@ -736,8 +736,8 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     int OptionIndex =
         MatchOption(Option, ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: "
-                 "Option WorkingDir not found in Input parameter database\n"));
+        ulm_err(("Error: "
+                 "Option WorkingDir not found\n"));
         Abort();
     }
 
@@ -748,7 +748,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     /* Check to see if expected data is present */
     cnt = DirData.GetNSubStrings();
     if ((cnt != 1) && (cnt != ArrayLength)) {
-        ulm_err(("mpirun: Error: "
+        ulm_err(("Error: "
                  " Wrong number of data elements specified for  %s, or %s\n",
                  ULMInputOptions[OptionIndex].AbreviatedName,
                  ULMInputOptions[OptionIndex].FileName));
@@ -770,7 +770,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
         if ((*i)[0] != '/') {
             /* root directory not specified */
             if (getcwd(DirName, ULM_MAX_PATH_LEN) == NULL) {
-                ulm_err(("mpirun: Error: getcwd() call failed\n"));
+                ulm_err(("Error: getcwd() call failed\n"));
                 perror(" getcwd ");
                 Abort();
             }
@@ -791,7 +791,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
             if ((*i)[0] != '/') {
                 /* root directory not specified */
                 if (getcwd(DirName, ULM_MAX_PATH_LEN) == NULL) {
-                    ulm_err(("mpirun: Error: getcwd() call failed\n"));
+                    ulm_err(("Error: getcwd() call failed\n"));
                     perror(" getcwd ");
                     Abort();
                 }
@@ -804,138 +804,6 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     }                           /* end fill in data */
 }
 
-
-/*
- *  This routine takes data of the form
- *      host/int:int:int, host-int, int ...
- *  checks the validity of the host name, and then fills in
- *  an array with the number of the entries, and then in a seperate
- *  location the individual elements.
- */
-void FillIntListPerHost(char *OptionString,
-                        InputParameters_t * ULMInputOptions,
-                        int SizeOfInputOptionsDB, int **NEntriesPerHost,
-                        int ***ListEntriePerHost, int NumberHosts,
-                        int MinValue, HostName_t * HostList)
-{
-    int i, NSeparators = 2, Nlists, Indx, j;
-    char SeparatorList[] = { " , " };
-    ssize_t len;
-    struct hostent *NetEntry;
-
-/* get OptionIndex */
-    int OptionIndex =
-        MatchOption(OptionString, ULMInputOptions, SizeOfInputOptionsDB);
-    if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option %s not found in Input parameter database\n", OptionString));
-        Abort();
-    }
-
-/* parse ProcsPerHost data */
-    ParseString H800DataPerHost(ULMInputOptions[OptionIndex].InputData,
-                                NSeparators, SeparatorList);
-
-/* find out how many hosts have explicit devices listed */
-    Nlists = H800DataPerHost.GetNSubStrings();
-    if ((Nlists < 1) || (Nlists > NumberHosts)) {
-        fprintf(stderr, "Number of Host list is incorrect.\n");
-        fprintf(stderr,
-                "   This should be in the range of 1 to %d, but is %d\n",
-                NumberHosts, Nlists);
-        fprintf(stderr, "\n   Input :: %s\n",
-                ULMInputOptions[OptionIndex].InputData);
-        Abort();
-    }
-
-/* allocate memory to store data */
-    *NEntriesPerHost = ulm_new(int, NumberHosts);
-    for (i = 0; i < NumberHosts; i++)
-        (*NEntriesPerHost)[i] = 0;
-    *ListEntriePerHost = ulm_new(int *, NumberHosts);
-    for (i = 0; i < NumberHosts; i++)
-        (*ListEntriePerHost)[i] = NULL;
-
-/* process data for each host */
-    i = 0;
-    for (ParseString::iterator HD = H800DataPerHost.begin();
-         HD != H800DataPerHost.end(); HD++) {
-
-        ParseString CurrentHost(*HD, 1, "/");
-        int NFields = CurrentHost.GetNSubStrings();
-        if (NFields != 2) {
-            ulm_err(("mpirun: Error: Incorrect Data format for host and list.\n" "Number of arguments should be 2, but is %d\n", NFields));
-            ulm_err(("Input: %s\n", *HD));
-            Abort();
-        }
-
-/* find host name */
-        NetEntry = gethostbyname(*(CurrentHost.begin()));
-        if (NetEntry == NULL) {
-            ulm_err(("mpirun: Error: Unrecognized host name %s\n",
-                     *(CurrentHost.begin())));
-            Abort();
-        }
-        len = strlen(NetEntry->h_name);
-        if (len > ULM_MAX_HOSTNAME_LEN) {
-            ulm_err(("mpirun Error: Host name too long for library buffer, length = %ld\n", (long) len));
-            Abort();
-        }
-
-/* check against list of valid names */
-        Indx = -1;
-        for (j = 0; j < NumberHosts; j++) {
-            if (strncmp(HostList[j], NetEntry->h_name, len) != 0)
-                continue;
-            Indx = j;
-
-/* get list of devices */
-            ParseString::iterator CharList = CurrentHost.begin();
-            CharList++;
-            ParseString CurrentList(*CharList, 1, ":");
-            int LenghtOfList = CurrentList.GetNSubStrings();
-            (*NEntriesPerHost)[Indx] = LenghtOfList;
-/* allocate memory to store list */
-            if ((*ListEntriePerHost)[Indx] != NULL) {
-                fprintf(stderr,
-                        "%s List for host %s entered more than once.\n",
-                        OptionString, NetEntry->h_name);
-                fprintf(stderr, "\n   Input :: %s\n",
-                        ULMInputOptions[OptionIndex].InputData);
-                Abort();
-            }
-            (*ListEntriePerHost)[Indx] = ulm_new(int, LenghtOfList);
-
-/* fill in data */
-            int cnt = 0;
-            char *TmpCharPtr;
-            for (ParseString::iterator DataList = CurrentList.begin();
-                 DataList != CurrentList.end(); DataList++) {
-                (*ListEntriePerHost)[Indx][cnt] =
-                    (int) strtol(*DataList, &TmpCharPtr, 10);
-                if (TmpCharPtr == *DataList) {
-                    fprintf(stderr,
-                            "Unable to convert data to integer.\n Data :: %s\n",
-                            *DataList);
-                    Abort();
-                }
-                if ((*ListEntriePerHost)[Indx][cnt] < MinValue) {
-                    fprintf(stderr,
-                            "Unexpected value.  Min value expected %d and value %d\n",
-                            MinValue, (*ListEntriePerHost)[Indx][cnt]);
-                    Abort();
-                }
-                cnt++;
-            }
-        }                       /* end loop over hosts in job */
-        if (Indx == -1) {
-            printf
-                ("mpirun: Error: Server Host %s is not in the list of host for this job.\n",
-                 NetEntry->h_name);
-            Abort();
-        }
-        i++;
-    }                           /* end loop over host list */
-}
 
 
 /*
@@ -998,8 +866,7 @@ void parseMaxRetries(const char *InfoStream)
         MatchOption("MaxRetryWhenNoResource", ULMInputOptions,
                     SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MaxRetryWhenNoResource not found in Input parameter database\n");
+        ulm_err(("Error: Option MaxRetryWhenNoResource not found\n"));
         Abort();
     }
     //
@@ -1059,8 +926,7 @@ void parseMinSMPRecvDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("MinSMPrecvdescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MinSMPrecvdescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option MinSMPrecvdescpages not found\n"));
         Abort();
     }
 
@@ -1093,8 +959,7 @@ void parseMaxSMPRecvDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("MaxSMPrecvdescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MaxSMPrecvdescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option MaxSMPrecvdescpages not found\n"));
         Abort();
     }
 
@@ -1127,8 +992,7 @@ void parseTotalSMPRecvDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("TotSMPrecvdescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option TotSMPrecvdescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option TotSMPrecvdescpages not found\n"));
         Abort();
     }
 
@@ -1161,8 +1025,7 @@ void parseMinSMPISendDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("MinSMPisenddescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MinSMPisenddescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option MinSMPisenddescpages not found\n"));
         Abort();
     }
 
@@ -1195,8 +1058,7 @@ void parseMaxSMPISendDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("MaxSMPisenddescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MaxSMPisenddescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option MaxSMPisenddescpages not found\n"));
         Abort();
     }
 
@@ -1229,8 +1091,7 @@ void parseTotalSMPISendDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("TotSMPisenddescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option TotSMPisenddescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option TotSMPisenddescpages not found\n"));
         Abort();
     }
 
@@ -1262,8 +1123,7 @@ void parseTotalIRecvDescPages(const char *InfoStream)
     int OptionIndex = MatchOption("TotIrecvdescpages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option TotIrecvdescpages not found in Input parameter database\n");
+        ulm_err(("Error: Option TotIrecvdescpages not found\n"));
         Abort();
     }
 
@@ -1295,8 +1155,7 @@ void parseMinSMPDataPages(const char *InfoStream)
     int OptionIndex = MatchOption("MinSMPDatapages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MinSMPDatapages not found in Input parameter database\n");
+        ulm_err(("Error: Option MinSMPDatapages not found\n"));
         Abort();
     }
 
@@ -1329,8 +1188,7 @@ void parseMaxSMPDataPages(const char *InfoStream)
     int OptionIndex = MatchOption("MaxSMPDatapages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MaxSMPDatapages not found in Input parameter database\n");
+        ulm_err(("Error: Option MaxSMPDatapages not found\n"));
         Abort();
     }
 
@@ -1362,8 +1220,7 @@ void parseTotalSMPDataPages(const char *InfoStream)
     int OptionIndex = MatchOption("TotSMPDatapages", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option TotSMPDatapages not found in Input parameter database\n");
+        ulm_err(("Error: Option TotSMPDatapages not found\n"));
         Abort();
     }
 
@@ -1411,8 +1268,7 @@ void parseCpusPerNode(const char *InfoStream)
     int OptionIndex =
         MatchOption("CpusPerNode", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option CpusPerNode not found in Input parameter database\n");
+        ulm_err(("Error: Option CpusPerNode not found\n"));
         Abort();
     }
 
@@ -1442,8 +1298,7 @@ void parseResourceAffinity(const char *InfoStream)
     int OptionIndex = MatchOption("ResourceAffinity", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option ResourceAffinity not found in Input parameter database\n");
+        ulm_err(("Error: Option ResourceAffinity not found\n"));
         Abort();
     }
 
@@ -1473,8 +1328,7 @@ void parseDefaultAffinity(const char *InfoStream)
     int OptionIndex = MatchOption("DefaultAffinity", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option DefaultAffinity not found in Input parameter database\n");
+        ulm_err(("Error: Option DefaultAffinity not found\n"));
         Abort();
     }
 
@@ -1504,8 +1358,7 @@ void parseMandatoryAffinity(const char *InfoStream)
     int OptionIndex = MatchOption("MandatoryAffinity", ULMInputOptions,
                                   SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MandatoryAffinity not found in Input parameter database\n");
+        ulm_err(("Error: Option MandatoryAffinity not found\n"));
         Abort();
     }
 
@@ -1538,8 +1391,7 @@ void parseMaxComms(const char *InfoStream)
     int OptionIndex =
         MatchOption("MaxComms", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        fprintf(stderr,
-                "mpirun: Error: Option MaxComms not found in Input parameter database\n");
+        ulm_err(("Error: Option MaxComms not found\n"));
         Abort();
     }
 
@@ -1583,7 +1435,7 @@ void parseQuadricsRails(const char *InfoStream)
         MatchOption("QuadricsRails", ULMInputOptions,
                     SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option QuadricsRails not found in Input parameter database\n"));
+        ulm_err(("Error: Option QuadricsRails not found\n"));
         Abort();
     }
 
@@ -1596,7 +1448,7 @@ void parseQuadricsRails(const char *InfoStream)
          i++) {
         int railIndex = atoi(*i);
         if ((railIndex < 0) || (railIndex > 31)) {
-            ulm_err(("mpirun: Error: specified Quadrics rail index, %d, is outside " "acceptable limits (0 >= n < 32)\n", railIndex));
+            ulm_err(("Error: specified Quadrics rail index, %d, is outside " "acceptable limits (0 >= n < 32)\n", railIndex));
             Abort();
         }
         RunParameters.quadricsRailMask |= (1 << railIndex);
@@ -1617,7 +1469,7 @@ void parseQuadricsFlags(const char *InfoStream)
         MatchOption("QuadricsFlags", ULMInputOptions,
                     SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option QuadricsFlags not found in Input parameter database\n"));
+        ulm_err(("Error: Option QuadricsFlags not found\n"));
         Abort();
     }
 
@@ -1650,7 +1502,7 @@ void parseMyrinetFlags(const char *InfoStream)
     int OptionIndex =
         MatchOption("MyrinetFlags", ULMInputOptions, SizeOfInputOptionsDB);
     if (OptionIndex < 0) {
-        ulm_err(("mpirun: Error: Option MyrinetFlags not found in Input parameter database\n"));
+        ulm_err(("Error: Option MyrinetFlags not found\n"));
         Abort();
     }
 

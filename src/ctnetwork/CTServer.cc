@@ -408,7 +408,7 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
                 buffer_m[COLL_IDX(cmd)] = (char *)malloc(datalen);
                 if ( !buffer_m[COLL_IDX(cmd)] )
                 {
-                    ulm_err(("Unable to alloc memory for buffer (cmd = %d).\n", cmd));
+                    ulm_err(("Error: Can't alloc memory for buffer (cmd = %d).\n", cmd));
                     spinunlock(&coll_lock_m);
                     return false;
                 }
@@ -454,7 +454,7 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
                 buffer_m[COLL_IDX(cmd)] = (char *)malloc(bufsz);
                 if ( !buffer_m[COLL_IDX(cmd)] )
                 {
-                    ulm_err(("Unable to alloc memory for buffer (cmd = %d).\n", cmd));
+                    ulm_err(("Error: Can't alloc memory for buffer (cmd = %d).\n", cmd));
                     spinunlock(&coll_lock_m);
                     return false;
                 }

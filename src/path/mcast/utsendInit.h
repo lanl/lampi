@@ -28,15 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #ifndef _INITUTSENDDEVS
 #define _INITUTSENDDEVS
 
-#include "include/internal/mmap_params.h"
+#include "internal/mmap_params.h"
+#include "mem/FreeLists.h"
 
-extern FreeLists<DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
-                 MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> UtsendDescriptors;
+extern FreeListShared_t <UtsendDesc_t> UtsendDescriptors;
 
 extern SharedMemDblLinkList**  UnackedUtsendDescriptors;
 

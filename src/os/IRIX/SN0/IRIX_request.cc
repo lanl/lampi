@@ -40,7 +40,7 @@
 int resource_info::get_other(int n)
 {
     if (!(n < num_other)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (other[n]);
 }
@@ -48,7 +48,7 @@ int resource_info::get_other(int n)
 void resource_info::set_other(int n, int value)
 {
     if (!(n < num_other)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     other[n] = value;
 }
@@ -58,7 +58,7 @@ void io_info::set_ioslot(int s)
     // assign the node number
     if (s > 0) {
         if (!(s <= 12)) {
-            ulm_exit((-1, "Aborting \n"));
+            ulm_exit((-1, "Aborting\n"));
         }
         if (s <= 6) {
             set_other(0, 1);
@@ -77,7 +77,7 @@ void io_info::set_ioslot(int s)
 int io_info::get_node_num(int s)
 {
     if (!((s >= 0) && (s < 2))) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (get_other(s));
 }
@@ -85,7 +85,7 @@ int io_info::get_node_num(int s)
 int router_info::add_node(int i)
 {
     if (!(node_cursor + 1 < num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     node[++node_cursor] = i;
     return (node_cursor);
@@ -93,14 +93,14 @@ int router_info::add_node(int i)
 int router_info::set_node(int s, int i)
 {
     if (!(s < num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (node[s] = i);
 }
 int router_info::get_node(int s)
 {
     if (!(s < num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (node[s]);
 }
@@ -108,7 +108,7 @@ int router_info::get_node(int s)
 int router_info::add_router(int i)
 {
     if (!(router_cursor + 1 < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     router[++router_cursor] = i;
     return (router_cursor);
@@ -116,14 +116,14 @@ int router_info::add_router(int i)
 int router_info::set_router(int s, int i)
 {
     if (!(s < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (router[s] = i);
 }
 int router_info::get_router(int s)
 {
     if (!(s < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (router[s]);
 }
@@ -131,7 +131,7 @@ int router_info::get_router(int s)
 int node_info::add_cpu(int i)
 {
     if (!(cpu_cursor + 1 < num_cpus)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     cpu[++cpu_cursor] = i;
     resource[R_CPU][cpu_cursor] = i;
@@ -140,7 +140,7 @@ int node_info::add_cpu(int i)
 int node_info::set_cpu(int s, int i)
 {
     if (!(s < num_cpus)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     resource[R_CPU][s] = i;
     return (cpu[s] = i);
@@ -148,7 +148,7 @@ int node_info::set_cpu(int s, int i)
 int node_info::getCpu(int s)
 {
     if (!(s < num_cpus)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (cpu[s]);
 }
@@ -157,7 +157,7 @@ int node_info::getCpu(int s)
 int node_info::add_hippi(int i)
 {
     if (!(hippi_cursor + 1 < num_hips)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     hippi[++hippi_cursor] = i;
     resource[R_HIPPI][hippi_cursor] = i;
@@ -166,7 +166,7 @@ int node_info::add_hippi(int i)
 int node_info::set_hippi(int s, int i)
 {
     if (!(s < num_hips)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     resource[R_HIPPI][s] = i;
     return (hippi[s] = i);
@@ -174,7 +174,7 @@ int node_info::set_hippi(int s, int i)
 int node_info::get_hippi(int s)
 {
     if (!(s < num_hips)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (hippi[s]);
 }
@@ -182,7 +182,7 @@ int node_info::get_hippi(int s)
 int node_info::add_memory(int i)
 {
     if (!(memory_cursor + 1 < num_mems)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     memory[++memory_cursor] = i;
     resource[R_MEMORY][memory_cursor] = i;
@@ -192,7 +192,7 @@ int node_info::add_memory(int i)
 int node_info::set_memory(int s, int i)
 {
     if (!(s < num_mems)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     resource[R_MEMORY][s] = i;
     return (memory[s] = i);
@@ -201,7 +201,7 @@ int node_info::set_memory(int s, int i)
 int node_info::get_memory(int s)
 {
     if (!(s < num_mems)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (memory[s]);
 }
@@ -209,7 +209,7 @@ int node_info::get_memory(int s)
 int node_info::add_router(int i)
 {
     if (!(router_cursor + 1 < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     router[++router_cursor] = i;
     return (router_cursor);
@@ -218,7 +218,7 @@ int node_info::add_router(int i)
 int node_info::set_router(int s, int i)
 {
     if (!(s < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (router[s] = i);
 }
@@ -226,7 +226,7 @@ int node_info::set_router(int s, int i)
 int node_info::get_router(int s)
 {
     if (!(s < num_routers)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (router[s]);
 }
@@ -234,7 +234,7 @@ int node_info::get_router(int s)
 int module_info::add_node(int i)
 {
     if (!(node_cursor < num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     node[++node_cursor] = i;
     node_priority[node_cursor] = i;
@@ -244,7 +244,7 @@ int module_info::add_node(int i)
 int module_info::set_node(int s, int i)
 {
     if (!(s <= num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     node_priority[s - 1] = i;
     return (node[s - 1] = i);
@@ -253,7 +253,7 @@ int module_info::set_node(int s, int i)
 int module_info::get_node(int s)
 {
     if (!(s <= num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (node[s - 1]);
 }
@@ -261,7 +261,7 @@ int module_info::get_node(int s)
 int module_info::get_priority_node(int s)
 {
     if (!(s <= num_nodes)) {
-        ulm_exit((-1, "Aborting \n"));
+        ulm_exit((-1, "Aborting\n"));
     }
     return (node_priority[s - 1]);
 }

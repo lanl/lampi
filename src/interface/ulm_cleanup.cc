@@ -20,12 +20,10 @@ void ulm_cleanup()
 #endif
 
     if (ShareMemDescPool) {
-        ShareMemDescPool->MemoryPool<MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-             MMAP_SHARED_FLAGS>::~MemoryPool();
+        ShareMemDescPool->MemoryPoolShared_t::~MemoryPoolShared_t();
     }
     if (largeShareMemDescPool) {
-        largeShareMemDescPool->MemoryPool<MMAP_SHARED_PROT, MMAP_SHARED_FLAGS,
-             MMAP_SHARED_FLAGS>::~MemoryPool();
+        largeShareMemDescPool->MemoryPoolShared_t::~MemoryPoolShared_t();
     }
    
     if (communicators) {

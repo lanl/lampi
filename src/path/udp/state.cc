@@ -44,17 +44,11 @@ int udp_sockfd_long_g = 0;
 // recv frag descriptors
 //
 
-FreeLists < DoubleLinkList, udpRecvFragDesc, MMAP_SHARED_PROT,
-            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UDPRecvFragDescs;
+FreeListShared_t <udpRecvFragDesc> UDPRecvFragDescs;
 
 // pool for send frag descriptors
 
-FreeLists < DoubleLinkList, udpSendFragDesc, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > udpSendFragDescs;
-
-FreeLists < DoubleLinkList, UDPEarlySend_large, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_large;
-FreeLists < DoubleLinkList, UDPEarlySend_med, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_med;
-FreeLists < DoubleLinkList, UDPEarlySend_small, MMAP_PRIVATE_PROT,
-            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_small;
+FreeListPrivate_t <udpSendFragDesc> udpSendFragDescs;
+FreeListPrivate_t <UDPEarlySend_large> UDPEarlySendData_large;
+FreeListPrivate_t <UDPEarlySend_med> UDPEarlySendData_med;
+FreeListPrivate_t <UDPEarlySend_small> UDPEarlySendData_small;

@@ -51,8 +51,7 @@
 
 // extern'd in the sharedmem/SMPSharedMemGlobals.h
 // i'll run this by code czar  Rasmussen later
-FreeLists < DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
-            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UtsendDescriptors;
+FreeListShared_t <UtsendDesc_t> UtsendDescriptors;
 
 SharedMemDblLinkList **UnackedUtsendDescriptors;
 

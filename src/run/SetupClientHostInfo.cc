@@ -279,7 +279,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 ival = atoi(ArgList[1]);
                 if (ival <= 0) {
                     printf
-                        ("Error: reading in number of process. \n  Input line:: %s",
+                        ("Error: reading in number of process.\n  Input line:: %s",
                          buf1[1]);
                     exit(-1);
                 }

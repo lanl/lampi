@@ -1,43 +1,34 @@
 /*
- * This file is part of LA-MPI
- *
- * Copyright 2002 Los Alamos National Laboratory
- *
- * This software and ancillary information (herein called "LA-MPI") is
- * made available under the terms described here.  LA-MPI has been
- * approved for release with associated LA-CC Number LA-CC-02-41.
- * 
- * Unless otherwise indicated, LA-MPI has been authored by an employee
- * or employees of the University of California, operator of the Los
- * Alamos National Laboratory under Contract No.W-7405-ENG-36 with the
- * U.S. Department of Energy.  The U.S. Government has rights to use,
- * reproduce, and distribute LA-MPI. The public may copy, distribute,
- * prepare derivative works and publicly display LA-MPI without
- * charge, provided that this Notice and any statement of authorship
- * are reproduced on all copies.  Neither the Government nor the
- * University makes any warranty, express or implied, or assumes any
- * liability or responsibility for the use of LA-MPI.
- * 
- * If LA-MPI is modified to produce derivative works, such modified
- * LA-MPI should be clearly marked, so as not to confuse it with the
- * version available from LANL.
- * 
- * LA-MPI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * LA-MPI is distributed in the hope that it will be useful, but
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307 USA.
+ * Lesser General Public License for more details.
  */
-
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _FREELISTS
@@ -83,30 +74,21 @@ extern FixedSharedMemPool PerProcSharedMemoryPools;
 
 template < class ContainerType, class ElementType,
            int MemProt, int MemFlags, int SharedMemFlag >
-class FreeLists {
+class FreeLists_t {
 public:
     // --STATE--
-    // string describing the pool
-    char *listDescription;
 
-    // number of free lists
-    int nLists_m;
-
-    // Number of elements per chunk
-    int nElementsPerChunk_m;
-
-    // element size (in bytes)
-    size_t eleSize_m;
-
-    // Memory pool - source of memory for free lists
-    MemoryPool < MemProt, MemFlags, SharedMemFlag > *memoryPool_m;
-
-    // flag on whether to call ulm_free(memoryPool_m) at destruction
-    bool freeMemPool_m;
+    char *description_m;     // string describing the pool
+    MemoryPool_t < MemProt, MemFlags, SharedMemFlag > *memoryPool_m;
+                               // Memory pool - source of memory
+    int nLists_m;              // number of free lists
+    int nElementsPerChunk_m;   // Number of elements per chunk
+    size_t eleSize_m;          // element size (in bytes)
+    bool freeMemPool_m;        // call ulm_free(memoryPool_m) at destruction?
 
     // --METHODS--
-    // d'tor
-    ~FreeLists()
+
+    ~FreeLists_t()
         {
             if (affinity_m) {
                 delete[]affinity_m;
@@ -114,8 +96,8 @@ public:
             }
 
             if (memoryPool_m) {
-                memoryPool_m->MemoryPool < MemProt, MemFlags,
-                    SharedMemFlag >::~MemoryPool();
+                memoryPool_m->MemoryPool_t<MemProt, MemFlags, SharedMemFlag>
+                    ::~MemoryPool_t();
                 if (freeMemPool_m && (MemFlags != SharedMemFlag)) {
                     ulm_free(memoryPool_m);
                     memoryPool_m = 0;
@@ -153,9 +135,9 @@ public:
                 }
             }
 
-            if (listDescription) {
-                ulm_free(listDescription);
-                listDescription = 0;
+            if (description_m) {
+                ulm_free(description_m);
+                description_m = 0;
             }
 
         }
@@ -176,16 +158,22 @@ public:
         }
 
     // initialization
-    int Init(int Nlsts, long nPagesPerList,
-             ssize_t PoolChunkSize, size_t PageSize,
-             ssize_t ElementSize, long minPagesPerList,
-             long maxPagesPerList, long mxConsecReqFailures,
-             char *lstlistDescription, int retryForMoreResources,
-             affinity_t *affinity, bool enforceMemAffinity,
-             MemoryPool < MemProt, MemFlags,
-             SharedMemFlag > *inputPool, bool Abort =
-             true, int threshToGrowList = 0, bool freeMemPool
-             = true)
+    int Init(int nLists,
+             long nPagesPerList,
+             ssize_t PoolChunkSize,
+             size_t PageSize,
+             ssize_t ElementSize,
+             long minPagesPerList,
+             long maxPagesPerList,
+             long mxConsecReqFailures,
+             char *description,
+             int retryForMoreResources,
+             affinity_t *affinity,
+             bool enforceMemAffinity,
+             MemoryPool_t < MemProt, MemFlags, SharedMemFlag > *inputPool,
+             bool Abort = true,
+             int threshToGrowList = 0,
+             bool freeMemPool = true)
         {
 
             int errorCode = ULM_SUCCESS;
@@ -195,25 +183,22 @@ public:
 
             // set failure mode when resource requests fail too often
             if (Abort) {
-                RequestFailedFunction = &FreeLists::AbortFunction;
+                RequestFailedFunction = &FreeLists_t::AbortFunction;
             } else {
-                RequestFailedFunction = &FreeLists::ReturnError;
+                RequestFailedFunction = &FreeLists_t::ReturnError;
             }
 
             // set string describing the class
-            int strLen = strlen(lstlistDescription) + 1;
-            listDescription = (char *) ulm_malloc(strLen);
-            if (!listDescription) {
-                ulm_exit((-1, "ProcessPrivateFreeLists::Init Unable to "
-                          "allocate memory for listDescription.  Tried "
-                          " to allocate %ld bytes, errno %d \n",
-                          strlen, errno));
+            int strLen = strlen(description) + 1;
+            description_m = (char *) ulm_malloc(strLen);
+            if (!description_m) {
+                ulm_exit((-1, "Error: Out of memory\n"));
             }
-            strncpy(listDescription, lstlistDescription, strLen);
-            listDescription[strLen - 1] = '\0';
+            strncpy(description_m, description, strLen);
+            description_m[strLen - 1] = '\0';
 
             // Initialize number of contexts
-            nLists_m = Nlsts;
+            nLists_m = nLists;
 
             // initialize data for memory profiling
             if (OPT_MEMPROFILE) {
@@ -225,8 +210,7 @@ public:
                 chunksReturned = (int *) ulm_malloc(nLists_m * sizeof(int));
                 if (!elementsOut || !elementsMax || !elementsSum
                     || !numEvents || !chunksRequested || !chunksReturned) {
-                    ulm_exit((-1, "Error malloc'ing arrays for memory"
-                              " profiling \n"));
+                    ulm_exit((-1, "Error: Out of memory\n"));
                 }
                 for (int i = 0; i < nLists_m; i++) {
                     elementsOut[i] = 0;
@@ -263,7 +247,7 @@ public:
                 ssize_t maxMemoryInPool = maxPagesPerList * PageSize;
 
                 // initialize memory pool
-                errorCode = memPoolInit(Nlsts, nPagesPerList, PoolChunkSize,
+                errorCode = memPoolInit(nLists, nPagesPerList, PoolChunkSize,
                                         PageSize, minPagesPerList,
                                         minPagesPerList, nPagesPerList,
                                         maxPagesPerList, maxMemoryInPool);
@@ -300,11 +284,7 @@ public:
                 ulm_malloc(sizeof(ListOfMemorySegments_t < ContainerType > *) *
                            nLists_m);
             if (!freeLists_m) {
-                ulm_exit((-1, "ProcessPrivateFreeLists::Init Unable to "
-                          "allocate memory for freeList_m.  Tried to "
-                          "allocate %ld bytes, errno %d \n",
-                          sizeof(ListOfMemorySegments_t < ContainerType > *)
-                          * nLists_m, errno));
+                ulm_exit((-1, "Error: Out of memory\n"));
             }
             // run constructors
             for (int list = 0; list < nLists_m; list++) {
@@ -325,11 +305,7 @@ public:
                                    (ListOfMemorySegments_t < ContainerType >));
                 }
                 if (!freeLists_m[list]) {
-                    ulm_exit((-1, "FreeLists::Init Unable to allocate "
-                              "memory for freeLists_m[]. size reqested %ld "
-                              "errno %d \n",
-                              sizeof(ListOfMemorySegments_t < ContainerType >),
-                              errno));
+                    ulm_exit((-1, "Error: Out of memory\n"));
                 }
                 new(freeLists_m[list]) ListOfMemorySegments_t <
                     ContainerType >;
@@ -348,8 +324,7 @@ public:
             if (enforceMemAffinity_m) {
                 affinity_m = new affinity_t[nLists_m];
                 if (!affinity_m) {
-                    ulm_exit((-1,
-                              "Unable to allocate affinity_m array.\n"));
+                    ulm_exit((-1, "Error: Out of memory\n"));
                 }
                 // copy policies in
                 for (int pool = 0; pool < nLists_m; pool++) {
@@ -365,8 +340,8 @@ public:
                     while (freeLists_m[i]->bytesPushedOnFreeList_m
                            < freeLists_m[i]->minBytesPushedOnFreeList_m) {
                         if (createMoreElements(i) != ULM_SUCCESS) {
-                            ulm_exit((-1, "Error setting up initial private "
-                                      "free list for %s.\n", listDescription));
+                            ulm_exit((-1, "Error: Setting up initial private "
+                                      "free list for %s.\n", description_m));
                         }
                     }               // end while loop
 
@@ -374,8 +349,8 @@ public:
 
                 } else {
                     // only 1 process should be initializing the list
-                    ulm_exit((-1, "Error setting up initial private free "
-                              "list %d for %s. \n", i, listDescription));
+                    ulm_exit((-1, "Error: Setting up initial private free "
+                              "list %d for %s.\n", i, description_m));
                 }
             }                       // end freeList loop
 
@@ -406,7 +381,8 @@ public:
             }
 
             if (ListIndex >= nLists_m) {
-                ulm_err(("Array out of bounds!! \n"));
+                ulm_err(("Error: Array out of bounds\n"));
+                return NULL;
             }
             if (!(freeLists_m[ListIndex]->maxBytesPushedOnFreeList_m == -1)) {
                 if (sizeToAdd +
@@ -416,8 +392,8 @@ public:
                     if (freeLists_m[ListIndex]->consecReqFail_m >=
                         freeLists_m[ListIndex]->maxConsecReqFail_m) {
                         *errCode = ULM_ERR_OUT_OF_RESOURCE;
-                        ulm_err(("GetChunkOfMemory: Out of memory in "
-                                 "pool for %s \n", listDescription));
+                        ulm_err(("Error: List out of memory in pool for %s\n",
+                                 description_m));
                         return ReturnValue;
                     } else
                         *errCode = ULM_ERR_TEMP_OUT_OF_RESOURCE;
@@ -437,8 +413,8 @@ public:
                 if (freeLists_m[ListIndex]->consecReqFail_m
                     >= freeLists_m[ListIndex]->maxConsecReqFail_m) {
                     *errCode = ULM_ERR_OUT_OF_RESOURCE;
-                    ulm_err(("GetChunkOfMemory: Out of memory in "
-                             "pool for %s \n", listDescription));
+                    ulm_err(("Error: List out of memory in pool for %s\n",
+                             description_m));
                     return ReturnValue;
                 } else
                     *errCode = ULM_ERR_TEMP_OUT_OF_RESOURCE;
@@ -505,10 +481,7 @@ public:
 
             if (basePtr == (void *) (-1L)) {
 #ifdef _DEBUGQUEUES
-                fprintf(stderr,
-                        " Unable to add new elements for free list %s\n",
-                        listDescription);
-                fflush(stderr);
+                ulm_err(("Error: Can't get new elements for %s\n", description_m));
 #endif
                 freeLists_m[poolIndex]->lock_m.unlock();
                 return errorCode;
@@ -520,9 +493,8 @@ public:
                                   affinity_m[poolIndex])) {
                     errorCode = ULM_ERROR;
 #ifdef _DEBUGQUEUES
-                    fprintf(stderr,
-                            "Unable to set memory policy :: poolIndex %d\n",
-                            poolIndex);
+                    ulm_err(("Error: Can't set memory policy (poolIndex=%d)\n",
+                             poolIndex));
                     return errorCode;
 #endif                          /* _DEBUGQUEUES */
                 }
@@ -666,7 +638,7 @@ public:
 protected:
     // pointer to function called when too many consecutive requests for
     // memory have failed.
-    int (FreeLists::*RequestFailedFunction) (char *ErrorString);
+    int (FreeLists_t::*RequestFailedFunction) (char *ErrorString);
 
 private:
     // list of available descriptors - one per recieving context, the list
@@ -718,8 +690,8 @@ private:
         }
 
 
-    //! initialize memory pool
-    int memPoolInit(int Nlsts, long nPagesPerList, ssize_t PoolChunkSize,
+    // initialize memory pool
+    int memPoolInit(int nLists, long nPagesPerList, ssize_t PoolChunkSize,
                     size_t PageSize, long minPagesPerList,
                     long defaultMinPagesPerList, long defaultNPagesPerList,
                     long maxPagesPerList, ssize_t maxMemoryInPool)
@@ -734,9 +706,9 @@ private:
             long totPagesToAllocate;
             if (nPagesPerList == -1) {
                 // minimum size is  defaultNPagesPerList*number of local procs
-                totPagesToAllocate = defaultNPagesPerList * Nlsts;
+                totPagesToAllocate = defaultNPagesPerList * nLists;
             } else {
-                totPagesToAllocate = nPagesPerList * Nlsts;
+                totPagesToAllocate = nPagesPerList * nLists;
             }
 
             ssize_t memoryInPool = totPagesToAllocate * PageSize;
@@ -746,33 +718,31 @@ private:
             if (MemFlags == SharedMemFlag) {
                 // shared memory allocation
                 lenToAlloc =
-                    sizeof(MemoryPool < MemProt, MemFlags, SharedMemFlag >);
+                    sizeof(MemoryPool_t < MemProt, MemFlags, SharedMemFlag >);
                 memoryPool_m =
-                    (MemoryPool < MemProt, MemFlags, SharedMemFlag > *)
+                    (MemoryPool_t < MemProt, MemFlags, SharedMemFlag > *)
                     SharedMemoryPools.getMemorySegment(lenToAlloc,
                                                        CACHE_ALIGNMENT);
             } else {
                 // process private memory allocation
                 lenToAlloc =
-                    sizeof(MemoryPool < MemProt, MemFlags, SharedMemFlag >);
+                    sizeof(MemoryPool_t < MemProt, MemFlags, SharedMemFlag >);
                 memoryPool_m =
-                    (MemoryPool < MemProt, MemFlags, SharedMemFlag > *)
+                    (MemoryPool_t < MemProt, MemFlags, SharedMemFlag > *)
                     ulm_malloc(lenToAlloc);
             }
             if (!memoryPool_m) {
-                ulm_exit((-1, "FreeLists::Init Unable to allocate memory "
-                          "for memoryPool_m. size reqested %ld, "
-                          "errno %d ", lenToAlloc, errno));
+                ulm_exit((-1, "Error: Out of memory\n"));
             }
             // run constructor
-            new(memoryPool_m) MemoryPool < MemProt, MemFlags, SharedMemFlag >;
+            new(memoryPool_m) MemoryPool_t < MemProt, MemFlags, SharedMemFlag >;
 
             errorCode = memoryPool_m->Init(memoryInPool, maxMemoryInPool,
                                            PoolChunkSize, PageSize);
             if (errorCode != ULM_SUCCESS) {
                 return errorCode;
             }
-            //! return
+
             return errorCode;
         }
 
@@ -789,7 +759,7 @@ private:
             if (fd) {
                 for (i = 0; i < nLists_m; i++) {
                     fprintf(fd, "%s : %p : %d : %i : %d : %d : %d :"
-                            " %d : %d \n", listDescription, this, p,
+                            " %d : %d\n", description_m, this, p,
                             i, elementsMax[i], elementsSum[i],
                             numEvents[i], chunksRequested[i],
                             chunksReturned[i]);
@@ -802,5 +772,24 @@ private:
             }
         }
 };
+
+
+// Common cases for FreeLists
+
+#include "util/DblLinkList.h"
+
+template <class ElementType> class FreeListPrivate_t
+    : public FreeLists_t <DoubleLinkList,
+                          ElementType,
+                          MMAP_PRIVATE_PROT,
+                          MMAP_PRIVATE_FLAGS,
+                          MMAP_SHARED_FLAGS> {};
+
+template <class ElementType> class FreeListShared_t
+    : public FreeLists_t <DoubleLinkList,
+                          ElementType,
+                          MMAP_SHARED_PROT,
+                          MMAP_SHARED_FLAGS,
+                          MMAP_SHARED_FLAGS> {};
 
 #endif                          /* !_FREELISTS */

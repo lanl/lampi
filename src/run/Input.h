@@ -73,11 +73,6 @@ int MatchOption(char *StringToMatch, InputParameters_t *ULMInputOptions,
 void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
                  InputParameters_t *ULMInputOptions, int OptionIndex,
                  int MinVal);
-void FillIntListPerHost(char *OptionString,
-                        InputParameters_t *ULMInputOptions,
-                        int SizeOfInputOptionsDB, int **NEntriesPerHost,
-                        int ***ListEntriePerHost, int NumberHosts,
-                        int MinValue, HostName_t *HostList);
 void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength);
 void FatalNoInput(const char *ErrorString);
 void NoOpFunction(const char *ErrorString);

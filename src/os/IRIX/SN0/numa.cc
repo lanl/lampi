@@ -60,8 +60,7 @@ int getCPUSet(void)
     // allocate request structure
     ULMreq = ulm_new(request, 1);
     if( !ULMreq ) {
-	fprintf(stderr, " Unable to allocate memory for ULMreq\n");
-	ulm_exit((-1, "Aborting \n"));
+	ulm_exit((-1, "Error: Unable to allocate memory for ULMreq\n"));
     }
 
     // add constraints - no op
@@ -81,16 +80,12 @@ int getCPUSet(void)
     ULMai = new acquire(NChildren, ULMreq->get_num_resource(R_CPU),
 			ULMreq->get_resource(R_CPU));
     if( !ULMai ) {
-	fprintf(stderr, " Unable to allocate ULMai data structure\n");
-	fflush(stderr);
-	ulm_exit((-1, "Aborting \n"));
+	ulm_exit((-1, "Error: Unable to allocate ULMai data structure\n");
     }
 
     // allows for scheduling hints
     if (!(ULMai->init_parent())) {
-	fprintf(stderr, " init_parent call failed\n");
-	fflush(stderr);
-	ulm_exit((-1, "Aborting \n"));
+	ulm_exit((-1, "Error: init_parent call failed\n"));
     }
 
     return ULM_SUCCESS;

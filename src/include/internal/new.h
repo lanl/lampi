@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "internal/log.h"
+
 /*
  * Set ULM_NEW_DEBUG_LEVEL to
  * 0 for no checking
@@ -56,24 +58,19 @@ template <class T> inline T* _ulm_new(ssize_t nitems,
 {
     T *addr = NULL;
 
+    _ulm_set_file_line(file, line);
     if (debug_level > 1) {
         if (nitems <= 0) {
-            fprintf(stderr,
-                    "%s:%d: Warning: ulm_new: "
-                    "Request for %ld items of size %ld\n",
-                    file, line, (long) nitems, (long) sizeof(T));
-            fflush(stderr);
+            _ulm_warn("Warning: ulm_new: Request for %ld items of size %ld\n",
+                      (long) nitems, (long) sizeof(T));
         }
     }
 
     addr = new T[nitems];
     if (debug_level > 0) {
         if (addr == NULL) {
-            fprintf(stderr,
-                    "%s:%d: Error: ulm_new: "
-                    "Request for %ld items of size %ld failed\n",
-                    file, line, (long) nitems, (long) sizeof(T));
-            fflush(stderr);
+            _ulm_err("Error: ulm_new: Request for %ld items of size %ld failed\n",
+                     (long) nitems, (long) sizeof(T));
         }
     }
 
@@ -87,10 +84,7 @@ template <class T> inline void _ulm_delete(T *addr,
                                            int line)
 {
     if (debug_level > 1 && addr == NULL) {
-        fprintf(stderr,
-                "%s:%d: Warning: ulm_free: Invalid pointer %p\n",
-                file, line, addr);
-        fflush(stderr);
+        _ulm_warn("Warning: ulm_free: Invalid pointer %p\n", addr);
     }
     delete [] addr;
 }

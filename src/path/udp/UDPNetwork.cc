@@ -125,7 +125,7 @@ UDPNetwork::UDPNetwork(int num_hosts, int num_procs, int len_name,
             bproc_nodeaddr(bproc_getnodebyname(hostName),
                            (struct sockaddr *) &hostAddrs[i], &size);
         if (RetVal != 0) {
-            ulm_err((" UDPNetwork::UDPNetwork :: error returned from the bproc_nodeaddr call :: errno - %d \n", errno));
+            ulm_err(("Error: UDPNetwork::UDPNetwork :: error returned from the bproc_nodeaddr call :: errno - %d\n", errno));
         }
 #else
         struct hostent *hostptr = gethostbyname(hostName);

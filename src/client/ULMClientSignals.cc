@@ -181,7 +181,7 @@ void ClientAbnormalChildTermination(pid_t PIDofChild, int NChildren,
 
     /* send mpirun notice of abnormal termination */
     if (DEBUG) {
-        ulm_err(("Error: AAAAAA ABNORMALTERM being sent \n"));
+        ulm_err(("Error: AAAAAA ABNORMALTERM being sent\n"));
     }
     Tag = ABNORMALTERM;
     ErrorData[0] = (unsigned int) PIDofChild;
@@ -238,7 +238,7 @@ void daemonAbnormalChildTermination(pid_t PIDofChild, int NChildren,
 
     /* send mpirun notice of abnormal termination */
     if (DEBUG) {
-        ulm_err(("Error: AAAAAA ABNORMALTERM being sent \n"));
+        ulm_err(("Error: AAAAAA ABNORMALTERM being sent\n"));
     }
     Tag = ABNORMALTERM;
     ErrorData[0] = (unsigned int) PIDofChild;
