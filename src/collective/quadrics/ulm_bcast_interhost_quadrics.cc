@@ -1980,7 +1980,9 @@ Broadcaster::sync_leaves(int errorcode)
   /* neither local master nor masters */
   else
   {
+#ifndef USE_ELAN_SHARED
     ((ulm_coll_env_t*) sync->glob_env)->desc_index = 0;
+#endif
   }
 
   END_MARK;
