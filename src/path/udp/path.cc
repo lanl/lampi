@@ -107,7 +107,6 @@ bool udpPath::packData(BaseSendDesc_t *message, udpSendFragDesc *frag)
 bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 {
     bool shortMsg; 
-    void* early_send_data;
     int gldestProc;  
     int nDesc; 
     int nDescToAllocate;
@@ -119,7 +118,6 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     unsigned char *dest_addr;
     udpSendFragDesc *sendFragDesc;
 
-    early_send_data 	= NULL;  
     *incomplete 	= true;
     nDescToAllocate 	= 0;
     offset 		= 0;
