@@ -216,4 +216,8 @@ void lampi_init_postfork_ib(lampiState_t *);
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_ib;
 extern lampi_init_func_t lampi_init_postfork_ib;
 #endif
+
+int tty_noecho(int fd);
+int tty_raw(int fd);
+
 #endif /* _LAMPI_INIT_H_ */

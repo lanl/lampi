@@ -5,7 +5,8 @@ SRC_LIBMPI += \
 	src/init/init_debug.cc \
 	src/init/init_proc.cc \
 	src/init/state.cc \
-	src/init/stub.cc
+	src/init/stub.cc \
+	src/init/tty.cc
 
 ifeq "$(enable_shared_memory)" "yes"
 SRC_LIBMPI += src/init/init_shared_memory.cc
