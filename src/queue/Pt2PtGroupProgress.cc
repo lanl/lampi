@@ -139,13 +139,13 @@ int push_frags_into_network(double timeNow)
                 //
                 // We've finished sending
                 //
-                int nAcked=SendDesc->NumAcked;
+                int nAcked = SendDesc->NumAcked;
                 if( SendDesc->path_m->pathType_m == SHAREDMEM ) {
                     /* the shared memory send descriptor stores NumAcked in
-                     *   the shared memory variable
-                     *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
-                     */
-                    nAcked=SendDesc->pathInfo.sharedmem.sharedData->NumAcked;
+                    *   the shared memory variable
+                    *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
+                    */
+                    nAcked = SendDesc->pathInfo.sharedmem.sharedData->NumAcked;
                 }
                 if ( ( nAcked >= SendDesc->numfrags) &&
                 	 (SendDesc->NumSent >= SendDesc->numfrags) ) {
@@ -166,7 +166,7 @@ int push_frags_into_network(double timeNow)
                         /* a call to free the mpi object has been made,
                         *   so ok to free this descriptor */
                         SendDesc->WhichQueue = ONNOLIST;
-                        if (SendDesc->persistent) {
+                        if ( SendDesc->persistFreeCalled ) {
                             ulm_type_release(SendDesc->datatype);
                             ulm_type_release(SendDesc->bsendDatatype);
                         }

@@ -70,23 +70,23 @@ extern "C" int ulm_start(ULMRequest_t *request)
             // never started, so we can reuse its resources.
 
             int reuseDesc = 0;
-            int allFragsAcked=0;
+            int allFragsAcked = 0;
             if( SendDesc->path_m->pathType_m == SHAREDMEM ) {
-                    /* the shared memory send descriptor stores NumAcked in
-                     *   the shared memory variable
-                     *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
-                     */
-                    if( SendDesc->pathInfo.sharedmem.sharedData->NumAcked >=
-                                    SendDesc->numfrags)
-                            allFragsAcked=1;
+                /* the shared memory send descriptor stores NumAcked in
+                *   the shared memory variable
+                *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
+                */
+                if( SendDesc->pathInfo.sharedmem.sharedData->NumAcked >=
+                    SendDesc->numfrags)
+                    allFragsAcked = 1;
             } else {
-                    /* NumAcked is stored in the process private variable
-                     *   SendDesc->NumAcked
-                     */
-                    if( SendDesc->NumAcked >= SendDesc->numfrags)
-                            allFragsAcked=1;
+                /* NumAcked is stored in the process private variable
+                *   SendDesc->NumAcked
+                */
+                if( SendDesc->NumAcked >= SendDesc->numfrags)
+                    allFragsAcked = 1;
             }
-            if (( allFragsAcked &&
+            if ( (allFragsAcked &&
                  (SendDesc->messageDone == REQUEST_COMPLETE) &&
                  (ONNOLIST == SendDesc->WhichQueue)) ||
                 (ULM_STATUS_INITED == SendDesc->status)) {
@@ -119,7 +119,8 @@ extern "C" int ulm_start(ULMRequest_t *request)
                 // to the app
 
                 oldSendDesc->messageDone = REQUEST_RELEASED;
-                oldSendDesc->freeCalled=true;
+                oldSendDesc->freeCalled = true;
+                oldSendDesc->persistFreeCalled = true;
 
                 if (oldSendDesc->sendType == ULM_SEND_BUFFERED) {
                     size_t size;
