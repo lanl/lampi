@@ -137,24 +137,23 @@ typedef struct ULMRunParams {
     /* pointer to struct with Network Data */
     ULMRunNetworkTypes_t Networks;
 
-    //! on host resource specification
-#ifdef __mips
+#ifdef NUMA
     int *CpuList;
     int CpuListLen;
-    //! number of cpus to allocate per node (1 or 2)
+    // number of cpus to allocate per node (1 or 2)
     int *nCpusPerNode;
-    //! cpu affinity policy
+    // cpu affinity policy
     int *CpuPolicy;
-    //! memory affinity policy
-    int *MemoryPolicy;
-    //! resource affinity specification - 1 apply affinity, 0 don't apply
-    //!   affinity
+    // memory affinity policy
+    int *Affinity;
+    // resource affinity specification - 1 apply affinity, 0 don't apply
+    //   affinity
     int *useResourceAffinity;
-    //! resource affinity specification - 1 use os supplied defaults
-    //!                                   0 use user supplied affinity
+    // resource affinity specification - 1 use os supplied defaults
+    //                                   0 use user supplied affinity
     int *defaultAffinity;
-    //! resource affinity mandatory - 1 mandatory, fail if can't use affinity
-    //!                             - 0 continue if affinity can't be applied
+    // resource affinity mandatory - 1 mandatory, fail if can't use affinity
+    //                             - 0 continue if affinity can't be applied
     int *mandatoryAffinity;
 #endif
 

@@ -146,9 +146,7 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&(RunParameters->OutputPrefix), (adminMessage::packType)sizeof(int), 1))
 		    DataError("CheckArgs");
 
-	    /* resource affinity */
-#ifdef __mips
-
+#ifdef NUMA
 	    /* cpu list */
 	    if (RunParameters->CpuListLen != 0) {
 		    tag=adminMessage::CPULIST;
@@ -203,7 +201,7 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 					    (adminMessage::packType)sizeof(int), 1))
 			    DataError("mandatoryAffinity");
 	    }
-#endif
+#endif /* NUMA */
 
 	    /* maximum number of communicators - needed for shared memory resrouces */
 	    if (RunParameters->maxCommunicators != 0) {
@@ -464,9 +462,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&(RunParameters->OutputPrefix), (adminMessage::packType)sizeof(int), 1))
 		    DataError("CheckArgs");
 
-	    /* resource affinity */
-#ifdef __mips
-
+#ifdef NUMA
 	    /* cpu list */
 	    if (RunParameters->CpuListLen != 0) {
 		    tag=adminMessage::CPULIST;
@@ -521,7 +517,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 					    (adminMessage::packType)sizeof(int), 1))
 			    DataError("mandatoryAffinity");
 	    }
-#endif
+#endif /* NUMA */
 
 	    /* maximum number of communicators - needed for shared memory resrouces */
 	    if (RunParameters->maxCommunicators != 0) {

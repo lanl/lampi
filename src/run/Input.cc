@@ -1397,7 +1397,8 @@ void setThreads(const char *InfoStream)
 }
 
 
-#ifdef __mips
+#ifdef NUMA
+
 /*
  * Fill in number of cpus per node to use
  */
@@ -1520,7 +1521,8 @@ void parseMandatoryAffinity(const char *InfoStream)
                 RunParameters.mandatoryAffinity, ULMInputOptions,
                 OptionIndex, 0);
 }
-#endif                          // __mips
+
+#endif                          // NUMA
 
 
 /*

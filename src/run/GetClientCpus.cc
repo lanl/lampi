@@ -50,24 +50,23 @@
  ***
  ***/
 
-#ifdef __mips
-#include "internal/profiler.h"
+
+#ifdef NUMA
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "internal/constants.h"
+#include "internal/log.h"
 #include "internal/new.h"
+#include "internal/profiler.h"
 #include "internal/types.h"
+#include "run/Input.h"
 #include "run/Run.h"
 #include "run/globals.h"
-#include "internal/new.h"
-#include "run/Input.h"
 #include "util/ParseString.h"
-#endif                          //ifdef __mips
 
-#include "internal/log.h"
-
-#ifdef __mips
 void GetClientCpus(const char *InfoStream)
 {
     ParseString::iterator pi;
@@ -89,7 +88,8 @@ void GetClientCpus(const char *InfoStream)
 
 #else
 
-#include <stdio.h>
+#include "internal/log.h"
+
 void GetClientCpus(const char *InfoStream)
 {
     ulm_warn(("Warning: '-cpulist' not implemented for this platform.\n"));

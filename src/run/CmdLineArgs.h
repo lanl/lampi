@@ -255,7 +255,7 @@ InputParameters_t ULMInputOptions[] =
      parseMaxSMPDataPages,
      "Max shared memory data pages", 0, "\0"
     },
-#ifdef __mips
+#ifdef NUMA
     {"-cpuspernode", "CpusPerNode",
      STRING_ARGS, NoOpFunction, parseCpusPerNode, "Number of CPU's per node to use", 0, "\0"},
     {"-resrcaffinity", "ResourceAffinity",
@@ -264,7 +264,7 @@ InputParameters_t ULMInputOptions[] =
      STRING_ARGS, NoOpFunction, parseDefaultAffinity, "Resoruce affinity specification", 0, "\0"},
     {"-mandatoryAffinity", "MandatoryAffinity",
      STRING_ARGS, NoOpFunction, parseMandatoryAffinity, "Resource affinity usage mandatory", 0, "\0"},
-#endif				// __mips
+#endif				// NUMA
     {"-maxcomms",
      "MaxComms",
      STRING_ARGS,

@@ -79,11 +79,11 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->CmdLineOK = 0;
     RunParameters->mpirunName[0] = '\0';
     RunParameters->maxCommunicators = NULL;
-#ifdef __mips
+#ifdef NUMA
     RunParameters->CpuList = NULL;
     RunParameters->CpuListLen = 0;
     RunParameters->nCpusPerNode = 0;
-#endif                          // __mips
+#endif                          // NUMA
     RunParameters->ULMVerbocity = 0;
     RunParameters->UseThreads = 0;
     RunParameters->CheckArgs = 1;
