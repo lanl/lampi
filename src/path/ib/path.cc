@@ -837,4 +837,91 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
     return returnValue;
 }
 
+void ibPath::finalize(void)
+{
+    VAPI_ret_t vapi_result;
+    int i;
+
+    if (usethreads()) {
+        ib_state.lock.lock();
+    }
+
+    for (i = 0; i < ib_state.num_active_hcas; i++) {
+        ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
+        if (!h->usable) {
+            continue;
+        }
+
+        // detach UD QP from multicast group...dlid (last arg) current ignored
+        if (h->ud.receive_multicast) {
+            vapi_result =  VAPI_detach_from_multicast(h->handle, ib_state.mcast_gid,
+                h->ud.handle, 0);
+            if (vapi_result != VAPI_OK) {
+                ulm_warn(("VAPI_detach_from_multicast for HCA %d failed with %s\n",
+                    ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            }
+            h->ud.receive_multicast = false;
+        }
+
+        // destroy queue pairs
+        vapi_result = VAPI_destroy_qp(h->handle, h->ud.handle);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_destroy_qp for HCA %d UD QP failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+
+        // destroy completion queues
+        vapi_result = VAPI_destroy_cq(h->handle, h->recv_cq);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_destroy_cq for HCA %d recv_cq failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+        vapi_result = VAPI_destroy_cq(h->handle, h->send_cq);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_destroy_cq for HCA %d send_cq failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+
+        // deregister memory regions
+        vapi_result = VAPI_deregister_mr(h->handle, h->ud.recv_mr_handle);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_deregister_mr for HCA %d UD QP recv buffers failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+        vapi_result = VAPI_deregister_mr(h->handle, h->ud.send_mr_handle);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_deregister_mr for HCA %d UD QP send buffers failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+        
+        // destroy all UD address handles
+        vapi_result = h->ud.ah_cache.destroy(h->handle);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("UD Address Handle cache destroy for HCA %d failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+        
+        // deallocate protection domain
+        vapi_result = VAPI_dealloc_pd(h->handle, h->pd);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("VAPI_dealloc_pd for HCA %d failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+
+        // release HCA handle
+        vapi_result = EVAPI_release_hca_hndl(h->handle);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("EVAPI_release_hca_hndl for HCA %d failed with %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+        }
+
+        // set this HCA as unusable...
+        h->usable = false;
+    }
+
+    if (usethreads()) {
+        ib_state.lock.unlock();
+    }
+}
+
 #endif

@@ -128,6 +128,47 @@ class ib_ud_av_cache {
             
             return true;
         }
+
+        VAPI_ret_t destroy(VAPI_hca_hndl_t hca_hndl) 
+        {
+            VAPI_ret_t vapi_result = VAPI_OK;
+            struct info *p, *q;
+            int i;
+            
+            if (cache == 0) {
+                return vapi_result;
+            }
+
+            for (i = 0; i < nprocs(); i++) {
+                p = &(cache[i]);
+                if (p->ah != VAPI_INVAL_HNDL) {
+                    vapi_result = VAPI_destroy_addr_hndl(hca_hndl, p->ah);
+                    if (vapi_result != VAPI_OK) {
+                        return vapi_result;
+                    }
+                    p->ah = VAPI_INVAL_HNDL;
+                }
+                q = p;
+                p = p->next;
+                q->next = 0;
+                while (p) {
+                    if (p->ah != VAPI_INVAL_HNDL) {
+                        vapi_result = VAPI_destroy_addr_hndl(hca_hndl, p->ah);
+                        if (vapi_result != VAPI_OK) {
+                            return vapi_result;
+                        }
+                        p->ah = VAPI_INVAL_HNDL;
+                    }
+                    q = p;
+                    p = p->next;
+                    q->next = 0;
+                    ulm_free(q);
+                }
+            }
+            
+            ulm_free(cache);
+            return vapi_result; 
+        }
 };
 
 /* no dynamic sizing to help performance -- or at least
