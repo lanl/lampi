@@ -5,7 +5,6 @@ SRC_MPIRUN += \
 	src/run/CheckForControlMsgs.cc \
 	src/run/CheckHeartBeat.cc \
 	src/run/Daemonize.cc \
-	src/run/GetAppDir.cc \
 	src/run/GetAppHostData.cc \
 	src/run/GetClientApp.cc \
 	src/run/GetClientCpus.cc \
@@ -20,13 +19,11 @@ SRC_MPIRUN += \
 	src/run/KillAppProcs.cc \
 	src/run/ProcessInput.cc \
 	src/run/RearrangeHostList.cc \
+	src/run/RunParams.cc \
 	src/run/SendInputDataToClients.cc \
-	src/run/SetCheckArgsFalse.cc \
-	src/run/SetOutputPrefixTrue.cc \
 	src/run/SetupClientHostInfo.cc \
 	src/run/TVSetUp.cc \
 	src/run/TVSetUpApp.cc \
-	src/run/TerminateClients.cc \
 	src/run/VerifyLsfResources.cc \
 	src/run/coprocess.cc \
 	src/run/FixRunParameters.cc \

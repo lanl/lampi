@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2004. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,8 +52,6 @@
 #include "internal/types.h"
 #include "util/Utility.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "run/globals.h"
 
 /*
  * Read from stdin and create an admin message to host rank 0.
@@ -78,7 +79,7 @@ static int ScanStdIn(int fdin)
         }
     }
 
-    adminMessage *server = RunParameters.server;
+    adminMessage *server = RunParams.server;
     server->reset(adminMessage::SEND);
     server->pack(&cnt, adminMessage::INTEGER, 1);
     if (cnt > 0)
@@ -92,8 +93,7 @@ static int ScanStdIn(int fdin)
 }
 
 
-void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
-               ULMRunParams_t *RunParameters)
+void Daemonize(void)
 {
     int ActiveClients;
     int i, MaxDescriptorCtl, RetVal;
@@ -102,6 +102,9 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     int *ClientSocketFDList, NHosts, *ProcessCnt;
     HostName_t *HostList;
     adminMessage *server;
+    int *HostsNormalTerminated = &RunParams.HostsNormalTerminated;
+    int *HostsAbNormalTerminated = &RunParams.HostsAbNormalTerminated;
+
 
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
@@ -115,14 +118,13 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     pid_t **PIDsOfAppProcs;     /* list of PID's for all Client's children */
 
     /* Initialization */
-    SetTerminateInitiated(0);
-    server = RunParameters->server;
-    NHosts = RunParameters->NHosts;
-    ProcessCnt = RunParameters->ProcessCount;
-    HostList = RunParameters->HostList;
-    ActiveClients = RunParameters->NHosts;
+    server = RunParams.server;
+    NHosts = RunParams.NHosts;
+    ProcessCnt = RunParams.ProcessCount;
+    HostList = RunParams.HostList;
+    ActiveClients = RunParams.NHosts;
     ClientSocketFDList =
-        RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients;
+        RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
 
     /* setup list of active hosts */
     ActiveHosts = ulm_new(int, NHosts);
@@ -157,45 +159,47 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
             MaxDescriptorCtl = ClientSocketFDList[i];
     }
     MaxDescriptorCtl++;
-    HostsNormalTerminated = 0;
-    HostsAbNormalTerminated = 0;
+    *HostsNormalTerminated = 0;
+    *HostsAbNormalTerminated = 0;
 
     /* setup stdin file descriptor to be non-blocking */
-    if (RunParameters->STDINfd >= 0) {
+    if (RunParams.STDINfd >= 0) {
         /* input from terminal */
-        if (isatty(RunParameters->STDINfd)) {
+        if (isatty(RunParams.STDINfd)) {
 
             struct termios term;
-            if (tcgetattr(RunParameters->STDINfd, &term) != 0) {
+            if (tcgetattr(RunParams.STDINfd, &term) != 0) {
                 ulm_err(("tcgetattr(%d) failed with errno=%d\n",
-                         RunParameters->STDINfd, errno));
-                RunParameters->STDINfd = -1;
+                         RunParams.STDINfd, errno));
+                RunParams.STDINfd = -1;
             }
             term.c_lflag &= ~ICANON;
             term.c_cc[VMIN] = 0;
             term.c_cc[VTIME] = 0;
-            if (tcsetattr(RunParameters->STDINfd, TCSANOW, &term) != 0) {
+            if (tcsetattr(RunParams.STDINfd, TCSANOW, &term) != 0) {
                 ulm_err(("tcsetattr(%d) failed with errno=%d\n",
-                         RunParameters->STDINfd, errno));
-                RunParameters->STDINfd = -1;
+                         RunParams.STDINfd, errno));
+                RunParams.STDINfd = -1;
             }
             /* input from pipe or file */
         } else {
             struct stat sbuf;
-            if (fstat(RunParameters->STDINfd, &sbuf) != 0) {
+            if (fstat(RunParams.STDINfd, &sbuf) != 0) {
                 ulm_err(("stat(%d) failed with errno=%d\n",
-                         RunParameters->STDINfd, errno));
+                         RunParams.STDINfd, errno));
             } else if (S_ISFIFO(sbuf.st_mode)) {
                 int flags;
-                if (fcntl(RunParameters->STDINfd, F_GETFL, &flags) != 0) {
+                if (fcntl(RunParams.STDINfd, F_GETFL, &flags) != 0) {
                     ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n",
-                             RunParameters->STDINfd, errno));
-                    RunParameters->STDINfd = -1;
+                             RunParams.STDINfd, errno));
+                    RunParams.STDINfd = -1;
                 }
                 flags |= O_NONBLOCK;
-                if (fcntl(RunParameters->STDINfd, F_SETFL, flags) != 0) {
-                    ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", RunParameters->STDINfd, errno));
-                    RunParameters->STDINfd = -1;
+                if (fcntl(RunParams.STDINfd, F_SETFL, flags) != 0) {
+                    ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) "
+                             "failed with errno=%d\n",
+                             RunParams.STDINfd, errno));
+                    RunParams.STDINfd = -1;
                 }
             }
         }
@@ -204,11 +208,14 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     /* loop over work */
     for (;;) {
 
-        /* check to see if there is any stdin/stdout/stderr data to read and then write */
-        if (RunParameters->handleSTDio && RunParameters->STDINfd >= 0) {
-            if (ScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
-                close(RunParameters->STDINfd);
-                RunParameters->STDINfd = -1;
+        /*
+         * check to see if there is any stdin/stdout/stderr data to
+         * read and then write
+         */
+        if (RunParams.handleSTDio && RunParams.STDINfd >= 0) {
+            if (ScanStdIn(RunParams.STDINfd) != ULM_SUCCESS) {
+                close(RunParams.STDINfd);
+                RunParams.STDINfd = -1;
             }
         }
 
@@ -225,75 +232,76 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         DeltaTime = TimeInSeconds - LastTime;
         if (DeltaTime >= HEARTBEATINTERVAL) {
             LastTime = TimeInSeconds;
-
             RetVal = SendHeartBeat(ClientSocketFDList, NHosts,
                                    MaxDescriptorCtl);
         }
 
         /* check if any messages have arrived and process */
-        RetVal =
-            CheckForControlMsgs(MaxDescriptorCtl, ClientSocketFDList,
-                                NHosts, HeartBeatTime,
-                                &HostsNormalTerminated,
-                                StderrBytesRead, StdoutBytesRead,
-                                &HostsAbNormalTerminated,
-                                ActiveHosts, ProcessCnt,
-                                PIDsOfAppProcs, &TimeFirstCheckin,
-                                &ActiveClients);
+        RetVal = CheckForControlMsgs(MaxDescriptorCtl,
+                                     ClientSocketFDList,
+                                     NHosts,
+                                     HeartBeatTime,
+                                     HostsNormalTerminated,
+                                     HostsAbNormalTerminated,
+                                     ActiveHosts,
+                                     ProcessCnt,
+                                     PIDsOfAppProcs,
+                                     &TimeFirstCheckin,
+                                     &ActiveClients);
 
         /* exit if all hosts have terminated normally */
         if (!ActiveClients) {
-            /* !!!!!!!!  may want to cleanup */
-            /* last check if any messages have arrived and process */
             return;
         }
-        /* abnormal exit */
-        if (((HostsNormalTerminated + HostsAbNormalTerminated) == NHosts)
-            && (HostsAbNormalTerminated > 0)) {
-            /* last check if any messages have arrived and process */
-            RetVal =
-                CheckForControlMsgs(MaxDescriptorCtl,
-                                    ClientSocketFDList, NHosts,
-                                    HeartBeatTime,
-                                    &HostsNormalTerminated,
-                                    StderrBytesRead, StdoutBytesRead,
-                                    &HostsAbNormalTerminated,
-                                    ActiveHosts, ProcessCnt,
-                                    PIDsOfAppProcs,
-                                    &TimeFirstCheckin, &ActiveClients);
 
-            // Terminate all hosts
-            ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));
+        /* abnormal exit */
+        if (((*HostsNormalTerminated + *HostsAbNormalTerminated) == NHosts)
+            && (*HostsAbNormalTerminated > 0)) {
+            /* last check if any messages have arrived and process */
+            RetVal = CheckForControlMsgs(MaxDescriptorCtl,
+                                         ClientSocketFDList,
+                                         NHosts,
+                                         HeartBeatTime,
+                                         HostsNormalTerminated,
+                                         HostsAbNormalTerminated,
+                                         ActiveHosts,
+                                         ProcessCnt,
+                                         PIDsOfAppProcs,
+                                         &TimeFirstCheckin,
+                                         &ActiveClients);
+
+            ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n",
+                     *HostsAbNormalTerminated));
             Abort();
             exit(EXIT_FAILURE);
         }
 
-        /* check to see if any hosts have timed out - the first
+        /*
+         * check to see if any hosts have timed out - the first
          * host to time out it the return value of CheckHeartBeat
          */
         if (DeltaTime >= HEARTBEATINTERVAL) {
-            RetVal =
-                CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
-                               ActiveHosts,
-                               RunParameters->HeartBeatTimeOut);
+            RetVal = CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
+                                    ActiveHosts, RunParams.HeartBeatTimeOut);
 
             if (RetVal < NHosts) {
-                /* send TERMINATENOW message to remaining hosts */
-                ulm_err(("Error: Host %d is no longer participating in the job\n", RetVal));
+                // Terminate all hosts
+                ulm_err(("Error: Host %d is no longer participating "
+                         "in the job\n", RetVal));
                 ClientSocketFDList[RetVal] = -1;
-                KillAppProcs(RunParameters, RetVal);
-                HostsAbNormalTerminated++;
-                HostsAbNormalTerminated +=
-                    AbortAllHosts(ClientSocketFDList, NHosts, server);
+                KillAppProcs(RetVal);
+                Abort();
             }
         }
 
-        /* check to see if all clients have started up - if not and
-         *  timeout period expired - abort */
+        /* 
+         * check to see if all clients have started up - if not and
+         * timeout period expired - abort
+         */
         if (TimeFirstCheckin > 0
             && TimeInSeconds - TimeFirstCheckin > STARTUPINTERVAL) {
-            ulm_err(("Error:  mpirun terminating abnormally.\n"));
-            ulm_err(("  Clients did not startup.  List: "));
+            ulm_err(("Error: mpirun terminating abnormally.\n"));
+            ulm_err(("Clients did not startup.  List: "));
             for (i = 0; i < NHosts; i++)
                 if (ActiveHosts[i] == -1)
                     ulm_err((" %d ", i));

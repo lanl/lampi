@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,18 +55,361 @@
 #include "internal/profiler.h"
 #include "internal/types.h"
 #include "util/ParseString.h"
-#include "run/Run.h"
 #include "run/Input.h"
-#include "internal/new.h"
-#include "run/globals.h"
-#include "run/CmdLineArgs.h"
+#include "run/Run.h"
 
 
-int SizeOfInputOptionsDB =
-sizeof(ULMInputOptions) / sizeof(InputParameters_t);
+Options_t Options[] =
+{
+    {"-jobfile",
+     "JobDescriptionFile",
+     STRING_ARGS,
+     NoOpFunction,
+     NotImplementedFunction,
+     "File containing parameter settings", 0, "\0"
+    },
+    {"-nolsf",
+     "NoLSF",
+     NO_ARGS,
+     NoOpFunction,
+     setNoLSF,
+     "No LSF control will be used in job", 0, "\0"
+    },
+    /* HostCount must be before HostList */
+    {"-N",
+     "HostCount",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostCount,
+     "Number of hosts (machines)", 0, "\0"
+    },
+    /* HostList must be before Procs */
+    {"-H",
+     "HostList",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostData,
+     "List of hosts (machines)", 0, "\0"
+    },
+    {"-machinefile",
+     "MachineFile",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostDataFromMachineFile,
+     "File containing list of hosts (machines)", 0, "\0"
+    },
+    /* Procs must be after HostCount and HostList */
+    {"-np",
+     "Procs",
+     STRING_ARGS,
+     NoOpFunction,
+     GetClientProcessCount,
+     "Number of processes total or on each host (machine)", 0, "\0"
+    },
+    /* alias for -np, call ...NoInput here! */
+    {"-n",
+     "ProcsAlias",
+     STRING_ARGS,
+     GetClientProcessCountNoInput,
+     GetClientProcessCount,
+     "Number of processes total or on each host (machine)", 0, "\0"
+    },
+    {"-s",
+     "MpirunHostname",
+     STRING_ARGS,
+     GetMpirunHostnameNoInput,
+     GetMpirunHostname,
+     "IP hostname or address of mpirun host", 0, "\0"
+    },
+    {"-i",
+     "InterfaceList",
+     STRING_ARGS,
+     GetInterfaceNoInput,
+     GetInterfaceList,
+     "List of interface names to be used by TCP/UDP paths", 0, "\0"
+    },
+    {"-ni",
+     "Interfaces",
+     STRING_ARGS,
+     NoOpFunction,
+     GetInterfaceCount,
+     "Maximum number of interfaces to be used by TCP/UDP paths", 0, "\0"
+    },
+    {"-cpulist",
+     "CpuList",
+     STRING_ARGS,
+     NoOpFunction,
+     GetClientCpus,
+     "Which CPUs to use", 0, "\0"
+    },
+    {"-d",
+     "WorkingDir",
+     STRING_ARGS,
+     GetClientWorkingDirectoryNoInp,
+     GetClientWorkingDirectory,
+     "Current directory", 0, "\0"
+    },
+    {"-f",
+     "NoArgCheck",
+     NO_ARGS,
+     NoOpFunction,
+     SetCheckArgsFalse,
+     "No checking of MPI arguments", 0, "\0"
+    },
+    {"-t",
+     "OutputPrefix",
+     NO_ARGS,
+     NoOpFunction,
+     SetOutputPrefixTrue,
+     "Prefix standard output and error with helpful information", 0, "\0"
+    },
+    {"-q",
+     "Quiet",
+     NO_ARGS,
+     NoOpFunction,
+     SetQuietTrue,
+     "Suppress start-up messages", 0, "\0"
+    },
+    {"-dapp",
+     "DirectoryOfBinary",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppDir,
+     "Absolute path to binary", 0, "0"
+    },
+    {"-exe",
+     "BinaryName",
+     STRING_ARGS,
+     FatalNoInput,
+     GetClientApp,
+     "Binary name", 0, "0"
+    },
+    {"-dev",
+     "NetworkDevices",
+     STRING_ARGS,
+     GetNetworkDevListNoInput,
+     GetNetworkDevList,
+     "Type of network", 0, "\0"
+    },
+    {"-tvdbgstrt",
+     "TotalViewDebugStartup",
+     NO_ARGS,
+     NoOpFunction,
+     GetTVDaemon,
+     "Debug the ULM library", 0, "\0"
+    },
+    {"-gdb",
+     "GDBDebugStartup",
+     NO_ARGS,
+     NoOpFunction,
+     GetGDB,
+     "Debug LA-MPI library with gdb and xterm", 0, "\0"
+    },
+    {"-mh",
+     "MasterHost",
+     STRING_ARGS,
+     NoOpFunction,
+     RearrangeHostList,
+     "Startup host", 0, "\0"
+    },
+    {"-env", "EnvVars",
+     STRING_ARGS,
+     NoOpFunction,
+     parseEnvironmentSettings,
+     "List environment variables and settings", 0, "\0"
+    },
+    {"-norsrccontinue",
+     "OutOfResourceContinue",
+     NO_ARGS,
+     NoOpFunction,
+     parseOutOfResourceContinue,
+     "  ", 1, "\0"
+    },
+    {"-retry",
+     "MaxRetryWhenNoResource",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMaxRetries,
+     "Number of times to retry for resources", 0, "0"
+    },
+    {"-local",
+     "Local",
+     NO_ARGS,
+     NoOpFunction,
+     setLocal,
+     "Run on the local host using fork/exec to spawn the processes", 0, "0"
+    },
+    {"-ssh",
+     "UseSSH",
+     NO_ARGS,
+     NoOpFunction,
+     setUseSSH,
+     "use SSH instead of RSH to create remote processes", 0, "0"
+    },
+    {"-threads",
+        "NoThreads",
+        NO_ARGS,
+        NoOpFunction,
+        setThreads,
+        "Threads used in job", 0, "0"
+    },
+    {"-minsmprecvdesc",
+     "MinSMPrecvdescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMinSMPRecvDescPages,
+     "Min shared memory recv descriptor pages", 0, "\0"
+    },
+    {"-maxsmprecvdesc",
+     "MaxSMPrecvdescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMaxSMPRecvDescPages,
+     "Max shared memory recv descriptor pages", 0, "\0"
+    },
+    {"-totsmprecvdesc",
+     "TotSMPrecvdescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTotalSMPRecvDescPages,
+     "Total shared memory recv descriptor pages", 0, "\0"
+    },
+    {"-minsmpisenddesc",
+     "MinSMPisenddescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMinSMPISendDescPages,
+     "Min shared memory isend descriptor pages", 0, "\0"
+    },
+    {"-maxsmpisenddesc",
+     "MaxSMPisenddescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMaxSMPISendDescPages,
+     "Max shared memory isend descriptor pages", 0, "\0"
+    },
+    {"-totsmpisenddesc",
+     "TotSMPisenddescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTotalSMPISendDescPages,
+     "Total shared memory isend descriptor pages", 0, "\0"
+    },
+    {"-totirecvdesc",
+     "TotIrecvdescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTotalIRecvDescPages,
+     "Total irevc descriptor Pages", 0, "\0"
+    },
+    {"-totsmpdatapgs",
+     "TotSMPDatapages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTotalSMPDataPages,
+     "Total shared memory data pages", 0, "\0"
+    },
+    {"-minsmpdatapgs",
+     "MinSMPDatapages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMinSMPDataPages,
+     "Min shared memory data pages", 0, "\0"
+    },
+    {"-maxsmpdatapgs",
+     "MaxSMPDatapages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMaxSMPDataPages,
+     "Max shared memory data pages", 0, "\0"
+    },
+#if ENABLE_NUMA
+    {"-cpuspernode", "CpusPerNode",
+     STRING_ARGS, NoOpFunction, parseCpusPerNode, "Number of CPU's per node to use", 0, "\0"},
+    {"-resrcaffinity", "ResourceAffinity",
+     STRING_ARGS, NoOpFunction, parseResourceAffinity, "Resource affinity usage", 0, "\0"},
+    {"-defltaffinity", "DefaultAffinity",
+     STRING_ARGS, NoOpFunction, parseDefaultAffinity, "Resoruce affinity specification", 0, "\0"},
+    {"-mandatoryAffinity", "MandatoryAffinity",
+     STRING_ARGS, NoOpFunction, parseMandatoryAffinity, "Resource affinity usage mandatory", 0, "\0"},
+#endif				// ENABLE_NUMA
+    {"-maxcomms",
+     "MaxComms",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMaxComms,
+     "Maximum number of communicators on each host", 0, "\0"
+    },
+    {"-smdescmemperproc",
+     "SMDescMemPerProc",
+     STRING_ARGS,
+     NoOpFunction,
+     parseSMDescMemPerProc,
+     "Descriptor Shared Memory pool per process allocation - in bytes", 0, "\0"
+    },
+    {"-qr",
+     "QuadricsRails",
+     STRING_ARGS,
+     NoOpFunction,
+     parseQuadricsRails,
+     "Quadrics rail numbers to use", 0, "\0"
+    },
+    {"-crc",
+     "UseCRC",
+     NO_ARGS,
+     NoOpFunction,
+     parseUseCRC,
+     "Use CRCs instead of checksums", 0, "\0"
+    },
+    {"-qf",
+     "QuadricsFlags",
+     STRING_ARGS,
+     NoOpFunction,
+     parseQuadricsFlags,
+     "Special Quadrics flags -- noack, ack, nochecksum, checksum", 0, "\0"
+    },
+    {"-mf",
+     "MyrinetFlags",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMyrinetFlags,
+     "Special Myrinet GM flags -- noack, ack, nochecksum, checksum, <number> (fragment size)", 0, "\0"
+    },
+    {"-if",
+     "IBFlags",
+     STRING_ARGS,
+     NoOpFunction,
+     parseIBFlags,
+     "Special InfiniBand flags -- noack, ack, nochecksum, checksum", 0, "\0"
+    }
 
-int _ulm_AppArgsIndex;
+#if ENABLE_TCP
+    ,
+    {"-tcpmaxfrag",
+     "TCPMaxFragment",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPMaxFragment,
+     "TCP maximum fragment size", 0, "\0"
+    },
+    {"-tcpeagersend",
+     "TCPEagerSend",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPEagerSend,
+     "TCP eager send size", 0, "\0"
+    },
+    {"-tcpconretries",
+     "TCPConnectRetries",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPConnectRetries,
+     "TCP connection retries", 0, "\0"
+    }
+#endif
+};
 
+int SizeOfOptions = sizeof(Options) / sizeof(Options_t);
 
 void Usage(FILE *stream)
 {
@@ -129,10 +475,10 @@ static void Help(void)
 static void ListOptions(void)
 {
     printf("Advanced options:\n");
-    for (int i = 0; i < SizeOfInputOptionsDB; i++) {
-        if (!ULMInputOptions[i].display) {
-            printf("    %s", ULMInputOptions[i].AbreviatedName);
-            switch (ULMInputOptions[i].TypeOfArgs) {
+    for (int i = 0; i < SizeOfOptions; i++) {
+        if (!Options[i].display) {
+            printf("    %s", Options[i].AbreviatedName);
+            switch (Options[i].TypeOfArgs) {
             case STRING_ARGS:
                 printf(" [ARG]...");
                 break;
@@ -141,7 +487,7 @@ static void ListOptions(void)
                 break;
             }
             printf("\n        %s [%s]",
-                   ULMInputOptions[i].Usage, ULMInputOptions[i].FileName);
+                   Options[i].Usage, Options[i].FileName);
         }
         printf("\n");
     }
@@ -199,8 +545,7 @@ static void ScanForHelp(int i, char **argv)
 
 /* scan a system-wide configuration file, if it exists...
  */
-static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
-                                 int SizeOfInputOptionsDB)
+static void ScanSystemConfigFile(void)
 {
     int NBytes, OptionIndex;
     char ConfigFileName[ULM_MAX_PATH_LEN],
@@ -245,8 +590,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
             continue;
 
         /* loop over option list and find match */
-        OptionIndex = MatchOption(*InputData.begin(), ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+        OptionIndex = MatchOption(*InputData.begin());
         if (OptionIndex < 0) {
             ulm_err(("Error: Unrecognized option (%s)\n",
                      *InputData.begin()));
@@ -254,17 +598,17 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
         }
 
         /* fill in InputData */
-        if (ULMInputOptions[OptionIndex].TypeOfArgs == NO_ARGS) {
-            sprintf(ULMInputOptions[OptionIndex].InputData, "yes");
-            ULMInputOptions[OptionIndex].fpToExecute =
-                ULMInputOptions[OptionIndex].fpProcessInput;
+        if (Options[OptionIndex].TypeOfArgs == NO_ARGS) {
+            sprintf(Options[OptionIndex].InputData, "yes");
+            Options[OptionIndex].fpToExecute =
+                Options[OptionIndex].fpProcessInput;
         } else {
             if (InputData.GetNSubStrings() == 2) {
                 ParseString::iterator i = InputData.begin();
                 i++;
-                sprintf(ULMInputOptions[OptionIndex].InputData, "%s", *i);
-                ULMInputOptions[OptionIndex].fpToExecute =
-                    ULMInputOptions[OptionIndex].fpProcessInput;
+                sprintf(Options[OptionIndex].InputData, "%s", *i);
+                Options[OptionIndex].fpToExecute =
+                    Options[OptionIndex].fpProcessInput;
             } else {
                 ulm_err(("Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
                 Abort();
@@ -276,10 +620,9 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
 }
 
 /*
- * scan the ~/.lampi.conf file and enter this data in ULMInputOptions
+ * scan the ~/.lampi.conf file and enter this data in Options
  */
-static void ScanConfigFile(InputParameters_t * ULMInputOptions,
-                           int SizeOfInputOptionsDB)
+static void ScanConfigFile(void)
 {
     int NBytes, OptionIndex;
     char ConfigFileName[ULM_MAX_PATH_LEN],
@@ -326,8 +669,7 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
             continue;
 
         /* loop over option list and find match */
-        OptionIndex = MatchOption(*InputData.begin(), ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+        OptionIndex = MatchOption(*InputData.begin());
         if (OptionIndex < 0) {
             ulm_err(("Error: Unrecognized option (%s)\n",
                      *InputData.begin()));
@@ -335,17 +677,17 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
         }
 
         /* fill in InputData */
-        if (ULMInputOptions[OptionIndex].TypeOfArgs == NO_ARGS) {
-            sprintf(ULMInputOptions[OptionIndex].InputData, "yes");
-            ULMInputOptions[OptionIndex].fpToExecute =
-                ULMInputOptions[OptionIndex].fpProcessInput;
+        if (Options[OptionIndex].TypeOfArgs == NO_ARGS) {
+            sprintf(Options[OptionIndex].InputData, "yes");
+            Options[OptionIndex].fpToExecute =
+                Options[OptionIndex].fpProcessInput;
         } else {
             if (InputData.GetNSubStrings() == 2) {
                 ParseString::iterator i = InputData.begin();
                 i++;
-                sprintf(ULMInputOptions[OptionIndex].InputData, "%s", *i);
-                ULMInputOptions[OptionIndex].fpToExecute =
-                    ULMInputOptions[OptionIndex].fpProcessInput;
+                sprintf(Options[OptionIndex].InputData, "%s", *i);
+                Options[OptionIndex].fpToExecute =
+                    Options[OptionIndex].fpProcessInput;
             } else {
                 ulm_err(("Error: Cannot parse option %s in configuration file.\n", *InputData.begin()));
                 Abort();
@@ -361,37 +703,35 @@ static void ScanConfigFile(InputParameters_t * ULMInputOptions,
  * Check the environment for Input parameters.  Any data found is
  * added to the input database.
  */
-static void ScanEnvironment(InputParameters_t * ULMInputOptions,
-                            int SizeOfInputOptionsDB)
+static void ScanEnvironment(void)
 {
     int OptionIndex;
     char *EnvData;
 
-    /* loop over recognized environment variables (same as those expected in the
-     *   default database file. */
-    for (OptionIndex = 0; OptionIndex < SizeOfInputOptionsDB;
-         OptionIndex++) {
+    /* loop over recognized environment variables (same as those
+     *   expected in the default database file. */
+    for (OptionIndex = 0; OptionIndex < SizeOfOptions; OptionIndex++) {
 
         /* check for environment variable */
         EnvData = NULL;
-        EnvData = getenv(ULMInputOptions[OptionIndex].FileName);
+        EnvData = getenv(Options[OptionIndex].FileName);
 
         /* if no match, continue */
         if (EnvData == NULL)
             continue;
 
         /* Fill in data, if need be */
-        if (ULMInputOptions[OptionIndex].TypeOfArgs == NO_ARGS) {
-            sprintf(ULMInputOptions[OptionIndex].InputData, "yes");
-            ULMInputOptions[OptionIndex].fpToExecute =
-                ULMInputOptions[OptionIndex].fpProcessInput;
-        } else if (ULMInputOptions[OptionIndex].TypeOfArgs == STRING_ARGS) {
-            sprintf(ULMInputOptions[OptionIndex].InputData, "%s", EnvData);
-            ULMInputOptions[OptionIndex].fpToExecute =
-                ULMInputOptions[OptionIndex].fpProcessInput;
+        if (Options[OptionIndex].TypeOfArgs == NO_ARGS) {
+            sprintf(Options[OptionIndex].InputData, "yes");
+            Options[OptionIndex].fpToExecute =
+                Options[OptionIndex].fpProcessInput;
+        } else if (Options[OptionIndex].TypeOfArgs == STRING_ARGS) {
+            sprintf(Options[OptionIndex].InputData, "%s", EnvData);
+            Options[OptionIndex].fpToExecute =
+                Options[OptionIndex].fpProcessInput;
         } else {
             ulm_err(("Error: Cannot parse option %s\n",
-                     ULMInputOptions[OptionIndex].FileName));
+                     Options[OptionIndex].FileName));
             Abort();
         }
     }                           /* end OptionIndex loop */
@@ -401,19 +741,17 @@ static void ScanEnvironment(InputParameters_t * ULMInputOptions,
 /*
  *  This routine is used to scan argv for input options.
  */
-static void ScanCmdLine(int argc, char **argv,
-                        InputParameters_t * ULMInputOptions,
-                        int SizeOfInputOptionsDB)
+static void ScanCmdLine(int argc, char **argv, int *FirstAppArg)
 {
     int ArgvIndex, BinaryNameIndex, OptionIndex, Flag;
     size_t ArgvLen, DatabaseLen;
     bool processedBinaryName = false;
 
     /* set appargsindex to default value indicating no arguments */
-    _ulm_AppArgsIndex = argc;
+    *FirstAppArg = argc;
 
     BinaryNameIndex =
-        MatchOption("BinaryName", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("BinaryName");
     if (BinaryNameIndex < 0) {
         ulm_err(("Error: Option BinaryName not found\n"));
         Abort();
@@ -427,40 +765,40 @@ static void ScanCmdLine(int argc, char **argv,
         ScanForHelp(ArgvIndex, argv);
 
         /* loop over database options */
-        for (OptionIndex = 0; OptionIndex < SizeOfInputOptionsDB;
+        for (OptionIndex = 0; OptionIndex < SizeOfOptions;
              OptionIndex++) {
 
             /* check AbreviatedName */
             DatabaseLen =
-                strlen(ULMInputOptions[OptionIndex].AbreviatedName);
+                strlen(Options[OptionIndex].AbreviatedName);
             if ((DatabaseLen == ArgvLen)
                 &&
                 (strncmp
                  (argv[ArgvIndex],
-                  ULMInputOptions[OptionIndex].AbreviatedName,
+                  Options[OptionIndex].AbreviatedName,
                   DatabaseLen) == 0)) {
                 Flag = 1;
             }
             /* process data if Flag == 1 */
             if (Flag) {
-                if (ULMInputOptions[OptionIndex].TypeOfArgs == NO_ARGS) {
-                    sprintf(ULMInputOptions[OptionIndex].InputData, "yes");
-                    ULMInputOptions[OptionIndex].fpToExecute =
-                        ULMInputOptions[OptionIndex].fpProcessInput;
-                } else if (ULMInputOptions[OptionIndex].TypeOfArgs ==
+                if (Options[OptionIndex].TypeOfArgs == NO_ARGS) {
+                    sprintf(Options[OptionIndex].InputData, "yes");
+                    Options[OptionIndex].fpToExecute =
+                        Options[OptionIndex].fpProcessInput;
+                } else if (Options[OptionIndex].TypeOfArgs ==
                            STRING_ARGS) {
                     if ((ArgvIndex + 1) < argc) {
-                        sprintf(ULMInputOptions[OptionIndex].InputData,
+                        sprintf(Options[OptionIndex].InputData,
                                 "%s", argv[++ArgvIndex]);
-                        ULMInputOptions[OptionIndex].fpToExecute =
-                            ULMInputOptions[OptionIndex].fpProcessInput;
+                        Options[OptionIndex].fpToExecute =
+                            Options[OptionIndex].fpProcessInput;
                     }
                     if (OptionIndex == BinaryNameIndex) {
                         processedBinaryName = true;
                     }
                 } else {
                     ulm_err(("Error: Cannot parse option %s\n",
-                             ULMInputOptions[OptionIndex].FileName));
+                             Options[OptionIndex].FileName));
                     Abort();
                 }
                 break;
@@ -471,19 +809,19 @@ static void ScanCmdLine(int argc, char **argv,
         /* stop processing - found the binary, binary arguments, or a bad option */
         if (!Flag) {
             if (processedBinaryName) {
-                _ulm_AppArgsIndex = ArgvIndex;
+                *FirstAppArg = ArgvIndex;
                 break;
             } else {
                 if (argv[ArgvIndex][0] == '-') {
                     ulm_err(("Error: unrecognized option \'%s\'.\n", argv[ArgvIndex]));
                     Abort();
                 } else {
-                    sprintf(ULMInputOptions[BinaryNameIndex].InputData,
+                    sprintf(Options[BinaryNameIndex].InputData,
                             "%s", argv[ArgvIndex]);
-                    ULMInputOptions[BinaryNameIndex].fpToExecute =
-                        ULMInputOptions[BinaryNameIndex].fpProcessInput;
+                    Options[BinaryNameIndex].fpToExecute =
+                        Options[BinaryNameIndex].fpProcessInput;
                     if (++ArgvIndex < argc) {
-                        _ulm_AppArgsIndex = ArgvIndex;
+                        *FirstAppArg = ArgvIndex;
                     }
                     break;
                 }
@@ -505,19 +843,19 @@ static void ScanCmdLine(int argc, char **argv,
  * Function pointers to functions used to process the input are also
  * setup.
  */
-void ScanInput(int argc, char **argv)
+void ScanInput(int argc, char **argv, int *FirstAppArg)
 {
     /* read in data from ${MPI_ROOT}/etc/lampi.conf */
-    ScanSystemConfigFile(ULMInputOptions, SizeOfInputOptionsDB);
+    ScanSystemConfigFile();
 
     /* read in data from ~/.lampi.conf */
-    ScanConfigFile(ULMInputOptions, SizeOfInputOptionsDB);
+    ScanConfigFile();
 
     /* read in data from environment */
-    ScanEnvironment(ULMInputOptions, SizeOfInputOptionsDB);
+    ScanEnvironment();
 
     /* read in data from command line options */
-    ScanCmdLine(argc, argv, ULMInputOptions, SizeOfInputOptionsDB);
+    ScanCmdLine(argc, argv, FirstAppArg);
 }
 
 
@@ -526,8 +864,7 @@ void ScanInput(int argc, char **argv)
  * performed over all available types of option names.  The index in
  * the options data base table is returned.
  */
-int MatchOption(char *StringToMatch, InputParameters_t * ULMInputOptions,
-                int SizeOfInputOptionsDB)
+int MatchOption(char *StringToMatch)
 {
     int IndexInTable, IndexOfMatch = -1;
     size_t StringToMatchlen, OptionInTablelen;
@@ -535,24 +872,24 @@ int MatchOption(char *StringToMatch, InputParameters_t * ULMInputOptions,
     /* initialize local data */
     StringToMatchlen = strlen(StringToMatch);
 
-    for (IndexInTable = 0; IndexInTable < SizeOfInputOptionsDB;
+    for (IndexInTable = 0; IndexInTable < SizeOfOptions;
          IndexInTable++) {
 
         /* search over Abreviated name */
         OptionInTablelen =
-            strlen(ULMInputOptions[IndexInTable].AbreviatedName);
+            strlen(Options[IndexInTable].AbreviatedName);
         if ((StringToMatchlen == OptionInTablelen)
             &&
             (strncmp
-             (ULMInputOptions[IndexInTable].AbreviatedName, StringToMatch,
+             (Options[IndexInTable].AbreviatedName, StringToMatch,
               StringToMatchlen) == 0)) {
             return IndexInTable;
         }
 
         /* search over FileName */
-        OptionInTablelen = strlen(ULMInputOptions[IndexInTable].FileName);
+        OptionInTablelen = strlen(Options[IndexInTable].FileName);
         if ((StringToMatchlen == OptionInTablelen) &&
-            (strncmp(ULMInputOptions[IndexInTable].FileName,
+            (strncmp(Options[IndexInTable].FileName,
                      StringToMatch, StringToMatchlen) == 0)) {
             return IndexInTable;
         }
@@ -567,7 +904,7 @@ int MatchOption(char *StringToMatch, InputParameters_t * ULMInputOptions,
  * Parse character strings and fill an input array with integer data.
  */
 void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
-                 InputParameters_t * ULMInputOptions, int OptionIndex,
+                 Options_t * Options, int OptionIndex,
                  int MinVal)
 {
     int Value, i, cnt;
@@ -578,7 +915,7 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
     if ((cnt != 1) && (cnt != SizeOfArray)) {
         ulm_err(("Error: Wrong number of data elements specified for %s. "
                  "Number or arguments specified (%d) should be either 1 or %d\n",
-                 ULMInputOptions[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].AbreviatedName,
                  cnt, SizeOfArray));
         Abort();
     }
@@ -621,7 +958,7 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
  * Parse character strings and fill an input array with long data.
  */
 void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
-                  InputParameters_t * ULMInputOptions, int OptionIndex,
+                  Options_t * Options, int OptionIndex,
                   int MinVal)
 {
     int i, cnt;
@@ -631,10 +968,10 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
+        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n", Options[OptionIndex].AbreviatedName, Options[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n", cnt, SizeOfArray));
         ulm_err(("Input line: %s\n",
-                 ULMInputOptions[OptionIndex].InputData));
+                 Options[OptionIndex].InputData));
         Abort();
     }
 
@@ -678,7 +1015,7 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
  * Parse character strings and fill an input array with ssize_t data.
  */
 void FillSsizeData(ParseString * InputObj, int SizeOfArray,
-                   ssize_t * Array, InputParameters_t * ULMInputOptions,
+                   ssize_t * Array, Options_t * Options,
                    int OptionIndex, int MinVal)
 {
 
@@ -693,11 +1030,11 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
     if ((cnt != 1) && (cnt != SizeOfArray)) {
         ulm_err(("Error: "
                  "Wrong number of data elements specified for %s, or %s\n",
-                 ULMInputOptions[OptionIndex].AbreviatedName,
-                 ULMInputOptions[OptionIndex].FileName));
+                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n", cnt, SizeOfArray));
         ulm_err(("Input line: %s\n",
-                 ULMInputOptions[OptionIndex].InputData));
+                 Options[OptionIndex].InputData));
         Abort();
     }
 
@@ -752,7 +1089,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
 
     /* find ProcsPerHost index in option list */
     int OptionIndex =
-        MatchOption(Option, ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption(Option);
     if (OptionIndex < 0) {
         ulm_err(("Error: "
                  "Option WorkingDir not found\n"));
@@ -760,7 +1097,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     }
 
     /* parse host list */
-    ParseString DirData(ULMInputOptions[OptionIndex].InputData,
+    ParseString DirData(Options[OptionIndex].InputData,
                         NSeparators, SeparatorList);
 
     /* Check to see if expected data is present */
@@ -768,11 +1105,11 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     if ((cnt != 1) && (cnt != ArrayLength)) {
         ulm_err(("Error: "
                  " Wrong number of data elements specified for  %s, or %s\n",
-                 ULMInputOptions[OptionIndex].AbreviatedName,
-                 ULMInputOptions[OptionIndex].FileName));
+                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is :: %d , but should be either 1 or %d\n", cnt, ArrayLength));
         ulm_err(("Input line: %s\n",
-                 ULMInputOptions[OptionIndex].InputData));
+                 Options[OptionIndex].InputData));
         Abort();
     }
 
@@ -825,6 +1162,16 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
 
 
 /*
+ * This routine is used to process the Application's dirctory name.
+ */
+void GetAppDir(const char *InfoStream)
+{
+    GetDirectoryList("DirectoryOfBinary", &(RunParams.UserAppDirList),
+                     RunParams.NHosts);
+}
+
+
+/*
  * Determine behaviour when a resource such as descriptors, memory for
  * user data, etc. is exhuaseted.  The default behaviour is for the
  * library to abort, but this can be modified to return an error code
@@ -836,33 +1183,33 @@ void parseOutOfResourceContinue(const char *InfoStream)
     // allocate memory for the array
     //
     //  SMP message frag descriptors
-    RunParameters.Networks.SharedMemSetup.recvFragResources_m.
-        outOfResourceAbort = ulm_new(bool, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.recvFragResources_m.
+        outOfResourceAbort = ulm_new(bool, RunParams.NHosts);
     //  SMP isend descriptors
-    RunParameters.Networks.SharedMemSetup.isendDescResources_m.
-        outOfResourceAbort = ulm_new(bool, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.isendDescResources_m.
+        outOfResourceAbort = ulm_new(bool, RunParams.NHosts);
     //  irecv descriptors
-    RunParameters.irecvResources_m.outOfResourceAbort =
-        ulm_new(bool, RunParameters.NHosts);
+    RunParams.irecvResources_m.outOfResourceAbort =
+        ulm_new(bool, RunParams.NHosts);
     //  SMP data buffers
-    RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
-        outOfResourceAbort = ulm_new(bool, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        outOfResourceAbort = ulm_new(bool, RunParams.NHosts);
 
     //
     // set outOfResourceAbort indicating to return an error code when out of resources
     //
-    for (int host = 0; host < RunParameters.NHosts; host++) {
+    for (int host = 0; host < RunParams.NHosts; host++) {
         //  SMP message frag descriptors
-        RunParameters.Networks.SharedMemSetup.recvFragResources_m.
+        RunParams.Networks.SharedMemSetup.recvFragResources_m.
             outOfResourceAbort[host] = false;
         //  SMP isend descriptors
-        RunParameters.Networks.SharedMemSetup.isendDescResources_m.
+        RunParams.Networks.SharedMemSetup.isendDescResources_m.
             outOfResourceAbort[host] = false;
         //  irecv descriptors
-        RunParameters.irecvResources_m.outOfResourceAbort[host] = false;
+        RunParams.irecvResources_m.outOfResourceAbort[host] = false;
 
         //  SMP data buffers
-        RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
             outOfResourceAbort[host] = false;
 
     }
@@ -880,9 +1227,7 @@ void parseMaxRetries(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex =
-        MatchOption("MaxRetryWhenNoResource", ULMInputOptions,
-                    SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MaxRetryWhenNoResource");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MaxRetryWhenNoResource not found\n"));
         Abort();
@@ -891,40 +1236,40 @@ void parseMaxRetries(const char *InfoStream)
     // allocate memory for the array
     //
     // SMP message frag headers
-    RunParameters.Networks.SharedMemSetup.recvFragResources_m.retries_m =
-        ulm_new(long, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.recvFragResources_m.retries_m =
+        ulm_new(long, RunParams.NHosts);
     // SMP isend message descriptors
-    RunParameters.Networks.SharedMemSetup.isendDescResources_m.retries_m =
-        ulm_new(long, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.isendDescResources_m.retries_m =
+        ulm_new(long, RunParams.NHosts);
     // irecv descriptors
-    RunParameters.irecvResources_m.retries_m =
-        ulm_new(long, RunParameters.NHosts);
+    RunParams.irecvResources_m.retries_m =
+        ulm_new(long, RunParams.NHosts);
     // SMP data buffers
-    RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
-        retries_m = ulm_new(long, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        retries_m = ulm_new(long, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
     // SMP message frag headers
-    FillLongData(&ProcData, RunParameters.NHosts,
-                 RunParameters.Networks.SharedMemSetup.recvFragResources_m.
-                 retries_m, ULMInputOptions, OptionIndex, 1);
+    FillLongData(&ProcData, RunParams.NHosts,
+                 RunParams.Networks.SharedMemSetup.recvFragResources_m.
+                 retries_m, Options, OptionIndex, 1);
 
     // SMP isend message descriptors
-    for (int host = 0; host < RunParameters.NHosts; host++) {
-        RunParameters.Networks.SharedMemSetup.isendDescResources_m.
+    for (int host = 0; host < RunParams.NHosts; host++) {
+        RunParams.Networks.SharedMemSetup.isendDescResources_m.
             retries_m[host] =
-            RunParameters.Networks.SharedMemSetup.recvFragResources_m.
+            RunParams.Networks.SharedMemSetup.recvFragResources_m.
             retries_m[host];
-        RunParameters.irecvResources_m.retries_m[host] =
-            RunParameters.Networks.SharedMemSetup.recvFragResources_m.
+        RunParams.irecvResources_m.retries_m[host] =
+            RunParams.Networks.SharedMemSetup.recvFragResources_m.
             retries_m[host];
-        RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
             retries_m[host] =
-            RunParameters.Networks.SharedMemSetup.recvFragResources_m.
+            RunParams.Networks.SharedMemSetup.recvFragResources_m.
             retries_m[host];
     }
 
@@ -941,26 +1286,25 @@ void parseMinSMPRecvDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MinSMPrecvdescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MinSMPrecvdescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MinSMPrecvdescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.recvFragResources_m.
-        minPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.recvFragResources_m.
+        minPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   recvFragResources_m.minPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, 1);
+                  Options, OptionIndex, 1);
 }
 
 
@@ -974,26 +1318,25 @@ void parseMaxSMPRecvDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MaxSMPrecvdescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MaxSMPrecvdescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MaxSMPrecvdescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.recvFragResources_m.
-        maxPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.recvFragResources_m.
+        maxPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   recvFragResources_m.maxPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, -1);
+                  Options, OptionIndex, -1);
 }
 
 
@@ -1007,25 +1350,24 @@ void parseTotalSMPRecvDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("TotSMPrecvdescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("TotSMPrecvdescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TotSMPrecvdescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.recvFragResources_m.
-        maxTotalPages_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.recvFragResources_m.
+        maxTotalPages_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
-                  recvFragResources_m.maxTotalPages_m, ULMInputOptions,
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
+                  recvFragResources_m.maxTotalPages_m, Options,
                   OptionIndex, -1);
 }
 
@@ -1040,26 +1382,25 @@ void parseMinSMPISendDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MinSMPisenddescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MinSMPisenddescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MinSMPisenddescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.isendDescResources_m.
-        minPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.isendDescResources_m.
+        minPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   isendDescResources_m.minPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, 1);
+                  Options, OptionIndex, 1);
 }
 
 
@@ -1073,26 +1414,25 @@ void parseMaxSMPISendDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MaxSMPisenddescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MaxSMPisenddescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MaxSMPisenddescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.isendDescResources_m.
-        maxPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.isendDescResources_m.
+        maxPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   isendDescResources_m.maxPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, -1);
+                  Options, OptionIndex, -1);
 }
 
 
@@ -1106,25 +1446,24 @@ void parseTotalSMPISendDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("TotSMPisenddescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("TotSMPisenddescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TotSMPisenddescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.isendDescResources_m.
-        maxTotalPages_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.isendDescResources_m.
+        maxTotalPages_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
-                  isendDescResources_m.maxTotalPages_m, ULMInputOptions,
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
+                  isendDescResources_m.maxTotalPages_m, Options,
                   OptionIndex, -1);
 }
 
@@ -1138,25 +1477,24 @@ void parseTotalIRecvDescPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("TotIrecvdescpages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("TotIrecvdescpages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TotIrecvdescpages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.irecvResources_m.maxTotalPages_m =
-        ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.irecvResources_m.maxTotalPages_m =
+        ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.irecvResources_m.maxTotalPages_m,
-                  ULMInputOptions, OptionIndex, -1);
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.irecvResources_m.maxTotalPages_m,
+                  Options, OptionIndex, -1);
 }
 
 
@@ -1170,26 +1508,25 @@ void parseMinSMPDataPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MinSMPDatapages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MinSMPDatapages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MinSMPDatapages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
-        minPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        minPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   SMPDataBuffersResources_m.minPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, 1);
+                  Options, OptionIndex, 1);
 }
 
 
@@ -1203,26 +1540,25 @@ void parseMaxSMPDataPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MaxSMPDatapages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MaxSMPDatapages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MaxSMPDatapages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
-        maxPagesPerContext_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        maxPagesPerContext_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   SMPDataBuffersResources_m.maxPagesPerContext_m,
-                  ULMInputOptions, OptionIndex, -1);
+                  Options, OptionIndex, -1);
 }
 
 
@@ -1235,32 +1571,31 @@ void parseTotalSMPDataPages(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("TotSMPDatapages", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("TotSMPDatapages");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TotSMPDatapages not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.Networks.SharedMemSetup.SMPDataBuffersResources_m.
-        maxTotalPages_m = ulm_new(ssize_t, RunParameters.NHosts);
+    RunParams.Networks.SharedMemSetup.SMPDataBuffersResources_m.
+        maxTotalPages_m = ulm_new(ssize_t, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillSsizeData(&ProcData, RunParameters.NHosts,
-                  RunParameters.Networks.SharedMemSetup.
+    FillSsizeData(&ProcData, RunParams.NHosts,
+                  RunParams.Networks.SharedMemSetup.
                   SMPDataBuffersResources_m.maxTotalPages_m,
-                  ULMInputOptions, OptionIndex, -1);
+                  Options, OptionIndex, -1);
 }
 
 
 void setNoLSF(const char *InfoStream)
 {
-    RunParameters.UseLSF = false;
+    RunParams.UseLSF = false;
 }
 
 /*
@@ -1268,19 +1603,39 @@ void setNoLSF(const char *InfoStream)
  */
 void setThreads(const char *InfoStream)
 {
-    RunParameters.UseThreads = 1;
+    RunParams.UseThreads = 1;
 }
 
 
 void setUseSSH(const char *InfoStream)
 {
-    RunParameters.UseSSH = 1;
+    RunParams.UseSSH = 1;
 }
 
 
 void setLocal(const char *InfoStream)
 {
-    RunParameters.Local = 1;
+    RunParams.Local = 1;
+}
+
+
+void SetOutputPrefixTrue(const char *InfoStream)
+{
+    RunParams.OutputPrefix = 1;
+}
+
+
+void SetQuietTrue(const char *InfoStream)
+{
+    RunParams.Quiet = 1;
+}
+
+
+void SetCheckArgsFalse(const char *InfoStream)
+{
+    RunParams.CheckArgs = 0;
+
+    putenv("LAMPI_NO_CHECK_ARGS=1");
 }
 
 
@@ -1296,22 +1651,22 @@ void parseCpusPerNode(const char *InfoStream)
 
     /* find ProcsPerHost index in option list */
     int OptionIndex =
-        MatchOption("CpusPerNode", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("CpusPerNode");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option CpusPerNode not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.nCpusPerNode = ulm_new(int, RunParameters.NHosts);
+    RunParams.nCpusPerNode = ulm_new(int, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillIntData(&ProcData, RunParameters.NHosts,
-                RunParameters.nCpusPerNode, ULMInputOptions, OptionIndex,
+    FillIntData(&ProcData, RunParams.NHosts,
+                RunParams.nCpusPerNode, Options, OptionIndex,
                 1);
 }
 
@@ -1325,23 +1680,22 @@ void parseResourceAffinity(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("ResourceAffinity", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("ResourceAffinity");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option ResourceAffinity not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.useResourceAffinity = ulm_new(int, RunParameters.NHosts);
+    RunParams.useResourceAffinity = ulm_new(int, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillIntData(&ProcData, RunParameters.NHosts,
-                RunParameters.useResourceAffinity, ULMInputOptions,
+    FillIntData(&ProcData, RunParams.NHosts,
+                RunParams.useResourceAffinity, Options,
                 OptionIndex, 0);
 }
 
@@ -1355,23 +1709,22 @@ void parseDefaultAffinity(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("DefaultAffinity", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("DefaultAffinity");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option DefaultAffinity not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.defaultAffinity = ulm_new(int, RunParameters.NHosts);
+    RunParams.defaultAffinity = ulm_new(int, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillIntData(&ProcData, RunParameters.NHosts,
-                RunParameters.defaultAffinity, ULMInputOptions,
+    FillIntData(&ProcData, RunParams.NHosts,
+                RunParams.defaultAffinity, Options,
                 OptionIndex, 0);
 }
 
@@ -1385,23 +1738,22 @@ void parseMandatoryAffinity(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     /* find ProcsPerHost index in option list */
-    int OptionIndex = MatchOption("MandatoryAffinity", ULMInputOptions,
-                                  SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("MandatoryAffinity");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MandatoryAffinity not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.mandatoryAffinity = ulm_new(int, RunParameters.NHosts);
+    RunParams.mandatoryAffinity = ulm_new(int, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillIntData(&ProcData, RunParameters.NHosts,
-                RunParameters.mandatoryAffinity, ULMInputOptions,
+    FillIntData(&ProcData, RunParams.NHosts,
+                RunParams.mandatoryAffinity, Options,
                 OptionIndex, 0);
 }
 
@@ -1419,22 +1771,22 @@ void parseMaxComms(const char *InfoStream)
 
     /* find ProcsPerHost index in option list */
     int OptionIndex =
-        MatchOption("MaxComms", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("MaxComms");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MaxComms not found\n"));
         Abort();
     }
 
     /* allocate memory for the array */
-    RunParameters.maxCommunicators = ulm_new(int, RunParameters.NHosts);
+    RunParams.maxCommunicators = ulm_new(int, RunParams.NHosts);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillIntData(&ProcData, RunParameters.NHosts,
-                RunParameters.maxCommunicators, ULMInputOptions,
+    FillIntData(&ProcData, RunParams.NHosts,
+                RunParams.maxCommunicators, Options,
                 OptionIndex, 0);
 }
 
@@ -1448,8 +1800,8 @@ void parseSMDescMemPerProc(const char *InfoStream)
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
 
-    fillInputStructure(&(RunParameters.smDescPoolBytesPerProc),
-                       "SMDescMemPerProc", RunParameters.NHosts,
+    fillInputStructure(&(RunParams.smDescPoolBytesPerProc),
+                       "SMDescMemPerProc", RunParams.NHosts,
                        (ssize_t) 1, NSeparators, SeparatorList);
 }
 
@@ -1461,18 +1813,16 @@ void parseQuadricsRails(const char *InfoStream)
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
 
-    int OptionIndex =
-        MatchOption("QuadricsRails", ULMInputOptions,
-                    SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("QuadricsRails");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option QuadricsRails not found\n"));
         Abort();
     }
 
-    ParseString HostData(ULMInputOptions[OptionIndex].InputData,
+    ParseString HostData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
-    RunParameters.quadricsRailMask = 0;
+    RunParams.quadricsRailMask = 0;
 
     for (ParseString::iterator i = HostData.begin(); i != HostData.end();
          i++) {
@@ -1481,13 +1831,13 @@ void parseQuadricsRails(const char *InfoStream)
             ulm_err(("Error: specified Quadrics rail index, %d, is outside " "acceptable limits (0 >= n < 32)\n", railIndex));
             Abort();
         }
-        RunParameters.quadricsRailMask |= (1 << railIndex);
+        RunParams.quadricsRailMask |= (1 << railIndex);
     }
 }
 
 void parseUseCRC(const char *InfoStream)
 {
-    RunParameters.UseCRC = true;
+    RunParams.UseCRC = true;
 }
 
 void parseQuadricsFlags(const char *InfoStream)
@@ -1496,31 +1846,30 @@ void parseQuadricsFlags(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     int OptionIndex =
-        MatchOption("QuadricsFlags", ULMInputOptions,
-                    SizeOfInputOptionsDB);
+        MatchOption("QuadricsFlags");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option QuadricsFlags not found\n"));
         Abort();
     }
 
-    ParseString QuadricsFlags(ULMInputOptions[OptionIndex].InputData,
+    ParseString QuadricsFlags(Options[OptionIndex].InputData,
                               NSeparators, SeparatorList);
 
     for (ParseString::iterator i = QuadricsFlags.begin();
          i != QuadricsFlags.end(); i++) {
         if ((strlen(*i) == 5) && (strncmp(*i, "noack", 5) == 0)) {
-            RunParameters.quadricsDoAck = false;
+            RunParams.quadricsDoAck = false;
         } else if ((strlen(*i) == 10)
                    && (strncmp(*i, "nochecksum", 10) == 0)) {
-            RunParameters.quadricsDoChecksum = false;
+            RunParams.quadricsDoChecksum = false;
         } else if ((strlen(*i) == 4) && (strncmp(*i, "nohw", 4) == 0)) {
-            RunParameters.quadricsHW = 0;
+            RunParams.quadricsHW = 0;
         } else if ((strlen(*i) == 2) && (strncmp(*i, "hw", 2) == 0)) {
-            RunParameters.quadricsHW = 1;
+            RunParams.quadricsHW = 1;
         } else if ((strlen(*i) == 3) && (strncmp(*i, "ack", 3) == 0)) {
-            RunParameters.quadricsDoAck = true;
+            RunParams.quadricsDoAck = true;
         } else if ((strlen(*i) == 8) && (strncmp(*i, "checksum", 8) == 0)) {
-            RunParameters.quadricsDoChecksum = true;
+            RunParams.quadricsDoChecksum = true;
         } else {
             ulm_err(("Error: unrecognized -qf argument: %s \n",*i));
             Abort();
@@ -1537,30 +1886,30 @@ void parseMyrinetFlags(const char *InfoStream)
     long fragSize;
 
     int OptionIndex =
-        MatchOption("MyrinetFlags", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("MyrinetFlags");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option MyrinetFlags not found\n"));
         Abort();
     }
 
-    ParseString QuadricsFlags(ULMInputOptions[OptionIndex].InputData,
+    ParseString QuadricsFlags(Options[OptionIndex].InputData,
                               NSeparators, SeparatorList);
 
     for (ParseString::iterator i = QuadricsFlags.begin();
          i != QuadricsFlags.end(); i++) {
         if ((strlen(*i) >= 3) && (strncmp(*i, "noack", 3) == 0)) {
-            RunParameters.Networks.GMSetup.doAck = false;
+            RunParams.Networks.GMSetup.doAck = false;
         } else if ((strlen(*i) >= 3)
                    && (strncmp(*i, "nochecksum", 3) == 0)) {
-            RunParameters.Networks.GMSetup.doChecksum = false;
+            RunParams.Networks.GMSetup.doChecksum = false;
         } else if ((strlen(*i) >= 1) && (strncmp(*i, "ack", 1) == 0)) {
-            RunParameters.Networks.GMSetup.doAck = true;
+            RunParams.Networks.GMSetup.doAck = true;
         } else if ((strlen(*i) >= 1) && (strncmp(*i, "checksum", 1) == 0)) {
-            RunParameters.Networks.GMSetup.doChecksum = true;
+            RunParams.Networks.GMSetup.doChecksum = true;
         } else if ((strlen(*i) >= 1)
                    && (fragSize = strtol(*i, &endptr, 10))
                    && (*endptr == '\0')) {
-            RunParameters.Networks.GMSetup.fragSize = fragSize;
+            RunParams.Networks.GMSetup.fragSize = fragSize;
         }
     }
 #endif
@@ -1573,26 +1922,26 @@ void parseIBFlags(const char *InfoStream)
     char SeparatorList[] = { " , " };
 
     int OptionIndex =
-        MatchOption("IBFlags", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("IBFlags");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option IBFlags not found\n"));
         Abort();
     }
 
-    ParseString IBFlags(ULMInputOptions[OptionIndex].InputData,
+    ParseString IBFlags(Options[OptionIndex].InputData,
                               NSeparators, SeparatorList);
 
     for (ParseString::iterator i = IBFlags.begin();
          i != IBFlags.end(); i++) {
         if ((strlen(*i) >= 3) && (strncmp(*i, "noack", 3) == 0)) {
-            RunParameters.Networks.IBSetup.ack = false;
+            RunParams.Networks.IBSetup.ack = false;
         } else if ((strlen(*i) >= 3)
                    && (strncmp(*i, "nochecksum", 3) == 0)) {
-            RunParameters.Networks.IBSetup.checksum = false;
+            RunParams.Networks.IBSetup.checksum = false;
         } else if ((strlen(*i) >= 1) && (strncmp(*i, "ack", 1) == 0)) {
-            RunParameters.Networks.IBSetup.ack = true;
+            RunParams.Networks.IBSetup.ack = true;
         } else if ((strlen(*i) >= 1) && (strncmp(*i, "checksum", 1) == 0)) {
-            RunParameters.Networks.IBSetup.checksum = true;
+            RunParams.Networks.IBSetup.checksum = true;
         }
     }
 #endif
@@ -1607,18 +1956,18 @@ void parseTCPMaxFragment(const char *InfoStream)
     char SeparatorList[] = { " " };
 
     int OptionIndex =
-        MatchOption("TCPMaxFragment", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("TCPMaxFragment");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TCPMaxFragment not found\n"));
         Abort();
     }
 
-    ParseString params(ULMInputOptions[OptionIndex].InputData,
+    ParseString params(Options[OptionIndex].InputData,
                        NSeparators, SeparatorList);
 
     for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
-        RunParameters.Networks.TCPSetup.MaxFragmentSize = atol(*i);
-        if(RunParameters.Networks.TCPSetup.MaxFragmentSize == 0) {
+        RunParams.Networks.TCPSetup.MaxFragmentSize = atol(*i);
+        if(RunParams.Networks.TCPSetup.MaxFragmentSize == 0) {
             ulm_err(("Error: invalid value for option -tcpmaxfrag \"%s\"\n", *i));
             Abort();
         }
@@ -1631,18 +1980,18 @@ void parseTCPEagerSend(const char *InfoStream)
     char SeparatorList[] = { " " };
 
     int OptionIndex =
-        MatchOption("TCPEagerSend", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("TCPEagerSend");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TCPEagerSend not found\n"));
         Abort();
     }
 
-    ParseString params(ULMInputOptions[OptionIndex].InputData,
+    ParseString params(Options[OptionIndex].InputData,
                        NSeparators, SeparatorList);
 
     for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
-        RunParameters.Networks.TCPSetup.MaxEagerSendSize = atol(*i);
-        if(RunParameters.Networks.TCPSetup.MaxEagerSendSize == 0) {
+        RunParams.Networks.TCPSetup.MaxEagerSendSize = atol(*i);
+        if(RunParams.Networks.TCPSetup.MaxEagerSendSize == 0) {
             ulm_err(("Error: invalid value for option -tcpeagersend \"%s\"\n", *i));
             Abort();
         }
@@ -1655,18 +2004,18 @@ void parseTCPConnectRetries(const char *InfoStream)
     char SeparatorList[] = { " " };
 
     int OptionIndex =
-        MatchOption("TCPConnectRetries", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("TCPConnectRetries");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TCPConnectRetries not found\n"));
         Abort();
     }
 
-    ParseString params(ULMInputOptions[OptionIndex].InputData,
+    ParseString params(Options[OptionIndex].InputData,
                        NSeparators, SeparatorList);
 
     for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
-        RunParameters.Networks.TCPSetup.MaxConnectRetries = atol(*i);
-        if(RunParameters.Networks.TCPSetup.MaxConnectRetries == 0) {
+        RunParams.Networks.TCPSetup.MaxConnectRetries = atol(*i);
+        if(RunParams.Networks.TCPSetup.MaxConnectRetries == 0) {
             ulm_err(("Error: invalid value for option -tcpmaxcon \"%s\"\n", *i));
             Abort();
         }

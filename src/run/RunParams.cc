@@ -35,60 +35,6 @@
 #include "config.h"
 #endif
 
-#include "internal/profiler.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/uio.h>
+#include "run/RunParams.h"
 
-#include "internal/constants.h"
-#include "internal/types.h"
-#include "run/Run.h"
-#include "client/SocketGeneric.h"
-#include "internal/log.h"
-
-/*
- * This routine is used to send an abort message to all clients -
- * before the fork - and then shutdown Client.
- */
-
-void TerminateClients(int NClientsAccepted,
-                      int *ListClientsAccepted,
-                      ULMRunParams_t RunParameters)
-{
-    int hostIndex, j, listIndex;
-    ulm_iovec_t SendIoVec[1];
-    unsigned int Tags[1];
-    int *SocketToClients =
-        RunParameters.Networks.TCPAdminstrativeNetwork.SocketsToClients;
-
-    /* loop over all hosts in job */
-    for (hostIndex = 0; hostIndex < RunParameters.NHosts; hostIndex++) {
-
-        /* check to see if connection was established with client  -
-         *  loop over list of hosts that connected to mpirun */
-        listIndex = -1;
-        for (j = 0; j < NClientsAccepted; j++) {
-            if (ListClientsAccepted[j] == hostIndex) {
-                listIndex = hostIndex;
-                break;
-            }
-        }
-
-        if (listIndex > 0) {
-            /* if connection established - send ABORTALL message to client */
-            Tags[0] = ABORTALL;
-            SendIoVec[0].iov_base = (char *) &Tags[0];
-            SendIoVec[0].iov_len = (ssize_t) (sizeof(unsigned int));
-            SendSocket(SocketToClients[listIndex], 1, SendIoVec);
-        } else {
-            /* if connection not established : write information to stderr */
-            ulm_err(("Error: Can't connect to host : %s\n",
-                     RunParameters.HostList[hostIndex]));
-        }
-        /* end loop over hosts */
-    }
-
-    /* terminate mpirun */
-    exit(EXIT_FAILURE);
-}
+RunParams_t RunParams;  // mpirun runtime state

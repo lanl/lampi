@@ -79,13 +79,6 @@ static struct {
     { "LAMPI_VERBOSE", 0 },
     { "LAMPI_NHOSTS", 0 },
     { "LAMPI_HOSTID", 0 },
-    { "LAMPI_NUMPROCS", 0 },
-    { "LAMPI_NCPUSPERNODE", 0 },
-    { "LAMPI_USERESOURCEAFFINITY", 0 },
-    { "LAMPI_DEFAULTRESOURCEAFFINITY", 0 },
-    { "LAMPI_MANDATORYRESOURCEAFFINITY", 0 },
-    { "LAMPI_MAXCOMMUNICATORS", 0 },
-    { "LAMPI_SMDESCPOOLBYTESPERPROC", 0 },
 	
     /* authorization code for client/server handshake. */
     { "LAMPI_ADMIN_AUTH0", 0 },
@@ -95,7 +88,6 @@ static struct {
     /* TCP port that mpirun is listening on. */
     { "LAMPI_ADMIN_PORT", 0 },
 	
-    { "LAMPI_NOECHOAPPSTARTED", 0 },
     { "LAMPI_NO_CHECK_ARGS", 0 },
 
     /* flag for disabling fortran layer */
@@ -115,6 +107,9 @@ static struct {
     { "T5_EVENT0", E0 },
     { "T5_EVENT1", E1 },
 	
+    /* BPROC info. */
+    { "BPROC_RANK", -1 },
+	
     { NULL }
 };
 
@@ -131,44 +126,12 @@ static struct {
     char *default_value;
     char *value;
 } lampi_environ_string[] = {
-    { "LAMPI_SETUPDONE", "" },
-    { "LAMPI_NPATHTYPES", "" },
-    { "LAMPI_DEVLIST", "" },
-    { "LAMPI_GM", "" },
-    { "LAMPI_UDP", "" },
-    { "LAMPI_ENDINITSETUP", "" },
-    { "LAMPI_TERMINATENOW", "" },
-    { "LAMPI_GMPDEVSPERHOST", "" },
-    { "LAMPI_GMPORTSPERDEV", "" },
-    { "LAMPI_TVDEBUG", "" },
-    { "LAMPI_IRCEVMINPAGESPERCTX", "" },
-    { "LAMPI_IRECVMAXPAGESPERCTX", "" },
-    { "LAMPI_IRECVMAXTOTPAGES", "" },
-    { "LAMPI_IRECVOUTOFRESRCABORT", "" },
-    { "LAMPI_IRECVRESOURCERETRY", "" },
-    { "LAMPI_SMPDATAPAGESMAXPAGESPERCTX", "" },
-    { "LAMPI_SMPDATAPAGESMAXTOTPAGES", "" },
-    { "LAMPI_SMPDATAPAGESMINPAGESPERCTX", "" },
-    { "LAMPI_SMPDATAPAGESOUTOFRESRCABORT", "" },
-    { "LAMPI_SMPDATAPAGESRESOURCERETRY", "" },
-    { "LAMPI_SMPFRAGMAXPAGESPERCTX", "" },
-    { "LAMPI_SMPFRAGMAXTOTPAGES", "" },
-    { "LAMPI_SMPFRAGMINPAGESPERCTX", "" },
-    { "LAMPI_SMPFRAGOUTOFRESRCABORT", "" },
-    { "LAMPI_SMPFRAGRESOURCERETRY", "" },
-    { "LAMPI_SMPISENDMAXPAGESPERCTX", "" },
-    { "LAMPI_SMPISENDMAXTOTPAGES", "" },
-    { "LAMPI_SMPISENDMINPAGESPERCTX", "" },
-    { "LAMPI_SMPISENDOUTOFRESRCABORT", "" },
-    { "LAMPI_SMPISENDRESOURCERETRY", "" },
-    { "LAMPI_SMPSMPAGESPERPROC", "" },
-    { "LAMPI_THREADUSAGE", "" },
-	
     /* Host name/IP where mpirun process is running. */
     { "LAMPI_ADMIN_IP", "" },
 	
     /* ??? */
     { "LSB_MCPU_HOSTS", "" },
+
     /* BPROC info. */
     { "NODES", "" },
 	

@@ -147,29 +147,6 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                                        StdoutBytesWritten, NewLineLast,
                                        state);
                 break;
-            case ACKABNORMALTERM:
-                Tag = ACKACKABNORMALTERM;
-                IOVec.iov_base = (char *) &Tag;
-                IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                /* send ack of ack so that mpirun can shut down */
-                IOReturn = SendSocket(*ServerSocketFD, 1, &IOVec);
-                /* drain stdio */
-                MaxDesc = 0;
-                NFDs = ProcessCount[hostIndex] + 1;
-                for (i = 0; i < NFDs; i++) {
-                    if (STDOUTfdsFromChildren[i] > MaxDesc)
-                        MaxDesc = STDOUTfdsFromChildren[i];
-                    if (STDERRfdsFromChildren[i] > MaxDesc)
-                        MaxDesc = STDERRfdsFromChildren[i];
-                }
-                MaxDesc++;
-                ClientDrainSTDIO(STDOUTfdsFromChildren,
-                                 STDERRfdsFromChildren, *ServerSocketFD,
-                                 NFDs, MaxDesc, IOPreFix, LenIOPreFix,
-                                 StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, state);
-                ulm_exit((-1, "Abnormal termination \n"));
-                break;
             case ALLHOSTSDONE:
                 // set flag indicating "app" process can terminate
                 ulm_dbg(("client ALLHOSTSDONE arrived on host %d\n",

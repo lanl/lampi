@@ -40,14 +40,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "internal/constants.h"
 #include "internal/profiler.h"
+#include "internal/constants.h"
+#include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "run/JobParams.h"
 #include "run/TV.h"
-#include "run/globals.h"
 
 volatile int MPIR_acquired_pre_main = 1;
 
@@ -57,25 +55,25 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
 
     /* return if no need for anything here - e.g. no debugging, or just
      *   debugging the startup, and the daemons */
-    if (!((RunParameters.TVDebug) && (RunParameters.TVDebugApp)))
+    if (!((RunParams.TVDebug) && (RunParams.TVDebugApp)))
         return;
 
     /* fill in MPIR_proctable */
     cnt = 0;
     /* loop over hosts */
-    for (HostID = 0; HostID < RunParameters.NHosts; HostID++) {
+    for (HostID = 0; HostID < RunParams.NHosts; HostID++) {
         /* loop over procs */
-        for (ProcID = 0; ProcID < (RunParameters.ProcessCount)[HostID];
+        for (ProcID = 0; ProcID < (RunParams.ProcessCount)[HostID];
              ProcID++) {
             /* fill in application process information */
             MPIR_proctable[cnt].host_name =
-                (char *) &((RunParameters.TVHostList)[HostID]);
+                (char *) &((RunParams.TVHostList)[HostID]);
             MPIR_proctable[cnt].executable_name =
-                (char *) (RunParameters.ExeList[HostID]);
+                (char *) (RunParams.ExeList[HostID]);
             MPIR_proctable[cnt].pid = PIDsOfAppProcs[HostID][ProcID];
 #if ENABLE_BPROC
             /* spawn xterm/gdb session to attach to remote process -- works in bproc env. only! */
-            if (RunParameters.GDBDebug) {
+            if (RunParams.GDBDebug) {
                 char title[64];
                 char command[256];
                 bool use_gdbserver = (getenv("LAMPI_USE_GDBSERVER") != 0) ? true : false;
@@ -112,7 +110,7 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
 
 #if ENABLE_BPROC
     /* if debugging with xterm/gdb in bproc env., then continue on... */
-    if (RunParameters.GDBDebug) {
+    if (RunParams.GDBDebug) {
         return;
     }
 #endif

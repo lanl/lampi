@@ -31,7 +31,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
 #ifndef _SocketGeneric
 #define _SocketGeneric
 
@@ -40,18 +39,13 @@
 #include "internal/types.h"
 #include "internal/lampi_state.h"
 
-/* function prototypes */
-
-void ULMInitSocketAuth();
-void ulm_SetAuthString(unsigned int *authdata);
-void ulm_GetAuthString(unsigned int *authdata);
-int ulm_SocketSendRecvSetup(int *ReadFDs, int NumReadFDs);
 ssize_t SendSocket(int DestinationFD, int NumRecordsToSend,
                    ulm_iovec_t *InputSendData);
 ssize_t RecvSocket(int SourceFD, void *OutputBuffer,
                    size_t SizeOfInputBuffer, int *errorReturn);
-ssize_t ClientWriteToServer(int *ServerFD, char *String, char *PrependString,
-                            int lenPrependString, int *NewLineLast,
-                            int Writefd, ssize_t lenString,
-                            bool startWithNewLine);
+ssize_t ClientWriteToServer(int *ServerFD, char *String,
+                            char *PrependString, int lenPrependString,
+                            int *NewLineLast, int Writefd,
+                            ssize_t lenString, bool startWithNewLine);
+
 #endif /* _SocketGeneric */

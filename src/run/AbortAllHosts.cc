@@ -42,16 +42,15 @@
 #include "internal/constants.h"
 #include "internal/profiler.h"
 #include "internal/types.h"
-#include "run/Run.h"
-#include "run/globals.h"
 #include "client/SocketGeneric.h"
+#include "run/Run.h"
 
 /*
- * This routine is used to send an abort message to all
- *  hosts participating in the job.
+ * This routine is used to send an abort message to all hosts
+ * participating in the job.
  */
 
-int AbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *server)
+int AbortAllHosts(int *ClientSocketFDList, int NHosts)
 {
     int NFailed = 0;
 #if ENABLE_RMS == 0
@@ -75,7 +74,7 @@ int AbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *server)
                     close(ClientSocketFDList[i]);
                     ClientSocketFDList[i] = -1;
                     NFailed++;
-                    HostsAbNormalTerminated++;
+                    RunParams.HostsAbNormalTerminated++;
                 }
             }
         }

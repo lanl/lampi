@@ -42,9 +42,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/uio.h>
-/* debug */
 #include <errno.h>
-/* end debug*/
 
 #include "client/SocketGeneric.h"
 #include "internal/constants.h"
@@ -56,79 +54,87 @@
 #include "ulm/errors.h"
 
 /*
- * This routine is used to read control messages send to mpirun
- *  from the Client's.
+ * Read control messages sent to mpirun from the client daemons
  */
-static int NumHostPIDsRecved = 0;
-
-							  
-int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
-                        int NHosts, double *HeartBeatTime,
+int CheckForControlMsgs(int MaxDescriptor,
+                        int *ClientSocketFDList,
+                        int NHosts,
+                        double *HeartBeatTime,
                         int *HostsNormalTerminated,
-                        ssize_t * StderrBytesRead,
-                        ssize_t * StdoutBytesRead, 
                         int *HostsAbNormalTerminated,
-                        int *ActiveHosts, int *ProcessCnt,
-                        pid_t ** PIDsOfAppProcs,
-                        double *TimeFirstCheckin, int *ActiveClients)
+                        int *ActiveHosts,
+                        int *ProcessCnt,
+                        pid_t **PIDsOfAppProcs,
+                        double *TimeFirstCheckin,
+                        int *ActiveClients)
 {
-    ulm_fd_set_t ReadSet;
-    int i, j, RetVal, error;
-    ssize_t ExpetctedData[2], IOReturn;
-    unsigned int *Inp, Tag;
-    struct timeval WaitTime;
+    char *buf;
     char ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
+    int bytes;
+    int error;
+    int rc;
+    int stdio_fd;
+    ssize_t ExpectedData[2];
+    ssize_t IOReturn;
+    struct timeval WaitTime;
+    ulm_fd_set_t ReadSet;
     ulm_iovec_t IOVec;
+    unsigned int tag;
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
 #endif
-#ifdef PURIFY
-    ExpetctedData[0] = 0;
-    ExpetctedData[1] = 0;
-#endif
 
+#ifdef PURIFY
+    ExpectedData[0] = 0;
+    ExpectedData[1] = 0;
+#endif
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 100000;
 
-
     bzero(&ReadSet, sizeof(ReadSet));
-    for (i = 0; i < NHosts; i++)
+    for (int i = 0; i < NHosts; i++) {
         if (ClientSocketFDList[i] > 0) {
             FD_SET(ClientSocketFDList[i], (fd_set *)&ReadSet);
         }
+    }
 
-    RetVal = select(MaxDescriptor, (fd_set *)&ReadSet, NULL, NULL, &WaitTime);
-    if (RetVal < 0)
-        return RetVal;
-    if (RetVal > 0) {
-        for (i = 0; i < NHosts; i++) {
+    rc = select(MaxDescriptor, (fd_set *)&ReadSet, NULL, NULL, &WaitTime);
+    if (rc < 0) {
+        return rc;
+    }
+
+    if (rc > 0) {
+        for (int i = 0; i < NHosts; i++) {
             if ((ClientSocketFDList[i] > 0)
                 && (FD_ISSET(ClientSocketFDList[i], (fd_set *)&ReadSet))) {
                 /* Read tag value */
 #ifdef PURIFY
-                Tag = 0;
+                tag = 0;
                 error = 0;
 #endif
-                IOReturn = RecvSocket(ClientSocketFDList[i], &Tag,
+                IOReturn = RecvSocket(ClientSocketFDList[i], &tag,
                                       sizeof(unsigned int), &error);
                 /* one end of pipe closed */
                 if (IOReturn == 0 || error != ULM_SUCCESS) {
                     ulm_dbg(("IOReturn = 0 host %d, error = %d\n", i,
                              error));
                     ClientSocketFDList[i] = -1;
-                    if (ActiveHosts[i])
+                    if (ActiveHosts[i]) {
                         (*HostsAbNormalTerminated)++;
-                    else
+                    } else {
                         (*ActiveClients)--;
+                    }
                     continue;
                 }
                 if (IOReturn < 0) {
                     ulm_err(("Error: Reading tag (%ld)\n", (long) IOReturn));
                     Abort();
                 }
-                switch (Tag) {  /* process according to message type */
+
+                switch (tag) {  /* process according to message type */
+
                 case HEARTBEAT:
 #ifndef HAVE_CLOCK_GETTIME
                     gettimeofday(&Time, NULL);
@@ -142,205 +148,128 @@ int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                         ((double) Time.tv_nsec) * 1e-9;
 #endif                          /* LINUX */
                     break;
+
                 case NORMALTERM:
                     ulm_dbg((" NormalTerm %d\n", i));
 #ifdef PURIFY
-                    ExpetctedData[0] = 0;
-                    ExpetctedData[1] = 0;
+                    ExpectedData[0] = 0;
+                    ExpectedData[1] = 0;
                     error = 0;
 #endif
-                    IOReturn =
-                        RecvSocket(ClientSocketFDList[i],
-                                   ExpetctedData,
-                                   2 * sizeof(ssize_t), &error);
+                    IOReturn = RecvSocket(ClientSocketFDList[i],
+                                          ExpectedData,
+                                          2 * sizeof(ssize_t), &error);
                     if (IOReturn < 0 || error != ULM_SUCCESS) {
                         ulm_err(("Error: Reading ExpectedData. "
-                                 "RetVal = %ld, error = %d\n",
+                                 "rc = %ld, error = %d\n",
                                  (long) IOReturn, error));
                         Abort();
                     }
 
-                    Tag = ACKNORMALTERM;
-                    IOVec.iov_base = (char *) &Tag;
+                    tag = ACKNORMALTERM;
+                    IOVec.iov_base = (char *) &tag;
                     IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
                     /* send ack */
-                    IOReturn =
-                        SendSocket(ClientSocketFDList[i], 1, &IOVec);
+                    IOReturn = SendSocket(ClientSocketFDList[i], 1, &IOVec);
                     if (IOReturn < 0) {
-                        ulm_err(("Error: sending ACKNORMALTERM. RetVal: %ld\n",
+                        ulm_err(("Error: sending ACKNORMALTERM. rc: %ld\n",
                                  (long) IOReturn));
                         Abort();
                     }
                     break;
+
                 case ACKACKNORMALTERM:
                     ulm_dbg(("ACKACKNORMALTERM host %d\n", i));
-                    if (ActiveHosts[i])
+                    if (ActiveHosts[i]) {
                         (*HostsNormalTerminated)++;
+                    }
                     ActiveHosts[i] = 0;
-                    // if all hosts have terminated normally
-                    //  notify all hosts, so that they can stop network processing
-                    //  and shut down.
+
+                    // if all hosts have terminated normally notify
+                    // all hosts, so that they can stop network
+                    // processing and shut down.
+
                     if ((*HostsNormalTerminated) == NHosts) {
-                        Tag = ALLHOSTSDONE;
+                        tag = ALLHOSTSDONE;
                         ulm_dbg(("ALLHOSTSDONE in mpirun\n"));
-                        IOVec.iov_base = (char *) &Tag;
+                        IOVec.iov_base = (char *) &tag;
                         IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                        for (j = 0; j < NHosts; j++) {
+                        for (int j = 0; j < NHosts; j++) {
                             /* send request if socket still open */
                             if (ClientSocketFDList[j] > 0) {
-                                ulm_dbg(("sending ALLHOSTSDONE to host %d\n", j));
-                                IOReturn =
-                                    SendSocket(ClientSocketFDList[j],
-                                               1, &IOVec);
-                                /* if IOReturn <= 0 assume connection no longer available */
+                                ulm_dbg(("sending ALLHOSTSDONE to %d\n", j));
+                                IOReturn = SendSocket(ClientSocketFDList[j],
+                                                      1, &IOVec);
+                                /* if IOReturn <= 0 assume connection lost */
                                 if (IOReturn <= 0) {
-                                    if (ActiveHosts[i])
+                                    if (ActiveHosts[i]) {
                                         (*HostsAbNormalTerminated)++;
+                                    }
                                     ActiveHosts[i] = 0;
                                 }
                             }
                         }
                     }           // end sending ALLHOSTSDONE
                     break;
+
                 case ACKALLHOSTSDONE:
                     ulm_dbg((" ACKALLHOSTSDONE host %d\n", i));
                     (*ActiveClients)--;
                     ClientSocketFDList[i] = -1;
                     break;
-                case CONFIRMABORTCHILDPROC:
-                    break;
-                    /* worker process died abnormally */
+
                 case ABNORMALTERM:
 #ifdef PURIFY
                     bzero(ReadBuffer, 5 * sizeof(unsigned int));
                     error = 0;
 #endif
-                    IOReturn =
-                        RecvSocket(ClientSocketFDList[i], ReadBuffer,
-                                   5 * sizeof(unsigned int), &error);
+                    IOReturn = RecvSocket(ClientSocketFDList[i], ReadBuffer,
+                                          5 * sizeof(unsigned int), &error);
                     if (IOReturn > 0 || error != ULM_SUCCESS) {
-                        Inp = (unsigned int *) ReadBuffer;
+                        unsigned int *Inp = (unsigned int *) ReadBuffer;
                         ulm_err(("Abnormal termination: "
                                  "Global Rank %u Local Host Rank %u PID %u "
                                  "HostID %d Signal %d ExitStatus %d\n",
                                  *(Inp + 2), *(Inp + 1), *Inp, i, *(Inp + 3),
                                  *(Inp + 4)));
                     }
-                    /* send ack to Client */
-                    Tag = ACKABNORMALTERM;
-                    IOVec.iov_base = (char *) &Tag;
-                    IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                    IOReturn =
-                        SendSocket(ClientSocketFDList[i], 1, &IOVec);
-                    if (IOReturn <= 0) {
-                        /* assume connection no longer available */
-                        ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", i));
-                        if (ActiveHosts[i])
-                            (*HostsAbNormalTerminated)++;
-                        ClientSocketFDList[i] = -1;
-                        ActiveHosts[i] = 0;
-                    }
-                    /* notify all other clients to terminate immediately */
-                    Tag = TERMINATENOW;
-                    IOVec.iov_base = (char *) &Tag;
-                    IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                    for (j = 0; j < NHosts; j++) {
-                        /* send request if socket still open */
-                        if ((j != i) && (ClientSocketFDList[j] > 0)) {
-                            IOReturn =
-                                SendSocket(ClientSocketFDList[j], 1,
-                                           &IOVec);
-                            /* if IOReturn <= 0 assume connection no longer available */
-                            if (IOReturn <= 0) {
-                                if (ActiveHosts[i])
-                                    (*HostsAbNormalTerminated)++;
-                                ActiveHosts[i] = 0;
-                            }
-                        }
-                    }
+                    AbortAllHosts(ClientSocketFDList, NHosts);
+                    Abort();
                     break;
-                case ACKTERMINATENOW:
-                    if (ActiveHosts[i])
-                        (*HostsAbNormalTerminated)++;
-                    ClientSocketFDList[i] = -1;
-                    ActiveHosts[i] = 0;
-                    (*ActiveClients)--;
-                    break;
-                case ACKACKABNORMALTERM:
-                    if (ActiveHosts[i])
-                        (*HostsAbNormalTerminated)++;
-                    ClientSocketFDList[i] = -1;
-                    ActiveHosts[i] = 0;
-                    (*ActiveClients)--;
-                    break;
-                case APPPIDS:
-                    /* read in app process pid's */
-#ifdef PURIFY
-                    bzero(PIDsOfAppProcs[i],
-                          ProcessCnt[i] * sizeof(pid_t));
-                    error = 0;
-#endif
-                    IOReturn =
-                        RecvSocket(ClientSocketFDList[i],
-                                   PIDsOfAppProcs[i],
-                                   ProcessCnt[i] * sizeof(pid_t),
-                                   &error);
-                    if (IOReturn !=
-                        (ssize_t) (ProcessCnt[i] * sizeof(pid_t))
-                        || error != ULM_SUCCESS) {
-                        ulm_err(("Error: Wrong number of PID's received for host %d.\n "
-                                 "\t%ld bytes received,  %ld expected., error = %d\n",
-                                 i, (long) IOReturn,
-                                 (long) (ProcessCnt[i] * sizeof(pid_t)),
-                                 error));
-                        Abort();
-                    }
-                    NumHostPIDsRecved++;
-                    /* debug setup - if need be */
-                    if (NumHostPIDsRecved == NHosts)
-                        MPIrunTVSetUpApp(PIDsOfAppProcs);
-                    break;
+
                 case STDIOMSG:
-                {
-                    int StdioFD;
                     IOReturn = RecvSocket(ClientSocketFDList[i],
-                                          &StdioFD,
-                                          sizeof(StdioFD),
-                                          &error);
-                    if (IOReturn != sizeof(StdioFD) || error != ULM_SUCCESS) {
+                                          &stdio_fd, sizeof(stdio_fd), &error);
+                    if (IOReturn != sizeof(stdio_fd) || error != ULM_SUCCESS) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
                         break;
                     }
 
-                    int bytes;
                     IOReturn = RecvSocket(ClientSocketFDList[i],
-                                          &bytes,
-                                          sizeof(bytes),
-                                          &error);
-                    if (IOReturn != sizeof(bytes) || error != ULM_SUCCESS || bytes == 0) {
+                                          &bytes, sizeof(bytes), &error);
+                    if (IOReturn != sizeof(bytes) ||
+                        error != ULM_SUCCESS || bytes == 0) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
                         break;
                     }
                     
-                    char *buff = (char*)malloc(bytes);
+                    buf = (char*) malloc(bytes);
                     IOReturn = RecvSocket(ClientSocketFDList[i],
-                                          buff,
-                                          bytes,
-                                          &error);
+                                          buf, bytes, &error);
                     if (IOReturn != bytes || error != ULM_SUCCESS) {
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
-                        free(buff);
+                        free(buf);
                         break;
                     }
-                    write(StdioFD, buff, bytes);
-                    free(buff);
+                    write(stdio_fd, buf, bytes);
+                    free(buf);
                     break;
-                }
+
                 default:
-                    ulm_err(("Error: Unrecognized control message : %d ", Tag));
+                    ulm_err(("Error: Unknown control message: %d\b", tag));
                     Abort();
                 }               /* end switch */
             }

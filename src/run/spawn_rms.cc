@@ -43,19 +43,14 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "internal/profiler.h"
+#include "client/adminMessage.h"
 #include "internal/constants.h"
 #include "internal/log.h"
-#include "internal/new.h"
 #include "internal/malloc.h"
-#include "internal/profiler.h"
+#include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "client/adminMessage.h"
-#include "run/JobParams.h"
-#include "internal/log.h"
-
-extern int ULMRunSpawnedClients;
 
 /* indices into the exec args */
 enum {
@@ -94,9 +89,7 @@ static int quadricsNRails(int railmask)
 }
 
 
-int SpawnRms(unsigned int *AuthData, int port,
-             ULMRunParams_t *RunParameters,
-             int FirstAppArgument, int argc, char **argv)
+int SpawnRms(unsigned int *AuthData, int port, int argc, char **argv)
 {
     char **exec_args;
     char **env_vars = 0;
@@ -109,29 +102,26 @@ int SpawnRms(unsigned int *AuthData, int port,
     char buf[512];
     adminMessage *server;
 
-    server = RunParameters->server;
+    server = RunParams.server;
     /* set up environment variables */
-    if (RunParameters->nEnvVarsToSet > 0) {
+    if (RunParams.nEnvVarsToSet > 0) {
         env_vars = (char **)
-            ulm_malloc((RunParameters->nEnvVarsToSet +
-                        5) * sizeof(char *));
+            ulm_malloc((RunParams.nEnvVarsToSet + 5) * sizeof(char *));
     }
 
-    /* environment variables from RunParameters */
-    for (i = 0; i < RunParameters->nEnvVarsToSet; i++) {
+    /* environment variables from RunParams */
+    for (i = 0; i < RunParams.nEnvVarsToSet; i++) {
         env_vars[i] = (char *)
-            ulm_malloc(strlen(RunParameters->envVarsToSet[i].var_m)
-                       +
-                       strlen(RunParameters->envVarsToSet[i].
-                              envString_m[0])
+            ulm_malloc(strlen(RunParams.envVarsToSet[i].var_m)
+                       + strlen(RunParams.envVarsToSet[i].envString_m[0])
                        + 2);
         sprintf(env_vars[i], "%s=%s",
-                RunParameters->envVarsToSet[i].var_m,
-                RunParameters->envVarsToSet[i].envString_m[0]);
+                RunParams.envVarsToSet[i].var_m,
+                RunParams.envVarsToSet[i].envString_m[0]);
     }
 
     /* put the variables into the environment */
-    for (i = 0; i < RunParameters->nEnvVarsToSet; i++) {
+    for (i = 0; i < RunParams.nEnvVarsToSet; i++) {
         if (putenv(env_vars[i]) != 0) {
             perror("Error trying to set env. vars");
             return -1;
@@ -142,10 +132,10 @@ int SpawnRms(unsigned int *AuthData, int port,
     admin_vars = (char **) ulm_malloc(ADMIN_END * sizeof(char *));
     admin_vars[IP_ADDR] = (char *) ulm_malloc(strlen("LAMPI_ADMIN_IP=")
                                               +
-                                              strlen(RunParameters->
+                                              strlen(RunParams.
                                                      mpirunName) + 1);
     sprintf(admin_vars[IP_ADDR], "LAMPI_ADMIN_IP=%s",
-            RunParameters->mpirunName);
+            RunParams.mpirunName);
 
     sprintf(buf, "%d", port);
     admin_vars[PORT] = (char *) ulm_malloc(strlen("LAMPI_ADMIN_PORT=")
@@ -190,9 +180,9 @@ int SpawnRms(unsigned int *AuthData, int port,
 
 
     /* allocate array of exec arguments */
-    exec_args = (char **) ulm_malloc((PROG_ARGS + argc - FirstAppArgument)
+    exec_args = (char **) ulm_malloc((PROG_ARGS + argc)
                                      * sizeof(char *));
-    for (i = 0; i < PROG_ARGS + argc - FirstAppArgument; i++) {
+    for (i = 0; i < PROG_ARGS + argc; i++) {
         exec_args[i] = 0;
     }
 
@@ -205,8 +195,8 @@ int SpawnRms(unsigned int *AuthData, int port,
     sprintf(exec_args[PRUN], "prun");
 
     /* number of hosts */
-    sprintf(buf, "%d", RunParameters->NHosts);
-    if (RunParameters->NHostsSet) {
+    sprintf(buf, "%d", RunParams.NHosts);
+    if (RunParams.NHostsSet) {
         exec_args[NODES] = (char *) ulm_malloc(sizeof(buf) + 4);
         sprintf(exec_args[NODES], "-N %s", buf);
     } else {
@@ -215,27 +205,27 @@ int SpawnRms(unsigned int *AuthData, int port,
 
     /* number of processors */
     nprocs = 0;
-    for (i = 0; i < RunParameters->NHosts; i++) {
-        nprocs += RunParameters->ProcessCount[i];
+    for (i = 0; i < RunParams.NHosts; i++) {
+        nprocs += RunParams.ProcessCount[i];
     }
     sprintf(buf, "%d", nprocs);
     exec_args[PROCS - skip_arg_count] =
         (char *) ulm_malloc(sizeof(buf) + 4);
     sprintf(exec_args[PROCS - skip_arg_count], "-n %s", buf);
 
-    if (0) { // DEBUG
+    if (0) {                    // DEBUG
         printf(">>>>> NHosts = %d, NHostsSet = %d, nprocs = %d\n",
-               RunParameters->NHosts, RunParameters->NHostsSet, nprocs);
+               RunParams.NHosts, RunParams.NHostsSet, nprocs);
         printf(">>>>> ProcessCount =");
-        for (i = 0; i < RunParameters->NHosts; i++) {
-            printf(" %d", RunParameters->ProcessCount[i]);
+        for (i = 0; i < RunParams.NHosts; i++) {
+            printf(" %d", RunParams.ProcessCount[i]);
         }
         printf("\n");
         fflush(stdout);
     }
 
     /* rms flag to tag stdout/stderr with process id */
-    if (RunParameters->OutputPrefix) {
+    if (RunParams.OutputPrefix) {
         exec_args[RMS_TAG - skip_arg_count] =
             (char *) ulm_malloc(strlen("-t") + 1);
         sprintf(exec_args[RMS_TAG - skip_arg_count], "-t");
@@ -247,11 +237,11 @@ int SpawnRms(unsigned int *AuthData, int port,
     exec_args[RMS_SPAWN - skip_arg_count] = (char *)
         ulm_malloc(strlen("-Rone-process-per-node,rails=XX,railmask=XX") +
                    1);
-    if (RunParameters->quadricsRailMask) {
+    if (RunParams.quadricsRailMask) {
         sprintf(exec_args[RMS_SPAWN - skip_arg_count],
                 "-Rone-process-per-node,rails=%d,railmask=%d",
-                quadricsNRails(RunParameters->quadricsRailMask),
-                RunParameters->quadricsRailMask);
+                quadricsNRails(RunParams.quadricsRailMask),
+                RunParams.quadricsRailMask);
     } else {
         sprintf(exec_args[RMS_SPAWN - skip_arg_count],
                 "-Rone-process-per-node");
@@ -259,13 +249,13 @@ int SpawnRms(unsigned int *AuthData, int port,
 
     /* program name */
     exec_args[PROG_NAME - skip_arg_count] = (char *)
-        ulm_malloc(strlen(RunParameters->ExeList[0]) + 1);
+        ulm_malloc(strlen(RunParams.ExeList[0]) + 1);
     sprintf(exec_args[PROG_NAME - skip_arg_count], "%s",
-            RunParameters->ExeList[0]);
+            RunParams.ExeList[0]);
 
     /* program arguments */
     p = &exec_args[PROG_ARGS - skip_arg_count];
-    q = &argv[FirstAppArgument];
+    q = &argv[0];
 
     while (*q) {
         *p = (char *) ulm_malloc(1 + strlen(*q));
@@ -288,7 +278,7 @@ int SpawnRms(unsigned int *AuthData, int port,
     } else {                    /* parent */
         /* clean up */
         if (exec_args) {
-            for (i = 0; i < PROG_ARGS + argc - FirstAppArgument; i++) {
+            for (i = 0; i < PROG_ARGS + argc; i++) {
                 if (exec_args[i]) {
                     ulm_free(exec_args[i]);
                 }
@@ -298,7 +288,7 @@ int SpawnRms(unsigned int *AuthData, int port,
         }
 
         if (env_vars) {
-            for (i = 0; i < RunParameters->nEnvVarsToSet; i++) {
+            for (i = 0; i < RunParams.nEnvVarsToSet; i++) {
                 if (env_vars[i]) {
                     ulm_free(env_vars[i]);
                 }

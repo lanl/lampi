@@ -46,13 +46,12 @@
 #include <netdb.h>
 #include <sys/stat.h>
 
+#include "internal/profiler.h"
 #include "init/environ.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
-#include "run/JobParams.h"
 #include "run/Run.h"
 
 /*
@@ -71,8 +70,8 @@
 ( (getgid() == fs.st_gid) && (S_IXGRP & fs.st_mode) )
 
 int Spawn(unsigned int *AuthData, int ReceivingSocket,
-          int **ListHostsStarted, ULMRunParams_t *RunParameters,
-          int FirstAppArgument, int argc, char **argv)
+          int **ListHostsStarted,
+          int argc, char **argv)
 {
     int isValid;
     char *execName = NULL;
@@ -83,8 +82,8 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
      * and RMS, where the executable is guaranteed to be on the front
      * end.
      */
-    if (RunParameters->UseRMS || RunParameters->UseBproc) {
-        execName = RunParameters->ExeList[0];
+    if (RunParams.UseRMS || RunParams.UseBproc) {
+        execName = RunParams.ExeList[0];
         if (stat(execName, &fs) < 0) {
             ulm_err(("%s: No such file or directory\n", execName));
             exit(EXIT_FAILURE);
@@ -102,35 +101,32 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
      * Should we run locally?  Yes if -local option given, or
      * LAMPI_LOCAL is set.
      */
-    if (RunParameters->Local == 0) {
-        lampi_environ_find_integer("LAMPI_LOCAL", &(RunParameters->Local));
+    if (RunParams.Local == 0) {
+        lampi_environ_find_integer("LAMPI_LOCAL", &(RunParams.Local));
     }
-    if ((RunParameters->NHosts == 1) && RunParameters->Local) {
-        return SpawnExec(AuthData, ReceivingSocket,
-                         ListHostsStarted, RunParameters,
-                         FirstAppArgument, argc, argv);
+    if ((RunParams.NHosts == 1) && RunParams.Local) {
+        return SpawnExec(AuthData, ReceivingSocket, ListHostsStarted,
+                         argc, argv);
     }
 
     if (ENABLE_RMS) {
         return SpawnRms(AuthData, ReceivingSocket,
-                        RunParameters, FirstAppArgument, argc, argv);
+                        argc, argv);
     }
 
     if (ENABLE_BPROC) {
         return SpawnBproc(AuthData, ReceivingSocket, ListHostsStarted,
-                          RunParameters, FirstAppArgument, argc, argv);
+                          argc, argv);
     }
 
-    if (RunParameters->UseLSF) {
-        return SpawnLsf(AuthData, ReceivingSocket,
-                        ListHostsStarted, RunParameters,
-                        FirstAppArgument, argc, argv);
+    if (RunParams.UseLSF) {
+        return SpawnLsf(AuthData, ReceivingSocket,  ListHostsStarted,
+                        argc, argv);
     }
 
     /*
      * Default: use rsh to spawn
      */
-    return SpawnRsh(AuthData, ReceivingSocket,
-                    ListHostsStarted, RunParameters,
-                    FirstAppArgument, argc, argv);
+    return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted,
+                    argc, argv);
 }

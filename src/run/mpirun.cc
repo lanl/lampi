@@ -64,65 +64,65 @@
 #define ULM_GLOBAL_DEFINE
 #include "init/environ.h"
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "client/adminMessage.h"
 #include "client/SocketGeneric.h"
-#include "client/SocketServer.h"
-#include "run/JobParams.h"
-#include "run/TV.h"
-#include "run/Run.h"
-#include "run/globals.h"
-#include "internal/new.h"
-#include "path/udp/UDPNetwork.h"  /* for UDPGlobals::NPortsPerProc */
+#include "path/udp/UDPNetwork.h"        /* for UDPGlobals::NPortsPerProc */
 #include "path/gm/base_state.h"
+#include "run/Run.h"
+#include "run/TV.h"
 
 /*
- * Global variables instantiated in this file
- */
-ULMRunParams_t RunParameters;   // Job description
-int *HostDoneWithSetup = NULL;  // Lists hosts are done with setup
-int *ListHostsStarted;          // List of host for which Spawn ran ok
-int HostsAbNormalTerminated = 0;        // Number of hosts that terminated abnormally
-int HostsNormalTerminated = 0;  // Number of hosts that terminated normally
-int NHostsStarted;              // Number of hosts succesfully spawned
-int ULMRunSetupDone = 0;        // When 1, setup is done
-int ULMRunSpawnedClients = 0;   //
-ssize_t *StderrBytesRead;       // number of bytes read per stderr socket
-ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
-
-static adminMessage *server = NULL;
-
-/* bproc_vexecmove_* does not work properly with debuggers if more
+ * bproc_vexecmove_* does not work properly with debuggers if more
  * than one thread is created before the bproc_vexecmove_* call.
  */
 #if ENABLE_BPROC
 static int use_connect_thread = 0;
 #else
 static int use_connect_thread = 1;
-#endif  /* ENABLE_BPROC */
+#endif                          /* ENABLE_BPROC */
 
 
-bool getClientPids(pid_t **hostarray, int *errorCode)
+/*
+ * Get authorization data for admin communications used
+ */
+static void getAuthData(unsigned int *auth)
 {
+    auth[0] = getpid();
+    auth[1] = getuid();
+    auth[2] = time(NULL);
+}
+
+
+/*
+ * Collect PIDs of application processes
+ *
+ * TODO:
+ * - collect daemon pid (as last element in packed array)
+ * - allocate space inside this function 
+ */
+static bool getClientPids(pid_t **hostarray, int *errorCode)
+{
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int rank, tag, contacted = 0;
-    int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME;
+    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
 
-    while (contacted < RunParameters.NHosts) {
-        int recvd = server->receiveFromAny(&rank, &tag, errorCode,
-                                           (alarm_time ==
-                                            -1) ? -1 : alarm_time * 1000);
+    while (contacted < RunParams.NHosts) {
+        int recvd = s->receiveFromAny(&rank, &tag, errorCode,
+                                      (alarm_time ==
+                                       -1) ? -1 : alarm_time * 1000);
         switch (recvd) {
         case adminMessage::OK:
             if ((tag == adminMessage::CLIENTPIDS) &&
-                (server->
+                (s->
                  unpack(hostarray[rank],
                         (adminMessage::packType) sizeof(pid_t),
-                        RunParameters.ProcessCount[rank], alarm_time))) {
+                        RunParams.ProcessCount[rank], alarm_time))) {
                 contacted++;
                 break;
             }
@@ -136,14 +136,15 @@ bool getClientPids(pid_t **hostarray, int *errorCode)
         }
     }
 
-    if (0) { /* debug */
-        for (int h = 0 ; h < RunParameters.NHosts; h++) {
-	    fprintf(stderr, "Host %d (%s) has PIDs", h, RunParameters.HostList[h]);
-	    for (int p = 0 ; p < RunParameters.ProcessCount[h]; p++) {
-	       fprintf(stderr, " %d", hostarray[h][p]);
-	    }
-	    fprintf(stderr, "\n");
-	}
+    if (0) {                    /* debug */
+        for (int h = 0; h < RunParams.NHosts; h++) {
+            fprintf(stderr, "Host %d (%s) has PIDs", h,
+                    RunParams.HostList[h]);
+            for (int p = 0; p < RunParams.ProcessCount[h]; p++) {
+                fprintf(stderr, " %d", hostarray[h][p]);
+            }
+            fprintf(stderr, "\n");
+        }
     }
 
     /* release clients */
@@ -151,24 +152,26 @@ bool getClientPids(pid_t **hostarray, int *errorCode)
     if (returnValue) {
         int goahead = (returnValue) ? 1 : 0;
 
-        server->reset(adminMessage::SEND);
-        server->pack(&goahead, (adminMessage::packType) sizeof(int), 1);
-	returnValue = server->broadcast(adminMessage::BARRIER, errorCode);
-	returnValue = (returnValue && goahead) ? true : false;
+        s->reset(adminMessage::SEND);
+        s->pack(&goahead, (adminMessage::packType) sizeof(int), 1);
+        returnValue = s->broadcast(adminMessage::BARRIER, errorCode);
+        returnValue = (returnValue && goahead) ? true : false;
     }
 
     return returnValue;
 }
 
 
-bool releaseClients(int *errorCode)
+static bool releaseClients(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
 
-    while (contacted < RunParameters.NHosts) {
-        int recvd = server->receiveFromAny(&rank, &tag, errorCode,
-                                           (RunParameters.TVDebug) ? -1 : ALARMTIME * 1000);
+    while (contacted < RunParams.NHosts) {
+        int recvd = s->receiveFromAny(&rank, &tag, errorCode,
+                                      (RunParams.
+                                       TVDebug) ? -1 : ALARMTIME * 1000);
         switch (recvd) {
         case adminMessage::OK:
             if (tag == adminMessage::BARRIER) {
@@ -178,7 +181,7 @@ bool releaseClients(int *errorCode)
             }
             break;
         case adminMessage::TIMEOUT:
-            if (RunParameters.TVDebug == 0) {
+            if (RunParams.TVDebug == 0) {
                 returnValue = false;
             }
             break;
@@ -191,32 +194,33 @@ bool releaseClients(int *errorCode)
         }
     }
 
-    server->reset(adminMessage::SEND);
+    s->reset(adminMessage::SEND);
     goahead = (returnValue) ? 1 : 0;
-    server->pack(&goahead, (adminMessage::packType) sizeof(int), 1);
-    returnValue = server->broadcast(adminMessage::BARRIER, errorCode);
+    s->pack(&goahead, (adminMessage::packType) sizeof(int), 1);
+    returnValue = s->broadcast(adminMessage::BARRIER, errorCode);
     returnValue = (returnValue && goahead) ? true : false;
 
     return returnValue;
 }
 
 
-static bool exchangeIPAddresses(int *errorCode, adminMessage* server)
+static bool exchangeIPAddresses(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     int udphosts = 0;
     int tcphosts = 0;
 
     // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
+    if (RunParams.NHosts == 1)
         return true;
 
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_UDP) {
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        for (int j = 0; j < RunParams.NPathTypes[i]; j++) {
+            if (RunParams.ListPathTypes[i][j] == PATH_UDP) {
                 udphosts++;
                 break;
             }
-            if (RunParameters.ListPathTypes[i][j] == PATH_TCP) {
+            if (RunParams.ListPathTypes[i][j] == PATH_TCP) {
                 tcphosts++;
                 break;
             }
@@ -226,24 +230,22 @@ static bool exchangeIPAddresses(int *errorCode, adminMessage* server)
     // both TCP and UDP now require that the host addresses be broadcast
     if (udphosts == 0 && tcphosts == 0) {
         return true;
-    } else if (udphosts != 0 && udphosts != RunParameters.NHosts) {
-        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using UDP!\n",
-                 udphosts, RunParameters.NHosts));
+    } else if (udphosts != 0 && udphosts != RunParams.NHosts) {
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using UDP!\n", udphosts, RunParams.NHosts));
         return false;
-    } else if (tcphosts != 0 && tcphosts != RunParameters.NHosts) {
-        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using TCP!\n",
-                 tcphosts, RunParameters.NHosts));
+    } else if (tcphosts != 0 && tcphosts != RunParams.NHosts) {
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using TCP!\n", tcphosts, RunParams.NHosts));
         return false;
     }
 
     size_t size;
-    if(RunParameters.NInterfaces == 0)
+    if (RunParams.NInterfaces == 0)
         size = sizeof(struct sockaddr_in);
     else
-        size = RunParameters.NInterfaces * sizeof(struct sockaddr_in);
+        size = RunParams.NInterfaces * sizeof(struct sockaddr_in);
 
-    int rc = server->allgather(0, 0, size);
-    if(rc != ULM_SUCCESS) {
+    int rc = s->allgather(0, 0, size);
+    if (rc != ULM_SUCCESS) {
         *errorCode = rc;
         return false;
     }
@@ -251,29 +253,30 @@ static bool exchangeIPAddresses(int *errorCode, adminMessage* server)
 }
 
 
-bool exchangeUDPPorts(int *errorCode,adminMessage *s)
+static bool exchangeUDPPorts(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int udphosts = 0, rc;
 
     // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
+    if (RunParams.NHosts == 1)
         return returnValue;
 
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_UDP) {
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        for (int j = 0; j < RunParams.NPathTypes[i]; j++) {
+            if (RunParams.ListPathTypes[i][j] == PATH_UDP) {
                 udphosts++;
                 break;
             }
         }
     }
-    if( udphosts != 0 ) {
-        rc = s->allgather((void*)NULL,(void *)NULL,
-                          UDPGlobals::NPortsPerProc*sizeof(unsigned short));
+    if (udphosts != 0) {
+        rc = s->allgather((void *) NULL, (void *) NULL,
+                          UDPGlobals::NPortsPerProc *
+                          sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error: exchangeUDPPorts() - allgather failed with error %d\n",
-                     rc));
+            ulm_err(("Error: exchangeUDPPorts() - allgather failed with error %d\n", rc));
             returnValue = false;
             *errorCode = rc;
         }
@@ -283,28 +286,29 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
 }
 
 
-bool exchangeTCPPorts(int *errorCode,adminMessage *s)
+static bool exchangeTCPPorts(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int tcphosts = 0, rc;
 
     // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
+    if (RunParams.NHosts == 1)
         return returnValue;
 
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_TCP) {
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        for (int j = 0; j < RunParams.NPathTypes[i]; j++) {
+            if (RunParams.ListPathTypes[i][j] == PATH_TCP) {
                 tcphosts++;
                 break;
             }
         }
     }
-    if( tcphosts != 0 ) {
-        rc = s->allgather((void*)NULL,(void *)NULL, sizeof(unsigned short));
+    if (tcphosts != 0) {
+        rc = s->allgather((void *) NULL, (void *) NULL,
+                          sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n",
-                     rc));
+            ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n", rc));
             returnValue = false;
             *errorCode = rc;
         }
@@ -313,27 +317,28 @@ bool exchangeTCPPorts(int *errorCode,adminMessage *s)
 }
 
 
-bool exchangeIBInfo(int *errorCode,adminMessage *s)
+static bool exchangeIBInfo(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int ibhosts = 0, i, j;
     int rc, active[3], tag;
-    int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME * 1000;
+    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
 
     // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
+    if (RunParams.NHosts == 1)
         return returnValue;
 
-    for (i = 0; i < RunParameters.NHosts; i++) {
-        for (j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_IB) {
+    for (i = 0; i < RunParams.NHosts; i++) {
+        for (j = 0; j < RunParams.NPathTypes[i]; j++) {
+            if (RunParams.ListPathTypes[i][j] == PATH_IB) {
                 ibhosts++;
                 break;
             }
         }
     }
 
-    if(ibhosts != 0) {
+    if (ibhosts != 0) {
 
         rc = s->allgather((void *) NULL, (void *) NULL, 2 * sizeof(int));
         if (rc != ULM_SUCCESS) {
@@ -373,8 +378,7 @@ bool exchangeIBInfo(int *errorCode,adminMessage *s)
         }
 
         if ((active[0] == 0) || (active[1] == 0)) {
-            ulm_warn(("Warning: exchangeIBInfo() - No active InfiniBand HCAs or ports found (HCAs = %d, ports = %d)\n", 
-                active[0], active[1]));
+            ulm_warn(("Warning: exchangeIBInfo() - No active InfiniBand HCAs or ports found (HCAs = %d, ports = %d)\n", active[0], active[1]));
             return returnValue;
         }
 
@@ -391,27 +395,28 @@ bool exchangeIBInfo(int *errorCode,adminMessage *s)
     return returnValue;
 }
 
-bool exchangeGMInfo(int *errorCode, adminMessage *s)
+static bool exchangeGMInfo(int *errorCode)
 {
+    adminMessage *s = RunParams.server;
     bool returnValue = true;
     int gmhosts = 0, i, j;
     int rc, maxDevs, tag;
-    int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME * 1000;
+    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
 
     // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
+    if (RunParams.NHosts == 1)
         return returnValue;
 
-    for (i = 0; i < RunParameters.NHosts; i++) {
-        for (j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_GM) {
+    for (i = 0; i < RunParams.NHosts; i++) {
+        for (j = 0; j < RunParams.NPathTypes[i]; j++) {
+            if (RunParams.ListPathTypes[i][j] == PATH_GM) {
                 gmhosts++;
                 break;
             }
         }
     }
 
-    if(gmhosts != 0) {
+    if (gmhosts != 0) {
 
         rc = s->allgather((void *) NULL, (void *) NULL, sizeof(int));
         if (rc != ULM_SUCCESS) {
@@ -467,91 +472,99 @@ bool exchangeGMInfo(int *errorCode, adminMessage *s)
     return returnValue;
 }
 
-void *server_connect(void *arg) 
+
+static void getSocketsToClients(void)
 {
-    int nprocs = *(int *)arg;
-    int connectTimeOut = MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
+    adminMessage *s = RunParams.server;
+    int *fds = ulm_new(int, RunParams.NHosts);
+
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        fds[i] = s->clientRank2FD(i);
+    }
+
+    RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients = fds;
+}
+
+
+static void *connectThread(void *arg)
+{
+    adminMessage *s = RunParams.server;
+    int nprocs = *(int *) arg;
+    int connectTimeOut =
+        MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
+    int rc = 0;
     sigset_t signals;
 
     /* enable SIGALRM for this thread */
     sigemptyset(&signals);
     sigaddset(&signals, SIGALRM);
-    pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *)NULL);
+    pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *) NULL);
 
-    if (!server->serverConnect(RunParameters.ProcessCount,
-                               RunParameters.HostList,
-                               RunParameters.NHosts, connectTimeOut)) {
-        ulm_err(("Error: Server/client connection failed.\n"));
-        if ( use_connect_thread )
-        {
-            pthread_exit((void *)0);            
+    if (!s->serverConnect(RunParams.ProcessCount,
+                          RunParams.HostList,
+                          RunParams.NHosts, connectTimeOut)) {
+        rc = -1;
+        if (use_connect_thread) {
+            pthread_exit((void *) rc);
         }
+
     }
-    if ( use_connect_thread )
-    {
-        pthread_exit((void *)1);
+    if (use_connect_thread) {
+        pthread_exit((void *) rc);
     }
 
-    return NULL;
+    return (void *) rc;
 }
 
 
 int mpirun(int argc, char **argv)
 {
-    int i, rc, NULMArgs, ErrorReturn, FirstAppArgument;
-    int *IndexULMArgs;
+    int FirstAppArg;
+    int *ListHostsStarted;
     int ReceivingSocket;
-    unsigned int AuthData[3];
-    int errorCode = 0;
+    int nprocs;
+    int rc;
     pthread_t sc_thread;
-    void *sc_thread_return;
-    sigset_t newsignals, oldsignals;
-    
+    sigset_t newsignals;
+    sigset_t oldsignals;
+    unsigned int AuthData[3];
+
     /* setup process characteristics */
     InitProc();
-    
-    /*
-     * Read in environment
-     */
+
+    /* read in environment */
     lampi_environ_init();
 
-    RunParameters.isatty = isatty(fileno(stdin));
+    RunParams.isatty = isatty(fileno(stdin));
 
-    /*
-     * Read in mpirun arguments
-     */
-    rc = ProcessInput(argc, argv, &NULMArgs, &IndexULMArgs,
-                            &RunParameters, &FirstAppArgument);
+    /* read in mpirun arguments */
+    rc = ProcessInput(argc, argv, &FirstAppArg);
     if (rc < 0) {
         ulm_err(("Error: Parsing command line\n"));
         Abort();
     }
 
     /* print banner message */
-    if (RunParameters.Quiet == 0) {
+    if (RunParams.Quiet == 0) {
         fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
     }
 
-    /*
-     * Setup authorization string
-     */
-    ULMInitSocketAuth();
-    ulm_GetAuthString(AuthData);
+    /* get authorization data for admin communication */
+    getAuthData(AuthData);
 
     /* calculate the total number of processes */
-    int nprocs = 0;
-    for (i = 0; i < RunParameters.NHosts; i++) {
-        nprocs += RunParameters.ProcessCount[i];
+    nprocs = 0;
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        nprocs += RunParams.ProcessCount[i];
     }
 
     /* create a new server admin connection/message object */
-    server = new adminMessage;
-	RunParameters.server = server;
-	
+    RunParams.server = new adminMessage;
+
     /* intialize the object as a server */
-    if (!server
-        || !server->serverInitialize((int *) AuthData, nprocs,
-                                     &ReceivingSocket)) {
+    if (!RunParams.server ||
+        !RunParams.server->serverInitialize((int *) AuthData, nprocs,
+                                            &ReceivingSocket)) {
         ulm_err(("Error: Unable to initialize server socket (auth[0] %d"
                  " auth[1] %d auth[2] %d nprocs %d port %d)\n",
                  AuthData[0], AuthData[1], AuthData[2], nprocs,
@@ -565,21 +578,20 @@ int mpirun(int argc, char **argv)
     sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
 
     /* spawn thread to do adminMessage::serverConnect() processing */
-    server->cancelConnect_m = false;
-    if ( use_connect_thread )
-    {
-        if (pthread_create(&sc_thread, (pthread_attr_t *)NULL, server_connect, (void *)&nprocs) != 0) {
+    RunParams.server->cancelConnect_m = false;
+    if (use_connect_thread) {
+        if (pthread_create
+            (&sc_thread, (pthread_attr_t *) NULL, connectThread,
+             (void *) &nprocs) != 0) {
             ulm_err(("Error: can't create serverConnect() thread!\n"));
             Abort();
-        }        
+        }
     }
-    
-    /*
-     * Spawn user app
-     */
+
+    /* spawn user application */
     rc = Spawn(AuthData, ReceivingSocket, &ListHostsStarted,
-               &RunParameters, FirstAppArgument, argc, argv);
-    if( rc != ULM_SUCCESS ) {
+               argc - FirstAppArg, argv + FirstAppArg);
+    if (rc != ULM_SUCCESS) {
         char **p;
 
         ulm_err(("Error: Can't spawn application\n"));
@@ -590,10 +602,9 @@ int mpirun(int argc, char **argv)
         fprintf(stderr, "\n");
         ulm_warn(("Are PATH and LD_LIBRARY_PATH correct?\n"));
 
-        server->cancelConnect_m = true;
-        if ( use_connect_thread )
-        {
-            pthread_join(sc_thread, (void **)NULL);
+        RunParams.server->cancelConnect_m = true;
+        if (use_connect_thread) {
+            pthread_join(sc_thread, (void **) NULL);
         }
         Abort();
     }
@@ -601,177 +612,161 @@ int mpirun(int argc, char **argv)
     /* 2/4/04 RTA:
      * It appears that creating more than one thread before a bproc call
      * causes the bproc_vexecmove_* to only spawn one remote process.
-     * So until bproc is fixed, move the server_connect() call to after
+     * So until bproc is fixed, move the connectThread() call to after
      * spawning user app.
      */
-    if ( 0 == use_connect_thread )
-    {
-        server_connect((void *)&nprocs);        
+    if (0 == use_connect_thread) {
+        if (connectThread((void *) &nprocs) == (void *) -1) {
+            Abort();
+        }
     }
-    
-    /* at this stage all remote process have been spawned, but their state
-     *   is unknown
+
+    /*
+     * at this stage all remote process have been spawned, but their
+     * state is unknown
      */
 
     /*
-     * Finish setting up administrative connections - time out proportional
-     *   to number of processes (not number of hosts, since we don't always 
-     *   know the number of hosts)...with minimum connect timeout 
+     * Finish setting up administrative connections - time out
+     * proportional to number of processes (not number of hosts, since
+     * we don't always know the number of hosts)...with minimum
+     * connect timeout
      */
-    if ( use_connect_thread )
-    {
+    if (use_connect_thread) {
         /* join with serverConnect() processing thread */
-        if (pthread_join(sc_thread, &sc_thread_return) == 0) {
-            int return_value = (int)sc_thread_return;
-            if (return_value == 0) {
-                ulm_err(("Error: serverConnect() thread failed!\n"));
+        void *thread_return;
+        if (pthread_join(sc_thread, &thread_return) == 0) {
+            if (thread_return == (void *) -1) {
                 Abort();
             }
-        }
-        else {
-            ulm_err(("Error: pthread_join() with serverConnect() thread failed!\n"));
+        } else {
+            ulm_err(("Error: pthread_join() with serverConnect() "
+                     "thread failed!\n"));
             Abort();
-        }        
+        }
     }
-        
-    /* set signal mask to unblock SIGALRM */
-    sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *)NULL);
 
-    if (server->nhosts() < 1) {
-        ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
+    /* set signal mask to unblock SIGALRM */
+    sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *) NULL);
+
+    if (RunParams.server->nhosts() < 1) {
+        ulm_err(("Error: nhosts (%d) less than one!\n",
+                 RunParams.server->nhosts()));
+        Abort();
+    }
+
+    /* now all daemon processes have connected back to mpirun */
+    RunParams.ClientsSpawned = 1;
+
+    /* update runtime information using returned host information */
+    FixRunParams(RunParams.server->nhosts());
+    getSocketsToClients();
+
+    /* totalview debugging of client "daemons" */
+    MPIrunTVSetUp();
+
+    /* send initial input parameters */
+    ulm_dbg(("\nmpirun: sending initial input to daemons...\n"));
+    rc = SendInitialInputDataToClients();
+    if (rc != ULM_SUCCESS) {
+        ulm_err(("Error: While sending initial input data to clients (%d)\n", rc));
         Abort();
     }
 
     /*
-     * mark the remote process as started
-     *   At this stage all daemon process have started up, and connected
-     *     back to mpirun.
-     */
-    ULMRunSpawnedClients = 1;
-
-    /*
-     * reset host information based on the number of hosts that
-     *   were actually started
-     */
-    FixRunParameters(&RunParameters, server->nhosts());
-    /* temporary fix */
-    int *ClientSocketFDList =
-        (int *) ulm_malloc(sizeof(int) * RunParameters.NHosts);
-    for (i = 0; i < RunParameters.NHosts; i++) {
-        ClientSocketFDList[i] = server->clientRank2FD(i);
-    }
-
-    RunParameters.Networks.TCPAdminstrativeNetwork.SocketsToClients =
-        ClientSocketFDList;
-    /* end temporary fix */
-
-    /* totalview debugging of client "daemons" */
-    MPIrunTVSetUp(&RunParameters, server);
-
-    /*
-     * send initial input parameters
-     */
-    ulm_dbg(("\nmpirun: sending initial input to daemons...\n"));
-    rc = SendInitialInputDataToClients(&RunParameters, server);
-    if( rc != ULM_SUCCESS ) {
-	    ulm_err(("Error: While sending initial input data to clients (%d)\n", rc));
-	    Abort();
-    }
-
-    /*
-     * at this stage we assume that all app processes have been
+     * at this stage all application processes have been
      * created on the remote hosts
      */
 
     /* collect PIDs of client applications */
-    RunParameters.AppPIDs = ulm_new(pid_t *, RunParameters.NHosts);
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        RunParameters.AppPIDs[i] = ulm_new(pid_t, RunParameters.ProcessCount[i]);
+    RunParams.AppPIDs = ulm_new(pid_t *, RunParams.NHosts);
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        RunParams.AppPIDs[i] = ulm_new(pid_t, RunParams.ProcessCount[i]);
     }
-    if (!getClientPids(RunParameters.AppPIDs, &errorCode)) {
-        ulm_err(("Error: Can't get client process IDs (%d)\n", errorCode));
-	Abort();
+    if (!getClientPids(RunParams.AppPIDs, &rc)) {
+        ulm_err(("Error: Can't get client process IDs (%d)\n", rc));
+        Abort();
     }
 
     /* totalview debugging of all client processes */
-    if (RunParameters.TVDebug && RunParameters.TVDebugApp) {
-        MPIrunTVSetUpApp(RunParameters.AppPIDs);
+    if (RunParams.TVDebug && RunParams.TVDebugApp) {
+        MPIrunTVSetUpApp(RunParams.AppPIDs);
     }
 
     /* IP address information exchange - postfork */
-    if (!exchangeIPAddresses(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchanging IP addresses (%d)\n", ErrorReturn));
+    if (!exchangeIPAddresses(&rc)) {
+        ulm_err(("Error: While exchanging IP addresses (%d)\n", rc));
         Abort();
     }
 
     /* UDP port information exchange - postfork */
-    if (!exchangeUDPPorts(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchangind UDP ports (%d)\n", ErrorReturn));
+    if (!exchangeUDPPorts(&rc)) {
+        ulm_err(("Error: While exchangind UDP ports (%d)\n", rc));
         Abort();
     }
 
     /* TCP port information exchange - postfork */
-    if (!exchangeTCPPorts(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchangind TCP ports (%d)\n", ErrorReturn));
+    if (!exchangeTCPPorts(&rc)) {
+        ulm_err(("Error: While exchangind TCP ports (%d)\n", rc));
         Abort();
     }
 
     /* GM info information exchange - postfork */
-    if (!exchangeGMInfo(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchanging GM information (%d)\n",
-                 ErrorReturn));
+    if (!exchangeGMInfo(&rc)) {
+        ulm_err(("Error: While exchanging GM information (%d)\n", rc));
         Abort();
     }
 
     /* InfiniBand information exchange - postfork */
-    if (!exchangeIBInfo(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchanging InfiniBand (IB) information (%d)\n",
-                 ErrorReturn));
+    if (!exchangeIBInfo(&rc)) {
+        ulm_err(("Error: While exchanging InfiniBand (IB) information (%d)\n", rc));
         Abort();
     }
 
     /* more banner info: print out process distribution */
-    if (RunParameters.Quiet == 0) {
-        fprintf(stderr, "LA-MPI: *** %d processes on %d hosts:", nprocs, RunParameters.NHosts);
-	for (int h = 0 ; h < RunParameters.NHosts; h++) {
-	    struct hostent *hptr;
-	    hptr = gethostbyname(RunParameters.HostList[h]);
-	    if (!hptr) {
-		perror("gethostbyname");
-	    }
-	    hptr = gethostbyaddr(hptr->h_addr, hptr->h_length, AF_INET);
-	    if (!hptr) {
-		perror("gethostbyaddr");
-	    }
-	    fprintf(stderr, " %d*%s",
-		    RunParameters.ProcessCount[h],
-		    hptr->h_name);
-	}
-	fprintf(stderr, "\n");
+    if (RunParams.Quiet == 0) {
+        fprintf(stderr,
+                "LA-MPI: *** %d processes on %d hosts:",
+                nprocs, RunParams.NHosts);
+        for (int h = 0; h < RunParams.NHosts; h++) {
+            struct hostent *hptr;
+
+            /* try to get a name rather than dotted IP address */
+            hptr = gethostbyname(RunParams.HostList[h]);
+            if (!hptr) {
+                perror("gethostbyname");
+            }
+            hptr = gethostbyaddr(hptr->h_addr, hptr->h_length, AF_INET);
+            if (!hptr) {
+                perror("gethostbyaddr");
+            }
+            fprintf(stderr, " %d*%s",
+                    RunParams.ProcessCount[h], hptr->h_name);
+        }
+        fprintf(stderr, "\n");
     }
 
     /* release all processes explicitly with barrier admin. message */
-    if (!releaseClients(&ErrorReturn)) {
-        ulm_err(("Error: Timed out while waiting to release clients (%d)\n",
-                 ErrorReturn));
+    if (!releaseClients(&rc)) {
+        ulm_err(("Error: Timed out while waiting to release clients (%d)\n", rc));
         Abort();
     }
 
-    /* wait for child prun process to complete */    
-    if (RunParameters.UseRMS) {
+    /* wait for child prun process to complete */
+    if (RunParams.UseRMS) {
         int term_status;
         wait(&term_status);
     } else {
-        Daemonize(StderrBytesRead, StdoutBytesRead, &RunParameters);
+        Daemonize();
     }
 
     /* free memory */
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        ulm_delete(RunParameters.AppPIDs[i]);
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        ulm_delete(RunParams.AppPIDs[i]);
     }
-    ulm_delete(RunParameters.AppPIDs);
+    ulm_delete(RunParams.AppPIDs);
+    ulm_delete(RunParams.Networks.
+               TCPAdminstrativeNetwork.SocketsToClients);
 
     return EXIT_SUCCESS;
 }
-
-

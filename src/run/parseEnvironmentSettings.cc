@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,23 +41,20 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/malloc.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "run/Input.h"
-#include "run/globals.h"
 #include "util/ParseTree.h"
 
 void parseEnvironmentSettings(const char *InfoStream)
 {
     // get number of hosts
-    int nHosts = RunParameters.NHosts;
+    int nHosts = RunParams.NHosts;
 
     // get pointer to input data
-    int OptionIndex =
-        MatchOption("EnvVars", ULMInputOptions, SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("EnvVars");
     if (OptionIndex < 0) {
         fprintf(stderr, "Option EnvironmentVariables not found in "
                 "Input parameter database\n");
@@ -73,7 +73,7 @@ void parseEnvironmentSettings(const char *InfoStream)
     //  both forms can be mixed in a single command line.
 
     // Parse Environement input
-    ParseTree P(", =", "''\"\"", ULMInputOptions[OptionIndex].InputData);
+    ParseTree P(", =", "''\"\"", Options[OptionIndex].InputData);
     if (!P.isCorrect()) {
         fprintf(stderr, P.getError());
         Abort();
@@ -95,17 +95,17 @@ void parseEnvironmentSettings(const char *InfoStream)
         leaf_i += P.countLeaves(leaves[leaf_i]->getParent());
         env_cnt++;
     }
-    RunParameters.nEnvVarsToSet = env_cnt;
-    if (RunParameters.nEnvVarsToSet == 0)
+    RunParams.nEnvVarsToSet = env_cnt;
+    if (RunParams.nEnvVarsToSet == 0)
         return;
 
     // Allocate space to store environment variable names and
     // settings
-    RunParameters.envVarsToSet =
-        ulm_new(ulmENVSettings, RunParameters.nEnvVarsToSet);
+    RunParams.envVarsToSet =
+        ulm_new(EnvSettings_t, RunParams.nEnvVarsToSet);
 
     // Extract indices of environment variables in leaf array
-    // and set environment variable names in RunParameters
+    // and set environment variable names in RunParams
     int *env_indices = ulm_new(int, env_cnt);
     char *expr, *buf;
     int i;
@@ -122,7 +122,7 @@ void parseEnvironmentSettings(const char *InfoStream)
         }
         strcpy(buf, expr);
         buf[strlen(expr)] = '\0';
-        RunParameters.envVarsToSet[env_i].var_m = buf;
+        RunParams.envVarsToSet[env_i].var_m = buf;
         env_i++;
         leaf_i += P.countLeaves(leaves[leaf_i]->getParent());
     }
@@ -163,10 +163,10 @@ void parseEnvironmentSettings(const char *InfoStream)
         if (host_cnt == 0) {
             // if there are no host names, set input data for
             // all hosts
-            RunParameters.envVarsToSet[i].setForAllHosts_m = true;
-            RunParameters.envVarsToSet[i].envString_m =
+            RunParams.envVarsToSet[i].setForAllHosts_m = true;
+            RunParams.envVarsToSet[i].envString_m =
                 (char **) ulm_malloc(sizeof(char *));
-            if (!RunParameters.envVarsToSet[i].envString_m) {
+            if (!RunParams.envVarsToSet[i].envString_m) {
                 fprintf(stderr,
                         "Error: allocating memory for envString_m\n"
                         "  Memory requested %ld\n",
@@ -176,10 +176,10 @@ void parseEnvironmentSettings(const char *InfoStream)
         } else {
             // set input data for each host - default setting is
             // no data
-            RunParameters.envVarsToSet[i].setForAllHosts_m = false;
-            RunParameters.envVarsToSet[i].setForThisHost_m =
+            RunParams.envVarsToSet[i].setForAllHosts_m = false;
+            RunParams.envVarsToSet[i].setForThisHost_m =
                 (bool *) ulm_malloc(sizeof(bool) * nHosts);
-            if (!RunParameters.envVarsToSet[i].setForThisHost_m) {
+            if (!RunParams.envVarsToSet[i].setForThisHost_m) {
                 fprintf(stderr,
                         "Error: allocating memory for setForThisHost_m\n"
                         "  Memory Requested %ld\n",
@@ -187,12 +187,11 @@ void parseEnvironmentSettings(const char *InfoStream)
                 Abort();
             }
             for (host = 0; host < nHosts; host++) {
-                RunParameters.envVarsToSet[i].setForThisHost_m[host] =
-                    false;
+                RunParams.envVarsToSet[i].setForThisHost_m[host] = false;
             }
-            RunParameters.envVarsToSet[i].envString_m =
+            RunParams.envVarsToSet[i].envString_m =
                 (char **) ulm_malloc(sizeof(char *) * nHosts);
-            if (!RunParameters.envVarsToSet[i].envString_m) {
+            if (!RunParams.envVarsToSet[i].envString_m) {
                 fprintf(stderr,
                         "Error: allocating memory for envString_m\n"
                         "  Memory requested %ld\n",
@@ -215,7 +214,7 @@ void parseEnvironmentSettings(const char *InfoStream)
             if (s == NULL || *(n->getParent()->getExpression()) != '=')
                 continue;
 
-            // make sure host name exists and is in the RunParameters
+            // make sure host name exists and is in the RunParams
             // HostList
             name = n->getExpression();
             struct hostent *NetEntry = gethostbyname(name);
@@ -226,7 +225,7 @@ void parseEnvironmentSettings(const char *InfoStream)
             int host_i = -1;
             for (int host = 0; host < nHosts; host++) {
                 int cmp = strcmp(NetEntry->h_name,
-                                 RunParameters.HostList[host]);
+                                 RunParams.HostList[host]);
                 if (cmp == 0)
                     host_i = host;
             }
@@ -237,19 +236,19 @@ void parseEnvironmentSettings(const char *InfoStream)
             }
             // fill in data for the host
             val = s->getExpression();
-            RunParameters.envVarsToSet[i].envString_m[host_i] =
+            RunParams.envVarsToSet[i].envString_m[host_i] =
                 (char *) ulm_malloc(strlen(val) + 1);
-            if (!RunParameters.envVarsToSet[i].envString_m[host_i]) {
+            if (!RunParams.envVarsToSet[i].envString_m[host_i]) {
                 fprintf(stderr,
                         "Error: allocating memory for envString_m\n"
                         "  Memory requested %ld\n",
                         (long) (strlen(val) + 1));
                 Abort();
             }
-            strcpy(RunParameters.envVarsToSet[i].envString_m[host_i], val);
-            RunParameters.envVarsToSet[i].
+            strcpy(RunParams.envVarsToSet[i].envString_m[host_i], val);
+            RunParams.envVarsToSet[i].
                 envString_m[host_i][strlen(val)] = '\0';
-            RunParameters.envVarsToSet[i].setForThisHost_m[host_i] = true;
+            RunParams.envVarsToSet[i].setForThisHost_m[host_i] = true;
         }
     }
 
@@ -266,32 +265,30 @@ void parseEnvironmentSettings(const char *InfoStream)
                 (j > env_indices[i] + 1 || n->getSibling() != NULL))
                 continue;
 
-            if (RunParameters.envVarsToSet[i].setForAllHosts_m) {
-                RunParameters.envVarsToSet[i].envString_m[0] =
+            if (RunParams.envVarsToSet[i].setForAllHosts_m) {
+                RunParams.envVarsToSet[i].envString_m[0] =
                     (char *) ulm_malloc(strlen(val) + 1);
-                if (!RunParameters.envVarsToSet[i].envString_m[0]) {
+                if (!RunParams.envVarsToSet[i].envString_m[0]) {
                     ulm_err(("Error: Out of memory\n"));
                     Abort();
                 }
-                strcpy(RunParameters.envVarsToSet[i].envString_m[0], val);
-                RunParameters.envVarsToSet[i].envString_m[0][strlen(val)] =
+                strcpy(RunParams.envVarsToSet[i].envString_m[0], val);
+                RunParams.envVarsToSet[i].envString_m[0][strlen(val)] =
                     '\0';
             } else {
                 for (host = 0; host < nHosts; host++) {
-                    if (!RunParameters.envVarsToSet[i].
-                        setForThisHost_m[host]) {
-                        RunParameters.envVarsToSet[i].
+                    if (!RunParams.envVarsToSet[i].setForThisHost_m[host]) {
+                        RunParams.envVarsToSet[i].
                             setForThisHost_m[host] = true;
-                        RunParameters.envVarsToSet[i].envString_m[host] =
+                        RunParams.envVarsToSet[i].envString_m[host] =
                             (char *) ulm_malloc(strlen(val) + 1);
-                        if (!RunParameters.envVarsToSet[i].
-                            envString_m[host]) {
+                        if (!RunParams.envVarsToSet[i].envString_m[host]) {
                             ulm_err(("Error: Out of memory\n"));
                             Abort();
                         }
-                        strcpy(RunParameters.envVarsToSet[i].
+                        strcpy(RunParams.envVarsToSet[i].
                                envString_m[host], val);
-                        RunParameters.envVarsToSet[i].
+                        RunParams.envVarsToSet[i].
                             envString_m[host][strlen(val)] = '\0';
                     }
                 }

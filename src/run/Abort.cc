@@ -43,10 +43,9 @@
 #include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "run/globals.h"
 #include "internal/new.h"
 
-static int TerminateInitiated;
+static int TerminateInitiated = 0;
 
 /*
  * abort a user application
@@ -54,23 +53,20 @@ static int TerminateInitiated;
 void AbortFunction(const char *file, int line)
 {
     _ulm_set_file_line(file, line);
-    if (!ULMRunSpawnedClients) {
+    if (!RunParams.ClientsSpawned) {
         _ulm_err("mpirun exiting: (no clients spawned)\n");
-        if (RunParameters.CmdLineOK == 0) {
+        if (RunParams.CmdLineOK == 0) {
             Usage(stderr);
         }
     } else if (TerminateInitiated == 0) {
         _ulm_err("mpirun exiting: (aborting clients)\n");
         TerminateInitiated = 1;
-        AbortAllHosts(RunParameters.Networks.
-                            TCPAdminstrativeNetwork.SocketsToClients,
-                            RunParameters.NHosts, RunParameters.server);
+        AbortAllHosts(RunParams.Networks.
+                      TCPAdminstrativeNetwork.SocketsToClients,
+                      RunParams.NHosts);
+        /* last ditch clean-up (on some platforms) */
+        KillAppProcs(-1);
     }
+
     exit(EXIT_FAILURE);
-}
-
-
-void SetTerminateInitiated(int val)
-{
-    TerminateInitiated = val;
 }

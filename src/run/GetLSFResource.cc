@@ -43,16 +43,13 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "internal/profiler.h"
 #include "init/environ.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
-#include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
-#include "run/Input.h"
 #include "run/Run.h"
-#include "run/globals.h"
 #include "util/ParseString.h"
 #include "util/Utility.h"
 

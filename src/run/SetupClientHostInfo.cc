@@ -41,12 +41,11 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
 #include "util/Utility.h"
 
 /*

@@ -36,35 +36,34 @@
 
 #include <sys/types.h>
 
-#include "internal/new.h"
-#include "run/JobParams.h"
-#include "run/Input.h"
+#include "client/SocketAdminNetwork.h"
 #include "client/adminMessage.h"
+#include "internal/new.h"
+#include "internal/types.h"
+#include "run/Input.h"
+#include "run/ResourceSpecs.h"
+#include "run/globals.h"
 #include "util/ParseString.h"
-
-#ifndef ULM_GLOBAL_DEFINE
-#define EXTERN extern
-#else
-#define EXTERN
-#endif
 
 /* prototypes */
 
 #define Abort() AbortFunction(__FILE__, __LINE__)
-int AbortAllHosts(int *ClientSocketFDList, int NHosts,
-                  adminMessage *server);
+int AbortAllHosts(int *ClientSocketFDList, int NHosts);
 void AbortFunction(const char *, int);
-int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
-                        int NHosts, double *HeartBeatTime,
+int CheckForControlMsgs(int MaxDescriptor,
+                        int *ClientSocketFDList,
+                        int NHosts,
+                        double *HeartBeatTime,
                         int *HostsNormalTerminated,
-                        ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
-                        int *HostsAbNormalTerminated, int *ActiveHosts,
-                        int *ProcessCnt, pid_t **PIDsOfAppProcs,
-                        double *TimeFirstCheckin, int *ActiveClients);
+                        int *HostsAbNormalTerminated,
+                        int *ActiveHosts,
+                        int *ProcessCnt,
+                        pid_t **PIDsOfAppProcs,
+                        double *TimeFirstCheckin,
+                        int *ActiveClients);
 int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
                    int *ActiveHosts, int HeartBeatTimeOut);
-void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
-               ULMRunParams_t *RunParameters);
+void Daemonize(void);
 void GetAppDir(const char *InfoStream);
 void GetAppHostCount(const char *InfoStream);
 void GetAppHostData(const char *InfoStream);
@@ -89,31 +88,14 @@ void GetTVAll(const char *InfoStream);
 void GetTVDaemon(const char *InfoStream);
 int InstallSigHandler(void);
 int IsTVDebug(void);
-void KillAppProcs(ULMRunParams_t *RunParameters, int hostrank);
-int ProcessInput(int argc, char **argv, int *NULMArgs, int **IndexULMArgs,
-                 ULMRunParams_t *RunParameters, int *FirstAppArgument);
+void KillAppProcs(int hostrank);
+int ProcessInput(int argc, char **argv, int *FirstAppArg);
 void RearrangeHostList(const char *InfoStream);
-void ScanInput(int argc, char **argv);
-int SendGMInputToClients(ULMRunParams_t *RunParameters,
-                         adminMessage *server);
-int SendIBInputToClients(ULMRunParams_t *RunParameters,
-                         adminMessage *server);
-int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
-                                  adminMessage *server);
-int SendInterfaceListToClients(ULMRunParams_t *RunParameters,
-                               adminMessage *server);
-int SendQuadricsInputToClients(ULMRunParams_t *RunParameters,
-                               adminMessage *server);
-int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
-                                adminMessage *server);
-int SendTCPInputToClients(ULMRunParams_t *RunParameters,
-                          adminMessage *server);
-void SetTerminateInitiated(int a);
+void ScanInput(int argc, char **argv, int *FirstAppArg);
+int SendInitialInputDataToClients(void);
 void Sigalarm(int Signal);
-void TerminateClients(int NClientsAccepted, int *ListClientsAccepted,
-                      ULMRunParams_t RunParameters);
-void VerifyLsfResources(const ULMRunParams_t *RunParameters);
-void FixRunParameters(ULMRunParams_t *RunParameters, int nhosts);
+void VerifyLsfResources(void);
+void FixRunParams(int nhosts);
 void InitProc(void);
 void parseCpusPerNode(const char *InfoStream);
 void parseDefaultAffinity(const char *InfoStream);
@@ -148,23 +130,17 @@ void setNoLSF(const char *InfoStream);
 void setThreads(const char *InfoStream);
 void setUseSSH(const char *InfoStream);
 int Spawn(unsigned int *AuthData, int ReceivingSocket,
-          int **ListHostsStarted, ULMRunParams_t *RunParameters,
-          int FirstAppArgument, int argc, char **argv);
+          int **ListHostsStarted, int argc, char **argv);
 int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
-               int **ListHostsStarted, ULMRunParams_t *RunParameters,
-               int FirstAppArgument, int argc, char **argv);
+               int **ListHostsStarted, int argc, char **argv);
 int SpawnExec(unsigned int *AuthData, int ReceivingSocket,
-              int **ListHostsStarted, ULMRunParams_t *RunParameters,
-              int FirstAppArgument, int argc, char **argv);
+              int **ListHostsStarted, int argc, char **argv);
 int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
-             int **ListHostsStarted, ULMRunParams_t *RunParameters,
-             int FirstAppArgument, int argc, char **argv);
+             int **ListHostsStarted, int argc, char **argv);
 int SpawnRms(unsigned int *AuthData, int port,
-             ULMRunParams_t *RunParameters, int FirstAppArgument,
              int argc, char **argv);
 int SpawnRsh(unsigned int *AuthData, int ReceivingSocket,
-             int **ListHostsStarted, ULMRunParams_t *RunParameters,
-             int FirstAppArgument, int argc, char **argv);
+             int **ListHostsStarted, int argc, char **argv);
 
 #if ENABLE_TCP
 void parseTCPMaxFragment(const char* infoStream);
@@ -175,7 +151,7 @@ void parseTCPConnectRetries(const char *InfoStream);
 // class to fill in array of type T
 template <class T>
 void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
-              InputParameters_t *ULMInputOptions, int OptionIndex, T MinVal)
+              Options_t *Options, int OptionIndex, T MinVal)
 {
     int Value, i, cnt;
     char *TmpCharPtr;
@@ -187,10 +163,10 @@ void FillData(ParseString *InputObj, int SizeOfArray, T *Array,
                  "\tNumber or arguments specified is %d, "
                  "but should be either 1 or %d\n"
                  "\tInput line: %s\n",
-                 ULMInputOptions[OptionIndex].AbreviatedName,
-                 ULMInputOptions[OptionIndex].FileName,
+                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].FileName,
                  cnt, SizeOfArray,
-                 ULMInputOptions[OptionIndex].InputData));
+                 Options[OptionIndex].InputData));
         Abort();
     }
 
@@ -238,8 +214,7 @@ void fillInputStructure(T **dataStorage, char *inputString,
                         char *SeparatorList)
 {
     // find ProcsPerHost index in option list
-    int OptionIndex =
-        MatchOption(inputString, ULMInputOptions, SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption(inputString);
     if (OptionIndex < 0) {
         ulm_err(("Error: Option %s not found\n", inputString));
         Abort();
@@ -249,11 +224,11 @@ void fillInputStructure(T **dataStorage, char *inputString,
     *dataStorage = ulm_new(T, nElements);
 
     /* parse ProcsPerHost data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     /* fill in data */
-    FillData(&ProcData, nElements, *dataStorage, ULMInputOptions,
+    FillData(&ProcData, nElements, *dataStorage, Options,
              OptionIndex, minValue);
 }
 

@@ -57,11 +57,6 @@ void InitProc(void)
     setrlimit(RLIMIT_NOFILE, &rl);
 
     /*
-     * Initialize TerminateInitiated to false...
-     */
-    SetTerminateInitiated(0);
-        
-    /*
      * Install signal handlers
      */
     set_sa_restart();

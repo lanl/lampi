@@ -113,7 +113,7 @@ static int *stdout_child;
 static int *stderr_parent;
 static int *stderr_child;
 
-extern "C" void ClientTVSetup();
+extern void ClientTVSetup(void);
 
 /*
  * inline functions

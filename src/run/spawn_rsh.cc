@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -44,14 +47,12 @@
 #include <unistd.h>
 #include <setjmp.h>
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "run/JobParams.h"
 
 /*
  * Use RSH to spawn master process on remote host.  This routine also
@@ -64,8 +65,7 @@
 int SpawnRsh(unsigned int *AuthData,
              int ReceivingSocket,
              int **ListHostsStarted,
-             ULMRunParams_t *RunParameters,
-             int FirstAppArgument, int argc, char **argv)
+             int argc, char **argv)
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
     int i, offset, LenList;
@@ -79,7 +79,7 @@ int SpawnRsh(unsigned int *AuthData,
     /* compute size of execvp argv[] , and max space needed to store the strings */
     MaxSize = 0;
     /* app args */
-    LenList = argc - FirstAppArgument;
+    LenList = argc;
     /* remote host rsh  - rsh and remote host */
     LenList += 3;
     len = strlen("rsh");
@@ -88,8 +88,8 @@ int SpawnRsh(unsigned int *AuthData,
     len = strlen("-n");
     if (len > MaxSize)
         MaxSize = len;
-    for (i = 0; i < RunParameters->NHosts; i++) {
-        len = strlen(RunParameters->HostList[i]);
+    for (i = 0; i < RunParams.NHosts; i++) {
+        len = strlen(RunParams.HostList[i]);
         if (len > MaxSize)
             MaxSize = len;
     }
@@ -122,7 +122,7 @@ int SpawnRsh(unsigned int *AuthData,
         MaxSize = len;
 
     len = strlen("LAMPI_ADMIN_IP");
-    len += strlen(RunParameters->mpirunName);
+    len += strlen(RunParams.mpirunName);
     len += 1;
     if (len > MaxSize)
         MaxSize = len;
@@ -132,15 +132,15 @@ int SpawnRsh(unsigned int *AuthData,
     len = strlen("cd");
     if (len > MaxSize)
         MaxSize = len;
-    for (i = 0; i < RunParameters->NHosts; i++) {
-        len = strlen(RunParameters->WorkingDirList[i]);
+    for (i = 0; i < RunParams.NHosts; i++) {
+        len = strlen(RunParams.WorkingDirList[i]);
         if (len > MaxSize)
             MaxSize = len;
     }
     /* executable */
     LenList++;
-    for (i = 0; i < RunParameters->NHosts; i++) {
-        len = strlen(RunParameters->ExeList[i]);
+    for (i = 0; i < RunParams.NHosts; i++) {
+        len = strlen(RunParams.ExeList[i]);
         if (len > MaxSize)
             MaxSize = len;
     }
@@ -150,7 +150,7 @@ int SpawnRsh(unsigned int *AuthData,
     /* null terminator */
     LenList++;
     /* user args */
-    for (i = FirstAppArgument; i < argc; i++) {
+    for (i = 0; i < argc; i++) {
         len = strlen(argv[i]);
         if (len > MaxSize)
             MaxSize = len;
@@ -163,13 +163,13 @@ int SpawnRsh(unsigned int *AuthData,
      *      spawn jobs
      ****************************/
     /* setup for stdin fowarding */
-    RunParameters->STDINfd = STDIN_FILENO;
+    RunParams.STDINfd = STDIN_FILENO;
 
     /*
      * list of hosts for which the ULMRun fork() succeeded - needed for
      * cleanup after abnormal termination
      */
-    *ListHostsStarted = ulm_new(int, RunParameters->NHosts);
+    *ListHostsStarted = ulm_new(int, RunParams.NHosts);
 
     /* spawn jobs */
 
@@ -184,7 +184,7 @@ int SpawnRsh(unsigned int *AuthData,
     int rsh_pid[MAX_CONCURRENT];
     int rsh_index = 0;
 
-    for (i = 0; i < RunParameters->NHosts; i++) {
+    for (i = 0; i < RunParams.NHosts; i++) {
         /* create exec string */
         hostSpecificLenList = LenList;
         hostSpecificMaxSize = MaxSize;
@@ -192,27 +192,27 @@ int SpawnRsh(unsigned int *AuthData,
         //  and if so, adjust hostSpecificLenList and hostSpecificMaxSize
         bool addEnvVar = false;
         int nAddedElements = 0;
-        if (RunParameters->nEnvVarsToSet > 0) {
+        if (RunParams.nEnvVarsToSet > 0) {
             // check to see if any environment variables need to be set
             //  if so adjust paramenters
-            for (int eVar = 0; eVar < RunParameters->nEnvVarsToSet; eVar++) {
+            for (int eVar = 0; eVar < RunParams.nEnvVarsToSet; eVar++) {
                 size_t envLen =
-                    strlen(RunParameters->envVarsToSet[eVar].var_m);
-                if (RunParameters->envVarsToSet[eVar].setForAllHosts_m) {
+                    strlen(RunParams.envVarsToSet[eVar].var_m);
+                if (RunParams.envVarsToSet[eVar].setForAllHosts_m) {
                     addEnvVar = true;
                     // add elements for  ' export x=y ; '
                     hostSpecificLenList += 3;
                     nAddedElements += 3;
-                    size_t tmp = strlen(RunParameters->envVarsToSet[eVar].envString_m[0]);
+                    size_t tmp = strlen(RunParams.envVarsToSet[eVar].envString_m[0]);
                     if (hostSpecificMaxSize < envLen + tmp + 1)
                         hostSpecificMaxSize = envLen + tmp + 1;
-                } else if (RunParameters->envVarsToSet[eVar].
+                } else if (RunParams.envVarsToSet[eVar].
                            setForThisHost_m[i]) {
                     addEnvVar = true;
                     // add elements for  ' export x=y ; '
                     hostSpecificLenList += 3;
                     nAddedElements += 3;
-                    size_t tmp = strlen(RunParameters->envVarsToSet[eVar].envString_m[i]);
+                    size_t tmp = strlen(RunParams.envVarsToSet[eVar].envString_m[i]);
                     if (hostSpecificMaxSize < envLen + tmp + 1)
                         hostSpecificMaxSize = envLen + tmp + 1;
                 }
@@ -246,7 +246,7 @@ int SpawnRsh(unsigned int *AuthData,
         int AppEntry = CDEntry + 3;
         int AppArgs = AppEntry + 1;
 
-        if ( RunParameters->UseSSH )
+        if ( RunParams.UseSSH )
             sprintf(ExecArgs[0], "ssh");
         else
             sprintf(ExecArgs[0], "rsh");
@@ -270,29 +270,29 @@ int SpawnRsh(unsigned int *AuthData,
         sprintf(ExecArgs[16], "LAMPI_ADMIN_PORT=%d", ReceivingSocket);
         sprintf(ExecArgs[17], ";");
         sprintf(ExecArgs[18], "export");
-        sprintf(ExecArgs[19], "LAMPI_ADMIN_IP=%s", RunParameters->mpirunName);
+        sprintf(ExecArgs[19], "LAMPI_ADMIN_IP=%s", RunParams.mpirunName);
         sprintf(ExecArgs[20], ";");
         if (addEnvVar) {
             // check to see if any environment variables need to be set
             //  if so adjust paramenters
             int nAdded = 0;
-            for (int eVar = 0; eVar < RunParameters->nEnvVarsToSet; eVar++) {
-                if (RunParameters->envVarsToSet[eVar].setForAllHosts_m) {
+            for (int eVar = 0; eVar < RunParams.nEnvVarsToSet; eVar++) {
+                if (RunParams.envVarsToSet[eVar].setForAllHosts_m) {
                     // add elements for  ' export x = y ; '
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 1], "export");
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
-                            RunParameters->envVarsToSet[eVar].var_m,
-                            RunParameters->envVarsToSet[eVar].envString_m[0]);
+                            RunParams.envVarsToSet[eVar].var_m,
+                            RunParams.envVarsToSet[eVar].envString_m[0]);
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
                     nAdded += 3;
-                } else if (RunParameters->envVarsToSet[eVar].
+                } else if (RunParams.envVarsToSet[eVar].
                            setForThisHost_m[i]) {
                     // add elements for  ' export x = y ; '
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 1],
                             "export");
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
-                            RunParameters->envVarsToSet[eVar].var_m,
-                            RunParameters->envVarsToSet[eVar].envString_m[i]);
+                            RunParams.envVarsToSet[eVar].var_m,
+                            RunParams.envVarsToSet[eVar].envString_m[i]);
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
                     nAdded += 3;
                 }
@@ -306,8 +306,8 @@ int SpawnRsh(unsigned int *AuthData,
         sprintf(ExecArgs[CDEntry + 2], ";");
 
         /* entry CDEntry+4 is app name - will be filled in loop */
-        for (int ii = FirstAppArgument; ii < argc; ii++) {
-            sprintf(ExecArgs[AppArgs + ii - FirstAppArgument], "%s",
+        for (int ii = 0; ii < argc; ii++) {
+            sprintf(ExecArgs[AppArgs + ii], "%s",
                     argv[ii]);
         }
 
@@ -316,7 +316,7 @@ int SpawnRsh(unsigned int *AuthData,
          * for rsh up to the user args, e.g. setting of env vars,
          * cd'ing to the appropriate directory, executable
          */
-        offset = argc - FirstAppArgument;
+        offset = argc;
         sprintf(ExecArgs[(CDEntry + 3) + offset + 1], "</dev/null");
         sprintf(ExecArgs[(CDEntry + 3) + offset + 2], "1>/dev/null");
         sprintf(ExecArgs[(CDEntry + 3) + offset + 3], "2>&1");
@@ -329,10 +329,10 @@ int SpawnRsh(unsigned int *AuthData,
             perror(" fork ");
             exit(EXIT_FAILURE);
         } else if (Child == 0) {        /* child process */
-            sprintf(ExecArgs[HostEntry], "%s", RunParameters->HostList[i]);
+            sprintf(ExecArgs[HostEntry], "%s", RunParams.HostList[i]);
             sprintf(ExecArgs[WorkingDirEntry], "%s",
-                    RunParameters->WorkingDirList[i]);
-            sprintf(ExecArgs[AppEntry], "%s", RunParameters->ExeList[i]);
+                    RunParams.WorkingDirList[i]);
+            sprintf(ExecArgs[AppEntry], "%s", RunParams.ExeList[i]);
 
             execvp(ExecArgs[0], ExecArgs);
             printf(" after execv\n");

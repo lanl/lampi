@@ -42,14 +42,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "run/JobParams.h"
-
 #include "run/coprocess.h"
 
 /*
@@ -61,8 +59,7 @@
 int SpawnExec(unsigned int *auth_data,
               int socket,
               int **hosts_started,
-              ULMRunParams_t *RunParameters,
-              int FirstAppArgument, int argc, char **argv)
+              int argc, char **argv)
 {
     enum {
         DEBUG = 0,
@@ -81,7 +78,7 @@ int SpawnExec(unsigned int *auth_data,
      * This spawn method is only valid for 1 host
      */
 
-    if (RunParameters->NHosts != 1) {
+    if (RunParams.NHosts != 1) {
         perror("SpawnExec only valid for 1 host");
         return -1;
     }
@@ -100,16 +97,13 @@ int SpawnExec(unsigned int *auth_data,
     snprintf(buf, sizeof(buf), "LAMPI_ADMIN_PORT=%d", socket);
     putenv(strdup(buf));
     snprintf(buf, sizeof(buf), "LAMPI_ADMIN_IP=%s",
-             RunParameters->mpirunName);
-    putenv(strdup(buf));
-    /* turn app started echoing off */
-    snprintf(buf, sizeof(buf), "LAMPI_NOECHOAPPSTARTED=");
+             RunParams.mpirunName);
     putenv(strdup(buf));
 
     /*
      * fork/exec child
      */
-    argv += FirstAppArgument - 1;
+    argv -= 1;
     if (DEBUG) {
         char **p = argv;
         fprintf(stderr, "exec args:");

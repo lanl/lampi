@@ -45,13 +45,9 @@
 #include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "run/Input.h"
-#include "internal/new.h"
-#include "run/globals.h"
 
 /*
- * This routine is used to rerange the host list and all the data that
- *   assumes host order.
+ * rearrange the host list and all the data that assumes host order
  */
 void RearrangeHostList(const char *InfoStream)
 {
@@ -62,24 +58,24 @@ void RearrangeHostList(const char *InfoStream)
     ExeName_t TmpExe;
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
-    HostName_t *HostList = RunParameters.HostList;
-    int *ProcessCnt = RunParameters.ProcessCount;
-    DirName_t *WorkingDirList = RunParameters.WorkingDirList;
-    ExeName_t *ExeList = RunParameters.ExeList;
-    int NHosts = RunParameters.NHosts;
-    DirName_t *ClientDirList = RunParameters.UserAppDirList;
-    int *NPathTypes = RunParameters.NPathTypes;
-    int **ListPathTypes = RunParameters.ListPathTypes;
+    HostName_t *HostList = RunParams.HostList;
+    int *ProcessCnt = RunParams.ProcessCount;
+    DirName_t *WorkingDirList = RunParams.WorkingDirList;
+    ExeName_t *ExeList = RunParams.ExeList;
+    int NHosts = RunParams.NHosts;
+    DirName_t *ClientDirList = RunParams.UserAppDirList;
+    int *NPathTypes = RunParams.NPathTypes;
+    int **ListPathTypes = RunParams.ListPathTypes;
 
     /* get input data */
     int OptionIndex =
-        MatchOption("MasterHost", ULMInputOptions, SizeOfInputOptionsDB);
+        MatchOption("MasterHost");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option TotalViewDebugStartup not found\n"));
         Abort();
     }
     /* parse MasterHost data */
-    ParseString MHData(ULMInputOptions[OptionIndex].InputData, NSeparators,
+    ParseString MHData(Options[OptionIndex].InputData, NSeparators,
                        SeparatorList);
 
     i = MHData.GetNSubStrings();

@@ -39,14 +39,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal/constants.h"
 #include "internal/profiler.h"
+#include "internal/constants.h"
 #include "internal/types.h"
 #include "internal/log.h"
 #include "internal/new.h"
 #include "run/Run.h"
-#include "run/Input.h"
-#include "run/globals.h"
 #include "internal/new.h"
 #include "util/Utility.h"
 #include "run/LSFResource.h"
@@ -102,13 +100,11 @@ void getBJSNodes(void)
         while (p && *p != '\0') {
             tmp_node = atoi(strsep(&p, ","));
             if (!nodestatus(tmp_node, node_status, NODE_STATUS_LEN)) {
-                ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
-                         tmp_node, node_status));
+                ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n", tmp_node, node_status));
                 Abort();
             }
             if (bproc_access(tmp_node, BPROC_X_OK) != 0) {
-                ulm_err(("Error: can not execute on a BJS reserved node (%i) stat=%i\n",
-                         tmp_node, bproc_access(tmp_node, BPROC_X_OK)));
+                ulm_err(("Error: can not execute on a BJS reserved node (%i) stat=%i\n", tmp_node, bproc_access(tmp_node, BPROC_X_OK)));
                 Abort();
             }
             nodes[nNodes++] = tmp_node;
@@ -117,54 +113,52 @@ void getBJSNodes(void)
     }
 
     if (nNodes) {
-        if (RunParameters.HostListSize > 0) {
+        if (RunParams.HostListSize > 0) {
             /* compare each host entry against nodes list */
-            for (i = 0; i < RunParameters.HostListSize; i++) {
+            for (i = 0; i < RunParams.HostListSize; i++) {
                 bool found = false;
-                tmp_node = atoi(RunParameters.HostList[i]);
+                tmp_node = atoi(RunParams.HostList[i]);
                 for (j = 0; j < nNodes; j++) {
                     if (tmp_node == nodes[j])
                         found = true;
                 }
                 if (!found) {
-                    ulm_err(("Error: requested node (%s) is not a BJS reserved node.\n"
-                             "Try running without the -H option when using BJS.\n",
-                             RunParameters.HostList[i]));
+                    ulm_err(("Error: requested node (%s) is not a BJS reserved node.\n" "Try running without the -H option when using BJS.\n", RunParams.HostList[i]));
                     // we do not have to abort here - then app will run on
                     // subset of requested nodes.  But this seems not what
                     // the user would expect
                     Abort();
-                    strcpy(RunParameters.HostList[i], "");
+                    strcpy(RunParams.HostList[i], "");
                 }
 
             }
             nNodes = 0;
             j = 0;
-            for (i = 0; i < RunParameters.HostListSize; i++) {
-                if (RunParameters.HostList[i][0] != '\0') {
+            for (i = 0; i < RunParams.HostListSize; i++) {
+                if (RunParams.HostList[i][0] != '\0') {
                     if (i == j) {
                         j++;
                     } else {
-                        strcpy(RunParameters.HostList[j++],
-                               RunParameters.HostList[i]);
+                        strcpy(RunParams.HostList[j++],
+                               RunParams.HostList[i]);
                     }
                 }
             }
             if (j == 0) {
-                ulm_delete(RunParameters.HostList);
-                RunParameters.HostList = 0;
+                ulm_delete(RunParams.HostList);
+                RunParams.HostList = 0;
             }
-            RunParameters.HostListSize = j;
+            RunParams.HostListSize = j;
             if (j == 0) {
                 ulm_err(("Error: no valid BJS hosts specified.  Try running without the -H option\n", j));
                 Abort();
             }
         } else {
             /* store each host entry of nodes list */
-            RunParameters.HostList = ulm_new(HostName_t, nNodes);
-            RunParameters.HostListSize = nNodes;
+            RunParams.HostList = ulm_new(HostName_t, nNodes);
+            RunParams.HostListSize = nNodes;
             for (i = 0; i < nNodes; i++) {
-                sprintf(RunParameters.HostList[i], "%d", nodes[i]);
+                sprintf(RunParams.HostList[i], "%d", nodes[i]);
             }
         }
     }
@@ -182,17 +176,16 @@ void pickNodesFromList(int cnt)
     int i, j = 0, tmp_node;
     char node_status[NODE_STATUS_LEN + 1];      // add 1 for terminating 0
 
-    if (RunParameters.HostListSize > 0) {
+    if (RunParams.HostListSize > 0) {
         /* find cnt nodes among the already listed nodes */
-        for (i = 0; i < RunParameters.HostListSize; i++) {
-            tmp_node = atoi(RunParameters.HostList[i]);
+        for (i = 0; i < RunParams.HostListSize; i++) {
+            tmp_node = atoi(RunParams.HostList[i]);
             if ((nodestatus(tmp_node, node_status, NODE_STATUS_LEN)) &&
                 (bproc_access(tmp_node, BPROC_X_OK) == 0)) {
                 if (i == j) {
                     j++;
                 } else {
-                    strcpy(RunParameters.HostList[j++],
-                           RunParameters.HostList[i]);
+                    strcpy(RunParams.HostList[j++], RunParams.HostList[i]);
                 }
             }
             if (j == cnt)
@@ -200,12 +193,12 @@ void pickNodesFromList(int cnt)
         }
     } else {
         /* find cnt nodes among all nodes, master last */
-        RunParameters.HostList = ulm_new(HostName_t, cnt);
-        RunParameters.HostListSize = cnt;
+        RunParams.HostList = ulm_new(HostName_t, cnt);
+        RunParams.HostListSize = cnt;
         for (i = 0; i < bproc_numnodes(); i++) {
             if ((nodestatus(i, node_status, NODE_STATUS_LEN)) &&
                 (bproc_access(i, BPROC_X_OK) == 0)) {
-                sprintf(RunParameters.HostList[j++], "%d", i);
+                sprintf(RunParams.HostList[j++], "%d", i);
             }
             if (j == cnt)
                 break;
@@ -215,13 +208,13 @@ void pickNodesFromList(int cnt)
             &&
             (nodestatus(BPROC_NODE_MASTER, node_status, NODE_STATUS_LEN))
             && (bproc_access(BPROC_NODE_MASTER, BPROC_X_OK) == 0))
-            sprintf(RunParameters.HostList[j++], "%d", BPROC_NODE_MASTER);
+            sprintf(RunParams.HostList[j++], "%d", BPROC_NODE_MASTER);
     }
-    if (RunParameters.HostListSize && (j == 0)) {
-        ulm_delete(RunParameters.HostList);
-        RunParameters.HostList = 0;
+    if (RunParams.HostListSize && (j == 0)) {
+        ulm_delete(RunParams.HostList);
+        RunParams.HostList = 0;
     }
-    RunParameters.HostListSize = j;
+    RunParams.HostListSize = j;
 #endif
     return;
 }
@@ -230,10 +223,10 @@ void pickCurrentNode(void)
 {
 #if ENABLE_BPROC
     /* use the current node only */
-    RunParameters.HostList = ulm_new(HostName_t, 1);
-    RunParameters.HostListSize = 1;
+    RunParams.HostList = ulm_new(HostName_t, 1);
+    RunParams.HostListSize = 1;
     int tmp_node = bproc_currnode();
-    sprintf(RunParameters.HostList[0], "%d", tmp_node);
+    sprintf(RunParams.HostList[0], "%d", tmp_node);
 #endif
     return;
 }
@@ -256,16 +249,13 @@ void GetClientProcessCount(const char *InfoStream)
     }
 
     /* find Procs or ProcsAlias index in option list */
-    int OptionIndex =
-        MatchOption("Procs", ULMInputOptions, SizeOfInputOptionsDB);
+    int OptionIndex = MatchOption("Procs");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option Procs not found in Input parameter database\n"));
         Abort();
     }
-    if (strlen(ULMInputOptions[OptionIndex].InputData) == 0) {
-        OptionIndex =
-            MatchOption("ProcsAlias", ULMInputOptions,
-                        SizeOfInputOptionsDB);
+    if (strlen(Options[OptionIndex].InputData) == 0) {
+        OptionIndex = MatchOption("ProcsAlias");
         if (OptionIndex < 0) {
             ulm_err(("Error: Option ProcsAlias not found in Input parameter database\n"));
             Abort();
@@ -273,107 +263,104 @@ void GetClientProcessCount(const char *InfoStream)
     }
 
     /* parse Procs/ProcsAlias data */
-    ParseString ProcData(ULMInputOptions[OptionIndex].InputData,
+    ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
     totalProcsSpecified = (ProcData.GetNSubStrings() == 1) ? true : false;
 
-    if (RunParameters.UseLSF) {
+    if (RunParams.UseLSF) {
         /* build HostList from LSFHost */
-        if (RunParameters.HostListSize == 0) {
-            nhosts = RunParameters.NHostsSet ? RunParameters.NHosts : LSFNumHosts;
+        if (RunParams.HostListSize == 0) {
+            nhosts = RunParams.NHostsSet ? RunParams.NHosts : LSFNumHosts;
             if (nhosts < 1) {
                 ulm_err(("Error: -N option specifies less than 1 host (%d).\n", nhosts));
                 Abort();
             }
 
-            RunParameters.HostList = ulm_new(HostName_t, nhosts);
-            RunParameters.HostListSize = nhosts;
+            RunParams.HostList = ulm_new(HostName_t, nhosts);
+            RunParams.HostListSize = nhosts;
             /* fill in host information */
             for (int Host = 0; Host < nhosts; Host++) {
                 if (Host < LSFNumHosts) {
-                    strcpy(RunParameters.HostList[Host],
-                           LSFHostList[Host]);
+                    strcpy(RunParams.HostList[Host], LSFHostList[Host]);
                 }
             }
         }
-        if (!RunParameters.NHostsSet) {
+        if (!RunParams.NHostsSet) {
             /* this should work for both LSF (with real machines) and 
              * LSF/RMS combinations (where one virtual host is reserved 
              * with all processors); although we will have to fix everything 
              * up for LSF/RMS after we spawn...
              */
-            RunParameters.NHosts = RunParameters.HostListSize;
+            RunParams.NHosts = RunParams.HostListSize;
         }
-    } else if (RunParameters.UseBproc) {
+    } else if (RunParams.UseBproc) {
         /* check BJS and reconcile nodes with -H specified nodes */
         getBJSNodes();
-        if (RunParameters.HostListSize > 0) {
+        if (RunParams.HostListSize > 0) {
             /* debug */
             /*
-            ulm_err(("RunParameters.NHostsSet %d RunParameters.NHosts %d "
-                     "RunParameters.HostListSize %d\n",
-                     RunParameters.NHostsSet,
-                     RunParameters.NHosts,
-                     RunParameters.HostListSize));
-            */
+               ulm_err(("RunParams.NHostsSet %d RunParams.NHosts %d "
+               "RunParams.HostListSize %d\n",
+               RunParams.NHostsSet,
+               RunParams.NHosts,
+               RunParams.HostListSize));
+             */
             /* end debug */
             nhosts =
-                (RunParameters.
-                 NHostsSet) ? ((RunParameters.NHosts >
-                                RunParameters.
-                                HostListSize) ? RunParameters.
-                               HostListSize : RunParameters.
-                               NHosts) : RunParameters.HostListSize;
+                (RunParams.NHostsSet) ? ((RunParams.NHosts >
+                                          RunParams.
+                                          HostListSize) ? RunParams.
+                                         HostListSize : RunParams.
+                                         NHosts) : RunParams.HostListSize;
             /* debug */
             /*
-            ulm_err((" nhosts %d \n", nhosts));
-            */
+               ulm_err((" nhosts %d \n", nhosts));
+             */
             /* end debug */
             pickNodesFromList(nhosts);
         } else {
-            nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : 1;
+            nhosts = (RunParams.NHostsSet) ? RunParams.NHosts : 1;
             pickNodesFromList(nhosts);
-            if ((nhosts == 1) && (RunParameters.HostListSize == 0))
+            if ((nhosts == 1) && (RunParams.HostListSize == 0))
                 pickCurrentNode();
         }
-        if (RunParameters.NHostsSet
-            && (RunParameters.HostListSize < RunParameters.NHosts)) {
+        if (RunParams.NHostsSet
+            && (RunParams.HostListSize < RunParams.NHosts)) {
             ulm_err(("Error: %d nodes found, %d requested\n",
-                     RunParameters.HostListSize, RunParameters.NHosts));
+                     RunParams.HostListSize, RunParams.NHosts));
             Abort();
-        } else if (RunParameters.HostListSize == 0) {
+        } else if (RunParams.HostListSize == 0) {
             ulm_err(("Error: no available nodes found\n"));
             Abort();
         }
-        RunParameters.NHosts = RunParameters.HostListSize;
+        RunParams.NHosts = RunParams.HostListSize;
     } else {
-        if (RunParameters.HostListSize == 0) {
+        if (RunParams.HostListSize == 0) {
 
             if (ENABLE_RMS) {
-                if (!RunParameters.NHostsSet) {
-                    RunParameters.NHosts = 1;
+                if (!RunParams.NHostsSet) {
+                    RunParams.NHosts = 1;
                 }
             } else {
                 GetAppHostDataNoInputRSH(InfoStream);
-                if (!RunParameters.NHostsSet) {
-                    RunParameters.NHosts = RunParameters.HostListSize;
-                } else if (RunParameters.NHosts != 1) {
-                    ulm_err(("Error: -N option did not specify 1 host (machine) "
-                             "but there is no host (-H) information.\n"));
+                if (!RunParams.NHostsSet) {
+                    RunParams.NHosts = RunParams.HostListSize;
+                } else if (RunParams.NHosts != 1) {
+                    ulm_err(("Error: -N option did not specify 1 host (machine) " "but there is no host (-H) information.\n"));
                     Abort();
                 }
             }
-        } else if (!RunParameters.NHostsSet) {
-            RunParameters.NHosts = RunParameters.HostListSize;
+        } else if (!RunParams.NHostsSet) {
+            RunParams.NHosts = RunParams.HostListSize;
         }
     }
 
     /* allocate memory for the array */
-    RunParameters.ProcessCount = ulm_new(int, RunParameters.NHosts);
+    RunParams.ProcessCount = ulm_new(int, RunParams.NHosts);
 
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        RunParameters.ProcessCount[i] = 0;
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        RunParams.ProcessCount[i] = 0;
     }
 
     if (totalProcsSpecified) {
@@ -385,34 +372,34 @@ void GetClientProcessCount(const char *InfoStream)
 
         if (ENABLE_RMS) {
             /* distribute totalProcs across the hosts */
-            for (int host = 0; host < RunParameters.NHosts; host++) {
-                RunParameters.ProcessCount[host] = 0;
+            for (int host = 0; host < RunParams.NHosts; host++) {
+                RunParams.ProcessCount[host] = 0;
             }
             for (int proc = 0, host = 0; proc < totalProcs; proc++) {
-                RunParameters.ProcessCount[host] += 1;
-                host = (host + 1) % RunParameters.NHosts;
+                RunParams.ProcessCount[host] += 1;
+                host = (host + 1) % RunParams.NHosts;
             }
         } else {
-            if (RunParameters.NHosts == 1) {
-                RunParameters.ProcessCount[0] = totalProcs;
-            } else if (RunParameters.UseLSF) {
+            if (RunParams.NHosts == 1) {
+                RunParams.ProcessCount[0] = totalProcs;
+            } else if (RunParams.UseLSF) {
                 /* minimize the number of hosts by using all available processors */
                 int procsAllocated = 0;
-                for (int i = 0; i < RunParameters.NHosts; i++) {
+                for (int i = 0; i < RunParams.NHosts; i++) {
                     for (int j = 0; j < LSFNumHosts; j++) {
-                        if (strcmp(RunParameters.HostList[i], LSFHostList[j])
+                        if (strcmp(RunParams.HostList[i], LSFHostList[j])
                             == 0) {
                             int procs =
                                 ((totalProcs - procsAllocated) >
                                  LSFProcessCount[j]) ? LSFProcessCount[j]
                                 : (totalProcs - procsAllocated);
-                            RunParameters.ProcessCount[i] = procs;
+                            RunParams.ProcessCount[i] = procs;
                             procsAllocated += procs;
                             break;
                         }
                     }
-                    if (RunParameters.ProcessCount[i] == 0) {
-                        RunParameters.NHosts = i;
+                    if (RunParams.ProcessCount[i] == 0) {
+                        RunParams.NHosts = i;
                         break;
                     }
                 }
@@ -420,7 +407,7 @@ void GetClientProcessCount(const char *InfoStream)
                     ulm_err(("Error: unable to allocate %d processes "
                              "(allocated %d processes) across %d hosts.\n",
                              totalProcs, procsAllocated,
-                             RunParameters.NHosts));
+                             RunParams.NHosts));
                     Abort();
                 }
             } else {
@@ -428,16 +415,16 @@ void GetClientProcessCount(const char *InfoStream)
                  * assign as close as possible to the same number of
                  * processes for each host
                  */
-                int baseProcs = totalProcs / RunParameters.NHosts;
-                int extraProcs = totalProcs % RunParameters.NHosts;
-                for (int i = 0; i < RunParameters.NHosts; i++) {
-                    RunParameters.ProcessCount[i] = baseProcs;
+                int baseProcs = totalProcs / RunParams.NHosts;
+                int extraProcs = totalProcs % RunParams.NHosts;
+                for (int i = 0; i < RunParams.NHosts; i++) {
+                    RunParams.ProcessCount[i] = baseProcs;
                     if (extraProcs > 0) {
-                        RunParameters.ProcessCount[i]++;
+                        RunParams.ProcessCount[i]++;
                         extraProcs--;
                     }
-                    if (RunParameters.ProcessCount[i] == 0) {
-                        RunParameters.NHosts = i;
+                    if (RunParams.ProcessCount[i] == 0) {
+                        RunParams.NHosts = i;
                         break;
                     }
                 }
@@ -445,25 +432,24 @@ void GetClientProcessCount(const char *InfoStream)
         }
     } else {
         /* fill in data */
-        FillIntData(&ProcData, RunParameters.NHosts,
-                    RunParameters.ProcessCount, ULMInputOptions,
-                    OptionIndex, 1);
+        FillIntData(&ProcData, RunParams.NHosts,
+                    RunParams.ProcessCount, Options, OptionIndex, 1);
 
         if (ENABLE_RMS) {
             /*
              * RMS determines the distribution of processes, so
              * reshuffle ProcessCount
              */
-            
+
             int totalProcs = 0;
-            
-            for (int host = 0; host < RunParameters.NHosts; host++) {
-                totalProcs += RunParameters.ProcessCount[host];
-                RunParameters.ProcessCount[host] = 0;
+
+            for (int host = 0; host < RunParams.NHosts; host++) {
+                totalProcs += RunParams.ProcessCount[host];
+                RunParams.ProcessCount[host] = 0;
             }
             for (int proc = 0, host = 0; proc < totalProcs; proc++) {
-                RunParameters.ProcessCount[host] += 1;
-                host = (host + 1) % RunParameters.NHosts;
+                RunParams.ProcessCount[host] += 1;
+                host = (host + 1) % RunParams.NHosts;
             }
         }
     }
@@ -481,61 +467,59 @@ void GetClientProcessCountNoInput(const char *InfoStream)
         return;
     }
 
-    if (!RunParameters.UseLSF) {
+    if (!RunParams.UseLSF) {
         ulm_err(("Error: No input data provided for -np/-n.\n"));
         Abort();
     }
 
     /* build HostList from LSFHost */
-    if (RunParameters.HostListSize == 0) {
-        nhosts =
-            RunParameters.NHostsSet ? RunParameters.NHosts : LSFNumHosts;
+    if (RunParams.HostListSize == 0) {
+        nhosts = RunParams.NHostsSet ? RunParams.NHosts : LSFNumHosts;
         if (nhosts < 1) {
             ulm_err(("Error: -N option specifies less than 1 host (%d).\n",
                      nhosts));
             Abort();
         }
 
-        RunParameters.HostList = ulm_new(HostName_t, nhosts);
-        RunParameters.HostListSize = nhosts;
+        RunParams.HostList = ulm_new(HostName_t, nhosts);
+        RunParams.HostListSize = nhosts;
         /* fill in host information */
         for (int Host = 0; Host < nhosts; Host++) {
             if (Host < LSFNumHosts) {
-                strcpy(RunParameters.HostList[Host], LSFHostList[Host]);
+                strcpy(RunParams.HostList[Host], LSFHostList[Host]);
             }
         }
     }
 
-    if (!RunParameters.NHostsSet) {
+    if (!RunParams.NHostsSet) {
         /* this should work for both LSF (with real machines) and 
          * LSF/RMS combinations (where one virtual host is reserved 
          * with all processors); although we will have to fix everything 
          * up for LSF/RMS after we spawn...
          */
-        RunParameters.NHosts = RunParameters.HostListSize;
+        RunParams.NHosts = RunParams.HostListSize;
     }
 
     /* allocate memory for the array */
-    RunParameters.ProcessCount = ulm_new(int, RunParameters.NHosts);
+    RunParams.ProcessCount = ulm_new(int, RunParams.NHosts);
 
     /* use LSFProcessCount as defaults. */
-    if (RunParameters.UseLSF) {
+    if (RunParams.UseLSF) {
 
-        for (Host = 0; Host < RunParameters.NHosts; Host++) {
+        for (Host = 0; Host < RunParams.NHosts; Host++) {
             for (LSFHost = 0; LSFHost < LSFNumHosts; LSFHost++) {
-                if (strcmp
-                    (RunParameters.HostList[Host], LSFHostList[LSFHost])
+                if (strcmp(RunParams.HostList[Host], LSFHostList[LSFHost])
                     == 0) {
-                    RunParameters.ProcessCount[Host] =
+                    RunParams.ProcessCount[Host] =
                         LSFProcessCount[LSFHost];
                     break;
                 }
             }                   /* end of for loop for LSF */
             if (LSFHost >= LSFNumHosts) {
                 ulm_err(("Error: There is no PE allocated on machine %s\n",
-                         RunParameters.HostList[Host]));
+                         RunParams.HostList[Host]));
                 Abort();
             }
-        }                       /* end of for loop for RunParameters->NHosts */
+        }                       /* end of for loop for RunParams.NHosts */
     }
 }

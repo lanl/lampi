@@ -45,15 +45,14 @@
 #include <netdb.h>
 #include <strings.h>
 
+#include "internal/profiler.h"
+#include "client/adminMessage.h"
 #include "internal/constants.h"
 #include "internal/malloc.h"
-#include "internal/profiler.h"
+#include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "run/JobParams.h"
 #include "run/TV.h"
-#include "client/adminMessage.h"
 
 MPIR_PROCDESC *MPIR_proctable = NULL;
 int MPIR_proctable_size = 0;
@@ -66,23 +65,24 @@ volatile int TVDummy = 0;       /* NEVER change this - this is a variable the
 volatile int MPIR_i_am_starter = 1;
 volatile int MPIR_debug_gate = 0;
 
-void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
+void MPIrunTVSetUp(void)
 {
+    adminMessage *server = RunParams.server;
     int HostRank, NumberOfProcsToDebug;
 
     /* check to see if code being debugged */
-    if (RunParameters->TVDebug == 0)
+    if (RunParams.TVDebug == 0)
         return;
 
     /* compute size of MPIR_proctable */
-    NumberOfProcsToDebug = RunParameters->NHosts;
-    if (RunParameters->TVDebugApp != 0) {
+    NumberOfProcsToDebug = RunParams.NHosts;
+    if (RunParams.TVDebugApp != 0) {
         /* no daemon processes */
         NumberOfProcsToDebug = 0;
         /* app processes */
-        for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++)
+        for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++)
             NumberOfProcsToDebug +=
-                ((RunParameters->ProcessCount)[HostRank]);
+                ((RunParams.ProcessCount)[HostRank]);
     }
 
     /* allocate memory for process table */
@@ -95,26 +95,26 @@ void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
         Abort();
     }
     /* allocate memory for list of hosts used by TotalView */
-    RunParameters->TVHostList =
+    RunParams.TVHostList =
         (HostName_t *) ulm_malloc(sizeof(HostName_t) *
-                                  RunParameters->NHosts);
-    if (RunParameters->TVHostList == NULL) {
+                                  RunParams.NHosts);
+    if (RunParams.TVHostList == NULL) {
         printf("Unable to allocate TVHostList array.\n");
         Abort();
     }
-    for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++) {
-        bzero((RunParameters->TVHostList)[HostRank], ULM_MAX_HOSTNAME_LEN);
-        strcpy((RunParameters->TVHostList)[HostRank], (char *)(RunParameters->HostList[HostRank]));
+    for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++) {
+        bzero((RunParams.TVHostList)[HostRank], ULM_MAX_HOSTNAME_LEN);
+        strcpy((RunParams.TVHostList)[HostRank], (char *)(RunParams.HostList[HostRank]));
     }
 
 /* debug */
     printf
-        (" IN MPIrunTVSetUp ::  MPIR_proctable_size %d RunParameters->TVDebugApp %d\n",
-         MPIR_proctable_size, RunParameters->TVDebugApp);
+        (" IN MPIrunTVSetUp ::  MPIR_proctable_size %d RunParams.TVDebugApp %d\n",
+         MPIR_proctable_size, RunParams.TVDebugApp);
     fflush(stdout);
 /* end debug */
     /* if app being debugged, setup will be finished after the fork() */
-    if (RunParameters->TVDebugApp != 0)
+    if (RunParams.TVDebugApp != 0)
         return;
     /* debug */
     fprintf(stderr," debugging deamons\n");
@@ -125,11 +125,11 @@ void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
     MPIR_being_debugged = 1;
 
     /* fill in MPIR_proctable */
-    for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++) {
+    for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++) {
         MPIR_proctable[HostRank].host_name =
-            (char *) &((RunParameters->TVHostList)[HostRank]);
+            (char *) &((RunParams.TVHostList)[HostRank]);
         MPIR_proctable[HostRank].executable_name =
-            (char *) (RunParameters->ExeList[HostRank]);
+            (char *) (RunParams.ExeList[HostRank]);
         MPIR_proctable[HostRank].pid = server->daemonPIDForHostRank(HostRank);
     }
 

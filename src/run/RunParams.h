@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -34,12 +34,12 @@
 #ifndef _MPIRUNJOBPARAMS
 #define _MPIRUNJOBPARAMS
 
-#include <unistd.h>
+#include <stdlib.h>
 
-#include "internal/types.h"
 #include "client/adminMessage.h"
 #include "client/SocketAdminNetwork.h"
-#include "run/ResourceSpecs.h"
+#include "internal/types.h"
+
 #if ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SharedMemJobParams.h"
 #endif
@@ -56,18 +56,21 @@
 #include "path/ib/setupInfo.h"
 #endif
 
-// structure to hold input environment variables
-typedef struct ulmEnvSet {
+
+/* structure to hold input environment variables */
+struct EnvSettings_t {
     char *var_m;
     bool setForAllHosts_m;
     bool *setForThisHost_m;
     char **envString_m;
-} ulmENVSettings;
+};
 
-/*
- *  structure characterizing a job
- */
-typedef struct ULMRunParams {
+/* mpirun runtime state */
+struct RunParams_t {
+
+    /* Have clients been spawned ? */
+    int ClientsSpawned;
+
     /* number of host participating in run */
     int NHosts;
 
@@ -76,6 +79,12 @@ typedef struct ULMRunParams {
 
     /* number of process on each host */
     int *ProcessCount;
+
+    /* Number of hosts that terminated normally */
+    int HostsNormalTerminated;
+
+    /* Number of hosts that terminated abnormally */
+    int HostsAbNormalTerminated;
 
     /* threads being used */
     int UseThreads;
@@ -212,7 +221,7 @@ typedef struct ULMRunParams {
 
     // list of environment variables to set on each host
     int nEnvVarsToSet;
-    ulmENVSettings *envVarsToSet;
+    EnvSettings_t *envVarsToSet;
 
     // irecv descriptors
     resourceSpecs_t irecvResources_m;
@@ -246,7 +255,6 @@ typedef struct ULMRunParams {
 
     /* should we do any checksumming/CRC on Quadrics */
     int quadricsDoChecksum;
-    
-} ULMRunParams_t;
+};
 
 #endif                          /* _MPIRUNJOBPARAMS */

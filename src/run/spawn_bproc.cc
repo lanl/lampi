@@ -48,24 +48,20 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#include "internal/profiler.h"
+#include "init/environ.h"
 #include "internal/constants.h"
+#include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "run/JobParams.h"
-#include "internal/log.h"
-
-#include "init/environ.h"
 
 #if ENABLE_BPROC == 0
 
 int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
-               int **ListHostsStarted,
-               ULMRunParams_t *RunParameters,
-               int FirstAppArgument, int argc, char **argv)
+               int **ListHostsStarted, int argc, char **argv)
 {
     return 0;
 }
@@ -105,9 +101,7 @@ static int *pids = 0;
 
 
 int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
-               int **ListHostsStarted,
-               ULMRunParams_t * RunParameters,
-               int FirstAppArgument, int argc, char **argv)
+               int **ListHostsStarted, int argc, char **argv)
 {
     char *execName = NULL;
     char *exec_args[END + 1];
@@ -140,21 +134,21 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
     exec_args[EXEC_ARGS] = NULL;
     exec_args[END] = NULL;
 
-    nHosts = RunParameters->NHosts;
+    nHosts = RunParams.NHosts;
 
     CHECK_FOR_ERROR(nodes = (int *) ulm_malloc(sizeof(int) * nHosts));
     CHECK_FOR_ERROR(pids = (int *) ulm_malloc(sizeof(int) * nHosts));
 
     for (i = 0; i < nHosts; i++) {
-        nodes[i] = atoi(RunParameters->HostList[i]);
+        nodes[i] = atoi(RunParams.HostList[i]);
         pids[i] = -1;
     }
 
     /* executable  for each of the hosts */
-    execName = RunParameters->ExeList[0];
+    execName = RunParams.ExeList[0];
 
     sprintf(LAMPI_SOCKET, "%d", ReceivingSocket);
-    sprintf(LAMPI_SERVER, "%s", RunParameters->mpirunName);
+    sprintf(LAMPI_SERVER, "%s", RunParams.mpirunName);
 
     /* SERVER ENV */
     SETENV(server_str, LAMPI_SERVER);
@@ -178,10 +172,10 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
 
     /* program arguments */
 
-    if ((argc - FirstAppArgument) > 0) {
+    if (argc > 0) {
         len = 0;
         argsUsed = 1;
-        for (i = FirstAppArgument; i < argc; i++) {
+        for (i = 0; i < argc; i++) {
             len += strlen(argv[i]);
             len += 1;           /* for the space after the arguments */
 
@@ -189,7 +183,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
         CHECK_FOR_ERROR(tmp_args =
                         (char *) ulm_malloc(sizeof(char) * (1 + len)));
         tmp_args[0] = 0;
-        for (i = FirstAppArgument; i < argc; i++) {
+        for (i = 0; i < argc; i++) {
             strcat(tmp_args, argv[i]);
             strcat(tmp_args, space_str);
         }
@@ -203,7 +197,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
-    for (i=0; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
         io[i].fd = i;
         io[i].type = BPROC_IO_FILE;
 #if BPROC_MAJOR_VERSION < 4
@@ -214,9 +208,9 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
         io[i].d.file.offset = 0;
         strcpy(io[i].d.file.name, "/dev/null");
     }
-    io[0].d.file.flags = O_RDONLY; /* in */
-    io[1].d.file.flags = O_WRONLY; /* out */
-    io[2].d.file.flags = O_WRONLY; /* err */
+    io[0].d.file.flags = O_RDONLY;      /* in */
+    io[1].d.file.flags = O_WRONLY;      /* out */
+    io[2].d.file.flags = O_WRONLY;      /* err */
 
     /*
      * Running mpirun within a debug environment, e.g. Totalview, can
@@ -229,10 +223,11 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      * Put a template for BPROC_RANK into the environment.
      * For bproc version >= 3.2.0 this gets filled in with the node rank
      * 0000000, 0000001, 0000002, etc.
-     */	
+     */
     putenv("BPROC_RANK=XXXXXXX");
-    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
-                        argv + (FirstAppArgument - 1), environ) < 0) {
+    if (bproc_vexecmove_io
+        (nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
+         argv - 1, environ) < 0) {
         ulm_err(("SpawnBproc: bproc_vexecmove: error %s\n",
                  bproc_strerror(errno)));
         ret_status = errno;
@@ -260,7 +255,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
     }
     return 0;
 
-CLEANUP_ABNORMAL:
+  CLEANUP_ABNORMAL:
     free(exec_args[EXEC_NAME]);
     if (argsUsed == 1) {
         free(tmp_args);

@@ -37,7 +37,7 @@
 
 /*
  * This file contains generic socket based communications routines to be used
- *  by mpirun and libmpi.  The basic model employed is that all send/recv
+ * by mpirun and libmpi.  The basic model employed is that all send/recv
  *  trafic employ's iovec's.  On the send side the format of sending will be
  *    -authroization data
  *    -number of tag/data records sent in this request
@@ -73,139 +73,14 @@
 #include "run/Run.h"
 #include "ulm/errors.h"
 
-/* static variables local to this file */
-
-static int SendRecvSetup = 0;   /* if == 0 ulm_SocketSendRecvSetup not called yet */
-static int MaxReadFD = 0;       /* Largest Read FD */
-static int *RemainingReadRecords;       /* Number of records to read before next Next
-                                         *  authorization record */
-static unsigned int AuthorizationData[3] = { 0, 0, 0 };
 
 #define MAXIOVEC 100
 
 /*
- *  This routine is used to initialize the authorization string used
- *  by the socket communications in between run and its clients.
+ * Send data over an already established socket connection.
  */
-void ULMInitSocketAuth()
-{
-    AuthorizationData[0] = getpid();
-    AuthorizationData[1] = getuid();
-    AuthorizationData[2] = time(NULL);
-}
-
-
-/*
- *  This routine is used to set the authorization string used in
- *  socket communications.
- */
-void ulm_SetAuthString(unsigned int *authdata)
-{
-    int i;
-
-    /* set string */
-    for (i = 0; i < 3; i++)
-        AuthorizationData[i] = authdata[i];
-}
-
-
-/*
- * This routine is used to obtain the authorization string used in
- * socket communications.
- */
-void ulm_GetAuthString(unsigned int *authdata)
-{
-    int i;
-
-    /* set string */
-    for (i = 0; i < 3; i++)
-        authdata[i] = AuthorizationData[i];
-}
-
-
-/*
- *  This routine is used to setup all the data needed for
- *  communications using the send/recv functions in this file.  This
- *  routine can be called multiple time with a cummulative effect.
- */
-int ulm_SocketSendRecvSetup(int *ReadFDs, int NumReadFDs)
-{
-    int Max, i, j;
-    int *TmpRemainingReadRecords = 0;
-
-    /* find the index of the highest receiving file descriptor - this will
-     *  be used for figuring out when to look for authorization data */
-    if (SendRecvSetup == 0) {
-        /* if first time in, just search the input list */
-        Max = 0;
-        for (i = 0; i < NumReadFDs; i++) {
-            if (ReadFDs[i] > Max)
-                Max = ReadFDs[i];
-        }
-    } else {
-        /* else compare current max with new list, and check to make sure no
-         *  duplicate entries are listed - if so, return error */
-        for (j = 0; j < NumReadFDs; j++) {
-            if ((ReadFDs[j] <= MaxReadFD)
-                && (RemainingReadRecords[ReadFDs[j]] >= 0))
-                return -1;
-        }
-        Max = MaxReadFD;
-        for (i = 0; i < NumReadFDs; i++) {
-            if (ReadFDs[i] > Max)
-                Max = ReadFDs[i];
-        }
-    }
-
-    /* Allocate array of ints to hold number of tag/data records to be
-     *  receved per ulm_iovec_t sent from the sending side  */
-    if (SendRecvSetup == 1) {
-        /* if not first time called, create temporary array to hold old data,
-         * reallocate, and copy old data in */
-        TmpRemainingReadRecords =
-            (int *) ulm_malloc(sizeof(int) * (MaxReadFD + 1));
-        if (TmpRemainingReadRecords == NULL) {
-            return -2;
-        }
-        for (i = 0; i < MaxReadFD + 1; i++)
-            TmpRemainingReadRecords[i] = RemainingReadRecords[i];
-        ulm_free(RemainingReadRecords);
-    }
-    RemainingReadRecords = (int *) ulm_malloc(sizeof(int) * (Max + 1));
-    if (RemainingReadRecords == NULL)
-        return -3;
-    for (i = 0; i <= Max; i++)
-        RemainingReadRecords[i] = -1;
-    if (SendRecvSetup == 1) {
-        for (i = 0; i < MaxReadFD + 1; i++)
-            RemainingReadRecords[i] = TmpRemainingReadRecords[i];
-        ulm_free(TmpRemainingReadRecords);
-        TmpRemainingReadRecords = NULL;
-    }
-
-    for (i = 0; i < NumReadFDs; i++)
-        RemainingReadRecords[ReadFDs[i]] = 0;
-
-    /* set flag indicating that this routine has already been called */
-    SendRecvSetup = 1;
-    /* set value of highest read file descriptor */
-    MaxReadFD = Max;
-    /* check for some simple error conditions */
-    if (MAXIOVEC < 3) {
-        return -5;
-    }
-
-    return 0;                   /* normal termination */
-}
-
-
-/*
- * This routine is used to send data over an already
- *  established socket connection.
- */
-
 ssize_t SendSocket(int DestinationFD, int NumRecordsToSend,
-                         ulm_iovec_t * InputSendData)
+                   ulm_iovec_t *InputSendData)
 {
     ssize_t RetVal;
 
@@ -216,7 +91,7 @@ ssize_t SendSocket(int DestinationFD, int NumRecordsToSend,
 
 
 /*
- * This routine will be used to read data from a given socket
+ * Read data from a given socket
  */
 ssize_t RecvSocket(int SourceFD, void *OutputBuffer,
                          size_t SizeOfInputBuffer, int *error)
@@ -261,7 +136,6 @@ ssize_t ClientWriteToServer(int *ServerFD, char *String, char *PrependString,
                             int StdioFD, ssize_t lenString,
                             bool startWithNewLine)
 {
-#define MAXIOVEC 100
     int niov;
     size_t len, LeftToWrite, LenToWrite;
     caddr_t PtrToNewLine, PtrToStartWrite;

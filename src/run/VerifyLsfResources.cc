@@ -44,23 +44,21 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "internal/profiler.h"
 #include "internal/constants.h"
 #include "internal/new.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
-#include "util/ParseString.h"
-#include "util/Utility.h"
-#include "run/Run.h"
-#include "internal/new.h"
-#include "run/globals.h"
 #include "run/Input.h"
 #include "run/LSFResource.h"
+#include "run/Run.h"
+#include "util/ParseString.h"
+#include "util/Utility.h"
 
 /*
  * This routine verifys the hosts and their assoicated process counts.
  */
 
-void VerifyLsfResources(const ULMRunParams_t *RunParameters)
+void VerifyLsfResources(void)
 {
     int Host;
     int LSFHost;
@@ -74,27 +72,27 @@ void VerifyLsfResources(const ULMRunParams_t *RunParameters)
     for (LSFHost = 0; LSFHost < LSFNumHosts; LSFHost++) {
         lsfprocs += LSFProcessCount[LSFHost];
     }
-    for (Host = 0; Host < RunParameters->NHosts; Host++) {
-        numprocs += RunParameters->ProcessCount[Host];
+    for (Host = 0; Host < RunParams.NHosts; Host++) {
+        numprocs += RunParams.ProcessCount[Host];
     }
     if (numprocs > lsfprocs) {
         ulm_err(("Error: the number of desired processes (%d) exceeds the number of LSF processes allowed (%d)\n", numprocs, lsfprocs));
         Abort();
     }
 #else
-    for (Host = 0; Host < RunParameters->NHosts; Host++) {
+    for (Host = 0; Host < RunParams.NHosts; Host++) {
         for (LSFHost = 0; LSFHost < LSFNumHosts; LSFHost++) {
-            if (strcmp(RunParameters->HostList[Host], LSFHostList[LSFHost])
+            if (strcmp(RunParams.HostList[Host], LSFHostList[LSFHost])
                 == 0) {
                 if (LSFProcessCount[LSFHost] >=
-                    RunParameters->ProcessCount[Host]) {
+                    RunParams.ProcessCount[Host]) {
                     LSFProcessCount[LSFHost] -=
-                        RunParameters->ProcessCount[Host];
+                        RunParams.ProcessCount[Host];
                     break;
                 } else {
                     printf("Error: your request of %d PE on %s exceeds ",
-                           RunParameters->ProcessCount[Host],
-                           RunParameters->HostList[Host]);
+                           RunParams.ProcessCount[Host],
+                           RunParams.HostList[Host]);
                     printf("the %d PE allocated by LSF.\n",
                            LSFProcessCount[LSFHost]);
                     Abort();
@@ -104,11 +102,11 @@ void VerifyLsfResources(const ULMRunParams_t *RunParameters)
         }                       /* end of for loop for LSF */
         if (LSFHost >= LSFNumHosts) {   /* can't find host in HostNames */
             printf("Error: machine %s not in LSF resource list\n",
-                   RunParameters->HostList[Host]);
+                   RunParams.HostList[Host]);
             Abort();
         }
 
-    }                           /* end of for loop for RunParameters->NHosts */
+    }                           /* end of for loop for RunParams.NHosts */
 #endif
 
 
