@@ -51,10 +51,6 @@ extern "C" void _ulm_log(FILE *fd, const char *fmt, va_list ap)
     }
 
     log_fd = fopen("lampi.log", "a");
-    if (log_fd == NULL) {
-        // try /tmp/lampi.log:  
-        log_fd = fopen("/tmp/lampi.log", "a");
-    }
     if (log_fd != NULL) {
         fprintf(log_fd, file_line);
         vfprintf(log_fd, fmt, ap);
