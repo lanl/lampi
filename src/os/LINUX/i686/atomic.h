@@ -55,7 +55,7 @@ typedef struct {
     volatile unsigned long long data;
 } bigAtomicUnsignedInt;
 
-
+/*
 #ifdef __INTEL_COMPILER
 
 #ifdef __cplusplus
@@ -74,6 +74,7 @@ extern "C"
 
 
 #else
+*/
 
 /*
  *  Spin until I can get the lock
@@ -113,7 +114,11 @@ inline static int spintrylock(lockStructure_t *lockData)
         "mov $0, %1\n"
         "2:"
         : "=m" (lockData->data.lockData_m),
+#ifdef __INTEL_COMPILER
+        "=&r" (gotLock) : "r" (0) : "memory");
+#else
         "=r" (gotLock) : "r" (0) : "memory");
+#endif
 
     return gotLock;
 }
@@ -129,7 +134,11 @@ inline static int fetchNadd(volatile int *addr, int inc)
     __asm__ __volatile__(
 	"       mov %2, %1\n" \
 	"lock ; xadd %1, %0\n"
-	: "=m" (*addr), "=r" (inputValue) : "r" (inc) : "memory");
+#ifdef __INTEL_COMPILER
+	: "=m" (*addr), "=&r" (inputValue) : "r" (inc) : "memory");
+#else
+    : "=m" (*addr), "=r" (inputValue) : "r" (inc) : "memory");
+#endif
 
     return (inputValue);
 }
@@ -142,12 +151,16 @@ inline static int fetchNset(volatile int *addr, int setValue)
     __asm__ __volatile__(
 	"       mov %2, %1\n" \
 	"lock ; xchg %1, %0\n"
-	: "=m" (*addr), "=r" (inputValue) : "r" (setValue) : "memory");
+#ifdef __INTEL_COMPILER
+	: "=m" (*addr), "=&r" (inputValue) : "r" (setValue) : "memory");
+#else
+    : "=m" (*addr), "=r" (inputValue) : "r" (setValue) : "memory");
+#endif
 
     return (inputValue);
 }
 
-#endif		/* __INTEL_COMPILER */
+//#endif		/* __INTEL_COMPILER */
 
 
 /*
