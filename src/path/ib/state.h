@@ -49,6 +49,9 @@
 class ibRecvFragDesc;
 class ibSendFragDesc;
 
+/* simple cache object to keep track of address
+ * handles for address vectors used in UD communication
+ */
 class ib_ud_av_cache {
     struct info {
         int egress_port_index;
@@ -128,82 +131,131 @@ class ib_ud_av_cache {
  * not unintentionally hurt it... 
  */
 
+/* basic record used for UD routing -- passed in bootstrap code */
 typedef struct {
+    /* UD QP number */
     VAPI_qp_num_t qp_num;
+    /* destination LID -- no global routing header */
     IB_lid_t lid;
+    /* destination LMC -- not used currently! */
     u_int8_t lmc;
+    /* basic record flags -- invalid/invalid only currently! */
     u_int8_t flag;
 } ib_ud_peer_info_t;
 
+/* macros to set and examine flag of ib_ud_peer_info_t routing record */
 #define PEER_INFO_IS_VALID(x) ((x.flag & 0x80) != 0)
 #define SET_PEER_INFO_VALID(x) (x.flag |= 0x80)
 #define SET_PEER_INFO_INVALID(x) (x.flag &= 0x7f)
 
+/* information about remote processes with basic UD QP connectivity */
 typedef struct {
+    /* number of max. active HCAs, used as first "index" in info[] array */
     int max_hcas;
+    /* number of max. active ports/HCA, used as second "index" in info[] array */
     int max_ports;
+    /* number of entries per remote process in info[] array -- max_hcas * max_ports */
     int proc_entries;
+    /* routing information for remote process */
     ib_ud_peer_info_t *info;
+    /* nprocs()-sized array of integers -- to round-robin HCA usage of routing info */
     int *next_remote_hca;
+    /* nprocs()-sized array of integers -- to round-robin port usage of routing info */
     int *next_remote_port;
 } ib_ud_peer_t;
 
+/* information about specific UD QP -- 1 per HCA */
 typedef struct {
     VAPI_qp_hndl_t handle;
     VAPI_qp_prop_t prop;
+    /* handle to single receive memory region of 2048 byte buffers */
     VAPI_mr_hndl_t recv_mr_handle;
+    /* handle to single send memory region of 2048 byte buffers */
     VAPI_mr_hndl_t send_mr_handle;
     VAPI_mr_t recv_mr;
     VAPI_mr_t send_mr;
+    /* flow-control tokens on send side to avoid send queue overflow */
     u_int32_t sq_tokens;
+    /* flow-control tokens on send side to avoid recv queue overflow */
     u_int32_t rq_tokens;
+    /* true if this UD QP receives multicast for this process */
     bool receive_multicast;
+    /* size of receive MR in terms of 2048 byte buffers */
     int num_rbufs;
+    /* size of send MR in terms of 2048 byte buffers */
     int num_sbufs;
+    /* page-aligned beginning of recv MR */
     void *base_rbuf;
+    /* page-aligned beginning of send MR */
     void *base_sbuf;
+    /* cache of address handles */
     ib_ud_av_cache ah_cache;
 } ib_ud_qp_state_t;
 
+/* information associated with a specific HCA */
 typedef struct {
+    /* true if HCA handle retrieved from VIPKL */
     bool usable;
+    /* number of ports in ACTIVE state */
     int num_active_ports;
+    /* indices of active ports -- not port number */
     int active_ports[LAMPI_MAX_IB_HCA_PORTS];
     VAPI_hca_hndl_t handle;
     VAPI_hca_vendor_t vendor;
     VAPI_hca_cap_t cap;
     VAPI_hca_port_t ports[LAMPI_MAX_IB_HCA_PORTS];
+    /* single protection domain per HCA */
     VAPI_pd_hndl_t pd;
     VAPI_cq_hndl_t recv_cq;
     VAPI_cq_hndl_t send_cq;
+    /* size of receive completion queue */
     VAPI_cqe_num_t recv_cq_size;
+    /* size of send completion queue */
     VAPI_cqe_num_t send_cq_size;
+    /* flow-control tokens to avoid recv CQ overflow */
     VAPI_cqe_num_t recv_cq_tokens;
+    /* flow-control tokens to avoid send CQ overflow */
     VAPI_cqe_num_t send_cq_tokens;
     ib_ud_qp_state_t ud;
+    /* receive fragment descriptors -- for UD comms */
     FreeListPrivate_t <ibRecvFragDesc> recv_frag_list;
+    /* send fragment descriptors -- for UD comms */
     FreeListPrivate_t <ibSendFragDesc> send_frag_list;
     unsigned int ctlMsgsToSendFlag;
     unsigned int ctlMsgsToAckFlag;
+    /* non-data control message tracking lists */
     ProcessPrivateMemDblLinkList ctlMsgsToSend[NUMBER_CTLMSGTYPES];
     ProcessPrivateMemDblLinkList ctlMsgsToAck[NUMBER_CTLMSGTYPES];
 } ib_hca_state_t;
 
+/* top-level IB information structure */
 typedef struct {
+    /* thread lock for all IB state access... */
     Locks lock;
+    /* total number of HCAs */
     u_int32_t num_hcas;
+    /* number of HCAs that have at least one port in the ACTIVE state */
     int num_active_hcas;
+    /* used for round-robin allocation of HCAS for sends */
     int next_send_hca;
+    /* used for round-robin allocation of ports for sends */
     int next_send_port;
+    /* indices of HCAs that have at least one port in the ACTIVE state */
     int active_hcas[LAMPI_MAX_IB_HCAS];
     VAPI_hca_id_t hca_ids[LAMPI_MAX_IB_HCAS];
     ib_hca_state_t hca[LAMPI_MAX_IB_HCAS];
+    /* common queue key for all QPs for this MPI job */
     VAPI_qkey_t qkey;
+    /* multicast GID that we join... */
     VAPI_gid_t mcast_gid;
     ib_ud_peer_t ud_peers;
+    /* number of maximum 2048 byte buffers for send and recv UD QP WQEs */
     int max_ud_2k_buffers;
+    /* flow-control flag for fragment pacing of long send messages */
     int max_outst_frags;
+    /* true if we do per-fragment standard ACKing */
     bool ack;
+    /* true if we do some final memory checksumming */
     bool checksum;
 } ib_state_t;
 

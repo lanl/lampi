@@ -59,7 +59,7 @@ bool ibPath::canReach(int globalDestProcessID)
     return result;
 }
 
-void ibPath::checkSendCQs(void)
+inline void ibPath::checkSendCQs(void)
 {
     VAPI_ret_t vapi_result;
     VAPI_wc_desc_t wc_desc;
@@ -112,7 +112,7 @@ void ibPath::checkSendCQs(void)
     }
 }
 
-bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
+inline bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
 {
     // check send completion queues of all HCAs for local send completion notification
     checkSendCQs();
@@ -159,7 +159,7 @@ bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
 }
 
 // all HCAs version
-bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
+inline bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
 {
     bool result = true;
 
@@ -178,7 +178,7 @@ bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *erro
     return result;
 }
 
-bool ibPath::sendCtlMsgs(int hca_index, double timeNow, int startIndex, 
+inline bool ibPath::sendCtlMsgs(int hca_index, double timeNow, int startIndex, 
 int endIndex, int *errorCode, bool skipCheck)
 {
     ibSendFragDesc *sfd, *afd;
@@ -267,7 +267,7 @@ int endIndex, int *errorCode, bool skipCheck)
 }
 
 // all HCAs version
-bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
+inline bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
 {
     bool result = true;
 
@@ -286,7 +286,7 @@ bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *err
     return result;
 }
 
-bool ibPath::cleanCtlMsgs(int hca_index, double timeNow, int startIndex, 
+inline bool ibPath::cleanCtlMsgs(int hca_index, double timeNow, int startIndex, 
 int endIndex, int *errorCode, bool skipCheck)
 {
     ibSendFragDesc *sfd, *afd;
@@ -375,7 +375,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     }
 
     /* create and init frags with all the necessary resources */
-    do {
+    while (message->pathInfo.ib.allocated_offset_m < (ssize_t)message->posted_m.length_m) {
 
         // slow down the send -- always initialize and send the first frag
         if (message->NumFragDescAllocated != 0) {
@@ -441,11 +441,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         (message->NumFragDescAllocated)++;
         (message->numfrags)++;
 
-    } while (message->pathInfo.ib.allocated_offset_m < (ssize_t)message->posted_m.length_m);
-
-    if (usethreads()) {
-        ib_state.lock.unlock();
-    }
+    } // end allocation while loop
 
     /* send list -- finish initialization, post request, and move to frag ack list if successful */
 
@@ -493,10 +489,17 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // rebind this frag to another HCA if possible
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
+                if (usethreads()) {
+                    ib_state.lock.unlock();
+                }
                 *errorCode = ULM_ERR_BAD_PATH;
                 return false;
             }
         }
+    } // end send fragment for loop
+
+    if (usethreads()) {
+        ib_state.lock.unlock();
     }
 
     /* is everything done? */
@@ -542,7 +545,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     return true;
 }
 
-bool ibPath::push(double timeNow, int *errorCode)
+inline bool ibPath::push(double timeNow, int *errorCode)
 {
     bool result = true;
 
@@ -552,7 +555,7 @@ bool ibPath::push(double timeNow, int *errorCode)
     return result;
 }
 
-bool ibPath::needsPush(void)
+inline bool ibPath::needsPush(void)
 {
     bool result = false;
 

@@ -415,17 +415,11 @@ inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
     else if ((state_m & LOCALACKED) != 0) {
         bool got_tokens = false;
         // try to get tokens and resend...
-        if (usethreads()) {
-            ib_state.lock.lock();
-        }
         if ((h->ud.sq_tokens >= 1) && (h->send_cq_tokens >= 1)) {
             (h->ud.sq_tokens)--;
             (h->send_cq_tokens)--;
             got_tokens = true;
         } 
-        if (usethreads()) {
-            ib_state.lock.unlock();
-        }
         if (got_tokens) {
             state_m = (state)(state_m & ~LOCALACKED);
             vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
