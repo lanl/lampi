@@ -64,9 +64,8 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
     int RetVal, sockbuf;
     unsigned int AuthData[3];
     struct sockaddr_in ParentSockAddr;
-#ifndef BPROC
     struct hostent *TmpHost;
-#endif
+
     /* open socket */
     (*ClientSocketFD) = socket(AF_INET, SOCK_STREAM, 0);
     if ((*ClientSocketFD) < 0) {
@@ -79,17 +78,22 @@ int SocketConnectToServer(int ServerPortNumber, HostName_t ServerHost,
     setsockopt((*ClientSocketFD), IPPROTO_TCP, TCP_NODELAY, &sockbuf,
                sizeof(int));
 
+    TmpHost = gethostbyname(ServerHost);
 #ifdef BPROC
-    int size = sizeof(struct sockaddr);
-    RetVal =
-        bproc_nodeaddr(BPROC_NODE_MASTER,
-                       (struct sockaddr *) &ParentSockAddr, &size);
-    if (RetVal != 0) {
-        ulm_err(("Error: from bproc_nodeaddr (%d)\n", errno));
-        return ULM_ERROR;
+    if (TmpHost == (struct hostent *)NULL) {
+        int size = sizeof(struct sockaddr);
+        RetVal = bproc_nodeaddr(BPROC_NODE_MASTER,
+            (struct sockaddr *) &ParentSockAddr, &size);
+        if (RetVal != 0) {
+            ulm_err(("Error: from bproc_nodeaddr (%d)\n", errno));
+            return ULM_ERROR;
+        }
+    }
+    else {
+        memcpy((char *) &ParentSockAddr.sin_addr, TmpHost->h_addr_list[0],
+           TmpHost->h_length);
     }
 #else
-    TmpHost = gethostbyname(ServerHost);
     memcpy((char *) &ParentSockAddr.sin_addr, TmpHost->h_addr_list[0],
            TmpHost->h_length);
 #endif

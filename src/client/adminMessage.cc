@@ -296,18 +296,22 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
     unsigned short  svrport;
     CTTCPChannel    *chnl;
     CTChannelStatus status;
-#ifndef BPROC
     struct hostent *serverHost;
-#endif
 
+    serverHost = gethostbyname(hostname_m);
 #ifdef BPROC
-    int size = sizeof(struct sockaddr);
-    if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
-        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
-        return false;
+    if (serverHost == (struct hostent *)NULL) {
+        /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
+        int size = sizeof(struct sockaddr);
+        if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
+            ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
+            return false;
+        }
+    }
+    else {
+        memcpy( (char*)&server.sin_addr, serverHost->h_addr_list[0], serverHost->h_length);
     }
 #else
-    serverHost = gethostbyname(hostname_m);
     if (serverHost == (struct hostent *)NULL) {
         ulm_err(("adminMessage::clientConnect gethostbyname(\"%s\") failed (h_errno = %d)!\n", hostname_m, h_errno));
         return false;
@@ -399,9 +403,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     struct sockaddr_in server;
     ulm_iovec_t iovecs[5];
     pid_t myPID;
-#ifndef BPROC
     struct hostent *serverHost;
-#endif
 
 #ifdef USE_CT
     return connectToRun(nprocesses, hostrank, timeout);
@@ -414,14 +416,20 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     }
     setsockopt(socketToServer_m, IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
 
+    serverHost = gethostbyname(hostname_m);
 #ifdef BPROC
-    int size = sizeof(struct sockaddr);
-    if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
-        ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
-        return false;
+    if (serverHost == (struct hostent *)NULL) {
+        /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
+        int size = sizeof(struct sockaddr);
+        if (bproc_nodeaddr(BPROC_NODE_MASTER, (struct sockaddr *)&server, &size) != 0) {
+            ulm_err(("adminMessage::clientConnect error returned from the bproc_nodeaddr call :: errno - %d\n",errno));
+            return false;
+        }
+    }
+    else {
+        memcpy( (char*)&server.sin_addr, serverHost->h_addr_list[0], serverHost->h_length);
     }
 #else
-    serverHost = gethostbyname(hostname_m);
     if (serverHost == (struct hostent *)NULL) {
         ulm_err(("adminMessage::clientConnect gethostbyname(\"%s\") failed (h_errno = %d)!\n", hostname_m, h_errno));
         return false;
