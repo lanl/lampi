@@ -351,3 +351,9 @@ Version 1.5.2
 
 - Only use ptys for standard I/O if mpirun is attached to a tty.
 
+Version 1.5.3
+
+- Kill running jobs with a kill -9 if we are able to
+
+- A bit more data output for de-bugging problems 
+
