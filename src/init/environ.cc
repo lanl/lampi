@@ -473,40 +473,41 @@ void lampi_environ_dump(void)
     int i;
 
     for (i = 0; lampi_environ_integer[i].name; i++) {
-        fprintf(stdout, "lampi_environ_dump: %s=%d [default=%d]\n",
+        fprintf(stderr, "lampi_environ_dump: %s=%d [default=%d]\n",
                 lampi_environ_integer[i].name,
                 lampi_environ_integer[i].value,
                 lampi_environ_integer[i].default_value);
     }
 
     for (i = 0; lampi_environ_real[i].name; i++) {
-        fprintf(stdout, "lampi_environ_dump: %s=%lf [default=%lf]\n",
+        fprintf(stderr, "lampi_environ_dump: %s=%lf [default=%lf]\n",
                 lampi_environ_real[i].name,
                 lampi_environ_real[i].value,
                 lampi_environ_real[i].default_value);
     }
 
     for (i = 0; lampi_environ_string[i].name; i++) {
-        fprintf(stdout, "lampi_environ_dump: %s=\"%s\" [default=\"%s\"]\n",
+        fprintf(stderr, "lampi_environ_dump: %s=\"%s\" [default=\"%s\"]\n",
                 lampi_environ_string[i].name,
                 lampi_environ_string[i].value,
                 lampi_environ_string[i].default_value);
     }
 
     for (i = 0; lampi_environ_string_array[i].name; i++) {
-        fprintf(stdout, "lampi_environ_dump: %s=\"",
+        fprintf(stderr, "lampi_environ_dump: %s=\"",
                 lampi_environ_string_array[i].name);
         if (lampi_environ_string_array[i].value) {
             for (p = lampi_environ_string_array[i].value; *p != NULL; p++) {
-                printf("%s:", *p);
+                fprintf(stderr, "%s:", *p);
             }
-            printf("\b\"");
+            fprintf(stderr, "\b\"");
         } else {
-            printf("NULL");
+            fprintf(stderr, "NULL");
         }
-        printf(" [default=\"%s\"]\n",
+        fprintf(stderr, " [default=\"%s\"]\n",
                lampi_environ_string_array[i].default_value);
     }
+    fflush(stderr);
 }
 
 CDECL_END

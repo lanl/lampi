@@ -123,6 +123,7 @@ void lampi_init_print(const char *string)
     fflush(stderr);
 }
 
+
 /*
  * Entry point for LA-MPI initialization.
  *
@@ -135,87 +136,35 @@ void lampi_init(void)
     }
     initialized = 1;
 
-
-    /* initialize _ulm */
-    lampi_init_prefork_initialize_state_information(&_ulm);
-
-    /*
-     * Initialize process
-     */
-    lampi_init_prefork_process_resources(&_ulm);
-
-    /* read library environment variables */
+    lampi_init_prefork_initialize_state_information(&_ulm);     /* init _ulm */
     lampi_init_prefork_environment(&_ulm);
-
-    /* initialization of global variables */
+    lampi_init_prefork_process_resources(&_ulm);
     lampi_init_prefork_globals(&_ulm);
-
-    /*
-     * startup specific information that needs to be set before
-     * connecting back to mpirun
-     */
     lampi_init_prefork_resource_management(&_ulm);
-
-    /*
-     * connect back to mpirun
-     */
-    ulm_dbg(("host %d: daemon %d: connecting to mpirun...\n", myhost(),
-             getpid()));
     lampi_init_prefork_connect_to_mpirun(&_ulm);
-
-    /*
-     * receive initial input parameters
-     */
     lampi_init_prefork_receive_setup_params(&_ulm);
     lampi_init_prefork_ip_addresses(&_ulm);
-
     lampi_init_prefork_debugger(&_ulm);
-
     lampi_init_prefork_resources(&_ulm);
-
-    /*
-     * path initialization that needs to happen before the child
-     * processes are created
-     */
     lampi_init_prefork_paths(&_ulm);
-
-    /* if library is to handle stdio, prefork data is set up */
     lampi_init_prefork_stdio(&_ulm);
 
-    /* fork the rest of the la-mpi processes */
-    lampi_init_fork(&_ulm);
-    /*
-     * all la-mpi procs have been created at this stage
-     */
+    lampi_init_fork(&_ulm);     /* all la-mpi procs created here */
 
     lampi_init_postfork_debugger(&_ulm);
-
-    /* if library is to handle stdio, postfork data is set up */
     lampi_init_postfork_stdio(&_ulm);
-
     lampi_init_postfork_resource_management(&_ulm);
     lampi_init_postfork_globals(&_ulm);
     lampi_init_postfork_resources(&_ulm);
     //lampi_init_debug(&_ulm);
-
-    /* exchange IP addresses */
-    lampi_init_postfork_ip_addresses(&_ulm);
-
-    /* post fork path setup */
+    lampi_init_postfork_ip_addresses(&_ulm);    /* exchange IP addresses */
     lampi_init_postfork_paths(&_ulm);
-
-    /* this must follow lampi_init_postfork_paths as it initializes the collective function pointers
-       which depend on the devices available. */
     lampi_init_postfork_communicators(&_ulm);
-
 #ifdef USE_ELAN_COLL
-    /* Enable the hw/bcast support for ULM_COMM_WORLD */
-    lampi_init_postfork_coll_setup(&_ulm);
+    lampi_init_postfork_coll_setup(&_ulm);      /* enable hw/bcast support */
 #endif
 
-    /* barrier until all procs - local and remote - have started up */
-    lampi_init_wait_for_start_message(&_ulm);
-
+    lampi_init_wait_for_start_message(&_ulm);   /* barrier on all procs */
     lampi_init_check_for_error(&_ulm);
 
     /* daemon process goes into loop */
@@ -335,10 +284,10 @@ void lampi_init_prefork_environment(lampiState_t *s)
 
     lampi_environ_init();
     if (lampi_environ_find_integer("LAMPI_VERBOSE", &(s->verbose))) {
-        lampi_init_print("lampi_init");
-        lampi_init_print("lampi_init_prefork_environment");
     }
     if (s->verbose) {
+        lampi_init_print("lampi_init");
+        lampi_init_print("lampi_init_prefork_environment");
         lampi_environ_dump();
     }
 }
@@ -375,8 +324,6 @@ void lampi_init_prefork_globals(lampiState_t *s)
     /* do not prepend informative prefix to stdout/stderr */
     lampiState.output_prefix = 0;
     lampiState.quiet = 0;
-    
-
     lampiState.map_global_proc_to_on_host_proc_id = 0;
 }
 
@@ -391,8 +338,9 @@ void lampi_init_postfork_globals(lampiState_t *s)
     }
 
     lampiState.local_rank = lampiState.memLocalityIndex = s->local_rank;
-    if ( s->client )
+    if (s->client) {
         s->client->setLocalProcessRank(s->local_rank);
+    }
 }
 
 
@@ -404,8 +352,9 @@ void lampi_init_prefork_resource_management(lampiState_t *s)
         return;
     }
     if (s->verbose) {
-        lampi_init_print("lampi_init_resource_management");
+        lampi_init_print("lampi_init_prefork_resource_management");
     }
+
     /* initialize data */
 #if ENABLE_BPROC
     /* send current node id instead of doing scan of addresses on master */
@@ -437,7 +386,6 @@ void lampi_init_postfork_resource_management(lampiState_t *s)
     if (s->verbose) {
         lampi_init_print("lampi_init_postfork_resource_management");
     }
-
     if (s->quadrics) {
         lampi_init_postfork_rms(s);
     }
@@ -774,7 +722,8 @@ void lampi_init_postfork_resources(lampiState_t *s)
         ulm_exit((-1,
                   "Unable to allocate space for the array of attributes objects\n"));
     }
-    // initizliae locks
+
+    // initialize locks
     for (int attr = 0; attr < attribPool.poolSize; attr++) {
         attribPool.attributes[attr].Lock.init();
     }
@@ -1050,6 +999,9 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         lampi_init_print("lampi_init_prefork_connect_to_mpirun");
     }
 
+    ulm_dbg(("host %d: daemon %d: connecting to mpirun...\n", myhost(),
+             getpid()));
+
     lampi_environ_find_integer("LAMPI_ADMIN_AUTH0", &(auth[0]));
     lampi_environ_find_integer("LAMPI_ADMIN_AUTH1", &(auth[1]));
     lampi_environ_find_integer("LAMPI_ADMIN_AUTH2", &(auth[2]));
@@ -1153,6 +1105,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      (adminMessage::packType) sizeof(int),
                                      1);
             break;
+
 #if ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
@@ -1334,6 +1287,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     if (s->verbose) {
         lampi_init_print("lampi_init_prefork_receive_setup_params");
     }
+
     // RUNPARAMS exchange
     // read the start of input parameters tag
     recvd = s->client->receive(-1, &tag, &errorCode);
@@ -1641,9 +1595,10 @@ void lampi_init_prefork_paths(lampiState_t *s)
     }
 
     lampi_init_prefork_shared_memory(s);        /* must be first */
-    /* as long as mpirun participates in the "wire up", the
-     *   order these paths are initialized needs to be mirrored
-     *   in mpirun
+
+    /* 
+     * as long as mpirun participates in the "wire up", the order
+     * these paths are initialized needs to be mirrored in mpirun
      */
     lampi_init_prefork_udp(s);
     lampi_init_prefork_tcp(s);
@@ -1688,61 +1643,50 @@ void lampi_init_postfork_paths(lampiState_t *s)
     /*
      * setup global array of available paths
      */
-    pathList=(availablePaths_t *) ulm_malloc(sizeof(availablePaths_t) *
-                    s->global_size);
-    if( !pathList ) {
+    pathList = (availablePaths_t *) ulm_malloc(sizeof(availablePaths_t) *
+                                               s->global_size);
+    if (!pathList) {
         s->error = ERROR_LAMPI_INIT_POSTFORK_PATHS;
         return;
     }
 
     pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
 
-    for( int proc=0 ; proc < s->global_size ; proc++ ) {
-            pathList[proc].useSharedMemory_m=-1;
-            pathList[proc].useTCP_m=-1;
-            pathList[proc].useUDP_m=-1;
-            pathList[proc].useQuadrics_m=-1;
-            pathList[proc].useGM_m=-1;
-        pathList[proc].useIB_m=-1;
+    for (int proc = 0; proc < s->global_size; proc++) {
+        pathList[proc].useSharedMemory_m = -1;
+        pathList[proc].useTCP_m = -1;
+        pathList[proc].useUDP_m = -1;
+        pathList[proc].useQuadrics_m = -1;
+        pathList[proc].useGM_m = -1;
+        pathList[proc].useIB_m = -1;
 
-            for (int i = 0; i < pathCount; i++) {
-                    if( ! (lampiState.pathContainer->canUsePath(proc,i))  )
-                                    continue;
-                    if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype,
-                                            sizeof(pathType), &(s->error))) {
-                            if ((ptype == SHAREDMEM)
-                                            && (pathList[proc].useSharedMemory_m < 0))
-                            {
-                                    pathList[proc].useSharedMemory_m = i;
-                            }
-                            else if ((ptype == TCPPATH)
-                                            && (pathList[proc].useTCP_m < 0))
-                            {
-                                    pathList[proc].useTCP_m = i;
-                            }
-                            else if ((ptype == UDPPATH)
-                                            && (pathList[proc].useUDP_m < 0))
-                            {
-                                    pathList[proc].useUDP_m = i;
-                            }
-                            else if ((ptype == QUADRICSPATH)
-                                            && (pathList[proc].useQuadrics_m < 0))
-                            {
-                                    pathList[proc].useQuadrics_m = i;
-                            }
-                            else if ((ptype == GMPATH)
-                                            && (pathList[proc].useGM_m < 0))
-                            {
-                                    pathList[proc].useGM_m = i;
-                            }
-                            else if ((ptype == IBPATH)
-                                            && (pathList[proc].useIB_m < 0))
-                            {
-                                    pathList[proc].useIB_m = i;
-                            }
-                    }
+        for (int i = 0; i < pathCount; i++) {
+            if (!(lampiState.pathContainer->canUsePath(proc, i)))
+                continue;
+            if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype,
+                                      sizeof(pathType), &(s->error))) {
+                if ((ptype == SHAREDMEM)
+                    && (pathList[proc].useSharedMemory_m < 0)) {
+                    pathList[proc].useSharedMemory_m = i;
+                } else if ((ptype == TCPPATH)
+                           && (pathList[proc].useTCP_m < 0)) {
+                    pathList[proc].useTCP_m = i;
+                } else if ((ptype == UDPPATH)
+                           && (pathList[proc].useUDP_m < 0)) {
+                    pathList[proc].useUDP_m = i;
+                } else if ((ptype == QUADRICSPATH)
+                           && (pathList[proc].useQuadrics_m < 0)) {
+                    pathList[proc].useQuadrics_m = i;
+                } else if ((ptype == GMPATH)
+                           && (pathList[proc].useGM_m < 0)) {
+                    pathList[proc].useGM_m = i;
+                } else if ((ptype == IBPATH)
+                           && (pathList[proc].useIB_m < 0)) {
+                    pathList[proc].useIB_m = i;
+                }
             }
-    } /* end proc loop */
+        }
+    }                           /* end proc loop */
 }
 
 
@@ -2114,57 +2058,66 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
     int recvd;
     int tag;
 
-    if(s->verbose)
-        lampi_init_print("lampi_init_prefork_ip_addresses");
-
-    if((s->nhosts == 1) || (!s->tcp && !s->udp))
+    if (s->error) {
         return;
+    }
 
-    recvd = s->client->receive(-1,&tag,&errorCode);
-    if(recvd != adminMessage::OK || tag != adminMessage::IFNAMES) {
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_ip_addresses");
+    }
+
+    if ((s->nhosts == 1) || (!s->tcp && !s->udp)) {
+        return;
+    }
+
+    recvd = s->client->receive(-1, &tag, &errorCode);
+    if (recvd != adminMessage::OK || tag != adminMessage::IFNAMES) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
 
     /* retrieve number of interfaces */
-    if(s->client->unpack(&s->if_count,
-        (adminMessage::packType)sizeof(s->if_count), 1) != true) {
+    if (s->client->unpack(&s->if_count,
+                          (adminMessage::packType) sizeof(s->if_count),
+                          1) != true) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
 
-    if(s->if_count) {
+    if (s->if_count) {
 
         /* retreive list of interface names */
         size_t size = s->if_count * sizeof(InterfaceName_t);
-        s->if_names = (InterfaceName_t*)ulm_malloc(size);
-        if(s->if_names == 0) {
+        s->if_names = (InterfaceName_t *) ulm_malloc(size);
+        if (s->if_names == 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
-        if(s->client->unpack(s->if_names, adminMessage::BYTE, size) != true) {
+        if (s->client->unpack(s->if_names, adminMessage::BYTE, size) != true) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
         size = s->if_count * sizeof(struct sockaddr_in);
-        s->if_addrs = (struct sockaddr_in*)ulm_malloc(size);
-        if(s->if_addrs == 0) {
+        s->if_addrs = (struct sockaddr_in *) ulm_malloc(size);
+        if (s->if_addrs == 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
         memset(s->if_addrs, 0, size);
 
         /* resolve IP address assigned to each IF */
-        for(int i=0; i<s->if_count; i++) {
+        for (int i = 0; i < s->if_count; i++) {
             HostName_t hostName;
-            if(ulm_ifnametoaddr(s->if_names[i], hostName, sizeof(hostName)) != ULM_SUCCESS) {
+            if (ulm_ifnametoaddr
+                (s->if_names[i], hostName,
+                 sizeof(hostName)) != ULM_SUCCESS) {
                 s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
                 return;
             }
             in_addr_t inaddr = inet_addr(hostName);
-            if(inaddr == INADDR_ANY) {
+            if (inaddr == INADDR_ANY) {
                 struct hostent *host = gethostbyname(hostName);
-                if(host == 0) {
+                if (host == 0) {
                     s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
                     return;
                 }
@@ -2178,9 +2131,11 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
 
         /* no interface list specified so use local hostname */
         s->if_count = 1;
-        s->if_names = (InterfaceName_t*)ulm_malloc(sizeof(InterfaceName_t));
-        s->if_addrs = (struct sockaddr_in*)ulm_malloc(sizeof(struct sockaddr_in));
-        if(s->if_names == 0 || s->if_addrs == 0) {
+        s->if_names =
+            (InterfaceName_t *) ulm_malloc(sizeof(InterfaceName_t));
+        s->if_addrs =
+            (struct sockaddr_in *) ulm_malloc(sizeof(struct sockaddr_in));
+        if (s->if_names == 0 || s->if_addrs == 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
@@ -2188,17 +2143,19 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
         memset(s->if_addrs, 0, sizeof(struct sockaddr_in));
 
         HostName_t hostName;
-        if(gethostname(hostName, sizeof(hostName)) < 0) {
+        if (gethostname(hostName, sizeof(hostName)) < 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
-        if (ulm_ifaddrtoname(hostName, s->if_names[0], sizeof(InterfaceName_t)) != ULM_SUCCESS) {
+        if (ulm_ifaddrtoname
+            (hostName, s->if_names[0],
+             sizeof(InterfaceName_t)) != ULM_SUCCESS) {
             //s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             //return;
         }
 
-        struct hostent* host = gethostbyname(hostName);
-        if(host == 0) {
+        struct hostent *host = gethostbyname(hostName);
+        if (host == 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             return;
         }
@@ -2210,22 +2167,30 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
 
 void lampi_init_postfork_ip_addresses(lampiState_t* s)
 {
-    if(s->verbose)
-        lampi_init_print("lampi_init_postfork_ip_addresses");
-
-    if((s->nhosts == 1) || (!s->tcp && !s->udp))
+    if (s->error) {
         return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_postfork_ip_addresses");
+    }
+
+    if ((s->nhosts == 1) || (!s->tcp && !s->udp)) {
+        return;
+    }
 
     /* redistribute list of all addresses */
     size_t count = (s->global_size * s->if_count);
-    s->h_addrs = (struct sockaddr_in*)ulm_malloc(count * sizeof(struct sockaddr_in));
+    s->h_addrs =
+        (struct sockaddr_in *) ulm_malloc(count *
+                                          sizeof(struct sockaddr_in));
     if (s->h_addrs == 0) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
 
-    int rc = s->client->allgather(s->if_addrs, s->h_addrs, (s->if_count * sizeof(struct sockaddr_in)));
-    if(rc != ULM_SUCCESS) {
+    int rc = s->client->allgather(s->if_addrs, s->h_addrs,
+                                  (s->if_count * sizeof(struct sockaddr_in)));
+    if (rc != ULM_SUCCESS) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
