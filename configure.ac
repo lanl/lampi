@@ -173,8 +173,8 @@ i?86-pc-linux*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm-1.6.3"
-        IB_PREFIX="/usr/mellanox"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
+        IB_PREFIX="${IB_PREFIX:-/usr/mellanox}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
@@ -218,7 +218,7 @@ i?86-pc-cygwin*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm-1.6.3"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
@@ -265,7 +265,7 @@ ia64-unknown-linux*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
@@ -302,7 +302,7 @@ x86_64-unknown-linux*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
@@ -358,14 +358,14 @@ alpha*-dec*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX=""
+        GM_PREFIX="${GM_PREFIX:-/opt/gm}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
 
         # on ASCI-Q, header files are broken.  Use header files we have installed
         # in src/path/quadrics/elan3:
         RMS_BROKEN_PREFIX="$srcdir/src/path/quadrics"
-        RMS_PREFIX="/usr/opt/rms"
+        RMS_PREFIX="${RMS_PREFIX:/usr/opt/rms}"
         ROMIO_FS="ufs nfs cfs"
 
 	;;
@@ -406,7 +406,7 @@ powerpc-apple-darwin*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm}"
         LSF_LIB=""
         LSF_INC=""
         RMS_PREFIX=""
@@ -456,7 +456,7 @@ mips-sgi-irix*)
         enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
-        GM_PREFIX="/opt/gm"
+        GM_PREFIX="${GM_PREFIX:-/opt/gm}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
