@@ -50,7 +50,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
                                          double timeNow)
 {
     RecvDesc_t *MatchedPostedRecvHeader;
-    RequestDesc_t *request;
+    RequestDesc_t *request = 0;
     ULM_64BIT_INT fragSendSeqID = DataHeader->isendSeq_m;
     bool recvDone = false;
 
