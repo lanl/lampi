@@ -74,23 +74,14 @@ public:
             return true;
         }
 
-#if 0
-    bool retransmitP(SendDesc_t *message) {
-        if ( (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
-            || (message->FragsToAck.size() == 0))
-            return false;
-        else if (dclock() >= message->earliestTimeToResend) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    bool resend(SendDesc_t *message, int *errorCode)
-    { 
-        ulm_dbg(("Proc %d: resend called.\n", myproc));
-        *errorCode = ULM_SUCCESS; return false; 
-    }
+#ifdef ENABLE_RELIABILITY
+    
+    bool doAck() { return gmState.doAck; }
+    
+    int fragSendQueue() {return GMFRAGSTOSEND;}
+    
+    int toAckQueue() {return GMFRAGSTOACK;}
+    
 #endif
 
     static void callback(struct gm_port *p, void *context, enum gm_status status);

@@ -107,13 +107,45 @@ public:
     void msgData(double timeNow);
 
     // Free send resources on reception of a data ACK
-    void msgDataAck();
+    void msgDataAck(double timeNow);
 
+    unsigned long long ackFragSequence()
+    {
+        gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
+        return p->thisFragSeq;
+    }
+    
+    unsigned long long ackDeliveredFragSeq()
+    {
+        gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
+        return p->deliveredFragSeq;
+    }
+    
+    unsigned long long ackReceivedFragSeq()
+    {
+        gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
+        return p->receivedFragSeq;
+    }
+    
+    /* returns the global Proc ID of sending process */
+    int ackSourceProc()
+    {
+        gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
+        return p->src_proc;
+    }
+    
+    bool ackStatus()
+    {
+        gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
+        return p->ackStatus;
+    }
+    
     // default constructor
     gmRecvFragDesc()
         {
             DataOK = false;
         }
+    
     gmRecvFragDesc(int poolIndex):BaseRecvFragDesc_t(poolIndex)
         {
             DataOK = false;

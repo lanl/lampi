@@ -79,13 +79,13 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
 
 
-    if (0 && OPT_RELIABILITY) {  // bypass for now!!!
+    if ( OPT_RELIABILITY ) {
 
 	    Communicator *pg = communicators[ctx_m];
 	    unsigned int glSourceProcess =  pg->remoteGroup->
 		    mapGroupProcIDToGlobalProcID[srcProcID_m];
 	    /* process the deliverd sequence number range */
-	    int returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
+	    int returnValue = processRecvDataSeqs(p, glSourceProcess, reliabilityInfo);
 	    if (returnValue != ULM_SUCCESS)
 		    return false;
     }
@@ -97,10 +97,16 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p->src_proc = myproc();
     p->dest_proc = gmHeader_m->data.senderID;
     p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
-    p->thisFragSeq = 0;
     p->checksum = 0;
 
-
+#ifdef ENABLE_RELIABILITY
+    if ( gmState.doChecksum )
+    {
+        p->checksum = BasePath_t::headerChecksum((gmHeader *)p, sizeof(gmHeader) - sizeof(ulm_uint32_t),
+                                                 GM_HDR_WORDS);        
+    }
+#endif
+    
     // only send if we have an implicit send token
     if (usethreads()) {
         gmState.localDevList[dev_m].Lock.lock();
@@ -118,7 +124,6 @@ bool gmRecvFragDesc::AckData(double timeNow)
     }
 
     // send the ACK
-
     gm_send_with_callback(gmState.localDevList[dev_m].gmPort,
 		    p, gmState.log2Size, sizeof(gmHeader),
 		    GM_LOW_PRIORITY,
@@ -172,12 +177,12 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 
 // Free send resources on reception of a data ACK
 
-void gmRecvFragDesc::msgDataAck()
+void gmRecvFragDesc::msgDataAck(double timeNow)
 {
     gmSendFragDesc		*sfd;
     SendDesc_t 			*bsd;
-
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
+
     sfd = (gmSendFragDesc *)p->ptrToSendDesc.ptr;
     bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
@@ -190,12 +195,16 @@ void gmRecvFragDesc::msgDataAck()
     if (usethreads())
         bsd->Lock.lock();
 
+#ifdef ENABLE_RELIABILITY
+    if (checkForDuplicateAndNonSpecificAck(sfd)) {
+        bsd->Lock.unlock();
+        ReturnDescToPool(0);
+        return;
+    }
+#endif
     // revisit this when reliability is implemented!!!!
-    (bsd->NumAcked)++;
-
+    handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
     sfd->setDidReceiveAck(true);
-    if ( sfd->sendDidComplete() )
-        sfd->freeResources();
 
     if (usethreads())
         bsd->Lock.unlock();
@@ -238,4 +247,6 @@ void gmRecvFragDesc::msgData(double timeNow)
 
     communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
 }
+
+
 

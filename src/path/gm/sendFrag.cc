@@ -49,6 +49,8 @@ bool gmSendFragDesc::init(int globalDestProc,
 
     if (!initialized_m) {
 
+        BaseSendFragDesc_t::init();
+        
         globalDestProc_m = globalDestProc;
         tmapIndex_m = tmapIndex;
         parentSendDesc_m = parentSendDesc;
@@ -58,9 +60,9 @@ bool gmSendFragDesc::init(int globalDestProc,
         packed_m = packed;
         numTransmits_m = numTransmits;
 
+        timeSent_m = -1;
         initialized_m = true;
         didRecvAck_m = false;
-        sendDidComplete_m = false;
     }
 
     if (!currentSrcAddr_m) {
@@ -111,12 +113,16 @@ bool gmSendFragDesc::init(int globalDestProc,
         headerp->destID = globalDestProc_m;
         headerp->dataLength = length_m;
         headerp->msgLength = parentSendDesc_m->posted_m.length_m;
-        headerp->frag_seq = 0;  // fix later for reliability!!!!
-
+        fragSeq_m = 0;  // fix later for reliability!!!!
+#ifdef ENABLE_RELIABILITY
+        parentSendDesc_m->path_m->initFragSeq(this);
+#endif
+        headerp->frag_seq = fragSeq_m;
+        
         headerp->isendSeq_m = parentSendDesc_m->isendSeq_m;
         headerp->sendFragDescPtr.ptr = (void *) this;
         headerp->dataSeqOffset = seqOffset_m;
-        headerp->checksum = 0; // header checksum -- fix later!!!!
+        headerp->checksum = 0;
     }
 
     buf = (gmFragBuffer *)currentSrcAddr_m;
@@ -180,8 +186,7 @@ bool gmSendFragDesc::init(int globalDestProc,
                 len_to_copy = (length_m - len_copied >= tmap[ti].size) ?
                     tmap[ti].size : length_m - len_copied;
                 if (len_to_copy == 0) {
-                    headerp->dataChecksum = csum;
-                    return true;
+                    break;
                 }
                 if (gmState.doChecksum) {
                     if (usecrc()) {
@@ -201,19 +206,25 @@ bool gmSendFragDesc::init(int globalDestProc,
 
         headerp->dataChecksum = csum;
     }
-
+    
+#ifdef ENABLE_RELIABILITY
+    if ( gmState.doChecksum )
+    {
+        headerp->checksum = BasePath_t::headerChecksum(headerp, sizeof(gmHeader) - sizeof(ulm_uint32_t),
+                                                                 GM_HDR_WORDS);        
+    }
+#endif
+    
     return true;
 }
 
 
-void gmSendFragDesc::freeResources()
+void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
 {
-    SendDesc_t 			*bsd;
 
     if ( GMFRAGFREELIST == WhichQueue )
         return;		// already freed
 
-    bsd = (SendDesc_t *) parentSendDesc_m;
     bsd->clearToSend_m = true;
 
     // remove frag descriptor from list of frags to be acked
