@@ -190,11 +190,11 @@ i?86-pc-linux*)
               CFLAGS="-g -O"
            fi
            CFLAGS="$CFLAGS -march=i686 -finline-functions"
-           CFLAGS="$CFLAGS -Wall -Wno-deprecated"
+           CFLAGS="$CFLAGS -Wall"
            # link flags with "make rpath=" support
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS"
+        CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -236,11 +236,11 @@ i?86-pc-cygwin*)
               CFLAGS="-g -O"
            fi
            CFLAGS="$CFLAGS -march=i686 -finline-functions"
-           CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+           CFLAGS="$CFLAGS -Wall"
            # link flags with "make rpath=" support
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS"
+        CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -273,11 +273,11 @@ ia64-unknown-linux*)
               CFLAGS="-g -O"
            fi
            CFLAGS="$CFLAGS -finline-functions"
-           CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+           CFLAGS="$CFLAGS -Wall"
            # link flags with "make rpath=" support
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS"
+        CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -311,10 +311,10 @@ x86_64-unknown-linux*)
         fi
 	#CFLAGS="$CFLAGS -finline-functions -m32"
         CFLAGS="$CFLAGS -finline-functions -fPIC"
-	CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+	CFLAGS="$CFLAGS -Wall"
         # link flags with "make rpath=" support
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
-        CXXFLAGS="$CFLAGS"
+        CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -420,7 +420,6 @@ powerpc-apple-darwin*)
         else
             MODULES_OS="$MODULES_OS src/os/DARWIN/powerpc"
         fi
-
         CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         # default features for this host
@@ -454,11 +453,11 @@ mips-sgi-irix*)
               CFLAGS="-g -O"
            fi
            CFLAGS="$CFLAGS -finline-functions"
-           CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+           CFLAGS="$CFLAGS -Wall"
            # link flags with "make rpath=" support
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS -no_auto_include"
+        CXXFLAGS="$CFLAGS -no_auto_include -Wno-deprecated"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
