@@ -63,8 +63,14 @@
 #endif
 
 #ifdef __APPLE__
+/* check if PowerPC 970 (G5) */
+#ifdef __ppc_64__
+#include "os/DARWIN/ppc_64/atomic.h"
+#else
 #include "os/DARWIN/powerpc/atomic.h"
 #endif
+
+#endif      /* __APPLE__ */
 
 #ifndef mb
 #define mb()
