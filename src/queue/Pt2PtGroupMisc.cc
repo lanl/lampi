@@ -36,6 +36,7 @@
 #ifdef  ENABLE_QSNET
 #include <elan3/elan3.h>
 #include "path/quadrics/state.h"
+#include "path/quadrics/dmaThrottle_new.h"
 #endif
 
 #include "queue/Communicator.h"
@@ -730,22 +731,27 @@ void CheckForAckedMessages(double timeNow)
             // sanity check
             if (SendDesc->path_m
                 && SendDesc->path_m->sendDone(SendDesc, timeNow, &errorCode) ) {
-		    /* for synchronus sends, mark send as complete - overkill
-		     *   for the rest of the send types - if we don't mark
-		     *   send done here, wait or test will never complete */
-		    if( !SendDesc->messageDone )
-			    SendDesc->messageDone=REQUEST_COMPLETE;
-		
-		    if( SendDesc->freeCalled ) {
-			    /* a call to free the mpi object has been made,
-			     *   so ok to free this descriptor */
-		    	    BaseSendDesc_t *TmpDesc = (BaseSendDesc_t *)
-		    		    UnackedPostedSends.RemoveLinkNoLock(SendDesc);
-		    	    if (usethreads())
-		    		    SendDesc->Lock.unlock();
-		    	    SendDesc->path_m->ReturnDesc(SendDesc);
-		    	    SendDesc = TmpDesc;
-		    }
+                /* for synchronus sends, mark send as complete - overkill
+                *   for the rest of the send types - if we don't mark
+                *   send done here, wait or test will never complete */
+                if( !SendDesc->messageDone )
+                    SendDesc->messageDone=REQUEST_COMPLETE;
+    
+                if( (SendDesc->freeCalled) || (SendDesc->persistFreeCalled) ) {
+                    /* a call to free the mpi object has been made,
+                    *   so ok to free this descriptor */
+                        BaseSendDesc_t *TmpDesc = (BaseSendDesc_t *)
+                            UnackedPostedSends.RemoveLinkNoLock(SendDesc);
+                        SendDesc->WhichQueue = ONNOLIST;
+                        if (usethreads())
+                            SendDesc->Lock.unlock();
+                        if ( SendDesc->freeCalled )
+                            SendDesc->path_m->ReturnDesc(SendDesc);
+                        SendDesc = TmpDesc;
+                } else {
+                    if (usethreads())
+                        SendDesc->Lock.unlock();
+                }
             } else {
                 // unlock - nothing to do
                 if (usethreads())

@@ -69,6 +69,7 @@ struct RequestDesc_t : public Links_t {
 
     bool persistent;		// persistence flag
     bool freeCalled;        // true when ulm_request_free is called before recv. request complete
+    bool persistFreeCalled;     // used for tracking when user calls request_free on persistent requests
     volatile int messageDone;	// message completion flag
 
     // default constructor
