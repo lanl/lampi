@@ -872,7 +872,8 @@ void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex)
 
     // if this was a bsend (or aborted bsend), then decrement the reference
     // count for the appropriate buffer allocation
-    if (message->sendType == ULM_SEND_BUFFERED && !message->persistent) {
+    if ( message->sendType == ULM_SEND_BUFFERED &&
+        !(message->persistent || message->persistFreeCalled) ) {
         if (message->posted_m.length_m > 0) {
             ulm_bsend_decrement_refcount(
 			    (ULMRequest_t) message,

@@ -779,7 +779,7 @@ void CheckForAckedMessages(double timeNow)
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         UnackedPostedSends.RemoveLinkNoLock(SendDesc);
                     SendDesc->WhichQueue = ONNOLIST;
-                    if (SendDesc->persistent) {
+                    if ( SendDesc->persistFreeCalled ) {
                         ulm_type_release(SendDesc->datatype);
                         ulm_type_release(SendDesc->bsendDatatype);
                     }
