@@ -101,13 +101,4 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
         }
     }
 #endif
-
-    /* 
-     * Install signal handler 
-     */
-    returnValue = ClientInstallSigHandler();
-    if (returnValue != ULM_SUCCESS) {
-        s->error = ERROR_LAMPI_INIT_PREFORK_INITIALIZING_PROCESS_RESOURCES;
-        return;
-    }
 }
