@@ -175,6 +175,8 @@
 #define PMPI_Info_set MPI_Info_set
 #undef PMPI_Init
 #define PMPI_Init MPI_Init
+#undef PMPI_Init_thread
+#define PMPI_Init_thread MPI_Init_thread
 #undef PMPI_Initialized
 #define PMPI_Initialized MPI_Initialized
 #undef PMPI_Intercomm_create
@@ -211,6 +213,8 @@
 #define PMPI_Pcontrol MPI_Pcontrol
 #undef PMPI_Probe
 #define PMPI_Probe MPI_Probe
+#undef PMPI_Query_thread
+#define PMPI_Query_thread MPI_Query_thread
 #undef PMPI_Recv
 #define PMPI_Recv MPI_Recv
 #undef PMPI_Recv_init
