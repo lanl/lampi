@@ -137,6 +137,7 @@ void KillAppProcs(int host)
                 RunParams.HostList[host]);
         if (system(cmd) != 0) {
             /* host can't be reached - return */
+            ulm_err(("Warning: host unreachable\n"));
             return;
         }
 
@@ -155,6 +156,9 @@ void KillAppProcs(int host)
         n += sprintf(cmd + n, " > /dev/null 2>&1\n");
         if (n >= ULM_MAX_COMMAND_STRING) {
             return;
+        }
+        if (RunParams.Verbose) {
+            ulm_err(("Running command \"%s\"\n", cmd));
         }
         system(cmd);
     }
