@@ -118,14 +118,6 @@ inline static int spintrylock(lockStructure_t *lockData)
     return gotLock;
 }
 
-/*
- * Clear the lock
- */
-inline static void spinunlock(lockStructure_t *lockData)
-{
-    lockData->data.lockData_m = 1;
-}
-
 
 /*
  *  atomically add a constant to the input integer returning the
@@ -156,6 +148,15 @@ inline static int fetchNset(volatile int *addr, int setValue)
 }
 
 #endif		/* WITH_ICC */
+
+
+/*
+ * Clear the lock
+ */
+inline static void spinunlock(lockStructure_t *lockData)
+{
+    lockData->data.lockData_m = 1;
+}
 
 
 inline static unsigned long long fetchNaddLong(bigAtomicUnsignedInt *addr,
