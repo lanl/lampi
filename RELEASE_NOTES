@@ -349,5 +349,5 @@ Version 1.5.2
 
 - Fixed ia64 atomic operation support.
 
-
+- Only use ptys for standard I/O if mpirun is attached to a tty.
 

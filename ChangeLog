@@ -1,3 +1,28 @@
+2004-05-27 18:24  ddd
+
+	* src/: client/adminMessage.h, include/internal/lampi_state.h,
+	  init/init.cc, run/JobParams.h, run/SendInputDataToClients.cc,
+	  run/mpirun.cc: More standard input problems:
+
+	  On Linux when mpirun's standard input is a sufficiently large
+	  file, a random amount of the standard input on the daemon's pty
+	  may fail to be drained on close().  This is incomprehensible
+	  behaviour to me, but...
+
+	  Solution: Tim astutely points out that if mpirun is not attached
+	  to a tty then we don't need the pty horribleness at all.
+
+	  So an isatty field has been added to RunParameters and is
+	  forwarded to the daemons.  ptys are only used if mpirun's stdin
+	  is a tty, in which case things appear to behave nicely.
+
+	  Tested on lambda with gcc and Lahey fortran for several
+	  variations of interactive and non-interactive stdin.
+
+2004-05-26 15:39  ddd
+
+	* ChangeLog: Updating for 1.5.2
+
 2004-05-26 15:35  ddd
 
 	* RELEASE_NOTES, rpm/lampi-clustermatic.spec,
