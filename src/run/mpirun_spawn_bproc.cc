@@ -152,7 +152,7 @@ static int setup_socket(struct sockaddr_in *listenaddr)
 #ifdef BPROC
 
 static int *pids = 0;
-static int iosock_fd[3];
+static int iosock_fd[2];
 static int max_sock_fd = -1;
 
 void *accept_thread(void *arg) {
@@ -172,17 +172,17 @@ void *accept_thread(void *arg) {
      *   things back. the pid and rfd (the process id
      *   and what type of file descriptor (stderr,stdout,stdin)
      */
-    while (connectCount < 3 * nHosts) {
+    while (connectCount < 2 * nHosts) {
 	FD_ZERO(&rset);
 	/* set the sockets to listen on */
-	for (int fdIndex = 0; fdIndex < 3; fdIndex++) {
+	for (int fdIndex = 0; fdIndex < 2; fdIndex++) {
 	    FD_SET(iosock_fd[fdIndex], &rset);
 	}
 
 	/* see if any sockets to accept */
 	int nRead = select(max_sock_fd + 1, &rset, NULL, NULL, &tmo);
 	if (nRead > 0) {
-	    for (int sock = 0; sock < 3; sock++) {
+	    for (int sock = 0; sock < 2; sock++) {
 		if (FD_ISSET(iosock_fd[sock], &rset)) {
 		    int fd = -1, pid = -1, rfd = -1;
 		    socklen_t sa_size;
@@ -207,12 +207,6 @@ void *accept_thread(void *arg) {
 			    hostID = i;
 			}
 		    switch (rfd) {
-		    case STDIN_FILENO:
-			if (RunParameters->STDINfds[hostID] != -1)
-			    break;
-			RunParameters->STDINfds[hostID] = fd;
-			connectCount++;
-			break;
 		    case STDOUT_FILENO:
 			if (RunParameters->STDOUTfds[hostID] != -1)
 			    break;
@@ -229,7 +223,7 @@ void *accept_thread(void *arg) {
 		}
 	    }			/* end sock loop */
 	}			/* end nread > 0 */
-    }				/* end while (connectCount < 3 * nHosts) */
+    }				/* end while (connectCount < 2 * nHosts) */
     pthread_exit((void *)1);
 }
 #endif
@@ -262,7 +256,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_SERVER[MAXBUFFERLEN];
 
 #ifndef USE_CT
-    struct bproc_io_t io[3];
+    struct bproc_io_t io[2];
     struct sockaddr_in addr;
     pthread_t a_thread;
     void *a_thread_return;
@@ -293,11 +287,9 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     // allocate space for stdio file handles
     RunParameters->STDERRfds = ulm_new(int, nHosts);
     RunParameters->STDOUTfds = ulm_new(int, nHosts);
-    RunParameters->STDINfds = ulm_new(int, nHosts);
     for (i = 0; i < nHosts; i++) {
 	RunParameters->STDERRfds[i] = -1;
 	RunParameters->STDOUTfds[i] = -1;
-	RunParameters->STDINfds[i] = -1;
     }
 #endif
 
@@ -365,8 +357,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      * setup stdio sockets for the exec'ed processes to connect back
      *  to
      */
-    for (int iofd = 0; iofd < 3; iofd++) {
-	io[iofd].fd = iofd;
+    for (int iofd = 0; iofd < 2; iofd++) {
+	io[iofd].fd = iofd + 1;
 	io[iofd].type = BPROC_IO_SOCKET;
 	io[iofd].send_info = 1;
 	((struct sockaddr_in *) &io[iofd].d.addr)->sin_family = AF_INET;
@@ -391,7 +383,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     }
 
     if (bproc_vexecmove_io
-	(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
+	(nHosts, nodes, pids, io, 2, exec_args[EXEC_NAME],
 	 argv + (FirstAppArgument - 1), environ) < 0) {
 	fprintf(stderr, "bproc error  %s at line = %i in file= %s\n",
 		strerror(errno), __LINE__, __FILE__);

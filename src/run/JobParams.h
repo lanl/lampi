@@ -160,9 +160,6 @@ typedef struct ULMRunParams {
     /* handle standard i/o traffic */
     int handleSTDio;
 
-    /* list of socket that send standad input data to host i */
-    int *STDINfds;
-
     /* list of socket that receives standad out data from host i */
     int *STDOUTfds;
 

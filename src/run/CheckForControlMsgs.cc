@@ -311,6 +311,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     ClientSocketFDList[i] = -1;
                     if (ActiveHosts[i])
                         (*HostsAbNormalTerminated)++;
+                    else
+                        (*ActiveClients)--;
                     continue;
                 }
                 if (IOReturn < 0) {
