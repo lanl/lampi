@@ -1136,7 +1136,7 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
       from = (char*)header->sform.data;
       to   = (char*)start_addr;
 
-      length_to_check =	header->sform.data_length;
+      length_to_check =	header->sform.mesg_length;
 
     }
   }
