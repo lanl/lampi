@@ -148,7 +148,7 @@ public:
     quadricsRecvFragDesc(int poolIndex) : BaseRecvFragDesc_t(poolIndex) { DataOK = false; }
 
     // destructor
-    ~quadricsRecvFragDesc() {}
+    virtual ~quadricsRecvFragDesc() {}
 
 #ifdef RELIABILITY_ON
     // check to see if multicast frag is a duplicate
