@@ -40,10 +40,8 @@
 #include "os/atomic.h"          /* for fetchNadd */ 
 #include "queue/Communicator.h"
 #include "queue/globals.h"
-#include "util/Utility.h"
-#include "util/inline_copy_functions.h"
 #include "util/misc.h"
-#include "util/parsing.h"
+#include "util/MemFunctions.h"
 
 typedef struct {
     int                 tag;
@@ -208,7 +206,7 @@ adminMessage::adminMessage()
     /* initialize collective resources */
     groupHostData_m = (admin_host_info_t *)NULL;
     barrierData_m = (swBarrierData *)NULL;
-    sharedBuffer_m = (void *RESTRICT_MACRO)NULL;
+    sharedBuffer_m = 0;
     lenSharedMemoryBuffer_m = 0;
     syncFlag_m = (int *)NULL;
     localProcessRank_m = -2;
@@ -667,7 +665,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                                      int timeout)
 {
     int             np = 0, tag, hostrank, nprocesses, recvAuthData[3], authOK;
-    int                     sockfd, cnt, hostcnt;
+    int             cnt, hostcnt;
     ulm_iovec_t iovecs[6], riov[1];
     int             *hostsAssigned = 0,assignNewId, daemon_to;
     long int        rcvdlen, sent;
@@ -777,7 +775,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             continue;
         }
                         
-        sockfd = daemon->socketfd();
+        /* sockfd = daemon->socketfd(); */
         daemon->setTimeout(daemon_to);
         // get daemon info: 
         //      tag: auth data : host rank : nprocesses : daemon PID : connection info string           
@@ -2687,7 +2685,6 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
     struct timeval t;
     fd_set fds;
     ulm_iovec_t iovecs;
-    int size;
 
     reset(RECEIVE);
 
@@ -2733,7 +2730,7 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
             returnValue = ERROR;
             return returnValue;
         }
-        if ((size=ulm_readv(sockfd, &iovecs, 1)) != sizeof(int)) {
+        if (ulm_readv(sockfd, &iovecs, 1) != sizeof(int)) {
             *errorCode = errno;
             returnValue = ERROR;
             return returnValue;

@@ -1,2 +1,2 @@
 SRC_MPIRUN += \
-	os/IRIX/lock.s
+	init/state.cc

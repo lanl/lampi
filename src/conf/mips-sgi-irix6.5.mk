@@ -47,8 +47,8 @@ LSF_PREFIX=/lsf
 LSF_INCLUDE_PREFIX=/lsf/share
 CPPFLAGS	+= -DLSF
 CPPFLAGS	+= -I$(LSF_INCLUDE_PREFIX)/include
-LDFLAGS		+= -L $(LSF_PREFIX)/lib64
-LDLIBS		+= -llsf
+LDFLAGS_MPIRUN	+= -L $(LSF_PREFIX)/lib64
+LDLIBS_MPIRUN	+= -llsf
 endif
 
 # NUMA support

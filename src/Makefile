@@ -86,9 +86,10 @@ endif
 
 MODULES_MPIRUN	:= $(MODULES_OS) 
 MODULES_MPIRUN	+= client
+MODULES_MPIRUN	+= init
+MODULES_MPIRUN	+= interface
 MODULES_MPIRUN	+= run
 MODULES_MPIRUN	+= util
-MODULES_MPIRUN	+= interface
 MODULES_MPIRUN  += ctnetwork
 MODULES_MPIRUN  += threads
 
@@ -185,27 +186,25 @@ $(VERSION): VERSION
 	echo '#define LAMPI_VERSION "'`cat VERSION`'"' > $@
 
 mpirun: $(VERSION) $(OBJ_MPIRUN)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_MPIRUN) \
-		-o $@ $(OBJ_MPIRUN) $(LDLIBS) $(LDLIBS_MPIRUN)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_MPIRUN) -o $@ $(OBJ_MPIRUN) $(LDLIBS) $(LDLIBS_MPIRUN)
 
 libmpi.a: $(VERSION) $(OBJ_LIBMPI)
-	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '_'`; ln -sf $$f _$$l; done
-	$(AR) $(ARFLAGS) $@ _*.o
+	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '.'`; ln -sf $$f src.$$l; done
+	$(AR) $(ARFLAGS) $@ src.*.o
 	$(RANLIB) $@
-	@$(RM) _*.o
+	@$(RM) src.*.o
 
 libmpi.$(SOSUFFIX): $(VERSION) $(OBJ_LIBMPI)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) \
-		-o $@ $(OBJ_LIBMPI) $(LDLIBS) $(LDLIBS_LIBMPI)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) -o $@ $(OBJ_LIBMPI) $(LDLIBS) $(LDLIBS_LIBMPI)
 
 libmpiandio.$(SOSUFFIX): $(VERSION) $(OBJ_LIBMPI) $(MPIO_LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) \
 		-o $@ $(OBJ_LIBMPI) $(MPIO_OBJECTS) $(LDLIBS) $(LDLIBS_LIBMPI)
 
 libmpiandio.a: $(VERSION) $(OBJ_LIBMPI) $(MPIO_LIB)
-	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '_'`; ln -sf $$f _$$l; done
-	$(AR) $(ARFLAGS) $@ _*.o
-	@$(RM) _*.o
+	@for f in $(OBJ_LIBMPI); do l=`echo $$f | tr '/' '-'`; ln -sf $$f src.$$l; done
+	$(AR) $(ARFLAGS) $@ src.*.o
+	@$(RM) src.*.o
 	$(AR) $(ARFLAGS) $@ $(MPIO_OBJECTS)
 	$(RANLIB) $@
 
