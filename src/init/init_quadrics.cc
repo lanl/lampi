@@ -58,6 +58,9 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
         return;
     }
 
+  if (!quadricsHW) // quadrics hardware bcast disabled by user
+      return;
+
     if (s->error) {
         return;
     }
@@ -128,6 +131,8 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
 
     if ( returnCode == ULM_SUCCESS)
     {
+      if (myproc()==0)         
+         ulm_err(("Enabling hw bcast on ULM_COMM_WORLD=%i\n",ULM_COMM_WORLD));
       cp->hw_bcast_enabled = QSNET_COLL ;
       cp->bcaster          = bcaster;
     }
@@ -205,6 +210,18 @@ void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
         return;
     }
+
+    /* read quadricsHW - if quadricsHW use hardware collectives
+     */
+    if (false ==
+        s->client->unpackMessage(&quadricsHW,
+                                 (adminMessage::packType) sizeof(int),
+                                 1)) {
+        ulm_err(("Failed unpacking quadricsHW...\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
+        return;
+    }
+
 
     /* read quadricsDoAck - if quadricsDoAck use reliable acking protocol, else use local
      * send completion semantics */
@@ -285,6 +302,15 @@ void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
         return;
     }
+
+    if (false ==
+        s->client->unpack(&quadricsHW,
+                       (adminMessage::packType) sizeof(int), 1)) {
+        ulm_err(("Failed unpacking quadricsHW...\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
+        return;
+    }
+
 
     /* read quadricsDoAck - if quadricsDoAck use reliable acking protocol, else use local
      * send completion semantics */
