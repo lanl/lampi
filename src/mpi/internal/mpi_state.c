@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2005. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -61,6 +61,22 @@ void *ulm_datatype_null_location;
 void *ulm_op_null_location;
 void *ulm_request_null_location;
 
+
+/*
+ * MPI layer initialization
+ */
+static void atexit_handler(void)
+{
+    if (_mpi.finalized == 0) {
+        fflush(stdin);
+        fflush(stdout);
+        ulm_warn(("Warning: Process exiting without MPI finalization\n"));
+        fflush(stderr);
+        sleep(1);
+    }
+}
+
+
 /*
  * MPI layer initialization
  */
@@ -97,7 +113,8 @@ int _mpi_init(void)
         }
 
         if (_MPI_FORTRAN) { 
-            lampi_environ_find_integer("LAMPI_FORTRAN", &(_mpi.fortran_layer_enabled));
+            lampi_environ_find_integer("LAMPI_FORTRAN",
+                                       &(_mpi.fortran_layer_enabled));
         } else {
             _mpi.fortran_layer_enabled = 0;
         }
@@ -106,6 +123,11 @@ int _mpi_init(void)
         _mpi.finalized = 0;
         _mpi.proc_null_request = &dummy_proc_null_request;
 
+        rc = atexit(atexit_handler);
+        if (rc < 0) {
+            perror("atexit");
+            return rc;
+        }
 
         rc = _mpi_init_datatypes();
         if (rc < 0) {
