@@ -184,6 +184,8 @@ private:
         } else
             return tcpSocketsConnected;
     }
+
+    void setSocketOptions(int);
 };
 
 #endif

@@ -176,6 +176,7 @@ bool TCPPeer::acceptConnection(int sd)
                 if(sendConnectAck(tcpSocket)) { 
                     tcpSocket.retries = 0;
                     tcpSocket.state = S_CONNECTED;
+                    setSocketOptions(tcpSocket.sd);
                     incrementSocketCount();
                     tcpSocket.flags |= (Reactor::NotifyRecv|Reactor::NotifyExcept);
                     tcpPath->insertListener(tcpSocket.sd, this, Reactor::NotifyRecv|Reactor::NotifyExcept);
@@ -189,6 +190,7 @@ bool TCPPeer::acceptConnection(int sd)
                 if(sendConnectAck(tcpSocket)) {
                     tcpSocket.retries = 0;
                     tcpSocket.state = S_CONNECTED;
+                    setSocketOptions(tcpSocket.sd);
                     incrementSocketCount();
                     tcpSocket.flags |= (Reactor::NotifyRecv|Reactor::NotifyExcept);
                     tcpPath->insertListener(tcpSocket.sd, this, Reactor::NotifyRecv|Reactor::NotifyExcept);
@@ -529,6 +531,7 @@ void TCPPeer::recvConnectAck(TCPSocket& tcpSocket)
     }
     tcpSocket.retries = 0;
     tcpSocket.state = S_CONNECTED;
+    setSocketOptions(tcpSocket.sd);
     incrementSocketCount();
 }
 
@@ -774,4 +777,28 @@ void TCPPeer::sendFailed(TCPRecvFrag* recvFrag)
     }
 }
 
+
+void TCPPeer::setSocketOptions(int sd)
+{
+#if defined(__linux__)
+    int optval = 1;
+    socklen_t optlen = sizeof(optval);
+#else
+    int optval = 1;
+    int optlen = sizeof(optval);
+#endif
+
+#if defined(TCP_NODELAY)
+   optval = 1;
+   if(setsockopt(sd, IPPROTO_TCP, TCP_NODELAY, &optval, optlen) < 0) {
+       ulm_err(("TCPPeer[%d,%d] setsoskcopt(TCP_NODELAY) failed with errno=%d\n", thisProc,peerProc,errno));
+   }
+#endif
+#if defined(TCP_NODELACK)
+   optval = 1;
+   if(setsockopt(sd, IPPROTO_TCP, TCP_NODELACK, &optval, optlen) < 0) {
+       ulm_err(("TCPPeer[%d,%d] setsoskcopt(TCP_NODELAY) failed with errno=%d\n", thisProc,peerProc,errno));
+   }
+#endif
+}
 
