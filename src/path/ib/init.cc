@@ -143,6 +143,7 @@ void ibSetup(lampiState_t *s)
     exchange_send[0] = exchange_send[1] = 0;
     ib_state.num_hcas = 0;
     ib_state.num_active_hcas = 0;
+    ib_state.finalized = false;
 
     // set some defaults here...
     ib_state.max_ud_2k_buffers = getenv_int("LAMPI_IB_MAX_UD_2K_BUFFERS", 2048);

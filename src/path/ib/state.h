@@ -318,6 +318,8 @@ typedef struct {
     double nack_lost_retrans_time;
     /* the maximum power of two to multiply the retransmit time by */
     int maxretrans_poweroftwo_multiple;
+    /* boolean indicating whether ibPath::finalize code has already been executed */
+    bool finalized;
 } ib_state_t;
 
 extern ib_state_t ib_state;
