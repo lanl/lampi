@@ -463,7 +463,7 @@ if test "$enable_gm" = "yes" ; then
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/gm"
    test "$GM_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$GM_PREFIX/include"
    test "$GM_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$GM_PREFIX/lib"
-   LIBS="$LIBS -lgm"
+   LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lgm"
 fi
 
 AC_ARG_ENABLE(shared_memory,
