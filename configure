@@ -10671,6 +10671,7 @@ alpha*-dec*)
 	;;
 
 powerpc-apple-darwin*)
+        PPC_TYPE=`/usr/bin/machine`
         CC="gcc"
         CXX="g++"
         if test "$enable_debug" = "yes" ; then
@@ -10680,15 +10681,22 @@ powerpc-apple-darwin*)
            CPPFLAGS="$CPPFLAGS -DNDEBUG"
         fi
         CFLAGS="$CFLAGS -finline-functions -fno-common -no-cpp-precomp"
-        CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double -Wno-deprecated"
-        CXXFLAGS="$CFLAGS"
+        CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double"
         DLLEXT="dylib"
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
         MODULES_OS="$MODULES_OS src/os/DARWIN"
-        MODULES_OS="$MODULES_OS src/os/DARWIN/powerpc"
+        if test "$PPC_TYPE" = "ppc970" ; then
+            CFLAGS="$CFLAGS -mcpu=970 -mtune=970 -mpowerpc64 -mpowerpc-gpopt"
+            CPPFLAGS="$CPPFLAGS -D__ppc_64__ -force_cpusubtype_ALL"
+            MODULES_OS="$MODULES_OS src/os/DARWIN/ppc_64"
+        else
+            MODULES_OS="$MODULES_OS src/os/DARWIN/powerpc"
+        fi
+
+        CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
@@ -10879,8 +10887,8 @@ if test "$enable_gm" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_GM"
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/gm"
    test "$GM_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$GM_PREFIX/include"
-   test "$GM_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$GM_PREFIX/lib"
-   LIBS="$LIBS -lgm"
+   test "$GM_PREFIX" = "" || LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -L$GM_PREFIX/lib"
+   LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lgm"
 fi
 
 # Check whether --enable-ib or --disable-ib was given.
