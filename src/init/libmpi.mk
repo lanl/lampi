@@ -19,7 +19,7 @@ ifneq (,$(findstring QUADRICS, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_quadrics.cc init/init_rms.cc
 endif
 
-ifneq (,$(findstring GM, $(CPPFLAGS)))
+ifneq (,$(findstring -DGM, $(CPPFLAGS)))
 SRC_LIBMPI += init/init_gm.cc
 endif
 
