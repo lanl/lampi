@@ -43,7 +43,6 @@ void mpi_wait_f(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
 
     /* fast return for MPI_REQUEST_NULL */
     if (*req = -1) {
-        ulm_err(("hello"));
         memset(status, 0, sizeof(MPI_Status));
         *rc = MPI_SUCCESS;
         return;
