@@ -458,8 +458,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
     *incomplete = true;
 
     /* destination memory? */
-   if ((message->sendType != ULM_SEND_MULTICAST) && 
-       (nDescToAllocate && (message->PostedLength > CTLHDR_DATABYTES))) {
+   if ( (nDescToAllocate && (message->PostedLength > CTLHDR_DATABYTES))) {
         gldestProc = communicators[message->ctx_m]->remoteGroup->
             mapGroupProcIDToGlobalProcID[message->dstProcID_m];
 
@@ -497,7 +496,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
    
     /* NO, send memory request over any rail */
 
-    if (!enoughMemory && (message->sendType != ULM_SEND_MULTICAST)) {
+    if (!enoughMemory ) {
         int bufsNeeded = (smallBufs) ? (smallBufs - bufCounts[smallBufType]) : (largeBufs - bufCounts[largeBufType]);
         size_t memNeeded = (smallBufs) ? (bufsNeeded * quadricsBufSizes[smallBufType]) :
             (bufsNeeded * quadricsBufSizes[largeBufType]);
@@ -538,20 +537,10 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         // get ctx and rail for each frag to allow load-balancing over
         // all Quadrics rails, if desired...
         bool needsDest;
-        if (message->sendType == ULM_SEND_MULTICAST) {
-            needsDest = (message->PostedLength <= CTLHDR_DATABYTES) ? false : true;
-        }
-        else {
-            needsDest = (smallBufs || largeBufs) ? true : false;
-        }
-        if (!getCtxRailAndDest(message,
-                               gldestProc,
-                               &ctx,
-                               &rail,
-                               &dest,
-                               (smallBufs) ? smallBufType : largeBufType,
-                               needsDest,
-                               errorCode)) {
+        needsDest = (smallBufs || largeBufs) ? true : false;
+        if (!getCtxRailAndDest(message, gldestProc, &ctx, &rail,
+                               &dest, (smallBufs) ? smallBufType : largeBufType,
+                               needsDest, errorCode)) {
             if (*errorCode == ULM_ERR_BAD_PATH)
                 return false;
             else {
@@ -560,15 +549,6 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
                     message->pathInfo.quadrics.lastMemReqOffset = offset;
                 }
                 break;
-            }
-        }
-
-        // set the muticast vpid in gldestProc if we're doing a multicast
-        if (message->sendType == ULM_SEND_MULTICAST) {
-            rc = communicators[message->ctx_m]->getMcastVpid(rail, &gldestProc);
-            if (rc != ULM_SUCCESS || gldestProc < 0) {
-                *errorCode = ULM_ERROR;
-                return false;
             }
         }
 
@@ -604,7 +584,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         else
             sfd = quadricsSendFragDescs.getElementNoLock(rail, returnValue);
 
-        if (returnValue != ULM_SUCCESS && message->sendType != ULM_SEND_MULTICAST) {
+        if (returnValue != ULM_SUCCESS ) {
             quadricsPeerMemory[rail]->push(gldestProc, destBufType, dest);
             if ((returnValue == ULM_ERR_OUT_OF_RESOURCE) || (returnValue ==
                                                              ULM_ERR_FATAL)) {

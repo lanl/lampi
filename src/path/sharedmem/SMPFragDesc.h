@@ -81,9 +81,6 @@ public:
     // lock for this frag
     Locks lock_m;
 
-    // reference count for frag
-    int refCnt_m;
-
     // offset within message data (pretend we have
     // a contiguous buffer that holds all message data)
     size_t seqOffset_m;

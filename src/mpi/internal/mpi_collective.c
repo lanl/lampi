@@ -51,18 +51,6 @@ int _mpi_init_collectives(void)
     _mpi.collective.scatter = ulm_scatter;
     _mpi.collective.scatterv = ulm_scatterv;
 
-#ifdef QUADRICS
-    if (ULM_HW_BARRIER) {
-        _mpi.collective.barrier = ulm_barrier_quadrics;
-    }
-    if (ULM_HW_BCAST) {
-        _mpi.collective.bcast = ulm_bcast_quadrics;
-    }
-    if (ULM_HW_REDUCE) {
-        _mpi.collective.reduce = ulm_reduce_quadrics;
-    }
-#endif
-    
     return 0;
 }
 

@@ -76,7 +76,6 @@ endif
 # include Quadrics Elan3 support if QUADRICS is defined
 ifneq (,$(findstring QUADRICS, $(CPPFLAGS)))
 MODULES_LIBMPI	+= path/quadrics
-MODULES_LIBMPI  += collective/quadrics
 endif
 
 # include GM if GM is defined

@@ -55,7 +55,6 @@ enum {
     ULM_SEND_BUFFERED = 2,
     ULM_SEND_SYNCHRONOUS = 3,
     ULM_SEND_READY = 4,
-    ULM_SEND_MULTICAST = 5, 
 
     /* status codes */
     ULM_STATUS_INVALID = 1,

@@ -47,7 +47,6 @@ enum quadricsCtlMsgTypes {
 
 struct quadricsCommon {
     unsigned short ctlMsgType;		//!< message type used to select the proper structure definition
-    unsigned short multicastRefCnt;		//!< reference count for multicast messages (otherwise unused)
 };
 
 #define FULLCMN_PADDING 30
@@ -58,7 +57,6 @@ struct quadricsCommon {
 
 struct quadricsFullCommon {
     unsigned short ctlMsgType;		//!< message type used to select the proper structure definition
-    unsigned short multicastRefCnt;		//!< reference count for multicast messages (otherwise unused)
     ulm_uint32_t padding[FULLCMN_PADDING];
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };

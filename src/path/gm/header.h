@@ -51,7 +51,6 @@ enum {
 
 struct gmHeaderCommon {
     unsigned short ctlMsgType;          // message type used to select the proper structure definition
-    unsigned short multicastRefCnt;     // reference count for multicast messages (otherwise unused)
 };
 
 // if dataChecksum is a CRC, then it is stored in the native integer

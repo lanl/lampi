@@ -407,17 +407,13 @@ private:
                 }
             }
 
-            if (parentSendDesc->sendType == ULM_SEND_MULTICAST) {
-                // currently, zero out - no reliability.
-                frag_seq = 0;
-            } else {
-                // thread-safe allocation of frag sequence number in header
-                if (usethreads())
-                    reliabilityInfo->next_frag_seqsLock[globalDestID].lock();
-                frag_seq = (reliabilityInfo->next_frag_seqs[globalDestID])++;
-                if (usethreads())
-                    reliabilityInfo->next_frag_seqsLock[globalDestID].unlock();
-            }
+	    // thread-safe allocation of frag sequence number in header
+            
+	    if (usethreads())
+       		    reliabilityInfo->next_frag_seqsLock[globalDestID].lock();
+  	    frag_seq = (reliabilityInfo->next_frag_seqs[globalDestID])++;
+	    if (usethreads())
+       		    reliabilityInfo->next_frag_seqsLock[globalDestID].unlock();
         }
 #endif
 

@@ -104,7 +104,7 @@ public:
 
     bool sendDone(BaseSendDesc_t *message, double timeNow, int *errorCode) {
 
-        if (!quadricsDoAck || (message->sendType == ULM_SEND_MULTICAST)) {
+        if (!quadricsDoAck ) {
             quadricsSendFragDesc *sfd, *afd;
 
             if ((message->sendType != ULM_SEND_SYNCHRONOUS) || (message->NumSent > 1)) {
@@ -238,17 +238,7 @@ public:
             r = (lr + i) % quadricsNRails;
             if (quadricsQueue[r].railOK) {
                 railAvail = true;
-                if (message->sendType == ULM_SEND_MULTICAST) {
-                    if (needDest) {
-                        *dest = communicators[message->ctx_m]->getMcastBuf(r, &sz);
-                        *dest = (void *)elan3_main2elan(quadricsQueue[r].ctx, *dest);
-                    }
-                    *rail = r;
-                    *ctx = quadricsQueue[r].ctx;
-                    quadricsLastRail = r;
-                    return true;
-                }
-                else if (needDest) {
+                if (needDest) {
                     quadricsPeerMemory[r]->addrCounts(globalDestProcessID, bufCounts);
                     if (bufCounts[destBufType] == 0)
                         continue;

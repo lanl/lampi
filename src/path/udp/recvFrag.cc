@@ -360,7 +360,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     msgType_m           = EXTRACT_MSG_TYPE(ulm_ntohi(msg.ctxAndMsgType));
     isendSeq_m          = ulm_ntohl(msg.isendSeq_m);
     seq_m               = ulm_ntohl(msg.frag_seq);
-    refCnt_m            = ulm_ntohi(msg.refCnt);
     seqOffset_m         = dataOffset();
 #else 
     length_m            = msg.length;
@@ -375,7 +374,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     msgType_m           = EXTRACT_MSGTYPE((msg.ctxAndMsgType));
     isendSeq_m          = msg.isendSeq_m;
     seq_m               = msg.frag_seq;
-    refCnt_m            = msg.refCnt;
     seqOffset_m         = dataOffset();
 #endif 
 

@@ -314,18 +314,17 @@ void gmRecvFragDesc::msgData(double timeNow)
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
     isendSeq_m = p->isendSeq_m;
     seq_m = p->frag_seq;
-    refCnt_m = p->common.multicastRefCnt;
     seqOffset_m = p->dataSeqOffset;
     msgLength_m = p->msgLength;
     fragIndex_m = seqOffset_m / gmState.bufSize;
     if (0) { // debug
         ulm_warn(("%d received frag from %d (length %ld)\n"
                   "%d\tgmFragBuffer_m %p gmHeader_m %p addr_m %p sizeof(gmHeader) %ld dev_m %d Dest %d\n"
-                  "%d\ttag_m %d ctx_m %d msgType_m %d isendSeq_m %ld seq_m %lld refCnt_m %d seqOffset_m %ld\n"
+                  "%d\ttag_m %d ctx_m %d msgType_m %d isendSeq_m %ld seq_m %lld seqOffset_m %ld\n"
                   "%d\tmsgLength_m %ld fragIndex_m %d\n",
                   myproc(), srcProcID_m,length_m,
                   myproc(), gmFragBuffer_m, gmHeader_m, addr_m, (long)sizeof(gmHeader), dev_m, dstProcID_m,
-                  myproc(), tag_m, ctx_m, msgType_m, isendSeq_m, seq_m, refCnt_m, seqOffset_m,
+                  myproc(), tag_m, ctx_m, msgType_m, isendSeq_m, seq_m, seqOffset_m,
                   myproc(), msgLength_m, fragIndex_m));
     }
     // remap process IDs from global to group ProcID

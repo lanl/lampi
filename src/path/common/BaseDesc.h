@@ -271,7 +271,6 @@ public:
     unsigned long isendSeq_m;     // message sequence number (assigned by the sender)
     bool isDuplicate_m;          // is this frag a duplicate?
     int msgType_m;               // comm type ID (point-to-point, collective, etc.)
-    int refCnt_m;                // reference count for frag
     int poolIndex_m;             //resource pool index
 
 #ifdef DEBUG_DESCRIPTORS

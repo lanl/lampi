@@ -53,10 +53,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
      * first message frag...
      */
 
-    if (refCnt_m > 0) { // multicast message 
-        return true;
-    }
-
     if (!quadricsDoAck) {
         /* free Elan-addressable memory now */
         if (length_m > CTLHDR_DATABYTES) {
@@ -487,24 +483,11 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
     isendSeq_m = p->isendSeq_m;
     seq_m = p->frag_seq;
-    refCnt_m = p->common.multicastRefCnt;
     seqOffset_m = dataOffset();
     fragIndex_m = seqOffset_m /
         quadricsBufSizes[(msgType_m == MSGTYPE_COLL) ?
                          SHARED_LARGE_BUFFERS : PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
-
-    if (refCnt_m > 0) { // multicast message
-        // remap process IDs from global to group ProcID
-        dstProcID_m = communicators[ctx_m]->
-            localGroup->mapGlobalProcIDToGroupProcID[myproc()];
-        srcProcID_m = communicators[ctx_m]->
-            remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m];
-
-        // what do we do if the return value is not ULM_SUCCESS?
-        communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
-        return;
-    }
 
 #ifdef RELIABILITY_ON
     isDuplicate_m = false;
