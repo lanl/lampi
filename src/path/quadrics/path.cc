@@ -345,6 +345,12 @@ bool quadricsPath::sendMemoryRequest(SendDesc_t *message, int gldestProc, size_t
         if (quadricsQueue[rail].railOK)
             nrails++;
     }
+    if (nrails == 0) {
+        // we're in trouble...
+        *errorCode = ULM_ERR_BAD_PATH;
+        return false;
+    }
+
     // how much memory to request from each rail...
     memNeededPerRail = memNeeded / nrails;
     memNeededExtra = memNeeded - (memNeededPerRail * nrails);
