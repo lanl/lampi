@@ -13,7 +13,7 @@
 .PHONY:		all clean distclean install
 SHELL		:= /bin/sh
 INSTALL		:= $(shell pwd)/install-sh -c
-VERSION 	:= include/internal/version.h
+VERSION	:= include/internal/version.h
 
 ######################################################################
 
@@ -41,7 +41,7 @@ MODULES_LIBMPI	+= mpi/f
 MODULES_LIBMPI	+= mpi/internal
 MODULES_LIBMPI	+= queue
 MODULES_LIBMPI	+= util
-MODULES_LIBMPI  += collective 
+MODULES_LIBMPI  += collective
 MODULES_LIBMPI  += collective/p2p
 MODULES_LIBMPI  += ctnetwork
 MODULES_LIBMPI  += init
@@ -84,7 +84,7 @@ ifdef ULM_DBG
 CPPFLAGS	+= -DULM_DBG=1
 endif
 
-MODULES_MPIRUN	:= $(MODULES_OS) 
+MODULES_MPIRUN	:= $(MODULES_OS)
 MODULES_MPIRUN	+= client
 MODULES_MPIRUN	+= init
 MODULES_MPIRUN	+= interface
@@ -114,20 +114,20 @@ etcdir = $(prefix)/etc
 
 # determine the source files by including the description of each module
 
-SRC_LIBMPI 	:=
+SRC_LIBMPI	:=
 include $(patsubst %,%/libmpi.mk,$(MODULES_LIBMPI))
 
-SRC_MPIRUN 	:=
+SRC_MPIRUN	:=
 include $(patsubst %,%/mpirun.mk,$(MODULES_MPIRUN))
 
 # determine the object files
 
-OBJ_LIBMPI 	:= 
+OBJ_LIBMPI	:=
 OBJ_LIBMPI	+= $(patsubst %.c,%.o,$(filter %.c,$(SRC_LIBMPI)))
 OBJ_LIBMPI	+= $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_LIBMPI)))
 OBJ_LIBMPI	+= $(patsubst %.s,%.o,$(filter %.s,$(SRC_LIBMPI)))
 
-OBJ_MPIRUN 	:= 
+OBJ_MPIRUN	:=
 OBJ_MPIRUN	+= $(patsubst %.c,%.o,$(filter %.c,$(SRC_MPIRUN)))
 OBJ_MPIRUN	+= $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_MPIRUN)))
 OBJ_MPIRUN	+= $(patsubst %.s,%.o,$(filter %.s,$(SRC_MPIRUN)))
@@ -148,7 +148,7 @@ clean:
 	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN)
 
 distclean: clean
-	$(RM) $(TARGET) $(VERSION) 
+	$(RM) $(TARGET) $(VERSION)
 
 install: all
 	umask 002 ; \
@@ -165,7 +165,7 @@ install: all
 	$(INSTALL) -m 775 -d $(prefix)/share/lampi ; \
 	$(INSTALL) -m 775 libmpi.$(SOSUFFIX) $(libdir)/libmpi.$(SOSUFFIX) ; \
 	$(INSTALL) -m 775 libmpiandio.$(SOSUFFIX) $(libdir)/libmpi.$(SOSUFFIX) ; \
-	$(INSTALL) -m 775 libmpiandio.a $(libdir)/libmpi.a ; \
+	$(INSTALL) -m 664 libmpiandio.a $(libdir)/libmpi.a ; \
 	$(INSTALL) -m 775 mpirun $(bindir) ; \
 	$(INSTALL) -m 664 ../man/lampi.man1 $(prefix)/share/man/man1/lampi.1 ; \
 	$(INSTALL) -m 664 ../man/mpirun.man1 $(prefix)/share/man/man1/mpirun.1 ; \
