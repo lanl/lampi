@@ -6,14 +6,14 @@
 
 The CVS repository for LA-MPI is
 
-    cvs.ccs.lanl.gov:/home/LAMPI/repository/
+    lambda.lanl.gov:/home/lampi/repository/
 
 and will be referred to as $CVSROOT.
 
 The release directory into which distribution trees for each release
 and system architecure should be placed is
 
-    cvs.ccs.lanl.gov:/home/LAMPI/release/
+    lambda.lanl.gov:/home/lampi/release/
 
 and will be referred to as $RELEASEROOT.
 
