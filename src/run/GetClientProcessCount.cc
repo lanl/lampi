@@ -60,16 +60,17 @@ void getBJSNodes(void)
     int nNodes = 0;
     char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
     char *node_str = 0, *p;
-    char tmp_str[1024];
+    char *tmp_str;
     int i, j, tmp_node;
 
     lampi_environ_find_string("NODES", &node_str);
 
     if (strlen(node_str) > 0) {
-        /* nodes allocated via BJS */
+	    tmp_str=(char *)ulm_malloc(strlen(node_str)+1);
+      /* nodes allocated via BJS */
         nodes = ulm_new(int, bproc_numnodes() + 1);
-        tmp_str[1023] = '\0';
-        strncpy(tmp_str, node_str, 1023);
+        tmp_str[strlen(node_str)] = '\0';
+        strncpy(tmp_str, node_str, strlen(node_str));
         p = tmp_str;
         while (p && *p != '\0') {
             tmp_node = bproc_getnodebyname(strsep(&p, ","));
@@ -84,6 +85,7 @@ void getBJSNodes(void)
             }
             nodes[nNodes++] = tmp_node;
         }
+	ulm_free(tmp_str);
     }
 
     if (nNodes) {
@@ -271,8 +273,14 @@ void GetClientProcessCount(const char *InfoStream)
         /* check BJS and reconcile nodes with -H specified nodes */
         getBJSNodes();
         if (RunParameters.HostListSize > 0) {
+		/* debug */
+		ulm_err(("RunParameters.NHostsSet %d RunParameters.NHosts %d RunParameters.HostListSize %d \n",RunParameters.NHostsSet,RunParameters.NHosts,RunParameters.HostListSize));
+		/* end debug */
             nhosts = (RunParameters.NHostsSet) ? ((RunParameters.NHosts > RunParameters.HostListSize) ? 
                 RunParameters.HostListSize : RunParameters.NHosts) : RunParameters.HostListSize;
+	    /* debug */
+	    ulm_err((" nhosts %d \n",nhosts));
+	    /* end debug */
             pickNodesFromList(nhosts);
         }
         else {
