@@ -144,13 +144,14 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
         }
         /* Sending host */
 #ifdef ENABLE_BPROC
-        sockaddr socktmp;
         int size = sizeof(struct sockaddr);
 #ifdef BPROC_NODE_NSTATES
         // BPROC_NODE_NSTATES only defined in obsolete version of bproc
         // obsolete version: avoid calling bproc_nodeaddr() slow!
         // newer versions:  bproc_nodeaddr() fast, bproc_nodenumber() removed 
         int nodeID = bproc_nodenumber((struct sockaddr *) &Child, size);
+#else
+        sockaddr socktmp;
 #endif
         /* find order in list */
         for (j = 0; j < RunParameters->NHosts; j++) {
