@@ -68,6 +68,8 @@ static void free_qitem(void *arg)
     }
 }
 
+#ifdef USE_CT
+
 static int match_msg(void *arg, void *ctx)
 {
     qitem_t             *item = (qitem_t *)arg;
@@ -82,6 +84,7 @@ static int match_msg(void *arg, void *ctx)
         return 0;
 }
 
+#endif
 
 /*
  * This routine scans through the list of hosts in hostList, and
