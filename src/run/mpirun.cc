@@ -346,12 +346,93 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
 }
 
 
-bool exchangeGMInfo(int *errorCode,adminMessage *s)
+bool exchangeIBInfo(int *errorCode,adminMessage *s)
+{
+    bool returnValue = true;
+    int ibhosts = 0, i, j;
+    int rc, active[3], tag;
+    int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME * 1000;
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters.NHosts == 1)
+        return returnValue;
+
+#ifdef ENABLE_CT
+    return returnValue;
+#endif
+
+    for (i = 0; i < RunParameters.NHosts; i++) {
+        for (j = 0; j < RunParameters.NPathTypes[i]; j++) {
+            if (RunParameters.ListPathTypes[i][j] == PATH_IB) {
+                ibhosts++;
+                break;
+            }
+        }
+    }
+
+    if(ibhosts != 0) {
+
+        rc = s->allgather((void *) NULL, (void *) NULL, 2 * sizeof(int));
+        if (rc != ULM_SUCCESS) {
+            ulm_err(("Error: exchangeIBInfo() - allgather of max active info failed (%d)\n", rc));
+            returnValue = false;
+            *errorCode = rc;
+            return returnValue;
+        }
+
+        /* receive max active HCA/port info. from host 0 */
+        active[0] = active[1] = active[2] = 0;
+        s->reset(adminMessage::RECEIVE);
+        rc = s->receive(0, &tag, errorCode, alarm_time);
+        switch (rc) {
+        case adminMessage::OK:
+            if (tag != adminMessage::IBMAXACTIVE) {
+                ulm_err(("Error: exchangeIBInfo() - did not get IBMAXACTIVE msg., got %d\n", tag));
+                returnValue = false;
+                *errorCode = rc;
+                return returnValue;
+            }
+            // active[0] = max active HCAs of any process
+            // active[1] = max active ports of any process
+            // active[2] = sizeof(ib_ud_peer_info_t) -- to avoid bringing in unnecessary headers...
+            if (!s->unpack(active, adminMessage::INTEGER, 3, alarm_time)) {
+                ulm_err(("Error: exchangeIBInfo() - can't unpack max active info\n"));
+                returnValue = false;
+                *errorCode = rc;
+                return returnValue;
+            }
+            break;
+        default:
+            ulm_err(("Error: exchangeIBInfo() - can't receive max active info from host 0\n"));
+            returnValue = false;
+            *errorCode = rc;
+            return returnValue;
+        }
+
+        if ((active[0] == 0) || (active[1] == 0)) {
+            ulm_warn(("Warning: exchangeIBInfo() - No active InfiniBand HCAs or ports found (HCAs = %d, ports = %d)\n", 
+                active[0], active[1]));
+            return returnValue;
+        }
+
+        rc = s->allgather((void *) NULL, (void *) NULL,
+                          active[0] * active[1] * active[2]);
+        if (rc != ULM_SUCCESS) {
+            ulm_err(("Error: exchangeIBInfo() - allgather of all process' active HCA/port info failed (%d)\n", rc));
+            returnValue = false;
+            *errorCode = rc;
+            return returnValue;
+        }
+    }
+
+    return returnValue;
+}
+
+bool exchangeGMInfo(int *errorCode, adminMessage *s)
 {
     bool returnValue = true;
     int gmhosts = 0, i, j;
     int rc, maxDevs, tag;
-    int *nDevsPerProc;
     int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME * 1000;
 
     // we don't do any of this if there is only one host...
@@ -370,13 +451,8 @@ bool exchangeGMInfo(int *errorCode,adminMessage *s)
             }
         }
     }
+
     if(gmhosts != 0) {
-        nDevsPerProc = (int *) ulm_malloc(sizeof(int) * s->totalNumberOfProcesses());
-        if (!nDevsPerProc) {
-            ulm_err(("Error: Out of memory\n"));
-            returnValue = false;
-            return returnValue;
-        }
 
         rc = s->allgather((void *) NULL, (void *) NULL, sizeof(int));
         if (rc != ULM_SUCCESS) {
@@ -427,8 +503,6 @@ bool exchangeGMInfo(int *errorCode,adminMessage *s)
             *errorCode = rc;
             return returnValue;
         }
-
-        ulm_free(nDevsPerProc);
     }
 
     return returnValue;
@@ -671,7 +745,14 @@ int main(int argc, char **argv)
 
     /* GM info information exchange - postfork */
     if (!exchangeGMInfo(&ErrorReturn, server)) {
-        ulm_err(("Error: While echanging GM information (%d)\n",
+        ulm_err(("Error: While exchanging GM information (%d)\n",
+                 ErrorReturn));
+        Abort();
+    }
+
+    /* InfiniBand information exchange - postfork */
+    if (!exchangeIBInfo(&ErrorReturn, server)) {
+        ulm_err(("Error: While exchanging InfiniBand (IB) information (%d)\n",
                  ErrorReturn));
         Abort();
     }

@@ -56,7 +56,8 @@ struct NetWorkDevs {
     { "gm", PATH_GM}, 
     { "udp", PATH_UDP}, 
     { "quadrics", PATH_QUADRICS},
-    { "sharedmemory", PATH_SHAREDMEM}
+    { "sharedmemory", PATH_SHAREDMEM},
+    { "ib", PATH_IB}
 };
 
 void GetNetworkDevListNoInput(const char *InfoStream)
@@ -72,6 +73,10 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 #endif
 
 #ifdef ENABLE_GM
+    cnt++;
+#endif
+
+#ifdef ENABLE_INFINIBAND
     cnt++;
 #endif
 
@@ -98,6 +103,10 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 #ifdef ENABLE_GM
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_GM;
 #endif
+#ifdef ENABLE_INFINIBAND
+        RunParameters.ListPathTypes[i][DevCnt++] = PATH_IB;
+#endif
+
     }                           /* end i loop */
 }
 

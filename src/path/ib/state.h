@@ -48,17 +48,17 @@ typedef struct {
     IB_lid_t lid;
     u_int8_t lmc;
     u_int8_t flag;
-} ib_ud_qp_info_t;
+} ib_ud_peer_info_t;
 
-#define INFO_VALID  (1 << 7)
-#define PORT_INFO_VALID(x) (((ib_ud_info_t *)x)->flag & INFO_VALID)
-#define SET_PORT_INFO_VALID(x) (((ib_ud_info_t *)x)->flag | INFO_VALID)
-#define SET_PORT_INFO_INVALID(x) (((ib_ud_info_t *)x)->flag & ~INFO_VALID)
+#define PEER_INFO_IS_VALID(x) ((x.flag & 0x80) != 0)
+#define SET_PEER_INFO_VALID(x) (x.flag |= 0x80)
+#define SET_PEER_INFO_INVALID(x) (x.flag &= 0x7f)
 
 typedef struct {
     int max_hcas;
     int max_ports;
-    ib_ud_qp_info_t *info;
+    int proc_entries;
+    ib_ud_peer_info_t *info;
 } ib_ud_peer_t;
 
 typedef struct {

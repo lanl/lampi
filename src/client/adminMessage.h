@@ -225,6 +225,7 @@ public:
         IRECVMAXTOTPAGES,      /* maximum total number of pages for  irecv descriptors */
         NPATHTYPES,             /* number of network device types */
         GMMAXDEVS,      /* maximum number of opened Myrinet/GM devices */
+        IBMAXACTIVE,    /* 3 integers: max. active HCAs, max. active ports/HCA, sizeof(ib_ud_peer_info_t) */
 #ifdef ENABLE_NUMA
         CPULIST,        /* list of cpus for resource affinity */
         NCPUSPERNODE,   /* number of cpus per node */
