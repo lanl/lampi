@@ -732,14 +732,21 @@ int mpirun(int argc, char **argv)
 
     /* more banner info: print out process distribution */
     if (RunParameters.Quiet == 0) {
+	fprintf(stderr, "NHosts = %d\n", RunParameters.NHosts);
         fprintf(stderr, "LA-MPI: *** %d processes on %d hosts:", nprocs, RunParameters.NHosts);
 	for (int h = 0 ; h < RunParameters.NHosts; h++) {
-	    struct hostent *hostent;
-	    hostent = gethostbyname(RunParameters.HostList[h]);
-	    hostent = gethostbyaddr(hostent->h_addr, sizeof(hostent->h_addr), AF_INET);
+	    struct hostent *hptr;
+	    hptr = gethostbyname(RunParameters.HostList[h]);
+	    if (!hptr) {
+		perror("gethostbyname");
+	    }
+	    hptr = gethostbyaddr(hptr->h_addr, hptr->h_length, AF_INET);
+	    if (!hptr) {
+		perror("gethostbyaddr");
+	    }
 	    fprintf(stderr, " %d*%s",
 		    RunParameters.ProcessCount[h],
-		    hostent->h_name);
+		    hptr->h_name);
 	}
 	fprintf(stderr, "\n");
     }
