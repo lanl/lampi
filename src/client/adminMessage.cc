@@ -2931,5 +2931,3 @@ void adminMessage::setTotalNumberOfProcesses(int nprocs)
 {
     totalNProcesses_m = nprocs;
 }
-
-    
