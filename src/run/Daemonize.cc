@@ -99,7 +99,6 @@ int mpirunScanStdIn(int fdin, int fdout)
     }
 
     if (write(fdout, buff, rc) == rc) {
-        ulm_err(("mpirunScanStdIn: wrote %d bytes\n", rc));
         return ULM_SUCCESS;
     } else {
         ulm_err(("mpirunScanStdIn: write failed with errno=%d\n", errno));
