@@ -2,7 +2,7 @@
       implicit none
 
       include 'mpif.h'
-      include 'mpiof.h'
+!      include 'mpiof.h'
 
 !     This is the same as fcoll_test.f, but uses the PMPI versions
 !     of all functions in order to test the profiling interface.

@@ -2,7 +2,7 @@
       implicit none
 
       include 'mpif.h'
-      include 'mpiof.h'
+!      include 'mpiof.h'
 
 !     Fortran equivalent of perf.c
 

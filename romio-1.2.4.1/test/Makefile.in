@@ -1,6 +1,8 @@
 CC = @TEST_CC@
 #note: lf95, on some versions of linux should be lf95 --staticlink
 #      ifc:  use ifc -Vaxlib 
+#INCLUDE_DIR =  $(MPI_COMPILE_FLAGS)
+#LIBS =  $(MPI_LD_FLAGS)  -lfmpi -lmpio -lmpi  -lelan
 F77 = @TEST_F77@
 INCLUDE_DIR = @ROMIO_INCLUDE@
 LIBS = ../../libmpi.so
