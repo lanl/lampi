@@ -52,6 +52,7 @@
 #include "util/MemFunctions.h"
 #include "util/Utility.h"
 #include "util/dclock.h"
+#include "util/if.h"
 #include "ctnetwork/CTNetwork.h"
 #include "init/environ.h"
 #include "init/fork_many.h"
@@ -101,6 +102,15 @@ static int *StdoutPipes;
 #include "internal/Private.h"
 
 /*
+ * inline functions
+ */
+void lampi_init_print(const char *string)
+{
+    fprintf(stderr, "%s\n", string);
+    fflush(stderr);
+}
+
+/*
  * Entry point for LA-MPI initialization.
  *
  * Any error here is fatal so there is no return code.
@@ -110,7 +120,6 @@ void lampi_init(void)
     if (initialized) {
         return;
     }
-
     initialized = 1;
 
     /* initialize _ulm */
@@ -144,6 +153,7 @@ void lampi_init(void)
      */
     ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
     lampi_init_prefork_receive_setup_params(&_ulm);
+    lampi_init_prefork_ip_addresses(&_ulm);
 
     if (lampiState.hostid == 0) {
         ulm_notice(("*** LA-MPI: Copyright 2001-2003, "
@@ -179,6 +189,9 @@ void lampi_init(void)
     lampi_init_postfork_globals(&_ulm);
     lampi_init_postfork_resources(&_ulm);
     //lampi_init_debug(&_ulm);
+
+    /* exchange IP addresses */
+    lampi_init_postfork_ip_addresses(&_ulm);
 
     /* post fork path setup */
     lampi_init_postfork_paths(&_ulm);
@@ -1707,6 +1720,8 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     lampi_init_prefork_receive_setup_params_quadrics(s);
     lampi_init_prefork_receive_setup_params_gm(s);
     lampi_init_prefork_receive_setup_params_ib(s);
+    lampi_init_prefork_receive_setup_params_tcp(s);
+
 }
 
 
@@ -2157,3 +2172,128 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     }
     memset(s->contextIDCtl, 0, sizeof(contextIDCtl_t));
 }
+
+
+void lampi_init_prefork_ip_addresses(lampiState_t *s)
+{
+    int errorCode;
+    int recvd;
+    int tag;
+
+    if(s->verbose)
+        lampi_init_print("lampi_init_prefork_ip_addresses");
+
+    if((s->nhosts == 1) || (!s->tcp && !s->udp))
+        return;
+
+    recvd = s->client->receive(-1,&tag,&errorCode);
+    if(recvd != adminMessage::OK || tag != adminMessage::IFNAMES) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+        return;
+    }
+
+    /* retrieve number of interfaces */
+    if(s->client->unpack(&s->if_count, 
+        (adminMessage::packType)sizeof(s->if_count), 1) != true) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+        return;
+    }
+
+    if(s->if_count) {
+
+        /* retreive list of interface names */
+        size_t size = s->if_count * sizeof(InterfaceName_t);
+        s->if_names = (InterfaceName_t*)ulm_malloc(size);
+        if(s->if_names == 0) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        if(s->client->unpack(s->if_names, adminMessage::BYTE, size) != true) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        size = s->if_count * sizeof(struct sockaddr_in);
+        s->if_addrs = (struct sockaddr_in*)ulm_malloc(size);
+        if(s->if_addrs == 0) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        memset(s->if_addrs, 0, size);
+
+        /* resolve IP address assigned to each IF */
+        for(int i=0; i<s->if_count; i++) {
+            HostName_t hostName;
+            if(ulm_ifnametoaddr(s->if_names[i], hostName, sizeof(hostName)) != ULM_SUCCESS) {
+                s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+                return;
+            }
+            in_addr_t inaddr = inet_addr(hostName);
+            if(inaddr == INADDR_ANY) {
+                struct hostent *host = gethostbyname(hostName);
+                if(host == 0) {
+                    s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+                    return;
+                }
+                memcpy(&inaddr, host->h_addr, sizeof(inaddr));
+            }
+            s->if_addrs[i].sin_family = AF_INET;
+            s->if_addrs[i].sin_addr.s_addr = inaddr;
+        }
+
+    } else {
+
+        /* no interface list specified so use local hostname */
+        s->if_count = 1;
+        s->if_names = (InterfaceName_t*)ulm_malloc(sizeof(InterfaceName_t));
+        s->if_addrs = (struct sockaddr_in*)ulm_malloc(sizeof(struct sockaddr_in));
+        if(s->if_names == 0 || s->if_addrs == 0) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        memset(s->if_names, 0, sizeof(InterfaceName_t));
+        memset(s->if_addrs, 0, sizeof(struct sockaddr_in));
+
+        HostName_t hostName;
+        if(gethostname(hostName, sizeof(hostName)) < 0) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        if (ulm_ifaddrtoname(hostName, s->if_names[0], sizeof(InterfaceName_t)) != ULM_SUCCESS) {
+            //s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            //return;
+        }
+      
+        struct hostent* host = gethostbyname(hostName);
+        if(host == 0) {
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+            return;
+        }
+        s->if_addrs[0].sin_family = AF_INET;
+        memcpy(&s->if_addrs[0].sin_addr, host->h_addr, sizeof(in_addr_t));
+    }
+}
+
+
+void lampi_init_postfork_ip_addresses(lampiState_t* s)
+{
+    if(s->verbose)
+        lampi_init_print("lampi_init_postfork_ip_addresses");
+                                                                                       
+    if((s->nhosts == 1) || (!s->tcp && !s->udp))
+        return;
+
+    /* redistribute list of all addresses */
+    size_t count = (s->global_size * s->if_count);
+    s->h_addrs = (struct sockaddr_in*)ulm_malloc(count * sizeof(struct sockaddr_in));
+    if (s->h_addrs == 0) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+        return;
+    }
+                                                                                       
+    int rc = s->client->allgather(s->if_addrs, s->h_addrs, (s->if_count * sizeof(struct sockaddr_in)));
+    if(rc != ULM_SUCCESS) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
+        return;
+    }
+}
+

@@ -33,7 +33,8 @@
 #include "util/Vector.h"
 
 
-FreeListShared_t<TCPRecvFrag> TCPRecvFrag::TCPRecvFrags;
+FreeListPrivate_t<TCPRecvFrag> TCPRecvFrag::TCPRecvFrags;
+
 
 //
 //  One-time initialization at startup of the recv descriptor pool.
@@ -50,19 +51,20 @@ int TCPRecvFrag::init()
     for(int i = 0 ; i < nFreeLists ; i++ ) 
         memAffinityPool[i] = i;
 
-    int rc = TCPRecvFrags.Init(  nFreeLists,
-                               4,                    // pages per list
+    int rc = TCPRecvFrags.Init(nFreeLists,
+                               16,                   // pages per list
                                SMPPAGESIZE,          // pool chunk size
                                SMPPAGESIZE,          // page size
                                sizeof(TCPRecvFrag),  // element size
-                               4,                    // min pages per list
+                               16,                   // min pages per list
                                -1,                   // max pages per list
                                1000,                 // max retries
                                " TCP recv frag descriptors ",
                                false,                // retry for resources
                                memAffinityPool.base(),
                                true,                 // enforce affinity
-                               ShareMemDescPool);
+                               0,
+                               true);                // abort when no resources
     return rc;
 }
 
@@ -97,7 +99,7 @@ unsigned long TCPRecvFrag::dataOffset()
     if (fragIndex_m == 0) 
         return 0;
     else
-        return TCPPath::MaxEarlySendSize + ((fragIndex_m-1) * TCPPath::MaxFragmentSize);
+        return TCPPath::MaxEagerSendSize + ((fragIndex_m-1) * TCPPath::MaxFragmentSize);
 }
 
 
@@ -165,8 +167,10 @@ void TCPRecvFrag::recvEventHandler(int sd)
         // do we need to send an ack?
         if(sendAck(sd))
             ReturnDescToPool(getMemPoolIndex());
-        else
+        else  {
+            WhichQueue = FRAGSTOACK;
             UnprocessedAcks.Append(this);
+        }
         if(recvDone)
             fragRequest->messageDone = REQUEST_COMPLETE;
     }
@@ -240,7 +244,7 @@ bool TCPRecvFrag::recvHeader(int sd)
                      fragLen = appLength;
                 addr_m = ((unsigned char*)fragRequest->addr_m + offset);
             }
-            sendAck(sd); // send ack now as a match has already been made
+            sendAck(sd); // start an ack now as a match has already been made
             ulm_dbg(("TCPRecvFrag[%d,%d]::recvEventHandler: matched posted recv.\n",thisProc,peerProc));
         }
 
@@ -343,7 +347,7 @@ bool TCPRecvFrag::recvDiscard(int sd)
         }
     }
     fragCnt += cnt;
-    return (fragCnt == length_m);
+    return (fragCnt >= length_m);
 }
 
 
@@ -370,7 +374,7 @@ bool TCPRecvFrag::sendAck(int sd)
         // attempt to send the ack
         fragAcked = tcpPeer->send(sd, this);
     }
-    return (fragAckCnt == sizeof(fragAck));
+    return (fragAckCnt >= sizeof(fragAck));
 }
 
 
@@ -383,7 +387,8 @@ void TCPRecvFrag::sendEventHandler(int sd)
 {
     int cnt=-1; 
     while(cnt < 0) {
-        cnt = send(sd, &fragAck+fragAckCnt, sizeof(fragAck)-fragAckCnt, 0);
+        // FIXED
+        cnt = send(sd, (unsigned char*)&fragAck + fragAckCnt, sizeof(fragAck)-fragAckCnt, 0);
         if(cnt < 0) { 
             switch(errno) {
             case EINTR:
@@ -401,7 +406,7 @@ void TCPRecvFrag::sendEventHandler(int sd)
         }
     }
     fragAckCnt += cnt;
-    if(fragAckCnt == sizeof(fragAck))
+    if(fragAckCnt >= sizeof(fragAck))
         tcpPeer->sendComplete(this);
 }
 

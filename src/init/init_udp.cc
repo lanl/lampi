@@ -38,68 +38,19 @@
 
 void lampi_init_prefork_udp(lampiState_t *s)
 {
-#ifdef ENABLE_CT
-    int rank;
-#endif
-
     if (s->error) {
         return;
     }
     if (s->verbose) {
         lampi_init_print("lampi_init_prefork_udp");
     }
-
-    if (s->nhosts == 1) {
+    if  (s->nhosts == 1)
         return;
-    }
-
-    if (s->udp || s->tcp) {
-        int bufsize = nhosts() * ULM_MAX_HOSTNAME_LEN;
-        char *names = ulm_new(char, bufsize);
-        int tag, errorCode;
-
-#ifdef ENABLE_CT
-        // receive UDPADDRESSES broadcast
-
-        /*
-            It's possible that node label 0 != host rank 0.  At startup, mpirun is always
-            connected to node label 0, so we need to account for that.
-            ASSERT: labels2Rank array has already been exchanged between daemons.
-        */
-		rank = 0;
-		tag = adminMessage::UDPADDRESSES;
-        if ( (s->client->receiveMessage(&rank, &tag, &errorCode) )
-			) 
-		{
-            if (!s->client->unpackMessage(names, adminMessage::BYTE, bufsize)) 
-			{
-                s->error = ERROR_LAMPI_INIT_PREFORK_UDP;
-                return;
-            }
-        } else {
+    if  (s->udp) {
+        if( UDPNetwork::initPreFork() != ULM_SUCCESS) {
             s->error = ERROR_LAMPI_INIT_PREFORK_UDP;
             return;
-        }
-
-#else
-        // receive UDPADDRESSES broadcast
-        if (s->client->reset(adminMessage::RECEIVE, bufsize) && 
-            (s->client->receive(-1, &tag, &errorCode) == adminMessage::OK) &&
-            (tag == adminMessage::UDPADDRESSES)) {
-            if (!s->client->unpack(names, adminMessage::BYTE, bufsize)) {
-                s->error = ERROR_LAMPI_INIT_PREFORK_UDP;
-                return;
-            }
-        } else {
-            s->error = ERROR_LAMPI_INIT_PREFORK_UDP;
-            return;
-        }
-
-#endif
-        UDPNetwork::beginInitLocal(nhosts(), nprocs(),
-                                   ULM_MAX_HOSTNAME_LEN, names);
-
-        ulm_delete(names);
+         }
     }
 }
 
@@ -128,6 +79,7 @@ void lampi_init_postfork_udp(lampiState_t * s)
          * each process has its own unique ports for UDP.
          */
 
+        UDPNetwork::initPostFork(s->if_count, s->h_addrs);
         if (!s->iAmDaemon) {
             rc = UDPGlobals::UDPNet->initialize(myproc());
             if (rc != ULM_SUCCESS) {

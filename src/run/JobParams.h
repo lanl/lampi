@@ -47,6 +47,9 @@
 #ifdef ENABLE_UDP
 # include "path/udp/setupInfo.h"
 #endif
+#ifdef ENABLE_UDP
+# include "path/tcp/tcpsetup.h"
+#endif
 #ifdef ENABLE_GM
 # include "path/gm/setupInfo.h"
 #endif
@@ -111,10 +114,17 @@ typedef struct ULMRunParams {
     /* list of "compute" network interface types used - per host list */
     int **ListPathTypes;
 
+    /* list of network interfaces */
+    InterfaceName_t *InterfaceList;
+ 
+    /* number of elements in interface list */
+    int NInterfaces;
+
     /* information about the available networks */
     struct {
         int UseSharedMemory;
         int UseUDP;
+        int UseTCP;
         int UseQSW;
         int UseGM;
         int UseIB;
@@ -124,6 +134,9 @@ typedef struct ULMRunParams {
 #endif
 #ifdef ENABLE_UDP
         UDPNetworkSetupInfo UDPSetup;
+#endif
+#ifdef ENABLE_TCP
+        TCPNetworkSetupInfo TCPSetup;
 #endif
 #ifdef ENABLE_GM
         GMNetworkSetupInfo GMSetup;

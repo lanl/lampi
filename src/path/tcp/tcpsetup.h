@@ -29,77 +29,29 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
+#ifndef _TCPNetworkSetupInfo_
+#define _TCPNetworkSetupInfo_
 
-#ifndef _UDPNETWORK_H_
-#define _UDPNETWORK_H_
+#include <sys/uio.h>		// needed for iovecs
+#include "internal/constants.h" // needed for control message tag values
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <strings.h>		// for bzero
+//-----------------------------------------------------------------------------
+// This class manages information describing how to setup for TCP
+// usage.  Device specific data is held only in the running app.
+//-----------------------------------------------------------------------------
 
-#include "util/Lock.h"
+struct TCPNetworkSetupInfo {
+    TCPNetworkSetupInfo() :
+        MaxFragmentSize(0),
+        MaxEagerSendSize(0),
+        MaxConnectRetries(0)
+        {
+        }
 
-class UDPNetwork;
-class adminMessage;
-
-
-class UDPGlobals {
-public:
-
-    static const int NPortsPerProc = 2;	// one for short messages and one for long.
-    static UDPNetwork* UDPNet;
-    static bool checkLongMessageSocket;
-    static Locks longMessageLock;
-
-private:
-
-    friend class UDPNetwork;
+    size_t  MaxFragmentSize;
+    size_t  MaxEagerSendSize;
+    int     MaxConnectRetries;
 };
 
+#endif 
 
-class UDPNetwork {
-public:
-
-    static int initPreFork();
-    static int initPostFork(int ifCount, struct sockaddr_in* peerAddrs);
-
-    int getLocalSocket(bool shortMsg)
-        {
-            return sockfd[(shortMsg ? 0 : 1)];
-        }
-
-    // info in network byte order
-    struct sockaddr_in getProcAddr(int procRank)
-        {
-            return hostAddrs[procRank];
-        }
-
-    // info in network byte order
-    unsigned short getHostPort(int procRank, bool shortMsg)
-        {
-            int basePort = procRank * UDPGlobals::NPortsPerProc;
-            if (!shortMsg)
-                basePort++;
-            return procPorts[basePort];
-        }
-
-    // Default ctor, does not initialize socket fd's nor bind them
-    UDPNetwork();
-
-    UDPNetwork(int ifCount, struct sockaddr_in* peerAddrs);
-
-    // Initialize sockets and bind them to addresses.
-    int initialize(int ProcID);
-
-    int nHosts;
-    int nProcs;
-    int sockfd[UDPGlobals::NPortsPerProc];
-    unsigned short portID[UDPGlobals::NPortsPerProc];
-    struct sockaddr_in addr;				// my local network address (recv on)
-    struct sockaddr_in *hostAddrs;	// global list of network addresses (send to)
-    unsigned short *procPorts;		// global list of process UDP ports (send to)
-};
-
-
-#endif // _UDPNETWORK_H_

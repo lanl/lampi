@@ -44,7 +44,7 @@ int udp_sockfd_long_g = 0;
 // recv frag descriptors
 //
 
-FreeListShared_t <udpRecvFragDesc> UDPRecvFragDescs;
+FreeListPrivate_t <udpRecvFragDesc> UDPRecvFragDescs;
 
 // pool for send frag descriptors
 

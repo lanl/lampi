@@ -201,8 +201,7 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	// select send path
 	//
 
-	int hostRank = global_proc_to_host(gldestProc);
-	sendFragDesc->toAddr = UDPGlobals::UDPNet->getHostAddr(hostRank);
+	sendFragDesc->toAddr = UDPGlobals::UDPNet->getProcAddr(gldestProc);
 	sendFragDesc->toAddr.sin_port = UDPGlobals::UDPNet->getHostPort(gldestProc, shortMsg);
 	sendFragDesc->sendSockfd = UDPGlobals::UDPNet->getLocalSocket(shortMsg);
 	// We attempt to get the UDPEarlySend_ descriptor.

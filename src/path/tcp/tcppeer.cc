@@ -41,6 +41,9 @@
 #include "path/tcp/tcpsend.h"
 
 
+extern size_t unsentAcks;
+extern size_t unsentAcksReturned;
+
 TCPPeer::TCPPeer() :
     tcpPath(0),
     thisHost(0),
@@ -78,17 +81,26 @@ void TCPPeer::setProc(long procID)
 //  locks to access them.
 //
 
-void TCPPeer::setHostAddrs()
+void TCPPeer::setNumAddresses(int numAddrs)
 {
-    TCPHost *tcpHost = tcpPath->getHost(peerHost);
-    int numAddrs = tcpHost->getNumAddrs();
     tcpSockets.size(numAddrs);
     for(int i=0; i<numAddrs; i++) {
          TCPSocket& tcpSocket = tcpSockets[i];
          ScopedLock lock(tcpSocket.lock);
          tcpSocket.close();
-         tcpSocket.addr = tcpHost->getHostAddr(i);
     }
+}
+
+
+void TCPPeer::setAddress(int index, const struct sockaddr_in& inaddr)
+{
+#if !defined(NDEBUG)
+    if(index < 0 || index >= (int)tcpSockets.size()) {
+        ulm_exit((-1, "TCPPeer::setAddress: invalid index %d\n", index));
+    }
+#endif
+    TCPSocket& tcpSocket = tcpSockets[index];
+    tcpSocket.addr = inaddr;
 }
 
 
@@ -101,7 +113,7 @@ void TCPPeer::setPort(unsigned short port)
          tcpSocket.addr.sin_port = peerPort;
     }
 }
-
+                                                                                       
 
 //
 //  Called by ulm_finalize to check for data that needs to
@@ -161,7 +173,8 @@ bool TCPPeer::acceptConnection(int sd)
             ScopedLock lock(tcpSocket.lock);
             if (tcpSocket.sd < 0) {
                 tcpSocket.sd = sd;
-                if(sendConnectAck(tcpSocket)) {
+                if(sendConnectAck(tcpSocket)) { 
+                    tcpSocket.retries = 0;
                     tcpSocket.state = S_CONNECTED;
                     incrementSocketCount();
                     tcpSocket.flags |= (Reactor::NotifyRecv|Reactor::NotifyExcept);
@@ -174,6 +187,7 @@ bool TCPPeer::acceptConnection(int sd)
                 tcpSocket.close();
                 tcpSocket.sd = sd;
                 if(sendConnectAck(tcpSocket)) {
+                    tcpSocket.retries = 0;
                     tcpSocket.state = S_CONNECTED;
                     incrementSocketCount();
                     tcpSocket.flags |= (Reactor::NotifyRecv|Reactor::NotifyExcept);
@@ -188,6 +202,21 @@ bool TCPPeer::acceptConnection(int sd)
 
 
 //
+//  Do we know how to reach the specified host.
+//
+
+bool TCPPeer::canReach()
+{
+    for(size_t i=0; i<tcpSockets.size(); i++) {
+        TCPSocket& tcpSocket = tcpSockets[i];
+        if(tcpSocket.addr.sin_addr.s_addr != 0 &&
+           tcpSocket.addr.sin_port != 0)
+            return true;
+    }
+    return false;
+}
+
+//
 //  If not connected to a peer, start the connection and return incomplete.
 //  Otherwise, create send fragements for the message and start the send.
 //
@@ -197,7 +226,10 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     // are we connected - if not must connect first
     size_t numSockets = tcpSockets.size();
     if(tcpSocketsConnected < numSockets) {
-        startConnect(); 
+        if(startConnect(errorCode) == false) {
+            *incomplete = true;
+            return false;
+        }
         if(tcpSocketsConnected == 0) {
             *incomplete = true;
             return true;
@@ -243,7 +275,7 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
             // dont send more than the first fragment until an ack is received
             // indicating that the matching receive has been posted
-            if (message->numfrags > 1 && message->NumSent == 0)
+            if (message->numfrags > 1 && message->FragsToSend.size() == message->numfrags)
                 message->clearToSend_m = false;
 
             // pull first fragment off queue
@@ -278,17 +310,27 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 //  for send/write events on the select.
 //
 
-void TCPPeer::startConnect()
-{        
+bool TCPPeer::startConnect(int *errorCode)
+{
+    size_t failed = 0;
     for(size_t i=0; i<tcpSockets.size(); i++) {
         TCPSocket& tcpSocket = tcpSockets[i];
         ScopedLock lock(tcpSocket.lock);
         if (!tcpSocket.isClosed())
             continue;
 
+        // has connection retry count been exceeded?
+        if(tcpSocket.retries > TCPPath::MaxConnectRetries) {
+            failed++;
+            continue;
+        }
+
         tcpSocket.sd = socket(AF_INET, SOCK_STREAM, 0);
-        if (tcpSocket.sd < 0)
-            ulm_exit((-1, "TCPPeer[%d,%d]::startConnect: socket() failed with errno=%d\n", thisProc,peerProc,errno));
+        if (tcpSocket.sd < 0) {
+            tcpSocket.retries++;
+            *errorCode = ULM_ERR_TEMP_OUT_OF_RESOURCE;
+            return false;
+        }
 
         // set the socket to non-blocking
         int flags;
@@ -309,7 +351,9 @@ void TCPPeer::startConnect()
                 tcpPath->insertListener(tcpSocket.sd, this, Reactor::NotifySend|Reactor::NotifyExcept);
                 continue;
             }
-            ulm_exit((-1, "TCPPeer[%d,%d]::startConnect: connect() failed with errno=%d\n", thisProc,peerProc,errno));
+            tcpSocket.close();
+            tcpSocket.retries++;
+            continue;
         }
         if(sendConnectAck(tcpSocket)) {
             tcpSocket.state = S_CONNECT_ACK;
@@ -317,6 +361,13 @@ void TCPPeer::startConnect()
             tcpPath->insertListener(tcpSocket.sd, this, Reactor::NotifyRecv|Reactor::NotifyExcept);
         }
     }
+
+    // if we cannot connect any sockets, try an alternate path
+    if(failed == tcpSockets.size()) {
+        *errorCode = ULM_ERR_BAD_PATH;
+        return false;
+    }
+    return true;
 }
 
 
@@ -340,6 +391,7 @@ void TCPPeer::completeConnect(TCPSocket& tcpSocket)
         ulm_err(("TCPPeer[%d,%d]::completeConnect(%d): getsockopt() failed with errno=%d\n", 
             thisProc, peerProc, tcpSocket.sd, errno));
         tcpSocket.close();
+        tcpSocket.retries++;
         return;
     }
     if(so_error == EINPROGRESS) {
@@ -351,6 +403,7 @@ void TCPPeer::completeConnect(TCPSocket& tcpSocket)
         ulm_err(("TCPPeer[%d,%d]::completeConnect(%d): connect() failed with errno=%d\n", 
             thisProc, peerProc, tcpSocket.sd, errno));
         tcpSocket.close();
+        tcpSocket.retries++;
         return;
     }
     if(sendConnectAck(tcpSocket)) {
@@ -418,7 +471,7 @@ void TCPPeer::recvEventHandler(int sd)
                 break;
                 }
             default:
-                ulm_err(("TCPPeer[%d,%d::recvEventHandler(%d): invalid socket state(%d).\n", 
+                ulm_err(("TCPPeer[%d,%d]::recvEventHandler(%d): invalid socket state(%d).\n", 
                     thisProc, peerProc, sd, tcpSocket.state));
                 tcpPath->removeListener(tcpSocket.sd, this, Reactor::NotifyAll);
                 tcpSocket.close();
@@ -474,6 +527,7 @@ void TCPPeer::recvConnectAck(TCPSocket& tcpSocket)
         tcpSocket.close();
         return;
     }
+    tcpSocket.retries = 0;
     tcpSocket.state = S_CONNECTED;
     incrementSocketCount();
 }

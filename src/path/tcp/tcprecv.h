@@ -42,22 +42,28 @@ public:
     TCPRecvFrag(int) {}
 
     static int init();
-    static TCPRecvFrag* getElement(int& retval) 
-        { return TCPRecvFrags.getElement(getMemPoolIndex(), retval); }
+    inline static TCPRecvFrag* getElement(int& retval) { 
+        return TCPRecvFrags.getElement(getMemPoolIndex(), retval); 
+    }
     virtual void init(TCPPeer* tcpPeer);
 
     // BaseRecvFragDesc_t
     virtual void ReturnDescToPool(int localRank);
-    virtual bool AckData(double timeNow =- 1.0);
-    virtual unsigned int CopyFunction(void* fragAddr, void *appAddr, ssize_t length);
+    virtual bool AckData(double timeNow = -1.0) { 
+        return sendAck(-1); 
+    }
+    virtual unsigned int CopyFunction(void* fragAddr, void *appAddr, ssize_t length) {
+        MEMCOPY_FUNC(fragAddr, appAddr, length); 
+        return length; 
+    }
     virtual unsigned long dataOffset();
-
+    
     // Reactor::Listener
     virtual void recvEventHandler(int sd);
     virtual void sendEventHandler(int sd);
 
 private:
-    static FreeListShared_t <TCPRecvFrag> TCPRecvFrags;
+    static FreeListPrivate_t <TCPRecvFrag> TCPRecvFrags;
 
     TCPPeer        *tcpPeer;
     long            thisProc;
@@ -80,15 +86,6 @@ private:
 };
 
 
-
-inline bool TCPRecvFrag::AckData(double timeNow) { 
-    return sendAck(-1); 
-}
-
-inline  unsigned int TCPRecvFrag::CopyFunction(void* fragAddr, void *appAddr, ssize_t length) {
-    MEMCOPY_FUNC(fragAddr, appAddr, length); 
-    return length; 
-}
 
 #endif
 

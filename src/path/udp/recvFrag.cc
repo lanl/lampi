@@ -46,7 +46,6 @@
 #include "client/ULMClient.h"
 #include "queue/globals.h"	// for getMemPoolIndex()
 #include "util/MemFunctions.h"
-//#include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
 #include "path/udp/path.h"
 
 #ifdef ENABLE_RELIABILITY
@@ -716,8 +715,8 @@ unsigned long udpRecvFragDesc::nonContigCopyFunction(void *appAddr, void *fragAd
 //-----------------------------------------------------------------------------
 bool udpRecvFragDesc::AckData(double timeNow)
 {
-    int useShortMsg = true,returnValue;
-    int hostRank, sendSockfd, count;
+    int useShortMsg = true;
+    int sendSockfd, count, returnValue;
     udp_header hd;
     udp_ack_header & ack = hd.ack;
 
@@ -771,8 +770,7 @@ bool udpRecvFragDesc::AckData(double timeNow)
     // select send path
     //
 
-    hostRank = global_proc_to_host(ack.dest_proc);
-    toAddr = UDPGlobals::UDPNet->getHostAddr(hostRank);
+    toAddr = UDPGlobals::UDPNet->getProcAddr(ack.dest_proc);
     toAddr.sin_port = UDPGlobals::UDPNet->getHostPort(ack.dest_proc, useShortMsg);
     sendSockfd = UDPGlobals::UDPNet->getLocalSocket(useShortMsg);
 

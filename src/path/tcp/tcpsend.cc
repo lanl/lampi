@@ -54,11 +54,11 @@ int TCPSendFrag::init()
         memAffinityPool[i] = i;
 
     return TCPSendFrags.Init(  nFreeLists,
-                               4,                    // pages per list
+                               16,                   // pages per list
                                SMPPAGESIZE,          // pool chunk size
                                SMPPAGESIZE,          // page size
                                sizeof(TCPSendFrag),  // element size
-                               4,                    // min pages per list
+                               16,                   // min pages per list
                                -1,                   // max pages per list
                                1000,                 // max retries
                                " TCP send frag descriptors ",
@@ -90,12 +90,12 @@ int TCPSendFrag::init(TCPPeer *tcpPeer, SendDesc_t *message)
     // determine offset and fragment length
     if(message->NumFragDescAllocated == 0) {
         this->fragMsgOffset = 0;
-        if (message->posted_m.length_m > TCPPath::MaxEarlySendSize)
-            this->fragLength = TCPPath::MaxEarlySendSize;
+        if (message->posted_m.length_m > TCPPath::MaxEagerSendSize)
+            this->fragLength = TCPPath::MaxEagerSendSize;
         else
             this->fragLength = message->posted_m.length_m;
     } else {
-        this->fragMsgOffset = TCPPath::MaxEarlySendSize + 
+        this->fragMsgOffset = TCPPath::MaxEagerSendSize + 
             ((message->NumFragDescAllocated-1) * TCPPath::MaxFragmentSize);
         size_t leftToSend = message->posted_m.length_m - this->fragMsgOffset;
         if(leftToSend > TCPPath::MaxFragmentSize)

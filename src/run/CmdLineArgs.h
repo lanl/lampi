@@ -95,6 +95,20 @@ InputParameters_t ULMInputOptions[] =
      GetMpirunHostname,
      "IP hostname or address of mpirun host", 0, "\0"
     },
+    {"-i",
+     "InterfaceList",
+     STRING_ARGS,
+     GetInterfaceNoInput,
+     GetInterfaceList,
+     "List of interface names to be used by TCP/UDP paths", 0, "\0"
+    },
+    {"-ni",
+     "Interfaces",
+     STRING_ARGS,
+     NoOpFunction,
+     GetInterfaceCount,
+     "Maximum number of interfaces to be used by TCP/UDP paths", 0, "\0"
+    },
     {"-cpulist",
      "CpuList",
      STRING_ARGS,
@@ -314,6 +328,30 @@ InputParameters_t ULMInputOptions[] =
      parseIBFlags,
      "Special InfiniBand flags -- noack, ack, nochecksum, checksum", 0, "\0"
     }
+#if defined(ENABLE_TCP)
+    ,
+    {"-tcpmaxfrag",
+     "TCPMaxFragment",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPMaxFragment,
+     "TCP maximum fragment size", 0, "\0"
+    },
+    {"-tcpeagersend",
+     "TCPEagerSend",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPEagerSend,
+     "TCP eager send size", 0, "\0"
+    },
+    {"-tcpconretries",
+     "TCPConnectRetries",
+     STRING_ARGS,
+     NoOpFunction,
+     parseTCPConnectRetries,
+     "TCP connection retries", 0, "\0"
+    }
+#endif
 };
 
 #endif

@@ -37,6 +37,7 @@
 #include "util/HashTable.h"
 #include "util/Lock.h"
 #include "util/Vector.h"
+#include "internal/types.h"
 
 
 //
@@ -87,11 +88,11 @@ private:
     int                sd_max;
     bool               sd_run;
     int                sd_changes;
-    fd_set             sd_send_set;
-    fd_set             sd_recv_set;
-    fd_set             sd_except_set;
+    ulm_fd_set_t       sd_send_set;
+    ulm_fd_set_t       sd_recv_set;
+    ulm_fd_set_t       sd_except_set;
 
-    void dispatch(int, fd_set&, fd_set&, fd_set&);
+    void dispatch(int, ulm_fd_set_t&, ulm_fd_set_t&, ulm_fd_set_t&);
     inline Descriptor* getDescriptor(int);
 };
 

@@ -37,6 +37,61 @@
 #include "ctnetwork/CTNetwork.h"
 #include "internal/Private.h"
 
+
+void lampi_init_prefork_receive_setup_params_tcp(lampiState_t * s)
+{
+    int errorCode;
+    int recvd;
+    int tag;
+    
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_receive_setup_params_tcp");
+    }
+    
+    if ((s->nhosts == 1) || (!s->tcp)) {
+        return;
+    }
+    
+    recvd = s->client->receive(-1, &tag, &errorCode);
+    if ((recvd == adminMessage::OK) &&
+        (tag == dev_type_params::START_TCP_INPUT)) {
+    } else { 
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_TCP;
+        return;
+    }
+    
+    if(TCPPath::initSetupParams(s->client) != ULM_SUCCESS) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_TCP;
+        return;
+    }
+
+    int done = 0;
+    while (!done) {
+        /* read next tag */
+        recvd = s->client->receive(-1, &tag, &errorCode);
+        if (recvd != adminMessage::OK) {
+            ulm_err(("Did not receive OK when reading next tag for TCP setup. "
+                     "recvd = %d, errorcode = %d.\n", recvd, errorCode));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_TCP;
+            return;
+        }
+        switch (tag) {
+        case dev_type_params::END_TCP_INPUT:
+            /* done reading input params */
+            done = 1;
+            break;
+        default:
+            ulm_err(("Unknown TCP setup tag %d...\n", tag));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_TCP;
+            return;
+        }
+    }
+}
+
+
 void lampi_init_prefork_tcp(lampiState_t *s)
 {
     if (s->error) {
@@ -51,7 +106,7 @@ void lampi_init_prefork_tcp(lampiState_t *s)
          */
 
         if (TCPPath::initPreFork() != ULM_SUCCESS) {
-            s->error = ERROR_LAMPI_INIT_POSTFORK_TCP;
+            s->error = ERROR_LAMPI_INIT_PREFORK_TCP;
             return;
         }
     }
@@ -82,7 +137,7 @@ void lampi_init_postfork_tcp(lampiState_t * s)
             s->error = ERROR_LAMPI_INIT_PATH_CONTAINER;
             return;
         }
-        
+
         /*
          * Initialization common to daemon/clients
          */
@@ -96,11 +151,7 @@ void lampi_init_postfork_tcp(lampiState_t * s)
          * Initiliziation specific to clients
          */
         if(!s->iAmDaemon) {
-            if(UDPGlobals::UDPNet == 0) {
-                s->error = ERROR_LAMPI_INIT_POSTFORK_TCP;
-                return;
-            }
-            rc = tcpPath->initClients(UDPGlobals::UDPNet->nHosts, UDPGlobals::UDPNet->hostAddrs);
+            rc = tcpPath->initClient(s->if_count, s->h_addrs);
             if(rc != ULM_SUCCESS) {
                 s->error = ERROR_LAMPI_INIT_POSTFORK_TCP;
                 return;
@@ -110,7 +161,7 @@ void lampi_init_postfork_tcp(lampiState_t * s)
         /*
          * Distribute TCP listen ports. Daemon must participate.
          */
-        rc = tcpPath->allgatherListenPort(s->client);
+        rc = tcpPath->exchangeListenPorts(s->client);
         if (rc != ULM_SUCCESS) {
             s->error = ERROR_LAMPI_INIT_POSTFORK_TCP;
             return;

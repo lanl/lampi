@@ -77,33 +77,36 @@ void Usage(FILE *stream)
             "Run a job under the LA-MPI message-passing system\n"
             "\n"
             "Options\n"
-            "-n|-np NPROCS  Number of processes. A single value specifies the\n"
-            "               total number of processes, while a comma-delimited\n"
-            "               list of numbers specifies the number of processes\n"
-            "               on each host.\n"
-            "-N NHOSTS      Number of hosts.\n"
-            "-H HOSTLIST    A comma-delimited list of hosts.\n"
-            "-s MPIRUNHOST  A comma-delimited list of preferred IP interface name fragments\n"
-            "               (whole, suffix, or prefix) or addresses for TCP/IP\n"
-            "               administrative and UDP/IP data traffic.\n"
-            "-d DIRLIST     A comma-delimited list of one or more working directories\n"
-            "               for spawned processes.\n"
-            "-dapp DIRLIST  A comma-delimited list of one or more directories\n"
-            "               where the executable is located.\n"
-            "-dev PATHLIST  A colon-delimited list of one or more network paths to use.\n"
-            "-threads       Enable thread safety.\n"
-            "-t             Tag standard output/error with source information.\n"
-            "-crc           Use 32-bit CRCs instead of additive checksums where applicable.\n"
-            "-qf FLAGSLIST  A comma-delimited list of keywords for operation on Quadrics networks.\n"
-            "               The keywords supported are \"ack\", \"noack\", \"checksum\", and\n"
-            "               \"nochecksum\" [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
-            "-mf FLAGSLIST  A comma-delimited list of keywords for operation on Myrinet GM networks.\n"
-            "               The keywords supported are \"ack\", \"noack\", \"checksum\",\n"
-            "               \"nochecksum\", and a number to set the size of the large message\n"
-            "               fragment buffer size [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
-            "-if FLAGSLIST  A comma-delimited list of keywords for operation on InfiniBand networks.\n"
-            "               The keywords supported are \"ack\", \"noack\", \"checksum\", and\n"
-            "               \"nochecksum\" [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+            "-n|-np NPROCS     Number of processes. A single value specifies the\n"
+            "                  total number of processes, while a comma-delimited\n"
+            "                  list of numbers specifies the number of processes\n"
+            "                  on each host.\n"
+            "-N NHOSTS         Number of hosts.\n"
+            "-H HOSTLIST       A comma-delimited list of hosts.\n"
+            "-s MPIRUNHOST     A comma-delimited list of preferred IP interface name fragments\n"
+            "                  (whole, suffix, or prefix) or addresses for TCP/IP\n"
+            "                  administrative and UDP/IP data traffic.\n"
+            "-d DIRLIST        A comma-delimited list of one or more working directories\n"
+            "                  for spawned processes.\n"
+            "-dapp DIRLIST     A comma-delimited list of one or more directories\n"
+            "                  where the executable is located.\n"
+            "-dev PATHLIST     A colon-delimited list of one or more network paths to use.\n" 
+            "-i IFLIST         A comma-delimited list of one or more interfaces names\n"
+            "                  to be used by TCP/UDP paths.\n"
+            "-ni NINTERFACES   Maximum number of interfaces to be used by TCP/UDP paths.\n"
+            "-threads          Enable thread safety.\n"
+            "-t                Tag standard output/error with source information.\n"
+            "-crc              Use 32-bit CRCs instead of additive checksums where applicable.\n"
+            "-qf FLAGSLIST     A comma-delimited list of keywords for operation on Quadrics networks.\n"
+            "                  The keywords supported are \"ack\", \"noack\", \"checksum\", and\n"
+            "                 \"nochecksum\" [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+            "-mf FLAGSLIST     A comma-delimited list of keywords for operation on Myrinet GM networks.\n"
+            "                  The keywords supported are \"ack\", \"noack\", \"checksum\",\n"
+            "                 \"nochecksum\", and a number to set the size of the large message\n"
+            "                  fragment buffer size [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+            "-if FLAGSLIST     A comma-delimited list of keywords for operation on InfiniBand networks.\n"
+            "                  The keywords supported are \"ack\", \"noack\", \"checksum\", and\n"
+            "                 \"nochecksum\" [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
             "\n");
     fflush(stream);
 }
@@ -1568,3 +1571,82 @@ void parseIBFlags(const char *InfoStream)
     }
 #endif
 }
+
+
+#ifdef ENABLE_TCP
+
+void parseTCPMaxFragment(const char *InfoStream)
+{
+    int NSeparators = 1;
+    char SeparatorList[] = { " " };
+
+    int OptionIndex =
+        MatchOption("TCPMaxFragment", ULMInputOptions, SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option TCPMaxFragment not found\n"));
+        Abort();
+    }
+
+    ParseString params(ULMInputOptions[OptionIndex].InputData,
+                       NSeparators, SeparatorList);
+
+    for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
+        RunParameters.Networks.TCPSetup.MaxFragmentSize = atol(*i);
+        if(RunParameters.Networks.TCPSetup.MaxFragmentSize == 0) {
+            ulm_err(("Error: invalid value for option -tcpmaxfrag \"%s\"\n", *i));
+            Abort();
+        }
+    }
+}
+
+void parseTCPEagerSend(const char *InfoStream)
+{
+    int NSeparators = 1;
+    char SeparatorList[] = { " " };
+
+    int OptionIndex =
+        MatchOption("TCPEagerSend", ULMInputOptions, SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option TCPEagerSend not found\n"));
+        Abort();
+    }
+
+    ParseString params(ULMInputOptions[OptionIndex].InputData,
+                       NSeparators, SeparatorList);
+
+    for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
+        RunParameters.Networks.TCPSetup.MaxEagerSendSize = atol(*i);
+        if(RunParameters.Networks.TCPSetup.MaxEagerSendSize == 0) {
+            ulm_err(("Error: invalid value for option -tcpeagersend \"%s\"\n", *i));
+            Abort();
+        }
+    }
+}
+
+void parseTCPConnectRetries(const char *InfoStream)
+{
+    int NSeparators = 1;
+    char SeparatorList[] = { " " };
+
+    int OptionIndex =
+        MatchOption("TCPConnectRetries", ULMInputOptions, SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option TCPConnectRetries not found\n"));
+        Abort();
+    }
+
+    ParseString params(ULMInputOptions[OptionIndex].InputData,
+                       NSeparators, SeparatorList);
+
+    for (ParseString::iterator i = params.begin(); i != params.end(); i++) {
+        RunParameters.Networks.TCPSetup.MaxConnectRetries = atol(*i);
+        if(RunParameters.Networks.TCPSetup.MaxConnectRetries == 0) {
+            ulm_err(("Error: invalid value for option -tcpmaxcon \"%s\"\n", *i));
+            Abort();
+        }
+    }
+}
+
+#endif
+
+

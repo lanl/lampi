@@ -43,12 +43,10 @@
 #include "internal/log.h"
 #include "internal/log.h"
 #include "internal/system.h"
-#include "mem/FixedSharedMemPool.h"
 #include "path/udp/UDPNetwork.h"
 #include "os/atomic.h"
 #include "ulm/ulm.h"
 
-extern FixedSharedMemPool SharedMemoryPools;
 
 // Prototype for initializing descriptor lists. This function is local/private
 // to UDP so it is not exported in a header file.
@@ -59,73 +57,39 @@ bool UDPGlobals::checkLongMessageSocket = true;
 Locks UDPGlobals::longMessageLock;
 
 // executed by the client daemon process only
-int UDPNetwork::beginInitLocal(int num_hosts, int num_procs, int len_name,
-                               const char *names)
+
+int UDPNetwork::initPreFork()
 {
-    UDPGlobals::UDPNet =
-        new UDPNetwork(num_hosts, num_procs, len_name, names);
-    if (!UDPGlobals::UDPNet) {
-        ulm_exit((-1,
-                  "UDPNetwork::beginInitLocal - UDPNet not allocated!\n"));
-    }
     return initLocalUDPSetup();       // initialize descriptor pools
 }
 
-// Default ctor, does not initialize socket fd's nor bind them
-UDPNetwork::UDPNetwork():nHosts(0), hostAddrs(0)
+
+int UDPNetwork::initPostFork(int ifCount, struct sockaddr_in* peerAddrs)
 {
-    for (int j = 0; j < UDPGlobals::NPortsPerProc; j++) {
-        sockfd[j] = -1;
+    UDPGlobals::UDPNet = new UDPNetwork(ifCount, peerAddrs);
+    if (!UDPGlobals::UDPNet) {
+        ulm_exit((-1, "UDPNetwork::beginInitLocal - UDPNet not allocated!\n"));
     }
+    return ULM_SUCCESS;
 }
 
 
-UDPNetwork::UDPNetwork(int num_hosts, int num_procs, int len_name,
-                       const char *names)
+UDPNetwork::UDPNetwork(int ifCount, struct sockaddr_in* peerAddrs)
 {
-    nHosts = num_hosts;
-    nProcs = num_procs;
+    nHosts = nhosts();
+    nProcs = nprocs();
 
-    localProcessesDone =
-        (int *) SharedMemoryPools.getMemorySegment(sizeof(int),
-                                                   CACHE_ALIGNMENT);
-    if (!localProcessesDone) {
-        ulm_exit((-1, "UDPNetwork::UDPNetwork error - unable to allocate "
-                  "%d bytes for localProcessesDone flag!\n", sizeof(int)));
-    }
-    *localProcessesDone = 0;
-
-    hostsDone =
-        (int *) SharedMemoryPools.getMemorySegment(sizeof(int),
-                                                   CACHE_ALIGNMENT);
-    if (!hostsDone) {
-        ulm_exit((-1, "UDPNetwork::UDPNetwork error - unable to allocate "
-                  "%d bytes for hostsDone flag!\n", sizeof(int)));
-    }
-    *hostsDone = 0;
-
-    hostAddrs =
-        (struct sockaddr_in *) SharedMemoryPools.
-        getMemorySegment(sizeof(struct sockaddr_in) * nHosts,
-                         CACHE_ALIGNMENT);
+    hostAddrs = (struct sockaddr_in *)ulm_malloc(sizeof(struct sockaddr_in) * nProcs);
     if (!hostAddrs) {
         ulm_exit((-1, "UDPNetwork::UDPNetwork error - unable to allocate "
                   "%d bytes for hostAddrs!\n",
                   sizeof(struct sockaddr_in) * nHosts));
     }
 
-    const char *hostName = names;
-    for (int i = 0; i < nHosts; i++) {
-        struct hostent *hostptr = gethostbyname(hostName);
-        if (hostptr) {
-            hostAddrs[i].sin_addr =
-                *(struct in_addr *) hostptr->h_addr_list[0];
-        } else {
-            hostAddrs[i].sin_addr.s_addr = 0;
-        }
-        hostAddrs[i].sin_family = AF_INET;
-        hostAddrs[i].sin_port = htons(0);
-        hostName += len_name;
+    int index=0;
+    for (int i = 0; i < nProcs; i++) {
+        hostAddrs[i] = peerAddrs[index];
+        index += ifCount;
     }
 
     int numPorts = UDPGlobals::NPortsPerProc * nProcs;

@@ -76,6 +76,7 @@ typedef char DirName_t[ULM_MAX_PATH_LEN];
 typedef char FileName_t[ULM_MAX_PATH_LEN];
 typedef char ExeName_t[ULM_MAX_PATH_LEN];
 typedef char PrefixName_t[ULM_MAX_PREFIX];
+typedef char InterfaceName_t[ULM_MAX_IFNAME_LEN];
 
 /*
  * Platform dependent time operations.

@@ -76,9 +76,7 @@ public:
     }
 
     virtual bool canReach(int globalDestProcessID) {
-        int destinationHostID = global_proc_to_host(globalDestProcessID);
-        struct sockaddr_in sockAddr = UDPGlobals::UDPNet->getHostAddr(destinationHostID);
-
+        struct sockaddr_in sockAddr = UDPGlobals::UDPNet->getProcAddr(globalDestProcessID);
         if (sockAddr.sin_addr.s_addr == 0)
             return false;
         else

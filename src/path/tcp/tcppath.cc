@@ -46,9 +46,14 @@
 
 TCPPath* TCPPath::_singleton = 0;
 Locks    TCPPath::_lock;
-size_t   TCPPath::MaxFragmentSize = 64*1024;
-size_t   TCPPath::MaxEarlySendSize = 16*1024;
 
+const size_t TCPPath::DefaultFragmentSize = 64 * 1024;
+const size_t TCPPath::DefaultEagerSendSize = 16 * 1024;
+const int    TCPPath::DefaultConnectRetries = 2;
+
+size_t  TCPPath::MaxFragmentSize = 0;
+size_t  TCPPath::MaxEagerSendSize = 0;
+int     TCPPath::MaxConnectRetries = 0;
 
 TCPPath::TCPPath(int handle) :
     thisHost(myhost()),
@@ -72,8 +77,9 @@ TCPPath* TCPPath::singleton()
         if(_singleton == 0) {
             int pathHandle;
             size_t tcpPathSize = sizeof(TCPPath);
-            if(tcpPathSize > MAX_PATH_OBJECT_SIZE_IN_BYTES)
-                return 0;
+            if(tcpPathSize > MAX_PATH_OBJECT_SIZE_IN_BYTES) {
+                ulm_exit((-1, "TCPPath::singleton(): sizeof(TCPPath) > MAX_PATH_OBJECT_SIZE_IN_BYTES\n"));
+            }
             _singleton = (TCPPath *) (pathContainer()->add(&pathHandle));
             if (_singleton != 0)
                 new(_singleton) TCPPath(pathHandle);
@@ -84,7 +90,35 @@ TCPPath* TCPPath::singleton()
 
 
 //
-//  Initialization of send/recv descriptors.
+//  Called prior to fork to distribute setup parameters to
+//  each daemon process.
+//
+
+int TCPPath::initSetupParams(adminMessage *admin)
+{
+    if (admin->unpack(&MaxFragmentSize,
+                      (adminMessage::packType) sizeof(size_t), 1) != true) {
+        ulm_err(("Failed unpacking TCPPath::MaxFragmentSize\n"));
+        return ULM_ERROR;
+    }
+
+    if (admin->unpack(&MaxEagerSendSize,
+                      (adminMessage::packType) sizeof(size_t), 1) != true) {
+        ulm_err(("Failed unpacking TCPPath::MaxEagerSendSize\n"));
+        return ULM_ERROR;
+    }
+
+    if (admin->unpack(&MaxConnectRetries,
+                      (adminMessage::packType) sizeof(int), 1) != true) {
+        ulm_err(("Failed unpacking TCPPath::MaxConnectRetries\n"));
+        return ULM_ERROR;
+    }
+    return ULM_SUCCESS;
+}
+
+
+//
+//  One time initialization for all processes.
 //
 
 int TCPPath::initPreFork()
@@ -99,26 +133,16 @@ int TCPPath::initPreFork()
     return ULM_SUCCESS;
 }
 
-//
-//  One time initialization for all processes. Create arrays of data
-//  structures to represent each participating host (TCPHost) and
-//  process (TCPPeer) that are indexed by host rank and global process
-//  rank.
-//
 
 int TCPPath::initPostFork()
 {
-    // allocate per host/process data structures
-    int numHosts = nhosts();
-    if(tcpHosts.size(numHosts > 0 ? numHosts : 0) == false)
-        return ULM_ERROR;
-
-    // allow for multiple sockets connections per client
     int numProcs = nprocs();
     if(tcpPeers.size(numProcs > 0 ? numProcs : 0) == false)
         return ULM_ERROR;
-    for(int i=0; i<numProcs; i++)
-        tcpPeers[i].setProc(i);
+    for(int i=0; i<numProcs; i++) {
+        TCPPeer& tcpPeer = tcpPeers[i];
+        tcpPeer.setProc(i); 
+    }
     return ULM_SUCCESS;
 }
 
@@ -127,18 +151,23 @@ int TCPPath::initPostFork()
 //  to accept incoming TCP connections.
 // 
 
-int TCPPath::initClients(int numAddrs, struct sockaddr_in *hosts)
+int TCPPath::initClient(int ifCount, struct sockaddr_in *peerAddrs)
 {
-    // initialize host addresses
-    for(size_t i=0; i<tcpHosts.size(); i++) {
-        TCPHost& tcpHost = tcpHosts[i];
-        tcpHost.setNumAddrs(1);
-        tcpHost.setHostAddr(0,hosts[i]);
-    }
+    // setup configurable parameters
+    if (MaxFragmentSize == 0)
+        MaxFragmentSize = (ifCount > 0) ? DefaultFragmentSize : (1024*1024);
+    if (MaxEagerSendSize == 0)
+        MaxEagerSendSize = DefaultEagerSendSize;
+    if (MaxConnectRetries == 0)
+        MaxConnectRetries = DefaultConnectRetries;
 
+    // initialize peer addresses
+    size_t index=0;
     for(size_t i=0; i<tcpPeers.size(); i++) {
-        TCPPeer& tcpPeer = tcpPeers[i];
-        tcpPeer.setHostAddrs();
+        tcpPeers[i].setNumAddresses(ifCount);
+        for(int n=0; n<ifCount; n++) {
+            tcpPeers[i].setAddress(n, peerAddrs[index++]);
+        }
     }
 
     // create a listen socket for incoming connections
@@ -170,7 +199,6 @@ int TCPPath::initClients(int numAddrs, struct sockaddr_in *hosts)
         return ULM_ERROR;
     }
     tcpListenPort = inaddr.sin_port;
-    tcpPeers[thisProc].setPort(tcpListenPort);
 
     // setup listen backlog to maximum allowed by kernel
     if(listen(tcpListenSocket, SOMAXCONN) < 0) {
@@ -201,23 +229,24 @@ int TCPPath::initClients(int numAddrs, struct sockaddr_in *hosts)
 //  participating processes.
 //
 
-int TCPPath::allgatherListenPort(adminMessage *admin)
+int TCPPath::exchangeListenPorts(adminMessage *admin)
 {
     Vector<unsigned short> ports;
     int numPeers = tcpPeers.size();
     ports.size(numPeers);
     for(int i=0; i<numPeers; i++)
         ports[i] = tcpPeers[i].getPort();
-
+                                                                                       
     int rc = admin->allgather(&tcpListenPort, ports.base(), sizeof(unsigned short));
     if(rc != ULM_SUCCESS) {
         return rc;
     }
-
+                                                                                       
     for(int i=0; i<numPeers; i++)
         tcpPeers[i].setPort(ports[i]);
-    return ULM_SUCCESS;    
+    return ULM_SUCCESS;
 }
+
 
 //
 //  Defined in BasePath_t - assume we can reach the destination if we know its address
@@ -225,9 +254,8 @@ int TCPPath::allgatherListenPort(adminMessage *admin)
 
 bool TCPPath::canReach(int globalDestProcessID) 
 {
-    int destinationHostID = global_proc_to_host(globalDestProcessID);
-    struct sockaddr_in sockAddr = getHostAddr(destinationHostID);
-    return (sockAddr.sin_addr.s_addr != 0);
+    TCPPeer& tcpPeer = tcpPeers[globalDestProcessID];
+    return tcpPeer.canReach();
 }
 
 
@@ -235,8 +263,8 @@ bool TCPPath::init(SendDesc_t *message)
 {
     message->numfrags = 1;
     message->clearToSend_m = true;
-    if (message->posted_m.length_m > MaxEarlySendSize) {
-        size_t remaining = message->posted_m.length_m - MaxEarlySendSize;
+    if (message->posted_m.length_m > MaxEagerSendSize) {
+        size_t remaining = message->posted_m.length_m - MaxEagerSendSize;
         message->numfrags += (remaining + MaxFragmentSize - 1) / MaxFragmentSize;
     }
     return true;
@@ -292,34 +320,7 @@ void TCPPath::finalize()
 //  Accessor Methods
 //
 
-struct sockaddr_in TCPPath::getHostAddr()
-{
-    return getHostAddr(thisHost);
-}
 
-struct sockaddr_in TCPPath::getHostAddr(int globalHostID, int numAddr)
-{
-#if !defined(NDEBUG)
-    if(globalHostID >= (int)tcpHosts.size()) {
-        static struct sockaddr_in addr;
-        ulm_err(("TCPPath::getHost: invalid host index."));
-        return addr;
-    }
-#endif
-    TCPHost& tcpHost = tcpHosts[globalHostID];
-    return tcpHost.getHostAddr(numAddr);
-}
-
-TCPHost* TCPPath::getHost(int globalHostID)
-{
-#if !defined(NDEBUG)
-    if(globalHostID >= (int)tcpHosts.size()) {
-        ulm_err(("TCPPath::getHost: invalid host index."));
-        return 0;
-    }
-#endif
-    return &tcpHosts[globalHostID];
-}
 
 TCPPeer* TCPPath::getPeer(int globalProcID) 
 {

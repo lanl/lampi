@@ -1,4 +1,5 @@
 SRC_MPIRUN += \
+	src/util/DblLinkList.cc \
 	src/util/BitVect.c \
 	src/util/CommandArg.cc \
 	src/util/HashNode.cc \
@@ -11,4 +12,5 @@ SRC_MPIRUN += \
 	src/util/bcopy2.cc \
 	src/util/linked_list.c \
 	src/util/misc.c \
-	src/util/parsing.c
+	src/util/parsing.c \
+	src/util/if.cc

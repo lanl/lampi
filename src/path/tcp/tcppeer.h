@@ -82,10 +82,12 @@ public:
     inline unsigned short getPort() { return peerPort; }
 
     void setProc(long);
-    void setHostAddrs();
-    void setPort(unsigned short port);
- 
+    void setNumAddresses(int count);
+    void setAddress(int index, const struct sockaddr_in&);
+    void setPort(unsigned short);
+
     bool acceptConnection(int sd);
+    bool canReach();
     bool send(SendDesc_t* message, bool* incomplete, int *errorCode);
     void sendComplete(TCPSendFrag*);
 
@@ -109,13 +111,14 @@ private:
     size_t tcpSocketsConnected;
     Locks lock;
 
-    enum { S_CLOSED, S_CONNECTING, S_CONNECT_ACK, S_CONNECTED };
+    enum { S_CLOSED, S_CONNECTING, S_CONNECT_ACK, S_CONNECTED, S_FAILED };
 
     struct TCPSocket {
         TCPSocket() :
             sd(-1),
             state(S_CLOSED),
             flags(0),
+            retries(0),
             sendFrag(0),
             recvFrag(0)
         {
@@ -124,6 +127,7 @@ private:
         int sd;
         int state;
         int flags;
+        int retries;
         Reactor::Listener* sendFrag;
         Reactor::Listener* recvFrag;
         Locks lock;
@@ -150,7 +154,7 @@ private:
     void completeConnect(TCPSocket&);
     void recvConnectAck(TCPSocket&);
     bool sendConnectAck(TCPSocket&);
-    void startConnect();
+    bool startConnect(int*);
 
     inline void incrementSocketCount() {
         if(usethreads()) {

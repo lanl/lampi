@@ -68,7 +68,7 @@ class UDPEarlySend_small;
 
 
 // Pools of free frag descriptors.  These lists have global scope.
-extern FreeListShared_t <udpRecvFragDesc> UDPRecvFragDescs;
+extern FreeListPrivate_t <udpRecvFragDesc> UDPRecvFragDescs;
 extern FreeListPrivate_t <udpSendFragDesc> udpSendFragDescs;
 
 // Freelists for use in the early udp send completion 

@@ -43,7 +43,6 @@
 
 class UDPNetworkSetupInfo {
 public:
-    int  NUDPHosts;		// number of hosts using UDP
     int* ListHosts;		// list of hosts using UDP
     int* HostToUDPHostsMap;	// for each host, it's index in list of UDP
 				// hosts. -1 if no device
@@ -51,7 +50,7 @@ public:
     int* NLogDevsPerPhysical;	// maximum number of ports per UDP device
 
     // default ctor
-    UDPNetworkSetupInfo() : NUDPHosts(0), ListHosts(0), HostToUDPHostsMap(0),
+    UDPNetworkSetupInfo() : ListHosts(0), HostToUDPHostsMap(0),
         NDevsPerHost(0), NLogDevsPerPhysical(0)
         {
         }

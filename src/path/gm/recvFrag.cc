@@ -85,7 +85,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
 	    unsigned int glSourceProcess =  pg->remoteGroup->
 		    mapGroupProcIDToGlobalProcID[srcProcID_m];
 	    /* process the deliverd sequence number range */
-	    returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
+	    int returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
 	    if (returnValue != ULM_SUCCESS)
 		    return false;
     }

@@ -66,6 +66,7 @@ enum {
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB,
+    ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_TCP,
     ERROR_LAMPI_INIT_PREFORK_PATHS,
     ERROR_LAMPI_INIT_POSTFORK_PATHS,
     ERROR_LAMPI_INIT_ALLFORKED_PATHS,
@@ -83,20 +84,12 @@ enum {
 };
 
 
-/*
- * inline functions
- */
-inline static void lampi_init_print(const char *string)
-{
-    fprintf(stderr, "%s\n", string);
-    fflush(stderr);
-}
 
 /*
  * prototypes
  */
 void lampi_init(void);
-
+void lampi_init_print(const char*);
 
 /*
  * prototypes for initialization phases
@@ -112,6 +105,7 @@ void lampi_init_prefork_paths(lampiState_t *);
 void lampi_init_prefork_process_resources(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg(lampiState_t *);
 void lampi_init_prefork_receive_setup_params(lampiState_t *);
+void lampi_init_prefork_ip_addresses(lampiState_t *);
 void lampi_init_prefork_resource_management(lampiState_t *);
 void lampi_init_prefork_resources(lampiState_t *);
 void lampi_init_prefork_stdio(lampiState_t *);
@@ -119,6 +113,7 @@ void lampi_init_prefork_stdio(lampiState_t *);
 void lampi_init_postfork_communicators(lampiState_t *s);
 void lampi_init_postfork_debugger(lampiState_t *);
 void lampi_init_postfork_globals(lampiState_t *);
+void lampi_init_postfork_ip_addresses(lampiState_t *);
 void lampi_init_postfork_paths(lampiState_t *);
 void lampi_init_postfork_resource_management(lampiState_t *);
 void lampi_init_postfork_resources(lampiState_t *);
@@ -201,9 +196,11 @@ extern lampi_init_func_t lampi_init_postfork_udp;
 #endif
 
 #ifdef ENABLE_TCP
+void lampi_init_prefork_receive_setup_params_tcp(lampiState_t *);
 void lampi_init_prefork_tcp(lampiState_t *);
 void lampi_init_postfork_tcp(lampiState_t *);
 #else
+extern lampi_init_func_t lampi_init_prefork_receive_setup_params_tcp;
 extern lampi_init_func_t lampi_init_prefork_tcp;
 extern lampi_init_func_t lampi_init_postfork_tcp;
 #endif

@@ -45,7 +45,6 @@
 #include "internal/log.h"
 #include "run/globals.h"  // for server
 
-extern bool broadcastUDPAddresses(int *errorCode);
 
 /* error macros */
 #define TagError(a)  \
@@ -342,7 +341,6 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 	//server->synchronize(RunParameters->NHosts + 1);
     ulm_dbg(("\nmpirun: done synching %d members before sending device info...\n", RunParameters->NHosts + 1));
 
-
     /* 
      * send device specific information 
      */
@@ -375,11 +373,17 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
         Abort();
     }
 
-    ulm_dbg(("\nmpirun: bcasting UDP addresses...\n"));
-    /* UDP IP address information broadcast */
-    if (!broadcastUDPAddresses(&returnValue)) {
-        ulm_err(("Error: broadcastUDPAddress failed (error %d)!\n",
-            returnValue));
+    /* TCP input parameters */
+    returnValue = SendTCPInputToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendTCPInputToClients - %d\n", returnValue));
+        Abort();
+    }
+
+    /* Interface input parameters */
+    returnValue = SendInterfaceListToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendInterfaceListToClients - %d\n", returnValue));
         Abort();
     }
 
@@ -641,7 +645,6 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    }
     }
 
-
     /* 
      * send device specific information 
      */
@@ -674,10 +677,17 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
         Abort();
     }
 
-    /* UDP IP address information broadcast */
-    if (!broadcastUDPAddresses(&returnValue)) {
-        ulm_err(("Error: broadcastUDPAddress failed (error %d)!\n",
-            returnValue));
+    /* TCP input parameters */
+    returnValue = SendTCPInputToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendTCPInputToClients - %d\n", returnValue));
+        Abort();
+    }
+
+    /* Interface input parameters */
+    returnValue = SendInterfaceListToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendInterfaceListToClients - %d\n", returnValue));
         Abort();
     }
 
@@ -1075,3 +1085,82 @@ int SendIBInputToClients(ULMRunParams_t *RunParameters,
         
     return returnValue;
 }
+
+
+int SendTCPInputToClients(ULMRunParams_t *RunParameters, adminMessage *server)
+{
+#ifdef ENABLE_TCP
+    int tag,errorCode;
+    int tcphosts = 0;
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters->NHosts == 1)
+        return ULM_SUCCESS;
+
+    for (int i = 0; i < RunParameters->NHosts; i++) {
+        for (int j = 0; j < RunParameters->NPathTypes[i]; j++) {
+            if (RunParameters->ListPathTypes[i][j] == PATH_TCP) {
+                tcphosts++;
+                break;
+            }
+        }
+    }
+
+    if(tcphosts == 0)
+        return ULM_SUCCESS;
+
+    if (RunParameters->NHosts != tcphosts) {
+        ulm_err(("Error: SendTCPInputToClients %d hosts out of %d using TCP!\n", 
+            tcphosts, RunParameters->NHosts));
+        return ULM_ERROR;
+    }
+
+    ulm_dbg(("mpirun: Bcasting TCP input...\n"));
+    server->reset(adminMessage::SEND);
+    server->pack(&RunParameters->Networks.TCPSetup.MaxFragmentSize, 
+		    (adminMessage::packType)sizeof(size_t), 1);
+    server->pack(&RunParameters->Networks.TCPSetup.MaxEagerSendSize, 
+		    (adminMessage::packType)sizeof(size_t), 1);
+    server->pack(&RunParameters->Networks.TCPSetup.MaxConnectRetries, 
+		    (adminMessage::packType)sizeof(int), 1);
+    tag = dev_type_params::END_TCP_INPUT;
+    server->pack(&tag, adminMessage::INTEGER, 1);
+    if ( !server->broadcast(dev_type_params::START_TCP_INPUT, &errorCode) ) {
+        ulm_err(("Error: Can't broadcast TCP input message (error %d)\n", errorCode));
+        Abort();
+    }
+#endif
+    return ULM_SUCCESS;
+}
+
+int SendInterfaceListToClients(ULMRunParams_t *RunParameters, adminMessage *server)
+{
+    int errorCode;
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters->NHosts == 1)
+        return ULM_SUCCESS;
+
+    ulm_dbg(("mpirun: Bcasting IF names input...\n"));
+    if (!server->reset(adminMessage::SEND)) {
+        ulm_err(("Error: SendInterfaceListToClients: unable to allocate send buffer!\n"));
+        Abort();
+    }
+    if(!server->pack(&RunParameters->NInterfaces, adminMessage::BYTE,
+                     sizeof(RunParameters->NInterfaces))) {
+        ulm_err(("Error: SendInterfaceListToClients: unable to pack NInterfaces\n"));
+        Abort();
+    }
+    if(RunParameters->NInterfaces &&
+       !server->pack(RunParameters->InterfaceList, adminMessage::BYTE,
+                     RunParameters->NInterfaces*sizeof(InterfaceName_t))) {
+        ulm_err(("Error: SendInterfaceListToClients: unable to pack InterfaceList\n"));
+        Abort();
+    }
+    if(!server->broadcast(adminMessage::IFNAMES, &errorCode)) {
+        ulm_err(("Error: SendInterfaceListToClients: unable to broadcast interface list.\n"));
+        Abort();
+    }
+    return ULM_SUCCESS;
+}
+

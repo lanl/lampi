@@ -173,6 +173,7 @@ int MPIrunProcessInput(int argc, char **argv,
 
     RunParameters->Networks.UseSharedMemory = 0;
     RunParameters->Networks.UseUDP = 0;
+    RunParameters->Networks.UseTCP = 0;
     RunParameters->Networks.UseGM = 0;
     RunParameters->Networks.UseQSW = 0;
     RunParameters->Networks.UseIB = 0;
@@ -185,10 +186,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.minPagesPerContext_m = NULL;
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxPagesPerContext_m = NULL;
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxTotalPages_m = NULL;
-#endif                          // UDP
-#ifdef ENABLE_UDP
-    RunParameters->Networks.UDPSetup.NUDPHosts = 0;
-#endif                          // UDP
+#endif
 #ifdef ENABLE_GM
     RunParameters->Networks.GMSetup.NGMHosts = 0;
 #endif
@@ -203,9 +201,13 @@ int MPIrunProcessInput(int argc, char **argv,
 #ifdef ENABLE_UDP
             case PATH_UDP:     // UDP interface
                 RunParameters->Networks.UseUDP = 1;
-                (RunParameters->Networks.UDPSetup.NUDPHosts)++;
                 break;
-#endif                          // UDP
+#endif
+#ifdef ENABLE_TCP
+            case PATH_TCP:     // TCP interface
+                RunParameters->Networks.UseTCP = 1;
+                break;
+#endif
 #ifdef ENABLE_GM
             case PATH_GM:
                 RunParameters->Networks.UseGM = 1;

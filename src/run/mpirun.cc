@@ -219,15 +219,14 @@ bool releaseClients(int *errorCode)
 }
 
 
-bool broadcastUDPAddresses(int *errorCode)
+static bool exchangeIPAddresses(int *errorCode, adminMessage* server)
 {
-    bool returnValue = true;
     int udphosts = 0;
     int tcphosts = 0;
 
     // we don't do any of this if there is only one host...
     if (RunParameters.NHosts == 1)
-        return returnValue;
+        return true;
 
     for (int i = 0; i < RunParameters.NHosts; i++) {
         for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
@@ -244,39 +243,29 @@ bool broadcastUDPAddresses(int *errorCode)
 
     // both TCP and UDP now require that the host addresses be broadcast
     if (udphosts == 0 && tcphosts == 0) {
-        return returnValue;
+        return true;
     } else if (udphosts != 0 && udphosts != RunParameters.NHosts) {
-        ulm_err(("Error: broadcastUDPAddresses %d hosts out of %d using UDP!\n",
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using UDP!\n",
                  udphosts, RunParameters.NHosts));
-        returnValue = false;
-        return returnValue;
+        return false;
     } else if (tcphosts != 0 && tcphosts != RunParameters.NHosts) {
-        ulm_err(("Error: broadcastUDPAddresses %d hosts out of %d using TCP!\n",
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using TCP!\n",
                  tcphosts, RunParameters.NHosts));
-        returnValue = false;
-        return returnValue;
+        return false;
     }
 
-    if (!server->reset(adminMessage::SEND, RunParameters.NHosts * ULM_MAX_HOSTNAME_LEN)) {
-        ulm_err(("Error: broadcastUDPAddresses: unable to allocate %d bytes for send buffer!\n",
-                 RunParameters.NHosts * ULM_MAX_HOSTNAME_LEN));
-        returnValue = false;
-        return returnValue;
-    }
+    size_t size;
+    if(RunParameters.NInterfaces == 0)
+        size = sizeof(struct sockaddr_in);
+    else
+        size = RunParameters.NInterfaces * sizeof(struct sockaddr_in);
 
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        HostName_t tmp;
-        returnValue = returnValue
-            && server->peerName(i, tmp, ULM_MAX_HOSTNAME_LEN, true);
-        returnValue = returnValue
-            && server->pack(tmp, adminMessage::BYTE, ULM_MAX_HOSTNAME_LEN);
+    int rc = server->allgather(0, 0, size);
+    if(rc != ULM_SUCCESS) {
+        *errorCode = rc;
+        return false;
     }
-    if (returnValue) {
-        returnValue =
-            server->broadcast(adminMessage::UDPADDRESSES, errorCode);
-    }
-
-    return returnValue;
+    return true;
 }
 
 
@@ -741,6 +730,12 @@ int main(int argc, char **argv)
         ulm_delete(clientpids);
     }
 
+    /* IP address information exchange - postfork */
+    if (!exchangeIPAddresses(&ErrorReturn, server)) {
+        ulm_err(("Error: While exchanging IP addresses (%d)\n", ErrorReturn));
+        Abort();
+    }
+
     /* UDP port information exchange - postfork */
     if (!exchangeUDPPorts(&ErrorReturn, server)) {
         ulm_err(("Error: While exchangind UDP ports (%d)\n", ErrorReturn));
@@ -784,3 +779,5 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
 }
+
+

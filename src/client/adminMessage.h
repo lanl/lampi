@@ -136,6 +136,10 @@ typedef struct {
         /* marker indicating the end of InfiniBand input data */
         END_IB_INPUT,
         /* end marker */
+        START_TCP_INPUT,
+        /* marker indicating the start of TCP input data */
+        END_TCP_INPUT,
+        /* marker indicating the end of TCP input data */
         COUNT
     };
 } dev_type_params;
@@ -212,8 +216,7 @@ public:
         TVDEBUG,         /* indicates if totalview debuging will be enables - 2 integers */
         CRC,    /* 1 bool of use CRC */
         CLIENTPIDS,     /* (client) n pid_t client PIDs */
-        UDPADDRESSES,
-        UDPPORTS,
+        IFNAMES,
         QUADRICSFLAGS, /* 1 bool of DoAck, and 1 bool of DoChecksum */
         BARRIER,        /* 1 integer of go-ahead status (0 = abort, 1 = go-ahead) */
         NHOSTS,         /* 1 integer from server with total number of hosts */

@@ -141,10 +141,10 @@ void Reactor::poll()
     struct timeval tm;
     tm.tv_sec = 0;
     tm.tv_usec = 0;
-    fd_set rset = sd_recv_set;
-    fd_set sset = sd_send_set;
-    fd_set eset = sd_except_set;
-    int rc = select(sd_max+1, &rset, &sset, &eset, &tm);
+    ulm_fd_set_t rset = sd_recv_set;
+    ulm_fd_set_t sset = sd_send_set;
+    ulm_fd_set_t eset = sd_except_set;
+    int rc = select(sd_max+1, (fd_set*)&rset, (fd_set*)&sset, (fd_set*)&eset, &tm);
     if(rc < 0) {
         if(errno != EINTR)
            ulm_exit((-1, "Reactor::poll: select() failed with errno=%d\n", errno));
@@ -157,10 +157,10 @@ void Reactor::poll()
 void Reactor::run()
 {
     while(sd_run == true) {
-        fd_set rset = sd_recv_set;
-        fd_set sset = sd_send_set;
-        fd_set eset = sd_except_set;
-        int rc = select(sd_max+1, &rset, &sset, &eset, 0);
+        ulm_fd_set_t rset = sd_recv_set;
+        ulm_fd_set_t sset = sd_send_set;
+        ulm_fd_set_t eset = sd_except_set;
+        int rc = select(sd_max+1, (fd_set*)&rset, (fd_set*)&sset, (fd_set*)&eset, 0);
         if(rc < 0) {
             if(errno != EINTR)
                 ulm_exit((-1, "Reactor::run: select() failed with errno=%d\n", errno));
@@ -171,7 +171,7 @@ void Reactor::run()
 }
 
 
-void Reactor::dispatch(int cnt, fd_set& rset, fd_set& sset, fd_set& eset)
+void Reactor::dispatch(int cnt, ulm_fd_set_t& rset, ulm_fd_set_t& sset, ulm_fd_set_t& eset)
 {
     // walk through the active list w/out holding lock, as this thread
     // is the only one that modifies the active list. however, note

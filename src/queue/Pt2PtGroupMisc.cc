@@ -950,6 +950,10 @@ int CheckForRetransmits()
 /*
  * send acks that have not yet been sent
  */
+
+size_t unsentAcks = 0;
+size_t unsentAcksReturned = 0;
+
 void SendUnsentAcks()
 {
     BaseRecvFragDesc_t *tmpDesc;
@@ -967,7 +971,9 @@ void SendUnsentAcks()
          (BaseRecvFragDesc_t *) UnprocessedAcks.begin();
          AckDesc != (BaseRecvFragDesc_t *) UnprocessedAcks.end();
          AckDesc = (BaseRecvFragDesc_t *) AckDesc->next) {
+        unsentAcks++;
         if (AckDesc->AckData()) {
+            unsentAcksReturned++;
             // if ack sent, remove from list
             tmpDesc =
                 (BaseRecvFragDesc_t *) UnprocessedAcks.

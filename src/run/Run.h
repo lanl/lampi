@@ -62,6 +62,10 @@ int SendGMInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server);
 int SendIBInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server);
+int SendTCPInputToClients(ULMRunParams_t *RunParameters,
+		adminMessage *server);
+int SendInterfaceListToClients(ULMRunParams_t *RunParameters,
+		adminMessage *server);
 int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                  int **ListHostsStarted, ULMRunParams_t *RunParameters, 
 		 int FirstAppArgument, int argc, char **argv);
@@ -130,6 +134,9 @@ void GetAppDir(const char *InfoStream);
 void GetAppHostCount(const char *InfoStream);
 void GetMpirunHostnameNoInput(const char *InfoStream);
 void GetMpirunHostname(const char *InfoStream);
+void GetInterfaceCount(const char *InfoStream);
+void GetInterfaceList(const char *InfoStream);
+void GetInterfaceNoInput(const char *InfoStream);
 void GetAppHostData(const char *InfoStream);
 void GetAppHostDataNoInputRSH(const char *InfoStream);
 void GetClientApp(const char *InfoStream);
@@ -189,6 +196,11 @@ void parseTotalSMPISendDescPages(const char *InfoStream);
 void parseTotalSMPRecvDescPages(const char *InfoStream);
 void setNoLSF(const char *InfoStream);
 void setThreads(const char *InfoStream);
+#ifdef ENABLE_TCP
+void parseTCPMaxFragment(const char* infoStream);
+void parseTCPEagerSend(const char* infoStream);
+void parseTCPConnectRetries(const char *InfoStream);
+#endif
 
 // class to fill in array of type T
 template <class T>

@@ -77,7 +77,7 @@ static void initRecvFragmentDescriptors(void)
                                UDPRecvFragsDescRetryForResources,
                                memAffinityPool,
                                enforceAffinity,
-                               ShareMemDescPool,
+                               0,
                                UDPRecvFragsDescAbortWhenNoResource);
     // clean up
     ulm_free(memAffinityPool);

@@ -44,6 +44,7 @@
 #define ULM_MAX_ERRORSTRING_LEN         512
 #define ULM_MAX_ERROR_BUFFER            65536
 #define ULM_MAX_HOSTNAME_LEN            64
+#define ULM_MAX_IFNAME_LEN              16
 #define ULM_MAX_HOSTS           	1024
 #define ULM_MAX_LEN_NETWORK_DEVTYPE     64
 #define ULM_MAX_NODE_NUMBER_POS         4

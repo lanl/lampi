@@ -83,6 +83,21 @@ typedef struct {
     int useDaemon;
     unsigned int channelID;
 
+    /*
+     * list of interfaces to be used for TCP/UDP and their 
+     * corresponding addresses
+     */
+    int                 if_count;
+    InterfaceName_t    *if_names;
+    struct sockaddr_in *if_addrs;
+
+    /*
+     * list of process host addresses index by:
+     * h_addrs[globalProcessRank * if_index] 
+     * where 0 <= if_index < if_count
+     */
+    struct sockaddr_in *h_addrs;
+
     /* 
      * boolean flags indicating run-time functionality
      */

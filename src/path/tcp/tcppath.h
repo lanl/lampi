@@ -41,7 +41,6 @@
 #include "path/common/path.h"
 #include "path/tcp/tcpsend.h"
 #include "path/tcp/tcprecv.h"
-#include "path/tcp/tcphost.h"
 #include "path/tcp/tcppeer.h"
 #include "util/Lock.h"
 #include "util/HashTable.h"
@@ -55,9 +54,20 @@ public:
     TCPPath(int pathHandle);
     virtual ~TCPPath();
 
-    static size_t MaxFragmentSize;
-    static size_t MaxEarlySendSize;
+    static const size_t DefaultFragmentSize;
+    static const size_t DefaultEagerSendSize;
+    static const int     DefaultConnectRetries;
 
+    static size_t MaxFragmentSize;
+    static size_t MaxEagerSendSize;
+    static int    MaxConnectRetries;
+
+    // init methods called once at startup
+    static int initSetupParams(adminMessage*);
+    static int initPreFork();
+    int initPostFork();
+    int initClient(int ifCount, struct sockaddr_in* inaddrs);
+    int exchangeListenPorts(adminMessage*);
 
     // BasePath_t methods
     virtual bool receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL) 
@@ -68,22 +78,11 @@ public:
     virtual bool needsPush();
     virtual void finalize();
 
-    // init methods called once at startup
-    static int initPreFork();
-    int initPostFork();
-    int initClients(int numAddrs, struct sockaddr_in* hosts);
-    int allgatherListenPort(adminMessage*);
-
     // accessor methods
     inline int  getHandle() { return tcpPathHandle; }
     inline long getHost() { return thisHost; }
     inline long getProc() { return thisProc; }
-
-    struct sockaddr_in getHostAddr(int globalHostID, int numAddr=0);
-    struct sockaddr_in getHostAddr();
-
-    TCPHost* getHost(int globalHostID);
-    TCPPeer* getPeer(int globalProcID);
+    TCPPeer*    getPeer(int globalProcID);
 
     inline void insertListener(int sd, Reactor::Listener* l, int flags) { tcpReactor.insertListener(sd,l,flags); }
     inline void removeListener(int sd, Reactor::Listener* l, int flags) { tcpReactor.removeListener(sd,l,flags); }
@@ -100,7 +99,6 @@ private:
     int tcpListenSocket;
     unsigned short tcpListenPort;
     Reactor tcpReactor;
-    Vector<TCPHost> tcpHosts;
     Vector<TCPPeer> tcpPeers;
 
     virtual void recvEventHandler(int);

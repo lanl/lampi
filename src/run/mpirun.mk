@@ -10,6 +10,7 @@ SRC_MPIRUN += \
 	src/run/GetClientWorkingDirectory.cc \
 	src/run/GetDebugData.cc \
 	src/run/GetLSFResource.cc \
+	src/run/GetInterfaces.cc \
 	src/run/GetNetworkDevList.cc \
 	src/run/Input.cc \
 	src/run/ProcessInput.cc \
