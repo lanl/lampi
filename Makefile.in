@@ -153,6 +153,7 @@ all: $(TARGET)
 clean:
 	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT) $(ROMIODIR)/Makefile
 
+
 distclean: clean
 	$(RM) $(TARGET) Makefile config.h config.log config.status
 
@@ -223,6 +224,14 @@ $(ROMIOLIB): lampi.$(DLLEXT)
 	@$(RM) $(ROMIOLIB)
 	(cd $(ROMIODIR) ; test -f Makefile || $(ROMIOCONFIGURE))
 	(cd $(ROMIODIR) ; $(MAKE) FROM_MPICH=1 mpiolib)
+
+romio-configure: lampi.$(DLLEXT)
+	(cd $(ROMIODIR) ; test -f Makefile || $(ROMIOCONFIGURE))
+
+romio-clean: lampi.$(DLLEXT)
+	(cd $(ROMIODIR) ; test -f Makefile || $(ROMIOCONFIGURE))
+	(cd $(ROMIODIR) ; $(MAKE) clean)
+
 
 # include dependency files, if we were not invoked as "make clean"
 # or "make distclean" or as "make nodeps=1 ..."
