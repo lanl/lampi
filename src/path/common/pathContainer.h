@@ -48,7 +48,7 @@ enum pathContainerInfoType {
 
 enum {
     MAX_PATHS = 8,
-    MAX_PATH_OBJECT_SIZE_IN_BYTES = 2048        /* or whatever */
+    MAX_PATH_OBJECT_SIZE_IN_BYTES = 4096        /* or whatever */
 };
 
 // this object can live in anonymous shared or process private memory
