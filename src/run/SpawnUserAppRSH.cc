@@ -174,7 +174,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
      ****************************/
     /* first setup stderr intercept so that error conditions can be intercepeted */
 
-    RunParameters->STDINsrc = dup(STDIN_FILENO);
+    RunParameters->STDINsrc = STDIN_FILENO;
     RunParameters->STDERRfds = ulm_new(int, RunParameters->NHosts);
     RunParameters->STDOUTfds = ulm_new(int, RunParameters->NHosts);
     for (i = 0; i < RunParameters->NHosts; i++) {
@@ -205,7 +205,6 @@ int SpawnUserAppRSH(unsigned int *AuthData,
 
     fflush(stdout);
     fflush(stderr);
-    close(STDIN_FILENO);
 
     /* spawn jobs */
 
