@@ -524,6 +524,8 @@ AC_ARG_ENABLE(bproc,
 echo "feature BPROC... ${enable_bproc:-no}"
 if test "$enable_bproc" = "yes" ; then
    AC_DEFINE(ENABLE_BPROC, 1)
+   AC_CHECK_MEMBER(struct bproc_io_t.send_info,[AC_DEFINE(BPROC_MAJOR_VERSION, 3)],
+    [AC_DEFINE(BPROC_MAJOR_VERSION, 4)],[#include <sys/bproc.h>])
    LIBS="$LIBS -lbproc"
 else
    AC_DEFINE(ENABLE_BPROC, 0)

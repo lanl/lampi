@@ -11,6 +11,9 @@
 /* Define to 1 if BPROC is enabled. */
 #undef ENABLE_BPROC
 
+/* Define to 3 or 4 if BPROC is enabled */
+#undef BPROC_MAJOR_VERSION
+
 /* Define to 1 if MPI argument checking is enabled. */
 #undef ENABLE_CHECK_API_ARGS
 
