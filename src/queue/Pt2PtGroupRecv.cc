@@ -48,7 +48,7 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
 {
     // create pointer to ULM request object
     RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
-    int srcProc;
+    int srcProc = 0;
 
     // make sure that he request object is in the inactive state
     if (tmpRequest->status == ULM_STATUS_INVALID) {
