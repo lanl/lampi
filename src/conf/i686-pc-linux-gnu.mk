@@ -13,7 +13,7 @@ comma	:=,
 CC		:= gcc
 CXX		:= g++ 
 CFLAGS		+= -march=i686 -finline-functions
-CPPFLAGS	:= -Wall -Wno-deprecated -I. -Iinclude
+CPPFLAGS	+= -Wall -Wno-deprecated -I. -Iinclude
 ifdef ULMDEBUG
 CFLAGS		+= -g
 else

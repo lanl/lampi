@@ -13,7 +13,7 @@ ifneq ($(CC),gcc)
 
 CXX		:= cxx 
 CFLAGS		+= -arch host -accept restrict_keyword
-CPPFLAGS	:= -pthread -w -I. -Iinclude -I/usr/opt/rms/include 
+CPPFLAGS	+= -pthread -w -I. -Iinclude -I/usr/opt/rms/include 
 ifdef ULMDEBUG
 CFLAGS		+= -g -gall -trapuv
 else

@@ -9,7 +9,7 @@
 CC		:= cc
 CXX		:= g++
 CFLAGS		+= -finline-functions -fno-common -no-cpp-precomp -UHAVE_PRAGMA_WEAK
-CPPFLAGS	:= -Wall -Wno-long-double -Wno-deprecated -I. -Iinclude
+CPPFLAGS	+= -Wall -Wno-long-double -Wno-deprecated -I. -Iinclude
 ifdef ULMDEBUG
 CFLAGS		+= -g
 else
