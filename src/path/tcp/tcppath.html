@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.0.2  (Linux)">
+	<META NAME="CREATED" CONTENT="20031119;15123200">
+	<META NAME="CHANGED" CONTENT="20031120;11132300">
+</HEAD>
+<BODY LANG="en-US">
+<H1>TCP Path</H1>
+<H2>1.0 Objectives</H2>
+<P>The primary goal of the design is to provide LA-MPI with a
+portable, cross-platform, TCP-IP path that implements a thin layer
+over the berkeley sockets API, providing performance comparable to
+netperf or other TCP/IP benchmarking applications. In general, the
+TCP path should be: 
+</P>
+<P>1) scalable 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">minimize buffer resources 
+	</P>
+	<LI><P>support setting up connections dynamically on an as-needed
+	basis 
+	</P>
+</UL>
+<P>2) efficient 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">minimize memory copies 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">utilize non-blocking I/O 
+	</P>
+	<LI><P>support message striping across multiple NICs 
+	</P>
+</UL>
+<P>3) thread-safe 
+</P>
+<H2>2.0 Approach</H2>
+<P>Minimizing buffer resources and memory copies can be achieved
+using a request to send / clear to send approach. Since MPI allows an
+application to post a send prior to a matching receive, this approach
+defers sending the bulk of a message until an acknowledgment (clear
+to send) has been returned for the initial message fragment. This
+eliminates the majority of buffering and memory copies at the
+receiver, as contiguous data types can be received directly into the
+applications posted receive buffer. However, to reduce the latency
+for small messages, some data is typically sent along with the
+initial fragment and buffered at the receiver if the match is not
+made. 
+</P>
+<P>To maximize the bandwidth available to the application, the design
+allows for multiple TCP connections to a given peer, each utilizing a
+different network path. This capability leverages LA-MPIs support for
+out-of-order delivery, striping multiple fragments of a single
+message across multiple TCP connections. However, since each
+connection consumes kernel resources, this capability is only enabled
+through a run-time option, and may only be suitable for relatively
+small clusters due to the number of connections required.
+Additionally, since very few NICs support TCP offloading, the
+overhead of TCP processing in the kernel will constrain the possible
+speedup. 
+</P>
+<H2>3.0 Overview</H2>
+<P>The following figure provides a brief overview of the TCP path.
+TCPPath implements the basic interfaces required by BasePath_t for
+point-to-point sends and descriptor management. These interfaces in
+turn delegate most operations to an instance of TCPPeer. During
+initialization an instance of TCPPeer is created for each
+participating process. However, actual TCP connections to the peer
+are not established until they are required. The following provides a
+brief overview of the send and receive paths. 
+</P>
+<IMG SRC="tcppath.jpg" NAME="TCP Path" ALIGN=BOTTOM WIDTH=908 HEIGHT=657 BORDER=0>
+<H3>3.1 Send Path</H3>
+<P>When a send is posted by an application a send descriptor is
+allocated by the MML and passed to paths send method (TCPPath::send).
+The send method fragments messages that are larger than the maximum
+eager send size into multiple fragments to support message striping
+and deferred delivery. A send fragment descriptor (TCPSendFrag) is
+allocated for each fragment from a process-private pool, initialized,
+and enqueued on the message send descriptor for delivery. Buffering
+of message data in the send fragment descriptors is only required if
+the data type of the message is non-contiguous, in which case the the
+message fragment is packed into a contiguous buffer that is allocated
+by the send fragment descriptor. 
+</P>
+<P>If a TCP connection to the peer has not been established, the send
+method will initiate a connection and return a status of incomplete
+to the MML. Likewise, if connections exist but are in use, a status
+of incomplete is returned to the MML. The MML will continue to invoke
+the send operation until a status of complete is returned indicating
+that all message fragments have been queued for delivery. 
+</P>
+<P>As all TCP connections are implemented with non-blocking sockets,
+write operations on the socket may not complete if adequate resources
+(e.g. buffers) are unavailable in the kernel. To handle this case an
+instance of Reactor is maintained by TCPPath to provide notifications
+that a socket is ready for read/write. If a write on the socket does
+not complete, the send descriptor is registered with the reactor to
+receive notification that the send can continue. TCPSendFrag
+implements an interface (Reactor::Listener) exported by the reactor,
+such that a method (Reactor::Listener::sendEventHandler) is called on
+the send descriptor when the send can continue without blocking. When
+the write completes the message descriptor is updated to reflect the
+current status and the instance of TCPSendFrag is unregistered from
+the Reactor and returned to the process private pool. 
+</P>
+<H3>3.2 Receive Path</H3>
+<P>Each instance of TCPPeer registers with the reactor to receive
+notification of receive events on its connected sockets. When data is
+available on a socket, a method (Reactor::Listener::recvEventHandler)
+is called on the corresponding TCPPeer instance, which dispatches the
+event to the current receive fragment descriptor (TCPRecvFrag) that
+is associated with the connection (TCPSocket). If there is no receive
+in progress, a new receive fragment is first allocated from a process
+private pool and associated with the connection. 
+</P>
+<P>Each message fragment that is written to the socket is preceded by
+a message header which defines the overall message length, offset of
+this fragment in the overall message, MPI tag, etc. When the message
+header is received, prior to receiving the message fragment, an
+attempt is made to match any receives that have been posted by the
+application. If a match is made and the message data type is
+contiguous, the message fragment is received directly into the
+applications buffers. Otherwise, a buffer is allocated by the receive
+fragment descriptor and the data is copied into the applications
+buffer when the receive is posted. 
+</P>
+<H2>4.0 Implementation</H2>
+<P>The following sections provide further detail on aspects of the
+TCP path design and implementation. 
+</P>
+<H3>4.1 Initialization</H3>
+<H4>4.1.1 Command-Line Arguments</H4>
+<P>The following command line arguments have been added to mpirun to
+configure the TCP path behavior: 
+</P>
+<TABLE CELLPADDING=10 CELLSPACING=2>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>-i&nbsp;&lt;interface-list&gt;</P>
+		</TD>
+		<TD>
+			<P>A comma deliminated list of interface names to be used in
+			establishing connections to the peers. Multiple interfaces may be
+			specified to support message striping. 
+			</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>-ni&nbsp;&lt;number-of-interfaces&gt;</P>
+		</TD>
+		<TD>
+			<P>Specifies the maximum number of interfaces to use for message
+			striping. This option can be used in place of the -i option to
+			indicate that striping should be performed without requiring the
+			user to know the interface names. 
+			</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>-tcpmaxfrag&nbsp;&lt;size&gt;</P>
+		</TD>
+		<TD>
+			<P>Specifies the TCP fragment size for message striping. This
+			value defaults to 64K. 
+			</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>-tcpeagersend&nbsp;&lt;size&gt;</P>
+		</TD>
+		<TD>
+			<P>Specifies the TCP eager send size, or the maximum amount of
+			data that is delivered in the initial fragment prior to a matching
+			receive. This value defaults to 16K. 
+			</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>-tcpconretries&nbsp;&lt;count&gt;</P>
+		</TD>
+		<TD>
+			<P>Specifies the maximum number of failed connection attempts
+			before the path is declared failed. Note that since connections
+			are accepted only during calls to ulm_make_progress(), it is
+			possible that applications that are CPU bound in application code
+			may not accept connections in a timely manner, causing connection
+			failures. If this is the case, it may be necessary to adjust this
+			value above the current default of 3. 
+			</P>
+		</TD>
+	</TR>
+</TABLE>
+<H4>4.1.2 Pre-Fork Initialization</H4>
+<P>In the client library pre-fork initialization code, a routine has
+been added to receive the TCP configuration parameters
+(lampi_init_prefork_receive_setup_params_tcp()) and the list of
+interface names to be used for IP connections
+(lampi_init_prefork_ip_addresses()). The latter routine retrieves the
+list of interface names from mpirun, and maps the interface name to
+its primary IP address. The list of interface names and IP addresses
+are then saved in the global lampiState_t data structure for use by
+both the TCP and UDP paths. 
+</P>
+<H4>4.1.3 Post-Fork Initialization</H4>
+<P>In the post-fork initialization code, a routine
+(lampi_init_postfork_ip_addresses()) has been added to distribute the
+IP address list associated with each process to all other processes
+via an allgather over the admin network. This list is then used by
+both the TCP and UDP path code to setup connections to remote peers. 
+</P>
+<P>An additional routine (lampi_init_postfork_tcp()) has been added
+to perform the following initialization steps for the TCP path: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">instantiate the TCPPath and
+	register with the global path container, 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">call the TCPPath::initClient
+	method to create the TCP listen socket and instantiate the TCPPeer
+	instances, 
+	</P>
+	<LI><P>and distribute each processes TCP listen port number to all
+	other processes via an allgather over the admin network. 
+	</P>
+</UL>
+<H3>4.2 Dynamic Connection Setup</H3>
+<P>Each instance of TCPPeer maintains an array of TCPSocket data
+structures, one for each IP addresses exported by the peer during
+post-fork initialization as described above. Associated with each
+TCPSocket is a state variable that may take on one of the following
+values: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">S_CLOSED 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">S_CONNECTING 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">S_CONNECT_ACK 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">S_CONNECTED 
+	</P>
+	<LI><P>S_FAILED 
+	</P>
+</UL>
+<P>Initially each TCPSocket will be in the closed (S_CLOSED) state. A
+socket is not created or a connection attempted until the application
+attempts to deliver a message to the peer process. When this occurs,
+connections are attempted for all instances of TCPSocket maintained
+by the TCPPeer. 
+</P>
+<P>TCP connections are attempted in a non-blocking fashion. The state
+S_CONNECTING indicates that a connect has been initiated but has not
+yet completed. When this occurs, the TCPPeer instance is registered
+with the reactor for notification of write events on the descriptor,
+which signals that the connect has either completed or failed. 
+</P>
+<P>If the connection succeeds, the connecting process writes its
+global process rank on the socket as a 4 byte integer and changes the
+state to S_CONNECT_ACK. The TCPPeer instance then registers for
+receive events on the descriptor to receive the global process rank
+of the peer process. 
+</P>
+<P>The peer process receives notification of the connection attempt
+via an event from the reactor on its listen socket descriptor. When
+this occurs the TCPPath instance will read the process rank of the
+peer from the socket, and pass the connection request on to the
+corresponding TCPPeer instance. The TCPPeer instance then makes a
+decision whether to accept the incoming connection request based on
+its current connection status. If it has not attempted a connection
+to the peer, it accepts the connection and updates its corresponding
+TCPSocket structure to reflect that a connection exists. Otherwise,
+if this process has already attempted a connection to the peer, it
+will either reject the incoming connection request and wait for its
+connection to complete, or accept the incoming connection and close
+the pending connection. This decision is based on the process rank,
+with the lowest process rank winning the election. When the
+connection is completed or accepted, the state is changed to
+S_CONNECTED, at which point it can be used to deliver any queued
+message descriptors. 
+</P>
+<P>If the connection attempt fails, it is retried up to
+&lt;tcpconretries&gt; before declaring the TCPSocket instance as
+failed (S_FAILED). However, the TCP path is not declared failed
+unless the peer process is unreachable via all known addresses. This
+occurs when all TCPSocket instances for a given TCPPeer have reached
+the state S_FAILED. 
+</P>
+<H3>4.3 RTS/CTS Approach</H3>
+<P>Messages are fragmented to support striping across multiple
+adapters and RTS/CTS flow control. The initial fragment of each
+message contains up to &lt;tcpeagersend&gt; bytes of message data. If
+the fragment is larger than &lt;tcpeagersend&gt; bytes, it is
+delivered as additional fragments of size &lt;tcpmaxfrag&gt;. The
+initial fragment of each message is sent as soon as resources are
+available at the sending process (hence eager send size). The
+remaining fragments are deferred until an acknowledgment is returned
+from the peer process. 
+</P>
+<P>In general, acknowledgments are not required due to the
+reliability provided by the TCP/IP protocol. However, the first
+fragment is acknowledged by the receiving process when a match has
+been made to a posted receive. This signals to the sender that the
+remaining fragments can be delivered without consuming significant
+resources (e.g. buffers) at the receiving process. 
+</P>
+</BODY>
+</HTML>
