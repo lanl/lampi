@@ -46,7 +46,7 @@ inline bool ibSendFragDesc::get_remote_ud_info(VAPI_ud_av_hndl_t *ah, VAPI_qp_nu
         &(ib_state.ud_peers.info[ib_state.ud_peers.proc_entries * globalDestID_m]);
     int *next_remote_hca = &(ib_state.ud_peers.next_remote_hca[globalDestID_m]);
     int *next_remote_port = &(ib_state.ud_peers.next_remote_port[globalDestID_m]);
-    int i, j, k, remote_hca, remote_port;
+    int i, j, k = 0, remote_hca, remote_port;
     bool found_dest_info = false;
     
     for (i = 0; i < ib_state.ud_peers.max_hcas; i++) {
