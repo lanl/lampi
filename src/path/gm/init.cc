@@ -317,7 +317,7 @@ void gmSetup(lampiState_t *s)
         }                           /* end dev loop */
     }
 
-    if ( 0 == gmState.nDevsAllocated )
+    if ( (0 == gmState.nDevsAllocated) && !(s->iAmDaemon)  )
         ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n",myproc()));
 
     /*
