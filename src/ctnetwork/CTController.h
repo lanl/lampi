@@ -55,7 +55,8 @@ class CTController : public Runnable
 protected:
     CTChannel               *channel_m;
     CTDelegate              *delegate_m;
-    int                             blksize_m;              /* # of nodes per block when sending messages to large # of nodes. */
+    int                     blksize_m;  // # of nodes per block when
+                                        // sending messages to large # of nodes.
         
     /*
      * Instance Methods

@@ -188,10 +188,10 @@ public:
      * Messaging Operations
      */
 
-    virtual CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);
-    virtual CTChannelStatus broadcast(CTMessage *msg);
+    CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);
+    CTChannelStatus broadcast(CTMessage *msg);
 
-    virtual CTChannelStatus sendMessage(CTMessage *msg);
+    CTChannelStatus sendMessage(CTMessage *msg);
     /*
       POST:     sends pt-to-pt message to destination set in  msg.
     */
@@ -216,9 +216,9 @@ public:
       length recvOffsets[i] - recvOffsets[i-1].
     */
 
-    virtual CTChannelStatus scatterv(int msgType, unsigned int *datalen, const char **data);
+    CTChannelStatus scatterv(int msgType, unsigned int *datalen, const char **data);
         
-    virtual CTChannelStatus synchronize(unsigned int numParticipants);
+    CTChannelStatus synchronize(unsigned int numParticipants);
 
 
 
