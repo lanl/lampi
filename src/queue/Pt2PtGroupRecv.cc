@@ -48,6 +48,7 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
 {
     // create pointer to ULM request object
     RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
+    int srcProc;
 
     // make sure that he request object is in the inactive state
     if (tmpRequest->status == ULM_STATUS_INVALID) {
@@ -128,16 +129,19 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
     } else {
 
         // lock for thread safety
-        if (usethreads())
-            recvLock[RecvDescriptor->srcProcID_m].lock();
+        if (usethreads()){
+            srcProc=RecvDescriptor->srcProcID_m;
+            recvLock[srcProc].lock();
+        }
 
         //  check list for match - posted receive is put on a list at this stage
         checkFragListsForSpecificMatch
             ((RecvDesc_t *) RecvDescriptor);
 
         // "free" lists
-        if (usethreads())
-            recvLock[RecvDescriptor->srcProcID_m].unlock();
+        if (usethreads()){
+            recvLock[srcProc].unlock();
+        }
 
     }
 
