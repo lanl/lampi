@@ -1,3 +1,21 @@
+2004-02-09 10:14  rta
+
+	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Updating version
+      number to 1.4.12
+
+	* configure, configure.ac, RELEASE_NOTES, ChangeLog: Updating version
+	  number to 1.4.12
+
+2004-02-09 08:04  rta
+
+	* src/: client/adminMessage.h: Increased MAXSOCKETS value to 8192
+
+2004-02-06 09:58  rta
+
+	* src/: run/mpirun_spawn_bproc.cc: Ugly fix to get around problem
+      with running threads in bproc environ, when mpirun is started
+      from Totalview.  Added sleep() before calling bproc_vexecmove_io().
+
 2004-02-05 14:02  ddd
 
 	* src/: client/adminMessage.cc, run/mpirun.cc: Copyright update

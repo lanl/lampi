@@ -265,4 +265,10 @@ Version 1.4.11
 
 - Minor fixes.
 
+Version 1.4.12
+
+- Increased MAXSOCKETS value to 8192
+
+- Added work-around for bug during process startup on bproc when
+  mpirun is started from a debugger, e.g. Totalview.
 
