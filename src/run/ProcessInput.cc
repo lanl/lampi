@@ -148,6 +148,20 @@ int MPIrunProcessInput(int argc, char **argv,
         RunParameters->TVDebugApp = 1;
     }
 
+#ifdef ENABLE_SHARED_MEMORY
+    RunParameters->Networks.UseSharedMemory = 1;
+    RunParameters->Networks.SharedMemSetup.PagesPerProc = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.outOfResourceAbort = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.retries_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.minPagesPerContext_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxPagesPerContext_m = NULL;
+    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxTotalPages_m = NULL;
+#endif
+#ifdef ENABLE_INFINIBAND
+    RunParameters->Networks.IBSetup.ack = 1;
+    RunParameters->Networks.IBSetup.checksum = 0;
+#endif
+
     /* are we in charge of standard I/O redirection? */
     RunParameters->handleSTDio = RunParameters->UseRMS ? 0 : 1;
 
@@ -185,23 +199,13 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.UseQSW = 0;
     RunParameters->Networks.UseIB = 0;
 
-#ifdef ENABLE_SHARED_MEMORY
-    RunParameters->Networks.UseSharedMemory = 1;
-    RunParameters->Networks.SharedMemSetup.PagesPerProc = NULL;
-    RunParameters->Networks.SharedMemSetup.recvFragResources_m.outOfResourceAbort = NULL;
-    RunParameters->Networks.SharedMemSetup.recvFragResources_m.retries_m = NULL;
-    RunParameters->Networks.SharedMemSetup.recvFragResources_m.minPagesPerContext_m = NULL;
-    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxPagesPerContext_m = NULL;
-    RunParameters->Networks.SharedMemSetup.recvFragResources_m.maxTotalPages_m = NULL;
-#endif
 #ifdef ENABLE_GM
     RunParameters->Networks.GMSetup.NGMHosts = 0;
 #endif
 #ifdef ENABLE_INFINIBAND
     RunParameters->Networks.IBSetup.NIBHosts = 0;
-    RunParameters->Networks.IBSetup.ack = 1;
-    RunParameters->Networks.IBSetup.checksum = 0;
 #endif
+
     for (int j = 0; j < RunParameters->NHosts; j++) {
         for (int i = 0; i < RunParameters->NPathTypes[j]; i++) {
             switch (RunParameters->ListPathTypes[j][i]) {
