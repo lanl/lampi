@@ -220,7 +220,7 @@ bool releaseClients(int *errorCode)
 
 #ifdef ENABLE_CT
     ulm_dbg(("\nmpirun: synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
-	server->synchronize(RunParameters.NHosts + 1);
+	//server->synchronize(RunParameters.NHosts + 1);
     ulm_dbg(("\nmpirun: done synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
 	return returnValue;
 #endif
@@ -297,7 +297,7 @@ bool broadcastUDPAddresses(int *errorCode)
     for (int i = 0; i < RunParameters.NHosts; i++) {
         HostName_t tmp;
         returnValue = returnValue
-            && server->peerName(i, tmp, ULM_MAX_HOSTNAME_LEN);
+            && server->peerName(i, tmp, ULM_MAX_HOSTNAME_LEN, true);
         returnValue = returnValue
             && server->pack(tmp, adminMessage::BYTE, ULM_MAX_HOSTNAME_LEN);
     }

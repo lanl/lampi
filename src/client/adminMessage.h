@@ -1036,7 +1036,7 @@ public:
 
     /* return true if the name or IP address in dot notation of the
      * peer to be stored at dst, or false if there is an error */
-    bool peerName(int hostrank, char *dst, int bytes);
+    bool peerName(int hostrank, char *dst, int bytes, bool useDottedIP);
 
     /*
      *  Accessor methods.
