@@ -183,7 +183,7 @@ void lampi_init_postfork_rms(lampiState_t *s)
         }
     }
 
-    if (s->debug) {
+    if (s->started_under_debugger) {
         printf("hostid\t%d\n"
                "global_size\t%d\n"
                "global_to_local_offset\t%d\n"

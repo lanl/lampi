@@ -92,7 +92,7 @@ void lampi_daemon_loop(lampiState_t *s)
     NChildren = ProcessCount[hostIndex];
 
     /* change heartbeat timeout, if being debugged */
-    if (s->debug == 1) {
+    if (s->started_under_debugger) {
         s->doHeartbeat = 0;
     }
 

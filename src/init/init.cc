@@ -114,8 +114,6 @@ static int *stdout_child;
 static int *stderr_parent;
 static int *stderr_child;
 
-extern void ClientTVSetup(void);
-
 /*
  * inline functions
  */
@@ -166,7 +164,6 @@ void lampi_init(void)
     lampi_init_postfork_resource_management(&lampiState);
     lampi_init_postfork_globals(&lampiState);
     lampi_init_postfork_resources(&lampiState);
-    //lampi_init_debug(&lampiState);
     lampi_init_postfork_ip_addresses(&lampiState);    /* exchange IP addresses */
     lampi_init_postfork_paths(&lampiState);
     lampi_init_postfork_communicators(&lampiState);
@@ -1098,10 +1095,10 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
                               (adminMessage::packType) sizeof(int), 1);
             s->client->setHostRank(s->hostid);
             break;
-        case adminMessage::TVDEBUG:
-            s->client->unpack(&(s->debug),
+        case adminMessage::DEBUGGER:
+            s->client->unpack(&(s->started_under_debugger),
                               (adminMessage::packType) sizeof(int), 1);
-            s->client->unpack(&(s->debug_location),
+            s->client->unpack(&(s->wait_for_debugger_in_daemon),
                               (adminMessage::packType) sizeof(int), 1);
             break;
         case adminMessage::THREADUSAGE:
@@ -1524,25 +1521,6 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
 }
 
 
-void lampi_init_prefork_debugger(lampiState_t *s)
-{
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_debugger");
-    }
-
-    if (!s->debug) {
-        return;
-    }
-
-    if (s->debug_location == 0) {
-        ClientTVSetup();
-    }
-}
-
-
 void lampi_init_postfork_pids(lampiState_t *s)
 {
     if (s->error) {
@@ -1585,27 +1563,6 @@ void lampi_init_postfork_pids(lampiState_t *s)
     }
 
     s->client->localBarrier();
-}
-
-
-void lampi_init_postfork_debugger(lampiState_t *s)
-{
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_postfork_debugger");
-    }
-
-    if (!s->debug) {
-        return;
-    }
-
-    if (s->debug_location == 1) {
-        if (!s->iAmDaemon) {
-            ClientTVSetup();
-	}
-    }
 }
 
 
@@ -1957,7 +1914,8 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->error = LAMPI_INIT_SUCCESS;
     s->verbose = 0;
     s->warn = 0;
-    s->debug = 0;
+    s->started_under_debugger = 0;
+    s->wait_for_debugger_in_daemon = 0;
     s->interceptSTDio = 1;
 
     /* network path types */

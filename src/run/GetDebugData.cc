@@ -47,57 +47,55 @@
 #include "run/Run.h"
 #include "run/RunParams.h"
 
+
 /*
- * Set the Totalview debug flags such that debugging will start with
- * the daemon processes.
+ * Set flags so that we wait for the debugger in the application
+ * processes (the default)
  */
-void GetTVDaemon(const char *InfoStream)
+void GetDebugDefault(const char *InfoStream)
 {
-    /* find TotalViewDebugStartup index in option list */
-    int OptionIndex = MatchOption("TotalViewDebugStartup");
+    RunParams.dbg.Spawned = 1;
+    RunParams.dbg.WaitInDaemon = 0;
+    /* shut off heartbeat - so won't time out while debugging */
+    RunParams.doHeartbeat = 0;
+    RunParams.HeartbeatPeriod = -1;
+    RunParams.HeartbeatTimeout = -1;
+}
+
+
+/*
+ * Set flags so that we wait for the debugger in the daemons
+ */
+void GetDebugDaemon(const char *InfoStream)
+{
+    int OptionIndex = MatchOption("DebugDaemon");
     if (OptionIndex < 0) {
-        ulm_err(("Error: Option TotalViewDebugStartup not found in Input parameter database\n"));
+        ulm_err(("Error: Option DebugDaemon not found\n"));
         Abort();
     }
-    RunParams.TVDebug = 1;
-    RunParams.TVDebugApp = 0;
+    RunParams.dbg.Spawned = 1;
+    RunParams.dbg.WaitInDaemon = 1;
     /* shut off heartbeat - so won't time out while debugging */
     RunParams.doHeartbeat = 0;
     RunParams.HeartbeatPeriod = -1;
     RunParams.HeartbeatTimeout = -1;
 }
+
 
 /*
- * Set the Totalview debug flags such that debugging will start after
- * the app processes have forked.
+ * Set a flags for firing up gdb in xterms
  */
-void GetTVAll(const char *InfoStream)
-{
-    /* 
-     * we are using the MPIR_being_debugged from totalview to invoke
-     * this routine.  We don't need to match on the input parameter
-     * index.
-     */
-
-    RunParams.TVDebug = 1;
-    RunParams.TVDebugApp = 1;
-    /* shut off heartbeat - so won't time out while debugging */
-    RunParams.doHeartbeat = 0;
-    RunParams.HeartbeatPeriod = -1;
-    RunParams.HeartbeatTimeout = -1;
-}
-
 void GetGDB(const char *InfoStream)
 {
-    /* find GDBDebugStartup index in option list */
-    int OptionIndex = MatchOption("GDBDebugStartup");
+    /* find GDBDebug index in option list */
+    int OptionIndex = MatchOption("GDBDebug");
     if (OptionIndex < 0) {
-        ulm_err(("Error: Option GDBDebugStartup not found in Input parameter database\n"));
+        ulm_err(("Error: Option GDBDebug not found\n"));
         Abort();
     }
-    RunParams.TVDebug = 1;
-    RunParams.TVDebugApp = 1;
-    RunParams.GDBDebug = 1;
+    RunParams.dbg.Spawned = 1;
+    RunParams.dbg.WaitInDaemon = 0;
+    RunParams.dbg.GDB = 1;
     /* shut off heartbeat - so won't time out while debugging */
     RunParams.doHeartbeat = 0;
     RunParams.HeartbeatPeriod = -1;

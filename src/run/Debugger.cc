@@ -36,9 +36,26 @@
 #endif
 
 /*
- *  This routine is used to setup the data TotalView needs
- *    to use, so that it can attach to the remote processes.
+ * Debugger support for mpirun
  */
+
+/*
+ * We interpret the MPICH debugger interface as follows:
+ *
+ * a) The launcher
+ *      - spawns the other processes,
+ *      - fills in the table MPIR_proctable, and sets MPIR_proctable_size
+ *      - sets MPIR_debug_state to MPIR_DEBUG_SPAWNED ( = 1)
+ *      - calls MPIR_Breakpoint() which the debugger will have a
+ *	  breakpoint on.
+ *
+ *  b) Applications start and then spin until MPIR_debug_gate is set
+ *     non-zero by the debugger.
+ *
+ * This file implements a) in two ways depending on whether we want to
+ * debug the daemons or the applications.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -76,23 +93,24 @@ volatile int MPIR_debug_gate = 0;
 volatile int MPIR_acquired_pre_main = 0;
 volatile int debugger_dummy = 0;
 
+extern "C" void *MPIR_Breakpoint(void);
+
+#define DUMP_INT(X) fprintf(stderr, "  %s = %d\n", # X, X);
 
 static void dump(void)
 {
-    fprintf(stderr, "MPIR_being_debugged = %d\n", MPIR_being_debugged);
-    fprintf(stderr, "MPIR_debug_gate = %d\n", MPIR_debug_gate);
-    fprintf(stderr, "MPIR_debug_state = %d\n", MPIR_debug_state);
-    fprintf(stderr, "MPIR_acquired_pre_main = %d\n", MPIR_acquired_pre_main);
-    fprintf(stderr, "MPIR_i_am_starter = %d\n", MPIR_i_am_starter);
-    fprintf(stderr, "RunParams.TVDebug = %d\n", RunParams.TVDebug);
-    fprintf(stderr, "RunParams.TVDebugApp = %d\n", RunParams.TVDebugApp);
-
-    fprintf(stderr,
-            "MPIR_proctable_size = %d\n"
-            "MPIR_proctable:\n", MPIR_proctable_size);
+    DUMP_INT(RunParams.dbg.Spawned);
+    DUMP_INT(RunParams.dbg.WaitInDaemon);
+    DUMP_INT(MPIR_being_debugged);
+    DUMP_INT(MPIR_debug_gate);
+    DUMP_INT(MPIR_debug_state);
+    DUMP_INT(MPIR_acquired_pre_main);
+    DUMP_INT(MPIR_i_am_starter);
+    DUMP_INT(MPIR_proctable_size);
+    fprintf(stderr, "MPIR_proctable:\n");
     for (int i = 0; i < MPIR_proctable_size; i++) {
         fprintf(stderr,
-                "  (i, host, exe, pid) = (%d, %s, %s, %ld)\n",
+                "    (i, host, exe, pid) = (%d, %s, %s, %ld)\n",
                 i,
                 MPIR_proctable[i].host_name,
                 MPIR_proctable[i].executable_name,
@@ -143,7 +161,7 @@ void DebuggerInit()
 {
     adminMessage *server = RunParams.server;
 
-    if (RunParams.TVDebug && RunParams.TVDebugApp == 0) {
+    if (RunParams.dbg.Spawned && RunParams.dbg.WaitInDaemon) {
         /* init for debugging daemon processes */
         MPIR_proctable_size = RunParams.NHosts;
     } else {
@@ -159,35 +177,23 @@ void DebuggerInit()
         Abort();
     }
 
-    /* allocate memory for list of hosts used by TotalView */
-    RunParams.TVHostList = (HostName_t *) ulm_malloc(sizeof(HostName_t) *
-                                                     RunParams.NHosts);
-    if (RunParams.TVHostList == NULL) {
-        ulm_err(("Out of memory\n"));
-        Abort();
-    }
-    for (int h = 0; h < RunParams.NHosts; h++) {
-        bzero((RunParams.TVHostList)[h], ULM_MAX_HOSTNAME_LEN);
-        strcpy((RunParams.TVHostList)[h], (char *)(RunParams.HostList[h]));
-    }
-
     /* 
      * fill in proc table
      */
 
-    if (RunParams.TVDebug == 1 && RunParams.TVDebugApp == 0) {
+    if (RunParams.dbg.Spawned && RunParams.dbg.WaitInDaemon) {
 
         /*
          * Debugging daemons
          */
 
-        ulm_dbg(("debugging daemons\n"));
+        ulm_err(("Warning: debugging daemons\n"));
 
         MPIR_being_debugged = 1;
 
         for (int h = 0; h < RunParams.NHosts; h++) {
-            MPIR_proctable[h].host_name = (char *) &RunParams.TVHostList[h];
-            MPIR_proctable[h].executable_name = (char *) RunParams.ExeList[h];
+            MPIR_proctable[h].host_name = RunParams.HostList[h];
+            MPIR_proctable[h].executable_name = RunParams.ExeList[h];
             MPIR_proctable[h].pid = server->daemonPIDForHostRank(h);
         }
 
@@ -201,19 +207,17 @@ void DebuggerInit()
          */
 
         int i = 0;
-
         for (int h = 0; h < RunParams.NHosts; h++) {
-            /* loop over procs */
             for (int p = 0; p < (RunParams.ProcessCount)[h]; p++) {
                 /* fill in application process information */
-                MPIR_proctable[i].host_name = (char *) &RunParams.TVHostList[h];
-                MPIR_proctable[i].executable_name = (char *) RunParams.ExeList[h];
+                MPIR_proctable[i].host_name = RunParams.HostList[h];
+                MPIR_proctable[i].executable_name = RunParams.ExeList[h];
                 MPIR_proctable[i].pid = RunParams.AppPIDs[h][p];
                 i++;
             }
         }
 
-        if(ENABLE_BPROC && RunParams.GDBDebug) {
+        if (ENABLE_BPROC && RunParams.dbg.GDB) {
             spawn_gdb_in_xterms();
             return;
         }
@@ -223,17 +227,9 @@ void DebuggerInit()
         dump();
     }
 
-    if (RunParams.TVDebug) {
+    if (RunParams.dbg.Spawned) {
         MPIR_debug_state = MPIR_DEBUG_SPAWNED;
     }
-}
 
-/**********************************************************************/
-
-/*
- * breakpoint function for parallel debuggers
- */
-extern "C" void *MPIR_Breakpoint(void)
-{
-    return NULL;
+    (void) MPIR_Breakpoint();
 }

@@ -64,7 +64,7 @@ void FixRunParams(int nhosts)
 
     // Totalview has trouble if given a dotted IP address as the host name when
     // using Bulk Launch to launch the tvdsvr process on the remote hosts.
-    useDottedIP = (RunParams.TVDebug) ? false : true;
+    useDottedIP = (RunParams.dbg.Spawned) ? false : true;
     for (int i = 0; i < nhosts; i++) {
         if (!server->
             peerName(i, RunParams.HostList[i],

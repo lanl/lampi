@@ -135,11 +135,9 @@ void lampi_init_allforked_resources(lampiState_t *);
 
 void lampi_daemon_loop(lampiState_t *);
 void lampi_init_check_for_error(lampiState_t *);
-void lampi_init_debug(lampiState_t *);
 void lampi_init_fork(lampiState_t *);
 
 void lampi_init_wait_for_start_message(lampiState_t *);
-
 
 /*
  * prototypes for path specific initialization phases

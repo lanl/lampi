@@ -7,7 +7,6 @@ SRC_LIBMPI += \
 	src/client/OrderlyShutdown.cc \
 	src/client/ScanStdoutStderr.cc \
 	src/client/SocketGeneric.cc \
-	src/client/TVSetup.cc \
 	src/client/adminMessage.cc \
 	src/client/daemonLoop.cc \
 	src/client/setupMemoryPools.cc \

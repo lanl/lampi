@@ -205,7 +205,7 @@ class adminMessage {
         RUNPARAMS,              /* (client) integer local_nprocs() and pid_t daemon PID */
         ENDRUNPARAMS,           /* marker indicating end of initial data paramters - no data */
         THREADUSAGE,            /* indicates if threads are expected, or not - 1 interger */
-        TVDEBUG,                /* indicates if totalview debuging will be enables - 2 integers */
+        DEBUGGER,               /* debugger flags - 2 integers */
         CRC,                    /* 1 bool of use CRC */
         CLIENTPIDS,             /* (client) n pid_t client PIDs */
         IFNAMES,

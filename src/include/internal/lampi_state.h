@@ -84,7 +84,6 @@ typedef struct {
     
     int *map_global_rank_to_host;   /* global rank to host index map */
     int *map_host_to_local_size;    /* number of procs on a given host */
-    int debug_location;
     int global_rank;                /* rank of this process */
     int global_size;                /* total number of processes in COMM_WORLD */
     int global_to_local_offset;
@@ -118,7 +117,8 @@ typedef struct {
      * boolean flags indicating run-time functionality
      */
 
-    int debug;
+    int started_under_debugger;     /* job started under a debugger */
+    int wait_for_debugger_in_daemon;/* wait for debugger in daemon, not app */
     int error;
 
     int quadrics;
