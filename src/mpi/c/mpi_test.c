@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -31,8 +31,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "internal/mpi.h"
 
 #ifdef HAVE_PRAGMA_WEAK
@@ -59,12 +57,6 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
         }
     }
 
-    if (request == NULL || flag == NULL) {
-	rc = MPI_ERR_REQUEST;
-	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
-	return rc;
-    }
-
     if (*request == _mpi.proc_null_request) {
 	if (status) {
 	    status->MPI_ERROR = MPI_SUCCESS;
@@ -73,6 +65,7 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	    status->_count = 0;
 	    status->_persistent = 0;
 	}
+        *flag = 1;
 	return MPI_SUCCESS;
     }
 
