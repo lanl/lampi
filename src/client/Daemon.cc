@@ -74,6 +74,7 @@ void lampi_daemon_loop(lampiState_t *s)
 
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
+            ClientScanStdoutStderr(s);
             CleanupOnAbnormalChildTermination(s);
             /*
              * set abnormal termination flag to 2, so that termination
