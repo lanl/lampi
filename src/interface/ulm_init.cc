@@ -52,10 +52,3 @@ extern "C" int ulm_init(void)
     lampi_init();
     return ULM_SUCCESS;
 }
-
-extern "C" int ulm_init_threads(int use)
-{
-	setthreadusage(use);
-	lampi_init();
-	return ULM_SUCCESS;
-}

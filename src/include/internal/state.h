@@ -94,16 +94,6 @@ inline long global_proc_to_host(long x)
     return lampiState.usethreads;
 }
 
-inline int setthreadusage(int use)
-{
-	if( use )
-		lampiState.usethreads=1;
-	else
-		lampiState.usethreads=0;
-
-	return ULM_SUCCESS;
-}
-
 inline int usecrc()
 {
     return lampiState.usecrc;

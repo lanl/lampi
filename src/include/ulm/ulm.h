@@ -73,12 +73,9 @@ extern "C"
 int ulm_init(void);
 
 /*!
- * initialization function - thread usage set - must be called or
- *    else ulm_init must be called
- *
- * \return              ULM return code
+ * set thread usage
  */
-int ulm_init_threads(int use);
+int setthreadusage(int use);
 
 /*!
  * termination function - must be called

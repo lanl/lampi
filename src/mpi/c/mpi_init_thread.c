@@ -46,32 +46,28 @@ int PMPI_Init_thread(int *argc, char ***argv, int required, int *provided)
 	return rc;
     }
 
+    rc = ulm_init();
+    if (rc != ULM_SUCCESS) {
+	    return MPI_ERR_INTERN;
+    }
+
+    /* set MPI thread usage flag - MPI defines more parameters than
+     *   ulm uses internally */
+    *provided=required;
+    _mpi.thread_usage=required;
     if( required == MPI_THREAD_SINGLE || required == MPI_THREAD_FUNNELED ||
 		    required == MPI_THREAD_SERIALIZED ) {
 	    /* no concurent threads - don't need to lock in order to avoid
 	     *   thread race conditions */
-	    rc = ulm_init_threads(0);
-	    if (rc != ULM_SUCCESS) {
-		    return MPI_ERR_INTERN;
-	    }
-	    *provided=required;
+	    setthreadusage(0);
     } else if( required == MPI_THREAD_MULTIPLE ) {
 	    /* concurent threads */
-	    rc = ulm_init_threads(1);
-	    if (rc != ULM_SUCCESS) {
-		    return MPI_ERR_INTERN;
-	    }
-	    *provided=required;
+	    setthreadusage(1);
     } else {
 	rc = MPI_ERR_ARG;
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
     }
-
-    /* set MPI thread usage flag - MPI defines more parameters than
-     *   ulm uses internally */
-    _mpi.thread_usage=required;
-
 
     /* barrier to make sure initialization is complete */
     ulm_barrier(ULM_COMM_WORLD);

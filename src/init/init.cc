@@ -2116,3 +2116,13 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     }
     memset(s->contextIDCtl, 0, sizeof(contextIDCtl_t));
 }
+
+extern "C" int setthreadusage(int use)
+{
+	if( use )
+		lampiState.usethreads=1;
+	else
+		lampiState.usethreads=0;
+
+	return ULM_SUCCESS;
+}
