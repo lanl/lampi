@@ -197,7 +197,7 @@ public:
 	    }
 	    else
 		    nAcked=message->NumAcked;
-        if (nAcked >= message->numfrags) {
+        if ( (nAcked >= message->numfrags) && (message->NumSent >= message->numfrags) ){
             return true;
         }
         *errorCode = ULM_SUCCESS;

@@ -213,6 +213,12 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
         }
     }
 
+    if ( dev == gmState.nDevsAllocated )
+    {
+        ulm_err(("Error! Unable to match GM port.\n"));
+        return;
+    }
+    
     // reclaim send token
     if (usethreads()) 
         gmState.localDevList[dev].Lock.lock();
@@ -235,8 +241,32 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 
 void gmRecvFragDesc::msgDataAck()
 {
+    gmSendFragDesc		*sfd;
+    SendDesc_t 			*bsd;
+
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
-    gmPath::callback(NULL, p->ptrToSendDesc.ptr, GM_SUCCESS);
+    sfd = (gmSendFragDesc *)p->sendFragDescPtr.ptr;
+    bsd = (SendDesc_t *) sfd->parentSendDesc_m;
+
+    if ( NULL == bsd )
+    {
+        ulm_err(("Process %d: Inconsistency Error! Base send descriptor is NULL.\n"));
+        return;
+    }
+
+    if (usethreads())
+        bsd->Lock.lock();
+
+    // revisit this when reliability is implemented!!!!
+    (bsd->NumAcked)++;
+
+    sfd->setDidReceiveAck(true);
+    if ( sfd->sendDidComplete() )
+        sfd->freeResources();
+
+    if (usethreads())
+        bsd->Lock.unlock();
+
     ReturnDescToPool(0);
 }
 

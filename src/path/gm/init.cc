@@ -250,7 +250,7 @@ void gmSetup(lampiState_t *s)
 
                 returnValue =
                     gm_open(&tmpPort, dev, port, portName,
-                            _GM_API_VERSION_1_6);
+                            (enum gm_api_version)GM_API_VERSION);
                 if (returnValue == GM_NO_SUCH_DEVICE) {
                     break;
                 }
@@ -263,6 +263,23 @@ void gmSetup(lampiState_t *s)
                  */
                 gm_get_node_id(tmpPort, &tmpNodeID);
                 gmState.localDevList[gmState.nDevsAllocated].node_id = tmpNodeID;
+
+/* GM 2.x now uses local node ID and a global node ID.  For versions earlier
+	than 2.x, the local ID is the same as the global ID.
+*/
+#if GM_API_VERSION >= 0x200				
+                returnValue = gm_node_id_to_global_id(tmpPort, tmpNodeID, 
+                                &(gmState.localDevList[gmState.nDevsAllocated].global_node_id));
+                if (returnValue != GM_SUCCESS) {
+                    ulm_err(("Error: gm_node_id_to_global_id() node %d port %d"
+                       " returned %d\n", dev, port, (int) returnValue));
+                    s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+                    return;
+                }
+#else
+                gmState.localDevList[gmState.nDevsAllocated].global_node_id = tmpNodeID;             
+#endif
+
                 gmState.localDevList[gmState.nDevsAllocated].port_id = port;
                 gmState.localDevList[gmState.nDevsAllocated].gmPort =
                     tmpPort;
@@ -299,6 +316,9 @@ void gmSetup(lampiState_t *s)
 
         }                           /* end dev loop */
     }
+
+    if ( 0 == gmState.nDevsAllocated )
+        ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n"));
 
     /*
      * gather hostID, nodeID, portID, and MAC address for
@@ -364,12 +384,14 @@ void gmSetup(lampiState_t *s)
         for (i = 0; i < maxDevs; i++) {
             if (i < gmState.nDevsAllocated) {
                 localBaseDevInfo[i].node_id = gmState.localDevList[i].node_id;
+                localBaseDevInfo[i].global_node_id = gmState.localDevList[i].global_node_id;
                 localBaseDevInfo[i].port_id = gmState.localDevList[i].port_id;
                 bcopy(gmState.localDevList[i].macAddress, localBaseDevInfo[i].macAddress,
                     LENMACADDR);
             }
             else {
                 localBaseDevInfo[i].node_id = (unsigned int)-1;
+                localBaseDevInfo[i].global_node_id = (unsigned int)-1;
                 localBaseDevInfo[i].port_id = (unsigned int)-1;
             }
         }
@@ -411,6 +433,8 @@ void gmSetup(lampiState_t *s)
 	        for (j = 0; j < s->global_size; j++) {
 	            gmState.localDevList[i].remoteDevList[j].node_id =
 	                (unsigned int) -1;
+	            gmState.localDevList[i].remoteDevList[j].global_node_id =
+	                (unsigned int) -1;
 	            gmState.localDevList[i].remoteDevList[j].port_id =
 	                (unsigned int) -1;
 	        }
@@ -431,6 +455,12 @@ void gmSetup(lampiState_t *s)
 	            if ((rDevIndex >= nDevsPerProc[proc]) || 
                     (allBaseDevInfo[remoteDev].node_id == (unsigned int)-1))
 	                continue;
+
+#if GM_API_VERSION >= 0x200
+	             gm_global_id_to_node_id(gmState.localDevList[localDev].gmPort,
+                                    allBaseDevInfo[remoteDev].global_node_id,
+                                    &(allBaseDevInfo[remoteDev].node_id));
+#endif
 	            /* check to see if remote device is reachable from
 	             *   the local device */
 	            returnValue =

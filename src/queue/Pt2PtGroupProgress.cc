@@ -139,7 +139,8 @@ int push_frags_into_network(double timeNow)
                 //
                 // We've finished sending
                 //
-                if (SendDesc->NumAcked >= SendDesc->NumSent) {
+                if ( (SendDesc->NumAcked >= SendDesc->numfrags) &&
+                	 (SendDesc->NumSent >= SendDesc->numfrags) ) {
                     // message has been acked
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         IncompletePostedSends.RemoveLinkNoLock(SendDesc);
