@@ -50,7 +50,7 @@ void SMPSWBarrier(volatile void *barrierData)
 {
     int count = 0;
     // cast data to real type
-    swBarrierData *barData = (swBarrierData *) barrierData;
+    volatile swBarrierData *barData = (volatile swBarrierData *) barrierData;
 
     // increment "release" count
     barData->releaseCnt += barData->commSize;
