@@ -30,16 +30,17 @@
 
 #endif /* !defined(KERNEL) */
 
-/*---------------------------------------------------------------*/
-
 /* Files can be opened in concurrent write mode using the
  * following flag to open(). */
-#define O_CONCURRENT_WRITE 020000000000
+#define O_CONCURRENT_WRITE                         020000000000
 
 /*---------------------------------------------------------------*/
 /*---------------------------------------------------------------*/
+                        
+#define PAN_FS_CLIENT_CW_MODE_IOCTL                ((unsigned int)0x24)
 
-#define PAN_FS_CLIENT_CW_MODE  'C'
+/*---------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
 
 #define PAN_FS_CLIENT_CW_MODE_FLUSH_F__NONE        0x00000000
 #define PAN_FS_CLIENT_CW_MODE_FLUSH_F__INVAL_BUFS  0x00000001
@@ -60,32 +61,33 @@ struct pan_fs_client_cw_mode_flush_args_s {
  * @since   1.0
  */
 #define PAN_FS_CLIENT_CW_MODE_FLUSH \
-  _IOWR((unsigned int)(PAN_FS_CLIENT_CW_MODE),1,pan_fs_client_cw_mode_flush_args_t)
+  _IOWR(PAN_FS_CLIENT_CW_MODE_IOCTL,60,pan_fs_client_cw_mode_flush_args_t)
 
 /*---------------------------------------------------------------*/
 /*---------------------------------------------------------------*/
 
-#define PAN_FS_CLIENT_LAYOUT 'L'
+#define PAN_FS_CLIENT_LAYOUT_VERSION               2
 
-#define PAN_FS_CLIENT_CW_MODE_FILE_NAME_LEN_MAX 255
+#define PAN_FS_CLIENT_CW_MODE_FILE_NAME_LEN_MAX    255
 
-#define PAN_FS_CLIENT_LAYOUT_VERSION  1
+#define PAN_FS_CLIENT_LAYOUT_CREATE_F__NONE        0x00000000
+#define PAN_FS_CLIENT_LAYOUT_CREATE_DIR_F__NONE    0x00000000
 
 enum pan_fs_client_layout_agg_type_e {
-  PAN_FS_CLIENT_LAYOUT_TYPE__INVALID      = 0,
-  PAN_FS_CLIENT_LAYOUT_TYPE__DEFAULT      = 1,
-  PAN_FS_CLIENT_LAYOUT_TYPE__RAID0        = 2,
-  PAN_FS_CLIENT_LAYOUT_TYPE__RAID1        = 3,
-  PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5      = 4,
-  PAN_FS_CLIENT_LAYOUT_TYPE__RAIDGRP1_5   = 5
+  PAN_FS_CLIENT_LAYOUT_TYPE__INVALID                 = 0,
+  PAN_FS_CLIENT_LAYOUT_TYPE__DEFAULT                 = 1,
+  PAN_FS_CLIENT_LAYOUT_TYPE__RAID0                   = 2,
+  PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE   = 3
 };
 typedef enum pan_fs_client_layout_agg_type_e pan_fs_client_layout_agg_type_t;
 
-enum pan_fs_client_layout_raidgrp_e {
-  PAN_FS_CLIENT_LAYOUT_RAIDGRP__INVALID       = 0,
-  PAN_FS_CLIENT_LAYOUT_RAIDGRP__ROUND_ROBIN   = 1
+enum pan_fs_client_layout_visit_e {
+  PAN_FS_CLIENT_LAYOUT_VISIT__INVALID                          = 0,
+  PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN                      = 1,
+  PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN_WITH_SINGLE_OFFSET   = 2,
+  PAN_FS_CLIENT_LAYOUT_VISIT__ROUND_ROBIN_WITH_HASHED_OFFSET   = 3
 };
-typedef enum pan_fs_client_layout_raidgrp_e pan_fs_client_layout_raidgrp_t;
+typedef enum pan_fs_client_layout_visit_e pan_fs_client_layout_visit_t;
 
 typedef struct pan_fs_client_layout_s pan_fs_client_layout_t;
 struct pan_fs_client_layout_s {
@@ -93,23 +95,16 @@ struct pan_fs_client_layout_s {
   int                              layout_is_valid;
   union {
     struct {
-      unsigned char                    num_comps_data_stripe;
+      unsigned int                     total_num_comps;
       unsigned int                     stripe_unit;
     } raid0;
     struct {
-      unsigned char                    num_comps_data_stripe;
-    } raid1;
-    struct {
-      unsigned char                    num_comps_data_stripe;
-      unsigned int                     stripe_unit;
-    } raid1_5;
-    struct {
       unsigned int                     total_num_comps;
       unsigned int                     stripe_unit;
-      unsigned int                     raidgrp_width;
-      unsigned int                     raidgrp_depth;
-      pan_fs_client_layout_raidgrp_t   raidgrp_layout_policy;
-    } raidgrp1_5;
+      unsigned int                     parity_stripe_width;
+      unsigned int                     parity_stripe_depth;
+      pan_fs_client_layout_visit_t     layout_visit_policy;
+    } raid1_5_parity_stripe;
   } u;
 };
 
@@ -119,6 +114,7 @@ struct pan_fs_client_layout_create_args_s {
   char                             filename[PAN_FS_CLIENT_CW_MODE_FILE_NAME_LEN_MAX+1];
   unsigned int                     mode;
   pan_fs_client_layout_t           layout;
+  unsigned int                     flags;
 };
 
 typedef struct pan_fs_client_layout_create_dir_args_s pan_fs_client_layout_create_dir_args_t;
@@ -127,6 +123,7 @@ struct pan_fs_client_layout_create_dir_args_s {
   char                             dirname[PAN_FS_CLIENT_CW_MODE_FILE_NAME_LEN_MAX+1];
   unsigned int                     mode;
   pan_fs_client_layout_t           child_layout;
+  unsigned int                     flags;
 };
 
 typedef struct pan_fs_client_layout_query_args_s pan_fs_client_layout_query_args_t;
@@ -146,7 +143,7 @@ struct pan_fs_client_layout_query_args_s {
  * @since   1.0
  */
 #define PAN_FS_CLIENT_LAYOUT_CREATE_FILE \
-  _IOWR((unsigned int)(PAN_FS_CLIENT_LAYOUT),1,pan_fs_client_layout_create_args_t)
+  _IOWR(PAN_FS_CLIENT_CW_MODE_IOCTL,61,pan_fs_client_layout_create_args_t)
 
 /**
  * An ioctl that can be used to create a dir in which all future child files
@@ -159,7 +156,7 @@ struct pan_fs_client_layout_query_args_s {
  * @since   1.0
  */
 #define PAN_FS_CLIENT_LAYOUT_CREATE_DIR \
-  _IOWR((unsigned int)(PAN_FS_CLIENT_LAYOUT),2,pan_fs_client_layout_create_dir_args_t)
+  _IOWR(PAN_FS_CLIENT_CW_MODE_IOCTL,62,pan_fs_client_layout_create_dir_args_t)
 
 /**
  * An ioctl that can be used to query the storage layout of a filesystem object
@@ -170,7 +167,7 @@ struct pan_fs_client_layout_query_args_s {
  * @since   1.0
  */
 #define PAN_FS_CLIENT_LAYOUT_QUERY_FILE \
-  _IOWR((unsigned int)(PAN_FS_CLIENT_LAYOUT),3,pan_fs_client_layout_query_args_t)
+  _IOWR(PAN_FS_CLIENT_CW_MODE_IOCTL,63,pan_fs_client_layout_query_args_t)
 
 #endif /* _PAN_FS_CLIENT__PAN_FS_CLIENT_CW_MODE_H_ */
 
