@@ -198,19 +198,10 @@ extern "C" int ulm_bcast_quadrics(void *buf, int count, ULMType_t *type, int roo
     int rc;
     int self;
     int total_hosts;
-    int total_procs;
     int cnt;
     int hi;
     long long tag;
-    size_t bcast_size = 0;
-    size_t copy_buffer_size = 0;
-    size_t shared_buffer_size = 0;
-    size_t offset = 0;
-    size_t ti = 0;
-    size_t mi = 0;
-    size_t mo = 0;
     unsigned char *p;
-    void *RESTRICT_MACRO shared_buffer;
 
     START_MARK;
 
@@ -221,55 +212,32 @@ extern "C" int ulm_bcast_quadrics(void *buf, int count, ULMType_t *type, int roo
     }
 
     group = communicators[comm]->localGroup;
-    bcast_size = count * type->extent;
     comm_ptr = (Communicator *) communicators[comm];
-    bcast_size = count * type->extent;
     hi = group->hostIndexInGroup;
     comm_root = group->groupHostData[hi].groupProcIDOnHost[0];
 
     rc = ulm_get_info(comm, ULM_INFO_PROCID, &self, sizeof(int));
     rc = ulm_get_info(comm, ULM_INFO_NUMBER_OF_HOSTS,
                       &total_hosts, sizeof(int));
-    rc = ulm_get_info(comm, ULM_INFO_NUMBER_OF_PROCS,
-                      &total_procs, sizeof(int));
-
-    /* set up collective descriptor, shared buffer */
-    tag = comm_ptr->get_base_tag(1);
-    coll_desc = comm_ptr->getCollectiveSMBuffer(tag);
-    shared_buffer = coll_desc->mem;
-    shared_buffer_size = (size_t) coll_desc->max_length;
-    copy_buffer_size = (bcast_size < shared_buffer_size) ?
-bcast_size : shared_buffer_size;
 
     /* single-host case */
-    if (total_hosts == 1) {
-        while (ti < (size_t) count) {
-            offset = 0;
-            if (self == root) {
-                type_pack(TYPE_PACK_PACK, shared_buffer, copy_buffer_size,
-                          &offset, buf, count, type, &ti, &mi, &mo);
-                wmb();
-                coll_desc->flag = 2;
-            } else {
-                ULM_SPIN_AND_MAKE_PROGRESS(coll_desc->flag != 2);
-                type_pack(TYPE_PACK_UNPACK, shared_buffer, copy_buffer_size,
-                          &offset, buf, count, type, &ti, &mi, &mo);
-            }
-
-            if (ti != (size_t) count) {
-                comm_ptr->smpBarrier(comm_ptr->barrierData);
-                coll_desc->flag = 1;
-                comm_ptr->smpBarrier(comm_ptr->barrierData);
-            }
-        }
-
-        comm_ptr->releaseCollectiveSMBuffer(coll_desc);
-        return ULM_SUCCESS;
+    if (total_hosts ==1) {
+        /* this will not happen: communcator allocation will not enable
+         * hardware broadcast if total_hosts <= 1 */
+        END_MARK;
+        return rc = ulm_bcast(buf, count, type, root, comm);
     }
+
+
+    tag = comm_ptr->get_base_tag(1);
+
+    /* set up collective descriptor, shared buffer */
+    /* hw bcast uses coll_desc->flag, but no longer uses the SMBuffers
+     * so we should replace coll_desc->flag with something else and not make this call: */
+    coll_desc = comm_ptr->getCollectiveSMBuffer(tag);
 
     /* more than 1 host, so send data around to comm-roots
         * using ulm_bcast_interhost */
-
     if (group->mapGroupProcIDToHostID[root] ==
         group->mapGroupProcIDToHostID[self]) {
         comm_root = root;
