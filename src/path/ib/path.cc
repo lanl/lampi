@@ -552,6 +552,9 @@ inline bool ibPath::push(double timeNow, int *errorCode)
 {
     bool result = true;
 
+    // check send completion queues
+    checkSendCQs();
+
     result = (sendCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
     result = (cleanCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
 
