@@ -314,7 +314,8 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
 
             // slow down the send
             if ((maxOutstandingSMPFrags != -1) &&
-                (message->NumFragDescAllocated - message->NumAcked >=
+                ((message->NumFragDescAllocated -
+                  message->pathInfo.sharedmem.sharedData->NumAcked) >=
                  (unsigned) maxOutstandingSMPFrags)) {
                 message->pathInfo.sharedmem.sharedData->clearToSend_m = false;
             } else if (!(waitOnAck && message->NumAcked == 0)) {
