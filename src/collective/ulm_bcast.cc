@@ -270,6 +270,11 @@ bcast_size : shared_buffer_size;
     /* more than 1 host, so send data around to comm-roots
         * using ulm_bcast_interhost */
 
+    if (group->mapGroupProcIDToHostID[root] ==
+        group->mapGroupProcIDToHostID[self]) {
+        comm_root = root;
+    }
+
     block_count = BLOCK_SIZE / type->packed_size;
     if (block_count == 0) {
         block_count = 1;
