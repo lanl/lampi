@@ -79,6 +79,7 @@ void NoOpFunction(const char *ErrorString);
 void NotImplementedFunction(const char *ErrorString);
 void SetCheckArgsFalse(const char *ErrorString);
 void SetOutputPrefixTrue(const char *ErrorString);
+void SetQuietTrue(const char *ErrorString);
 
 extern InputParameters_t ULMInputOptions[];
 extern int SizeOfInputOptionsDB;

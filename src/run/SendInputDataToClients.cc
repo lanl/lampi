@@ -132,7 +132,14 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&tag, (adminMessage::packType)sizeof(int), 1))
 		    TagError("OUTPUT_PREFIX");
 	    if(!server->pack(&(RunParameters->OutputPrefix), (adminMessage::packType)sizeof(int), 1))
-		    DataError("CheckArgs");
+		    DataError("OutputPrefix");
+
+	    // quiet
+	    tag = adminMessage::QUIET;
+	    if(!server->pack(&tag, (adminMessage::packType)sizeof(int), 1))
+		    TagError("QUIET");
+	    if(!server->pack(&(RunParameters->Quiet), (adminMessage::packType)sizeof(int), 1))
+		    DataError("Quiet");
 
 #if ENABLE_NUMA
 	    /* cpu list */

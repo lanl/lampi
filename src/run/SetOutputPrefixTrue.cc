@@ -47,3 +47,8 @@ void SetOutputPrefixTrue(const char *InfoStream)
 {
     RunParameters.OutputPrefix = 1;
 }
+
+void SetQuietTrue(const char *InfoStream)
+{
+    RunParameters.Quiet = 1;
+}

@@ -142,6 +142,13 @@ InputParameters_t ULMInputOptions[] =
      SetOutputPrefixTrue,
      "Prefix standard output and error with helpful information", 0, "\0"
     },
+    {"-q",
+     "Quiet",
+     NO_ARGS,
+     NoOpFunction,
+     SetQuietTrue,
+     "Suppress start-up messages", 0, "\0"
+    },
     {"-dapp",
      "DirectoryOfBinary",
      STRING_ARGS,

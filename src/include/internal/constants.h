@@ -156,6 +156,7 @@ enum {
     THREADUSAGE,                /* thread usage */
     CHECKARGS,                  /* MPI argument checking */
     OUTPUT_PREFIX,              /* stdout/stderr prefix */
+    QUIET,                      /* supress output messages */
     CPULIST,                    /* list of CPU's */
     NCPUSPERNODE,               /* number of CPUS per node */
     USERESOURCEAFFINITY,        /* use resource affinity */

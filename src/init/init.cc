@@ -159,7 +159,8 @@ void lampi_init(void)
     /*
      * connect back to mpirun
      */
-    ulm_dbg(("host %d: daemon %d: connecting to mpirun...\n", myhost(), getpid()));
+    ulm_dbg(("host %d: daemon %d: connecting to mpirun...\n", myhost(),
+             getpid()));
     lampi_init_prefork_connect_to_mpirun(&_ulm);
 
     /*
@@ -204,7 +205,7 @@ void lampi_init(void)
     lampi_init_postfork_paths(&_ulm);
 
     /* this must follow lampi_init_postfork_paths as it initializes the collective function pointers
-        which depend on the devices available. */
+       which depend on the devices available. */
     lampi_init_postfork_communicators(&_ulm);
 
 #ifdef USE_ELAN_COLL
@@ -218,19 +219,19 @@ void lampi_init(void)
     lampi_init_check_for_error(&_ulm);
 
     /* daemon process goes into loop */
-    if ( lampiState.iAmDaemon )
-    {
+    if (lampiState.iAmDaemon) {
         if (lampiState.verbose) {
             fprintf(stderr, "LA-MPI: *** Daemon initialized (stderr)\n");
             fprintf(stdout, "LA-MPI: *** Daemon initialized (stdout)\n");
             fflush(stdout);
         }
         lampi_daemon_loop(&_ulm);
-    }
-    else if (lampiState.global_rank == 0)
-    {
-        fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
-        fprintf(stderr, "LA-MPI: *** Copyright 2001-2004, ACL, Los Alamos National Laboratory\n");
+    } else if (lampiState.global_rank == 0) {
+        if (lampiState.quiet == 0) {
+            fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
+            fprintf(stderr, "LA-MPI: *** Copyright 2001-2004, ACL, "
+                    "Los Alamos National Laboratory\n");
+        }
     }
 }
 
@@ -373,6 +374,8 @@ void lampi_init_prefork_globals(lampiState_t *s)
 
     /* do not prepend informative prefix to stdout/stderr */
     lampiState.output_prefix = 0;
+    lampiState.quiet = 0;
+    
 
     lampiState.map_global_proc_to_on_host_proc_id = 0;
 }
@@ -1144,6 +1147,12 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      (adminMessage::packType) sizeof(int),
                                      1);
             break;
+
+        case adminMessage::QUIET:
+            s->client->unpackMessage(&(s->quiet),
+                                     (adminMessage::packType) sizeof(int),
+                                     1);
+            break;
 #if ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
@@ -1393,6 +1402,12 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&(s->output_prefix),
                               (adminMessage::packType) sizeof(int), 1);
             break;
+
+        case adminMessage::QUIET:
+            s->client->unpack(&(s->quiet),
+                              (adminMessage::packType) sizeof(int), 1);
+            break;
+
 #if ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use

@@ -141,6 +141,7 @@ typedef struct {
     int *STDERRfdsFromChildren;     /* stderr file descriptors to redirect */
     int *STDOUTfdsFromChildren;     /* stdout file descriptors to redirect */
     int output_prefix;              /* prepend informative prefix to stdout/stderr ? */
+    int quiet;                      /* suppress start-up messages */
     size_t StderrBytesWritten;      /* number of bytes written to stderr */
     size_t StdoutBytesWritten;      /* number of bytes written to stdout */
     int *NewLineLast;               /* insert newline character? */

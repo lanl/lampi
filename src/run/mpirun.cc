@@ -488,9 +488,6 @@ int mpirun(int argc, char **argv)
     /* setup process characteristics */
     lampirun_init_proc();
     
-    /* print out banner message */
-    fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
-
     /*
      * Read in environment
      */
@@ -504,6 +501,11 @@ int mpirun(int argc, char **argv)
     if (rc < 0) {
         ulm_err(("Error: Parsing command line\n"));
         Abort();
+    }
+
+    /* print banner message */
+    if (RunParameters.Quiet == 0) {
+        fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
     }
 
     /*

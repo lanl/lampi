@@ -86,8 +86,8 @@ typedef struct ULMRunParams {
     /* prepend output prefix */
     int OutputPrefix;
 
-    /* level of debug output */
-    int ULMVerbocity;
+    /* suppress start-up message */
+    int Quiet;
 
     /* hostname of mpirun host */
     HostName_t mpirunName;
