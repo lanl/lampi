@@ -517,12 +517,13 @@ int main(int argc, char **argv)
     t = second();
     /*
      * Finish setting up administrative connections - time out proportional
-     *   to number of hosts
+     *   to number of processes (not number of hosts, since we don't always 
+     *   know the number of hosts)...with minimum connect timeout 
      */
     ulm_dbg(("\nmpirun: collecting daemon info...\n"));
     timing_cur = second();
     sprintf(timing_out[timing_scnt++], "Collecting daemon info (t = 0).\n");
-    connectTimeOut = CONNECT_ALARMTIME * RunParameters.NHosts;
+    connectTimeOut = MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
     if (!server->serverConnect(RunParameters.ProcessCount,
                                RunParameters.HostList,
                                RunParameters.NHosts, connectTimeOut)) {
