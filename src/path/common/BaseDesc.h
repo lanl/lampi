@@ -48,6 +48,7 @@
 #include "path/udp/sendInfo.h"
 #include "path/quadrics/sendInfo.h"
 #include "path/sharedmem/sendInfo.h"
+#include "path/ib/sendInfo.h"
 #include "queue/SharedMemForCollective.h"
 
 enum RequestType_t {
@@ -141,6 +142,7 @@ public:
         udpSendInfo udp;
         quadricsSendInfo quadrics;
         sharedmemSendInfo sharedmem;
+        ibSendInfo ib;
     } pathInfo;
 
     Locks Lock;                 // lock
