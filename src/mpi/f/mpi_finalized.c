@@ -32,6 +32,11 @@
 
 #include "internal/mpif.h"
 
+void mpi_finalized_f(MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Finalized(flag);
+}
+
 #if defined(HAVE_PRAGMA_WEAK)
 
 #pragma weak PMPI_FINALIZED = mpi_finalized_f
@@ -43,11 +48,6 @@
 #pragma weak mpi_finalized = mpi_finalized_f
 #pragma weak mpi_finalized_ = mpi_finalized_f
 #pragma weak mpi_finalized__ = mpi_finalized_f
-
-void mpi_finalized_f(MPI_Fint *flag, MPI_Fint *rc)
-{
-    mpi_finalized_f(flag, rc);
-}
 
 #else
 
