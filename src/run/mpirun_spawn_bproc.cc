@@ -212,27 +212,18 @@ void *accept_thread(void *arg) {
 			    break;
 			RunParameters->STDINfds[hostID] = fd;
 			connectCount++;
-fprintf(stderr, "std in %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
-fflush(stderr);
-			//      printf("stdin for pid = %d\n", pid);
 			break;
 		    case STDOUT_FILENO:
 			if (RunParameters->STDOUTfds[hostID] != -1)
 			    break;
 			RunParameters->STDOUTfds[hostID] = fd;
 			connectCount++;
-fprintf(stderr, "std out %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
-fflush(stderr);
-			//      printf("stdout for pid = %d\n", pid);
 			break;
 		    case STDERR_FILENO:
 			if (RunParameters->STDERRfds[hostID] != -1)
 			    break;
 			RunParameters->STDERRfds[hostID] = fd;
-			//      printf("stderr for pid = %d\n", pid);
 			connectCount++;
-fprintf(stderr, "std err %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
-fflush(stderr);
 			break;
 		    }
 		}
@@ -384,9 +375,6 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         goto CLEANUP_ABNORMAL;
     }
 
-fprintf(stderr,"about to call bproc_vexecmove_io(nHosts = %d, nodes = %p, pids = %p, io = %p, 3, exec_args[EXEC_NAME] = %s, argv[%d] = %p, environ = %p\n",
-    nHosts, nodes, pids, io, exec_args[EXEC_NAME], FirstAppArgument - 1, argv + (FirstAppArgument -1), environ);
-fflush(stderr);
     if (bproc_vexecmove_io
 	(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
 	 argv + (FirstAppArgument - 1), environ) < 0) {
@@ -397,9 +385,6 @@ fflush(stderr);
     pthread_cancel(a_thread);
 	goto CLEANUP_ABNORMAL;
     }
-fprintf(stderr,"success --- bproc_vexecmove_io(nHosts = %d, nodes = %p, pids = %p, io = %p, 3, exec_args[EXEC_NAME] = %s, argv[%d] = %p, environ = %p\n",
-    nHosts, nodes, pids, io, exec_args[EXEC_NAME], FirstAppArgument - 1, argv + (FirstAppArgument -1), environ);
-fflush(stderr);
 
     /* join accept() processing thread */
     if (pthread_join(a_thread, &a_thread_return) == 0) {
