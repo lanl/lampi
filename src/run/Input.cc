@@ -91,6 +91,7 @@ void Usage(FILE *stream)
             "-dev PATHLIST     A colon-delimited list of one or more network paths to use.\n" 
             "-i IFLIST         A comma-delimited list of one or more interfaces names\n"
             "                  to be used by TCP/UDP paths.\n"
+            "-local            Run on the local host using fork/exec to spawn processes.\n"
             "-ni NINTERFACES   Maximum number of interfaces to be used by TCP/UDP paths.\n"
             "-q                Suppress start-up messages.\n"
             "-s MPIRUNHOST     A comma-delimited list of preferred IP interface name\n"
@@ -1274,6 +1275,12 @@ void setThreads(const char *InfoStream)
 void setUseSSH(const char *InfoStream)
 {
     RunParameters.UseSSH = 1;
+}
+
+
+void setLocal(const char *InfoStream)
+{
+    RunParameters.Local = 1;
 }
 
 

@@ -87,51 +87,33 @@ void GetAppHostCount(const char *InfoStream)
 }
 
 /*
- * get the primary name of this host from gethostname, if none is specified
+ * get the primary name of this host from gethostname, if none is
+ * specified
  */
 void GetMpirunHostnameNoInput(const char *InfoStream)
 {
-#if ENABLE_BPROC
-  /* gives a hostname of "n-1", which fails later */
-    int node = bproc_currnode();
-    sprintf(RunParameters.mpirunName, "n%d", node);
+    if (ENABLE_BPROC) {
 
+        strncpy(RunParameters.mpirunName, "n-1", ULM_MAX_HOSTNAME_LEN);
 
-    // try to construct a dotted IP of the mpirun node:
-    while (1) {
-      struct hostent *hptr;
-      struct utsname myname;
-      if (uname(&myname)<0) break;
-      if ( (hptr=gethostbyname(myname.nodename))==NULL) break;
-      if (hptr->h_addrtype!=AF_INET) break;
+    } else {
 
-      // multiple ip addresses:  h_addr_list[*].  Lets just take first one:
-      if (NULL==hptr->h_addr_list[0]) break;
-      in_addr *tin = (in_addr *) hptr->h_addr_list[0];
-
-      // convert to dotted ip string:
-      char *tmp = inet_ntoa( *tin );
-      strncpy(RunParameters.mpirunName,tmp,ULM_MAX_HOSTNAME_LEN);
-      break;
+        HostName_t tmp;
+        struct hostent *hptr;
+        tmp[ULM_MAX_HOSTNAME_LEN - 1] = '\0';
+        if (gethostname(tmp, ULM_MAX_HOSTNAME_LEN - 1) == -1) {
+            ulm_err(("Error: Can't find local hostname!\n"));
+            Abort();
+        }
+        if ((hptr = gethostbyname(tmp)) == NULL) {
+            ulm_err(("Error: Hostname look-up failed for %s\n", tmp));
+            Abort();
+        }
+        strncpy(RunParameters.mpirunName,
+                (strlen(hptr->h_name) >=
+                 ULM_MAX_HOSTNAME_LEN) ? tmp : hptr->h_name,
+                ULM_MAX_HOSTNAME_LEN);
     }
-
-#else
-    HostName_t tmp;
-    struct hostent *localHostInfo;
-    tmp[ULM_MAX_HOSTNAME_LEN - 1] = '\0';
-    if (gethostname(tmp, ULM_MAX_HOSTNAME_LEN - 1) == -1) {
-        ulm_err(("Error: Can't find local hostname!\n"));
-        Abort();
-    }
-    if ((localHostInfo = gethostbyname(tmp)) == NULL) {
-        ulm_err(("Error: Hostname look-up failed for %s\n", tmp));
-        Abort();
-    }
-    strncpy(RunParameters.mpirunName,
-            (strlen(localHostInfo->h_name) >=
-             ULM_MAX_HOSTNAME_LEN) ? tmp : localHostInfo->h_name,
-            ULM_MAX_HOSTNAME_LEN);
-#endif
 }
 
 

@@ -211,6 +211,13 @@ InputParameters_t ULMInputOptions[] =
      parseMaxRetries,
      "Number of times to retry for resources", 0, "0"
     },
+    {"-local",
+     "Local",
+     NO_ARGS,
+     NoOpFunction,
+     setLocal,
+     "Run on the local host using fork/exec to spawn the processes", 0, "0"
+    },
     {"-ssh",
      "UseSSH",
      NO_ARGS,

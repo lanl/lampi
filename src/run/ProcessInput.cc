@@ -84,6 +84,7 @@ int ProcessInput(int argc, char **argv,
     RunParameters->quadricsHW = 0;
     RunParameters->GDBDebug = 0;
     RunParameters->UseSSH = 0;
+    RunParameters->Local = 0;
 
     /* stdio input handling */
     RunParameters->STDINfd = STDIN_FILENO;
