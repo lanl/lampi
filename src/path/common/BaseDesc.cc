@@ -430,21 +430,20 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 
 void RecvDesc_t::DeliveredToAppLock(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone)
 {
-    // update byte count
+    // thread lock must be held for the entire time to prevent multiple
+    // threads from signaling receive completion for this RecvDesc_t...
     if (usethreads()) {
         Lock.lock();
-        DataReceived += bytesCopied;
-        DataInBitBucket += bytesDiscarded;
-        Lock.unlock();
-    } else {
-        DataReceived += bytesCopied;
-        DataInBitBucket += bytesDiscarded;
-    }
+    } 
+
+    // update byte count
+    DataReceived += bytesCopied;
+    DataInBitBucket += bytesDiscarded;
 
     // check to see if receive is complete, and if so mark the request
     // object as such
     if ((DataReceived + DataInBitBucket) >= reslts_m.length_m) {
-        // mark recv as complete - the request descriptor will be marked
+    // mark recv as complete - the request descriptor will be marked
 	// later on.  This is to avoid a race condition with another thread
 	// waiting to complete a recv, completing, and try to free the
 	// communicator before the current thread is done referencing
@@ -455,16 +454,18 @@ void RecvDesc_t::DeliveredToAppLock(unsigned long bytesCopied, unsigned long byt
 
         // remove receive descriptor from list
         Communicator *Comm = communicators[ctx_m];
-        Comm->privateQueues.MatchedRecv[reslts_m.peer_m]->RemoveLink(this);
+        if (WhichQueue == MATCHEDIRECV) {
+            Comm->privateQueues.MatchedRecv[reslts_m.peer_m]->RemoveLink(this);
+        }
 
         // if ulm_request_free() has already been called, then we
         // free the recv/request object here...
-        if (usethreads()) 
-            Lock.lock();
         if (freeCalled)
             requestFree();
-        if (usethreads())
-            Lock.unlock();
+    }
+
+    if (usethreads()) {
+        Lock.unlock();
     }
 }
 
