@@ -159,6 +159,7 @@ ssize_t udpRecvFragDesc::handleShortSocket()
     struct msghdr msgHdr;
     struct iovec iov[2];
     bool reread = false;
+    ssize_t count = 0;
 
     bzero((char *) &msgHdr, sizeof(msgHdr));
     msgHdr.msg_name = (caddr_t) & cli_addr;
@@ -171,10 +172,10 @@ ssize_t udpRecvFragDesc::handleShortSocket()
     iov[1].iov_base = (char *) data;
     iov[1].iov_len = maxShortPayloadSize_g;;
 
-    ssize_t count = recvmsg(sockfd, &msgHdr, 0);
-
     do {
-	if (count >= 0) {
+    count = recvmsg(sockfd, &msgHdr, 0);
+    
+	if (count > 0) {
 #ifdef HEADER_ON
 	 long type = ulm_ntohi(header.msg.type);
 #else
@@ -198,16 +199,14 @@ ssize_t udpRecvFragDesc::handleShortSocket()
             }
 	}
 	else {
-            count = 0;
-            if ((errno == EAGAIN) || (errno == EINTR)) {
+            if ((count < 0) && (errno == EINTR)) {
                 reread = true;
             }
             else {
                 reread = false;
-                ulm_warn(("udpRecvFragDesc::handleShortSocket recvmsg on fd %d failed with errno %d\n",
-                          sockfd, errno));
                 // free the descriptor
                 ReturnDescToPool(getMemPoolIndex());
+                count = 0;
             }
 	}
     } while (reread);
@@ -229,6 +228,7 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     struct msghdr msgHdr;
     struct iovec iov[1];
     bool reread = false;
+    ssize_t count = 0;
 
     bzero((char *) &msgHdr, sizeof(msgHdr));
     msgHdr.msg_name = (caddr_t) & cli_addr;
@@ -239,10 +239,11 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     iov[0].iov_base = (char *) &header;
     iov[0].iov_len = sizeof(udp_header);;
 
-    ssize_t count = recvmsg(sockfd, &msgHdr, MSG_PEEK);
 
     do {
-	if (count >= 0) {
+    count = recvmsg(sockfd, &msgHdr, MSG_PEEK);
+    
+	if (count > 0) {
 #ifdef HEADER_ON
             long type = ulm_ntohi(header.msg.type);
 #else
@@ -261,16 +262,14 @@ ssize_t udpRecvFragDesc::handleLongSocket()
             }
 	}
 	else {
-            count = 0;
-            if ((errno == EAGAIN) || (errno == EINTR)) {
+            if ((count < 0) && (errno == EINTR)) {
                 reread = true;
             }
             else {
                 reread = false;
-                ulm_warn(("udpRecvFragDesc::handleLongSocket recvmsg on fd %d failed with errno %d\n",
-                          sockfd, errno));
                 // free the descriptor
                 ReturnDescToPool(getMemPoolIndex());
+                count = 0;
             }
 	}
     } while (reread);
