@@ -63,10 +63,7 @@
 #include "init/init.h"
 #include "internal/state.h"
 
-int MPIR_proctable_size = 0;
 int MPIR_being_debugged = 0;
-int MPIR_force_to_main = 0;
-int MPIR_acquired_pre_main = 0;
 volatile int MPIR_debug_gate = 0;
 volatile int MPIR_debug_state = 0;
 

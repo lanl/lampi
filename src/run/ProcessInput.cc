@@ -81,7 +81,7 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
     RunParams.HeartbeatTimeout = 30;
     RunParams.quadricsRailMask = 0;
     RunParams.quadricsHW = 0;
-    RunParams.GDBDebug = 0;
+    RunParams.dbg.GDB = 0;
     RunParams.UseSSH = 0;
     RunParams.Local = 0;
 
@@ -151,12 +151,12 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
         RunParams.quadricsDoChecksum = 0;
     }
 
-    /* check to see if being debugged by TotalView */
+    /* check to see if started under a debugger */
     if (MPIR_being_debugged) {
-        GetTVAll("BeingTotalViewDebugged");
+        GetDebugDefault(NULL);
     } else {
-        RunParams.TVDebug = 0;
-        RunParams.TVDebugApp = 1;
+        RunParams.dbg.Spawned = 0;
+        RunParams.dbg.WaitInDaemon = 0;
     }
 
 #if ENABLE_SHARED_MEMORY

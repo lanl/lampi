@@ -104,20 +104,21 @@ Options_t Options[] =
      GetAppHostData,
      "List of hosts (machines)"
     },
-    /* Procs must be after Hostcount and HostList */
-    {{"n", "np", "nprocs"},
-     "Procs",
-     STRING_ARGS,
-     NoOpFunction,
-     GetClientProcessCount,
-     "Number of processes total or on each host (machine)"
-    },
+    /* MachineFile must be before Procs */
     {{"machinefile"},
      "MachineFile",
      STRING_ARGS,
      NoOpFunction,
      GetAppHostDataFromMachineFile,
      "File containing list of hosts (machines)"
+    },
+    /* Procs must be after Hostcount, HostList and MachineFile */
+    {{"n", "np", "nprocs"},
+     "Procs",
+     STRING_ARGS,
+     NoOpFunction,
+     GetClientProcessCount,
+     "Number of processes total or on each host (machine)"
     },
     {{"f", "no-arg-check"},
      "NoArgCheck",
@@ -231,7 +232,7 @@ Options_t Options[] =
      NO_ARGS,
      NoOpFunction,
      GetDebugDaemon,
-     "Debug the ULM library", 1
+     "Wait in LA-MPI daemon for debugger to attach (when applicable)"
     },
     {{"gdb"},
      "GDBDebug",

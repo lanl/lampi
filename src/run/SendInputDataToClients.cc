@@ -588,16 +588,16 @@ int SendInitialInputDataToClients(void)
                       (adminMessage::packType) sizeof(int), 1))
         DataError("UseThreads");
 
-    /* Totalview debug settings */
-    tag = adminMessage::TVDEBUG;
+    /* debugger settings */
+    tag = adminMessage::DEBUGGER;
     if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
-        TagError("TVDEBUG");
-    if (!server->pack(&(RunParams.TVDebug),
+        TagError("DEBUGGER");
+    if (!server->pack(&(RunParams.dbg.Spawned),
                       (adminMessage::packType) sizeof(int), 1))
-        DataError("TVDebug");
-    if (!server->pack(&(RunParams.TVDebugApp),
+        DataError("dbg.Spawned");
+    if (!server->pack(&(RunParams.dbg.WaitInDaemon),
                       (adminMessage::packType) sizeof(int), 1))
-        TagError("TVDebugApp");
+        TagError("dbg.WaitInDaemon");
 
 
     /* CRC parameters */

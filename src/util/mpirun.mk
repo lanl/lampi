@@ -5,6 +5,7 @@ SRC_MPIRUN += \
 	src/util/HashNode.cc \
 	src/util/HashTable.cc \
 	src/util/MemFunctions.cc \
+	src/util/MPIR_Breakpoint.c \
 	src/util/ParseString.cc \
 	src/util/ParseTree.cc \
 	src/util/Utility.cc \

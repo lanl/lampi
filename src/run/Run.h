@@ -39,8 +39,6 @@
 
 /* prototypes */
 
-extern "C" void *MPIR_Breakpoint(void);
-
 #define Abort() AbortFunction(__FILE__, __LINE__)
 void AbortFunction(const char *, int);
 int CheckForControlMsgs(int MaxDescriptor,

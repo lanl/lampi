@@ -207,17 +207,12 @@ struct RunParams_t {
     // Bproc being used
     int UseBproc;
 
-    /* indicate if being debugged by TotalView */
-    int TVDebug;
-
-    /* indicate if to debug the app
-     *                     -  after the fork  == 1  (default)
-     *                     -  before the fork right after startup == 0
-     */
-    int TVDebugApp;
-
-    /* mpirun should spawn xterm/gdb sessions for each process */
-    int GDBDebug;
+    // debugger support 
+    struct {
+        int Spawned;      // job started under debugger
+        int WaitInDaemon; // wait for debugger in the daemon (not the app)
+        int GDB;          // spawn xterm/gdb sessions for each process
+    } dbg;
 
     /* list of Debug hosts - in xxx.xxx.xxx.xxx format */
     HostName_t *TVHostList;
@@ -228,7 +223,7 @@ struct RunParams_t {
     /* list of client application process pid's (per host) */
     pid_t **AppPIDs;
 
-    /* server instance. */
+    /* server instance */
     adminMessage *server;
 	
     /* Connect timeout period - in seconds */

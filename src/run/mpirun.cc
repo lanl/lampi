@@ -109,7 +109,7 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
     adminMessage *s = RunParams.server;
     bool returnValue = true;
     int rank, tag, contacted = 0;
-    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
+    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME;
     char version[ULM_MAX_VERSION_STRING];
     int bad_versions = 0;
 
@@ -197,8 +197,8 @@ static bool releaseClients(int *errorCode)
 
     while (contacted < RunParams.NHosts) {
         int recvd = s->receiveFromAny(&rank, &tag, errorCode,
-                                      (RunParams.
-                                       TVDebug) ? -1 : ALARMTIME * 1000);
+                                      (RunParams.dbg.Spawned) ?
+                                      -1 : ALARMTIME * 1000);
         switch (recvd) {
         case adminMessage::OK:
             if (tag == adminMessage::BARRIER) {
@@ -208,7 +208,7 @@ static bool releaseClients(int *errorCode)
             }
             break;
         case adminMessage::TIMEOUT:
-            if (RunParams.TVDebug == 0) {
+            if (RunParams.dbg.Spawned == 0) {
                 returnValue = false;
             }
             break;
@@ -362,7 +362,7 @@ static bool exchangeIBInfo(int *errorCode)
     bool returnValue = true;
     int ibhosts = 0, i, j;
     int rc, active[3], tag;
-    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
+    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME * 1000;
 
     if (RunParams.Verbose) {
         ulm_err(("*** exchangeIBInfo\n"));
@@ -445,7 +445,7 @@ static bool exchangeGMInfo(int *errorCode)
     bool returnValue = true;
     int gmhosts = 0, i, j;
     int rc, maxDevs, tag;
-    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
+    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME * 1000;
 
     if (RunParams.Verbose) {
         ulm_err(("*** exchangeGMInfo\n"));
@@ -757,10 +757,9 @@ int mpirun(int argc, char **argv)
         Abort();
     }
 
-    if (RunParams.TVDebug == 1 && RunParams.TVDebugApp == 0) {
+    if (RunParams.dbg.Spawned && RunParams.dbg.WaitInDaemon) {
         /* initialize for debugging of daemons */
         DebuggerInit();
-        MPIR_Breakpoint();
     }
 
     /*
@@ -782,10 +781,9 @@ int mpirun(int argc, char **argv)
         Abort();
     }
 
-    if (RunParams.TVDebugApp) {
+    if (RunParams.dbg.WaitInDaemon == 0) {
         /* initialize for debugging of applications */
         DebuggerInit();
-    (void) MPIR_Breakpoint();
     }
 
     /* IP address information exchange - postfork */

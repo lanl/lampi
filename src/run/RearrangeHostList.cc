@@ -74,10 +74,9 @@ void RearrangeHostList(const char *InfoStream)
     int **ListPathTypes = RunParams.ListPathTypes;
 
     /* get input data */
-    int OptionIndex =
-        MatchOption("MasterHost");
+    int OptionIndex = MatchOption("MasterHost");
     if (OptionIndex < 0) {
-        ulm_err(("Error: Option TotalViewDebugStartup not found\n"));
+        ulm_err(("Error: Option MasterHost not found\n"));
         Abort();
     }
     /* parse MasterHost data */
