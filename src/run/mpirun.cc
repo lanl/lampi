@@ -74,7 +74,6 @@
 #include "path/gm/base_state.h"
 #include "run/Run.h"
 #include "run/RunParams.h"
-#include "run/TV.h"
 
 /*
  * bproc_vexecmove_* does not work properly with debuggers if more
@@ -745,9 +744,6 @@ int mpirun(int argc, char **argv)
     FixRunParams(RunParams.server->nhosts());
     getSocketsToClients();
 
-    /* totalview debugging of client "daemons" */
-    MPIrunTVSetUp();
-
     if (RunParams.Verbose) {
         ulm_err(("*** Exchanging data with application processes\n"));
     }
@@ -759,6 +755,12 @@ int mpirun(int argc, char **argv)
         ulm_err(("Error: While sending initial input data to clients (%d)\n",
                  rc));
         Abort();
+    }
+
+    if (RunParams.TVDebug == 1 && RunParams.TVDebugApp == 0) {
+        /* initialize for debugging of daemons */
+        DebuggerInit();
+        MPIR_Breakpoint();
     }
 
     /*
@@ -780,9 +782,10 @@ int mpirun(int argc, char **argv)
         Abort();
     }
 
-    /* totalview debugging of all client processes */
-    if (RunParams.TVDebug && RunParams.TVDebugApp) {
-        MPIrunTVSetUpApp(RunParams.AppPIDs);
+    if (RunParams.TVDebugApp) {
+        /* initialize for debugging of applications */
+        DebuggerInit();
+    (void) MPIR_Breakpoint();
     }
 
     /* IP address information exchange - postfork */

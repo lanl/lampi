@@ -39,6 +39,8 @@
 
 /* prototypes */
 
+extern "C" void *MPIR_Breakpoint(void);
+
 #define Abort() AbortFunction(__FILE__, __LINE__)
 void AbortFunction(const char *, int);
 int CheckForControlMsgs(int MaxDescriptor,
@@ -54,6 +56,7 @@ int CheckForControlMsgs(int MaxDescriptor,
                         int *ActiveClients);
 int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts, int *ActiveHosts);
 void Daemonize(void);
+void DebuggerInit(void);
 void FixRunParams(int nhosts);
 void InitProc(void);
 int InstallSigHandler(void);

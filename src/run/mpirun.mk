@@ -4,6 +4,7 @@ SRC_MPIRUN += \
 	src/run/CheckForControlMsgs.cc \
 	src/run/CheckHeartBeat.cc \
 	src/run/Daemonize.cc \
+	src/run/Debugger.cc \
 	src/run/GetAppHostData.cc \
 	src/run/GetClientApp.cc \
 	src/run/GetClientCpus.cc \
@@ -22,8 +23,6 @@ SRC_MPIRUN += \
 	src/run/RunParams.cc \
 	src/run/SendInputDataToClients.cc \
 	src/run/SetupClientHostInfo.cc \
-	src/run/TVSetUp.cc \
-	src/run/TVSetUpApp.cc \
 	src/run/VerifyLsfResources.cc \
 	src/run/coprocess.cc \
 	src/run/FixRunParameters.cc \
