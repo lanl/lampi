@@ -90,6 +90,10 @@ int ADIOI_Calc_aggregator(ADIO_File fd,
     
     /* get an index into our array of aggregators */
     rank_index = (int) ((off - min_off + fd_size)/ fd_size - 1);
+    /* next 2 lines added by swh@lanl.gov for zero length i/o           */
+    /* to keep 0 <= rank_index < fd->hints->cb_nodes, for zero-len I/O  */
+    rank_index = ADIOI_MAX(rank_index, 0);
+    rank_index = ADIOI_MIN(rank_index, fd->hints->cb_nodes-1);
 
     /* remember here that even in Rajeev's original code it was the case that
      * different aggregators could end up with different amounts of data to

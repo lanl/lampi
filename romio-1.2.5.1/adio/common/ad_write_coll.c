@@ -426,6 +426,27 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 	    }
 	}
 	
+
+        /* ---------------------------------------------------------------------- */
+        /* Mod by swh@lanl.gov to fix inconsistency between count and recv_size,  */
+        /* in the case of zero length write requests from the user api            */
+        /* This is also taken care of in ADIOI_Heap_merge, so this mod serves     */
+        /* primarily for debugging.                                               */
+        /* ---------------------------------------------------------------------- */
+        for (i=0; i < nprocs; i++)
+        {
+          if (!recv_size[i])
+          {
+             if ( count[i] )
+             {
+/*             fprintf(stderr,"rank %03d P300 ADIOI_Exch_and_write recv_size=0, count[%d]=%d, setting count=0\n",my_rank_debug,i,count[i]);
+               fflush(stderr); */
+               count[i] = 0;
+             }
+          }
+        }
+
+
 #ifdef PROFILE
 	MPE_Log_event(14, 0, "end computation");
 	MPE_Log_event(7, 0, "start communication");
@@ -840,7 +861,9 @@ static void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
     heap_struct *a, tmp;
     int i, j, heapsize, l, r, k, smallest;
 
-    a = (heap_struct *) ADIOI_Malloc((nprocs_recv+1)*sizeof(heap_struct));
+/* Modified by swh@lanl.gov to prevent under-allocation due to inconsisencies between recv_size & count */
+/*  a = (heap_struct *) ADIOI_Malloc((nprocs_recv+1)*sizeof(heap_struct)); */
+    a = (heap_struct *) ADIOI_Malloc((total_elements+1)*sizeof(heap_struct));
 
     j = 0;
     for (i=0; i<nprocs; i++)
