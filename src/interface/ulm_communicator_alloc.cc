@@ -48,32 +48,35 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
   int                 bcaster_id;
   char                busy_bcasters_in[MAX_BROADCASTERS];
   char                busy_bcasters_out[MAX_BROADCASTERS];
-  int                 tmp,gotit,vote,all_vote;
+  int                 tmp, gotit, vote, all_vote;
 
   START_MARK;
 
   Communicator       *cp ; 
   cp      = communicators[new_comm];
 
-  int GlobalProcID_min=cp->localGroup->mapGroupProcIDToGlobalProcID[0];
+  int GlobalProcID_min = cp->localGroup->mapGroupProcIDToGlobalProcID[0];
 
   if (communicators[new_comm]->localGroup->numberOfHostsInGroup <=1)
     return errorcode;
 
   /* make sure we all agree we are using hardware broadcast: */
   /* one cpu may disable after detecting an error  */
-  ulm_allreduce(&quadricsHW, &tmp, 1, (ULMType_t *) MPI_INT, (ULMOp_t *) MPI_LAND, new_comm );
-  quadricsHW=tmp;
-
+  ulm_allreduce(&quadricsHW, &tmp, 1, (ULMType_t *) MPI_INT, 
+	  (ULMOp_t *) MPI_BAND, new_comm );
+	  /*(ULMOp_t *) MPI_LAND, new_comm );*/
+  quadricsHW = tmp;
 
   if (!quadricsHW) // quadrics hardware bcast disabled by user
       return errorcode;
 
-  //ulm_barrier(new_comm);  no need for this since we added allreduce above
-
   /* leave ULM_COMM_WORLD and ULM_COMM_SELF after postfork_path */
   if ( new_comm == ULM_COMM_SELF || new_comm == ULM_COMM_WORLD )
     goto barrier_and_exit;
+
+  /* It is also important to avoid using locks within a collective
+     operation, which may cause deadlock across processes over different
+     nodes */
 
   /* make sure only the processes in the new communicator 
    * are allocated with the broadcaster */
@@ -81,20 +84,20 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
 
   /* try to find a free broadcaster */
   /* busy_broadcasters[i].cid = MPI_COMM_NULL    bcaster_id NOT in use */
-  /* busy_broadcasters[i].cid = cp->contextID    bcaster_id used by communicator */
+  /* busy_broadcasters[i].cid = cp->contextID    bcaster_id used by cp */
 
-  for (int i=0; i<MAX_BROADCASTERS; ++i) 
+  for (int i=0; i<broadcasters_array_len; ++i) 
       busy_bcasters_in[i]=(busy_broadcasters[i].cid!=MPI_COMM_NULL);
 
-  ulm_allreduce(busy_bcasters_in, busy_bcasters_out, MAX_BROADCASTERS, 
-      (ULMType_t *) MPI_CHAR, (ULMOp_t *) MPI_BOR, new_comm );
+  ulm_allreduce(busy_bcasters_in, busy_bcasters_out,
+	  broadcasters_array_len, (ULMType_t *) MPI_CHAR, 
+	  (ULMOp_t *) MPI_BOR, new_comm );
 
   /* To get the first free broacasters */
-  for (bcaster_id = 0; bcaster_id < MAX_BROADCASTERS; bcaster_id ++)
+  for (bcaster_id = 0; bcaster_id < broadcasters_array_len; bcaster_id ++)
   {
     if ( busy_bcasters_out[bcaster_id] == 0) break;
   }
-
 
   /* Make sure the available communicator is still within range,
    * otherwise, output a prompt message and quit */
@@ -105,21 +108,26 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
       goto barrier_and_exit;
   }
 
-  /* we have all agreed to use bcaster_id.  see if it is still available on this node */
+  /* we have all agreed to use bcaster_id.  
+     See if it is still available on this node */
   broadcasters_locks->lock();
-  if (MPI_COMM_NULL==busy_broadcasters[bcaster_id].cid) {
+  if (MPI_COMM_NULL == busy_broadcasters[bcaster_id].cid) {
       busy_broadcasters[bcaster_id].cid = new_comm;
       busy_broadcasters[bcaster_id].pid = GlobalProcID_min;
       gotit = 1;
-      vote = 1;
-  }else{
-      /* I didn't get the lock, but if anyone in my communicator got it, that is
-       * good enough.  Note:  "new_comm" may not be unique accross disjoint communicators,
-       * so we need to match both "new_comm" and smallest proc id in new_comm.  */
-      gotit=0;
-      vote=0;
-      if (busy_broadcasters[bcaster_id].cid==new_comm && 
-          busy_broadcasters[bcaster_id].pid== GlobalProcID_min) vote=1;
+      vote  = 1;
+  } else {
+       /* I didn't get the lock, but if any other proc on this node 
+	* and also in my communicator got it, that is good enough.  
+        *
+        * Note:  "new_comm" may not be unique accross disjoint communicators,
+        * so we need to match both "new_comm" and smallest proc id in new_comm.
+        */
+	gotit = 0;
+	vote  = 0;
+	if (busy_broadcasters[bcaster_id].cid == new_comm && 
+		busy_broadcasters[bcaster_id].pid == GlobalProcID_min) 
+	    vote = 1;
   }
   broadcasters_locks->unlock();
 
@@ -127,54 +135,53 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
       (ULMType_t *) MPI_INT, (ULMOp_t *) MPI_LAND, new_comm );
 
 
-  if (0==all_vote) {  /* we failed to agree */
-      if (1==gotit) { /* give up the broadcaster */
+  if (0 == all_vote) {  /* we failed to agree */
+      if (1 == gotit) { /* give up the broadcaster */
           broadcasters_locks->lock();
-          busy_broadcasters[bcaster_id].cid=MPI_COMM_NULL;
+          busy_broadcasters[bcaster_id].cid = MPI_COMM_NULL;
           broadcasters_locks->unlock();  
       }
 
       /* TODO:  create a centralized arbritrator and try again... */
-
-      if (cp->localGroup->ProcID==0) {
+      if (cp->localGroup->ProcID == 0) {
           ulm_err(("Warning: hw bcast shared memory arbritration failed."
-          " Reverting to software bcast. comm=%i \n",new_comm));
+          " Reverting to software bcast. comm=%i \n", new_comm));
       }
       goto barrier_and_exit;
   }
 
-
-
   {
     Broadcaster        *bcaster;
 
-
     /* Assign the first available broadcaster to the communicator*/
-
     bcaster = quadrics_broadcasters[bcaster_id];
-
     assert(bcaster_id == bcaster->id && bcaster_id != 0 
         && bcaster->inuse == 0);
 
     /* Link back to the communicator */
     bcaster->comm_index = cp->contextID;
+    bcaster->inuse == 1;
     
     /* Enable the hardware multicast */
     errorcode = bcaster->hardware_coll_init();
 
     if ( errorcode == ULM_SUCCESS)
     {
-      if (cp->localGroup->ProcID==0)  
-          ulm_err(("%i Enabling hw bcast (%i) on comm=%i\n",myproc(),bcaster_id,new_comm ));
+#if 0
+      if (cp->localGroup->ProcID == 0)  
+	ulm_err(("%i Enabling hw bcast (%i) on comm=%i\n",
+	      myproc(), bcaster_id, new_comm ));
+#endif
 
       cp->hw_bcast_enabled = QSNET_COLL ;
       cp->bcaster          = bcaster;
+      bcaster->inuse == 1;
     }
     else
     {
       /* Do a free for safety reasons */
+      bcaster->inuse == 0;
       bcaster->broadcaster_free();
-
       cp->bcast_queue.handle = 0;
       cp->hw_bcast_enabled = 0;
       cp->bcaster          = 0;

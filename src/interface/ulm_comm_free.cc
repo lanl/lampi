@@ -78,7 +78,6 @@ static inline void ulm_free_bcaster(int comm, int useThreads)
       bcaster->inuse  = 0;
       broadcasters_locks->unlock();
 
-
       /* Reset the bcaster_request queue from the communicator */
       ulm_free(communicators[comm]->bcast_queue.handle);
       communicators[comm]->bcast_queue.handle = 0;

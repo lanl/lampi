@@ -48,18 +48,17 @@
 #include "include/internal/type_copy.h"
 #include "collective/coll_fns.h"
 
-#undef ENABLE_RELIABILITY
-
 #ifdef USE_ELAN_COLL
-#define CHECK_MALLOC(cmd)                                              \
-do {                                                                   \
-  int returnAddress = 0;                                               \
-  returnAddress = (int)(cmd);                                          \
-  if (!returnAddress)                                                  \
-    {                                                                  \
-      ulm_err ((#cmd " Malloc failed \n"));                            \
-      exit (-1);                                                       \
-    }                                                                  \
+
+#define CHECK_MALLOC(cmd)                       \
+do {                                            \
+  int ret = 0;                                  \
+  ret = (int)(cmd);                             \
+  if (!ret)                                     \
+    {                                           \
+      ulm_err ((#cmd " Malloc failed \n"));     \
+      exit (-1);                                \
+    }                                           \
 } while(0)
 
 /* 
@@ -69,68 +68,68 @@ do {                                                                   \
  */
 
 /* 
- * A function to initialize a Broadcaster with the provided global
- * elan and main memory address.
+ * A function to initialize a Broadcaster with the provided 
+ * global main and elan memory addresses. Referecenced in 
+ * lampi_init_postfork_coll_setup()
  */
 int Broadcaster::init_bcaster
 ( maddr_vm_t   glob_main_mem, sdramaddr_t  glob_elan_mem)
 {
   int                  i;
-  int                  tn = QUADRICS_NUM_COLL_ENTRIES; 
+  int                  tn = NR_CHANNELS; 
 
-  ELAN3_CTX             *ctx;
+  ELAN3_CTX           *ctx;
 
   ctx   = quadrics_Glob_Mem_Info->ctx;
 
-  base  = (maddr_vm_t) ((char *)glob_main_mem + CONTROL_MAIN);
-  top   = (maddr_vm_t)((char *)base + QUADRICS_GLOB_MEM_MAIN_POOL_SIZE);
+  /* First grab the piece of global main memory for broadcast
+   * they will then be divided into equal size channles. 
+   */
+  base  = (maddr_vm_t)((char *)glob_main_mem + BCAST_CTRL_SIZE);
+  top   = (maddr_vm_t)((char *)base + COMM_BCAST_MEM_SIZE);
 
-  CHECK_MALLOC(channels = (quadrics_channel_t **)
-    ulm_malloc(sizeof(quadrics_channel_t*) * tn) );
-
+  /* 
+     Set up control structures for synchronizing the broacast channels,
+   * there will only one per communicator 
+   */
   CHECK_MALLOC(sync = (coll_sync_t*) ulm_malloc(sizeof(coll_sync_t) ) );
-  CHECK_MALLOC(ctrl = (bcast_ctrl_t*) ulm_malloc(sizeof(bcast_ctrl_t) )) ;
-  for ( i = 0 ; i < tn ; i ++ ) 
-  {
-    CHECK_MALLOC (channels[i] = (quadrics_channel_t *)
-      ulm_malloc(sizeof(quadrics_channel_t) ) );
-  }
 
   /* allocate sync structures */ 
   {
-    /* Global ones */
-    /* 64 */
+    /* Global main memory, 64 bytes aligned */
     sync->glob_env = (E3_Event_Blk*)glob_main_mem;
     glob_main_mem = (maddr_vm_t) 
       ((char *)glob_main_mem + sizeof(E3_Event_Blk) );
 
-    /* 16 * 8 */
+    /* Global elan memory, 64 bytes aligned.
+     * Ugly loops to keep the same kind of event sitting together,
+     * Assume compiler will not do loop fusion though.
+     */
     for ( i = 0 ; i < tn ; i ++ )
     {
       sync->glob_event[i] = glob_elan_mem ;
       glob_elan_mem = (glob_elan_mem + sizeof(E3_BlockCopyEvent) );
     }
 
-    /* 16 * 8 */
     for ( i = 0 ; i < tn ; i ++ )
     {
       sync->nack_event[i] = glob_elan_mem ;
       glob_elan_mem = (glob_elan_mem + sizeof(E3_BlockCopyEvent) );
     }
 
-    /* local ones */
+    /* Allocating synchronization structures from private main/elan memory */
     for ( i = 0 ; i < tn ; i ++ )
+    {
       CHECK_MALLOC(sync->recv_blk_main[i] = (E3_Event_Blk*)elan3_allocMain 
-      (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
-
-    for ( i = 0 ; i < tn ; i ++ )
+	  (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
       CHECK_MALLOC(sync->nack_blk_main[i] = (E3_Event_Blk*)elan3_allocMain 
-      (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
+	  (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
+    }
 
     CHECK_MALLOC(sync->src_blk_main = (E3_Event_Blk*)elan3_allocMain 
-      (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
+	(ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
     CHECK_MALLOC(sync->src_blk_elan = elan3_allocElan
-      (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk)));
+       	(ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk)));
     CHECK_MALLOC(sync->src_event    = elan3_allocElan
       (ctx, E3_EVENT_ALIGN, sizeof(E3_BlockCopyEvent)));
     CHECK_MALLOC(sync->src_wait_ack = 
@@ -147,18 +146,28 @@ int Broadcaster::init_bcaster
     CHECK_MALLOC(sync->chain_dma_elan_nack = elan3_allocElan
       (ctx, E3_DMA_ALIGN, tn*sizeof(E3_DMA_MAIN))); 
   }
- 
+
+  /* Set up control structures for the bcast channels */
+  CHECK_MALLOC(channels = (quadrics_channel_t **) 
+      ulm_malloc(sizeof(quadrics_channel_t*) * tn));
+  CHECK_MALLOC(ctrl = (bcast_ctrl_t*) ulm_malloc(sizeof(bcast_ctrl_t))); 
+
+  for ( i = 0 ; i < tn ; i ++ ) 
+  {
+    CHECK_MALLOC (channels[i] = (quadrics_channel_t *)
+      ulm_malloc(sizeof(quadrics_channel_t) ) );
+  }
+
   /* allocate transmission control structures */
   {
-    /* Global ones */
-    /* 16 * 16 */
+    /* Structures that needs to be sitting in global memory */
     for ( i = 0 ; i < tn ; i ++ )
     {
       ctrl->glob_event[i] = glob_elan_mem;
       glob_elan_mem = (glob_elan_mem + sizeof(E3_BlockCopyEvent) );
     }
 
-    /* local ones */
+    /* Structures that suffice to be allocated from local memory */
     for ( i = 0 ; i < tn ; i ++ )
       CHECK_MALLOC(ctrl->recv_blk_main[i] = (E3_Event_Blk*)elan3_allocMain 
       (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
@@ -169,25 +178,29 @@ int Broadcaster::init_bcaster
       (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk)));
   }
 
+  /* Devide the global bcast buffer into channels */
   for ( i = 0 ; i < tn ; i++)
   {
-    channels[i]->mcast_buff    = (char*)base + (BCAST_CHANNEL_LENGTH)*i;
+    channels[i]->mcast_buff    = (char*)base + (BCAST_CHAN_LENGTH)*i;
     channels[i]->index         = i;
   }
   return ULM_SUCCESS;
 }
 
+/* A function to reset all the collective control structures.
+ * Used to recycle the broadcasters, fault recovery from message
+ * problems (retransmissions).
+ */
 int Broadcaster::reset_coll_events()
 {
-  int              i;
-  int              tn = total_channels;
+  int                    i;
+  int                    tn = total_channels;
 
   ELAN3_CTX             *ctx;
 
   START_MARK;
   ctx         = quadrics_Glob_Mem_Info->ctx;
 
-  /* Prime the recv events for asynchronous recv */
   {
     E3_Event_Blk      * blk ;
     sdramaddr_t         blk_elan ;
@@ -196,17 +209,18 @@ int Broadcaster::reset_coll_events()
     E3_DMA_MAIN       * sync_dma;
 
     /* 
-     * Every process can have a sync_dma_elan to 
-     * update its status of a broadcast operation.
+     * Zero-out sync_dma to reset the synchronization structures 
      */
     sync_dma = sync->sync_dma;
     bzero(sync_dma, sizeof(E3_DMA_MAIN));
-
     elan3_copy32_to_sdram(ctx->sdram, sync_dma, sync->sync_dma_elan);
 
     for ( i = 0 ; i < tn; i ++ )
     {
-      /* Sync Ones */
+      /* 
+       * For receive events related to the synchronization,
+       * Including both ACK-related and NACK-related ones
+       */
       blk        = sync->recv_blk_main[i];
       blk_elan   = sync->src_blk_elan;
       event      = sync->glob_event[i];
@@ -233,7 +247,11 @@ int Broadcaster::reset_coll_events()
       elan3_copy32_to_sdram(ctx->sdram, sync_dma, 
 	  sync->chain_dma_elan + i*sizeof(E3_DMA_MAIN));
 
-      /* Ctrl Ones */
+      /* 
+       * For local events to the sender.  We still use the same name 
+       * 'recv_blk_main', but it actually refer to the BlockCopyEvent 
+       * triggered locally when send completes.
+       */
       blk        = ctrl->recv_blk_main[i];
       blk_elan   = ctrl->src_blk_elan;
       event      = ctrl->glob_event[i];
@@ -243,20 +261,24 @@ int Broadcaster::reset_coll_events()
       elan3_primeevent(ctx, event, 0);
     }
   }
+
+  /* Always reset the descriptor index about the last completed bcast 
+   * operation */
   ((ulm_coll_env_t*) sync->glob_env)->desc_index = 0;
 
-  /* A barrier is needed hereafter if this is invoked due to a nack. */
+  /* A barrier is needed after this. */
   END_MARK;
   return ULM_SUCCESS;
 }
 
-int 
-Broadcaster::init_coll_events
+/* A function does initialize all structures for broadcast, this one
+ * is intendend to be used when the broadcaster is initialized
+ */
+int Broadcaster::init_coll_events
 (int start_index, int end_index, int set_sync_dma)
 {
-  int              i,j;
-  int              tn = total_channels;
-
+  int                    i,j;
+  int                    tn = total_channels;
   ELAN3_CTX             *ctx;
 
   START_MARK;
@@ -271,8 +293,8 @@ Broadcaster::init_coll_events
     E3_DMA_MAIN       * sync_dma;
 
     /* 
-     * Every process can have a sync_dma_elan to 
-     * update its status of a broadcast operation.
+     * For receive events related to the synchronization,
+     * Including both ACK-related and NACK-related ones
      */
     sync_dma = sync->sync_dma;
     sync_dma->dma_type = 
@@ -287,6 +309,7 @@ Broadcaster::init_coll_events
     if (set_sync_dma)
     {
       int              remote_vp;
+
       /* To which vp should I trigger the event */
       remote_vp = num_branches ? local_master_vp : parent_vp;
       sync_dma->dma_srcCookieVProc=  
@@ -298,7 +321,8 @@ Broadcaster::init_coll_events
     for ( j = start_index ; j <= end_index ; j ++ )
     {
       i = j % tn;
-      /* Sync Ones */
+
+      /* Initialize the synchronization structures */
       blk        = sync->recv_blk_main[i];
       blk_elan   = sync->src_blk_elan;
       event      = sync->glob_event[i];
@@ -369,18 +393,25 @@ Broadcaster::init_coll_events
   return ULM_SUCCESS;
 }
 
+/* 
+ * This function is used to create DMA structures for each segment
+ * Since we use a linear list of segments, segment other than the last
+ * has to trigger the start of its next neighbours.
+ * Segmemnts other than the first has to be waited on the event 
+ * from its previous neighbour.
+ */
 void 
 Broadcaster::init_segment_dma(bcast_segment_t *temp)
 {
   E3_DMA_MAIN            temp_dma;
   E3_DMA_MAIN           *sync_dma;
   ELAN3_CTX             *ctx;
-  int slot_offset ;
+  int                    slot_offset ;
 
   START_MARK;
   ctx         = quadrics_Glob_Mem_Info->ctx;
 
-  /* use data dma for broadcasting */
+  /* data dma for broadcasting */
   elan3_initevent_main (ctx, sync->src_event,
       sync->src_blk_elan, sync->src_blk_main);
   E3_RESET_BCOPY_BLOCK(sync->src_blk_main);
@@ -395,13 +426,16 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
     elan3_local_cookie(ctx, self_vp, temp->bcastVp);
   sync_dma->dma_destCookieVProc = temp->bcastVp;
 
-  /* The following four and the events need to be updated */
+  /* The following four and the events need to be updated per bcast */
   sync_dma->dma_dest      = 0;  /* to be updated */
   sync_dma->dma_source    = 0;  /* to be updated */
   sync_dma->dma_size      = 0;  /* to be updated */
   sync_dma->dma_destEvent = 0;  /* to be updated */
 
-  /* Initialize the transmission DMAs */
+  /* For different channels, they use the same set of segment for bcast.
+   * Here for a particular segment, 
+   * initialize the transmission DMAs for all the Channels.
+   */
   for ( int k = 0 ; k < total_channels ; k ++)
   {
     for ( int fragment = 0 ; fragment < MAX_BCAST_FRAGS ; fragment ++)  
@@ -409,7 +443,6 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
       slot_offset = (k * MAX_BCAST_FRAGS + fragment);
       if ( fragment == 0)
       {
-	/* Disable this can work for mesg < 16384 bytes */
 	sync_dma->dma_srcEvent  = S2E(ctrl->glob_event[k]);
 	sync_dma->dma_destEvent = S2E(ctrl->glob_event[k]);
 	sync_dma->dma_source    = M2E(channels[k]->mcast_buff);
@@ -464,14 +497,29 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
   END_MARK;
 }
 
+/* 
+ * This is following the challenges made in src/init/init_rms.cc,
+ * to accommodate the QCS update. May not cover all different quadrics 
+ * releases across different platforms.
+ */
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
 #define elan3_nvps elan_nvps 
 #define elan3_vp2location elan_vp2location
 #define elan3_location2vp elan_location2vp
 #define elan3_maxlocal elan_maxlocal
 #define elan3_nlocal elan_nlocal
+
+/* The following two are bad, but I ensure Node and Context are not
+ * used for other purpose in this file. It shoud be OK.
+ */
 #define Node loc_node
 #define Context loc_context
+#endif
 
+/* This function setup the segments for the broadcast operation.
+ * For the time being, we use only a linear list of segments.
+ * Later optimization will be done to use a tree. 
+ */
 void Broadcaster::segment_create(void)
 {
   int            vp;
@@ -619,7 +667,9 @@ void Broadcaster::segment_create(void)
           } 
           else 
           {
-	    /* It is wrong to take the previous ctx */
+	    /* It is wrong to take the previous ctx, 
+	     * Following libelan will produce a very subtle bug
+	     */
 	    /*location.Context = segment->ctx;*/
 	    location.Context = first_ctx;
 	    vp = elan3_location2vp(location,cap);
@@ -644,7 +694,7 @@ void Broadcaster::segment_create(void)
 		segment->max   = location.Node;
 		segment->ctx   = first_ctx;
 
-		/* Work out the vp based on the new Context */
+		/* Work out the vp based on the new context */
 		location.Context = segment->ctx;
 		vp = elan3_location2vp(location,cap);
 	    }
@@ -695,6 +745,7 @@ void Broadcaster::segment_create(void)
     CHECK_MALLOC(segment->dma_elan = 
       elan3_allocElan(ctx, E3_DMA_ALIGN, 
         (total_channels * MAX_BCAST_FRAGS + 1)*sizeof(E3_DMA)));
+
     // using E3_EVENT_ALIGN (8) seems to cause problems on QSC
     // If the elan3_allocElan() is called, then (many elan calls later)
     // the quadrics NIC will gt confused and issue a SEGV.   
@@ -719,6 +770,7 @@ void Broadcaster::segment_create(void)
   END_MARK;
 }
 
+/* To set up a balance tree for synchronization */
 int Broadcaster::create_syncup_tree()
 {
   int start_node, total_nodes, parent_index, self_index;
@@ -780,7 +832,7 @@ int Broadcaster::create_syncup_tree()
   return parent_index;
 }
 
-/* The function to free the collective . --Weikuan */
+/* The function to free the collective */
 int Broadcaster::broadcaster_free()
 {
   bcast_segment_t *first, *temp;
@@ -811,7 +863,9 @@ int Broadcaster::broadcaster_free()
     ulm_free(temp);
   }
  
-  /* Reset the fields, I do not want to take the risk of resetting sync */
+  /* Reset the fields, do not take the risk of resetting 
+   * synchronization structures 
+   */
   bzero((void*)&comm_index, ((int) &segment - (int) &comm_index )); 
 
   /* Make sure the first segment is reset */
@@ -821,7 +875,7 @@ int Broadcaster::broadcaster_free()
   return rc;
 }
 
-/* Hardware based collectives initialization function. --Weikuan */
+/* Hardware based collectives initialization function. */
 int Broadcaster::hardware_coll_init(void)
 {
     Group *localGroup; 
@@ -843,7 +897,7 @@ int Broadcaster::hardware_coll_init(void)
     localRoot   = localGroup->groupHostData[host_index].groupProcIDOnHost[0];
     self        = localGroup->ProcID;
     branchRatio = SYNC_BRANCH_RATIO ;
-    total_channels  = QUADRICS_NUM_COLL_ENTRIES; 
+    total_channels  = NR_CHANNELS; 
     faulted     = 0 ;        
 
     branchRatio = getenv("LAMPI_BCAST_BRANCHRATIO") ? 
@@ -851,7 +905,7 @@ int Broadcaster::hardware_coll_init(void)
       SYNC_BRANCH_RATIO ;
     total_channels  = getenv("LAMPI_BCAST_CHANNELS") ? 
       atoi (getenv("LAMPI_BCAST_CHANNELS") ) :
-      QUADRICS_NUM_COLL_ENTRIES; 
+      NR_CHANNELS; 
 
     if ( !(branchRatio >= 2 && total_channels >= 2) )
     {
@@ -912,13 +966,16 @@ int Broadcaster::hardware_coll_init(void)
  * A function to pack 'count' 'dtype' data. 
  * For each dtype, pack all the data from the first pair to the last 
  */
-
 enum {
   COPYING          = 0,
   PACKING          = 1,
   UNPACKING        = 2,
 };
 
+/* Since the basic packing and unpacking function is not really
+ * versatile in terms of functionalities, I have to go through
+ * all the pains to create these functions. umh.., not fun!.
+ */
 inline unsigned int pack_buffer(void *src_addr, void * dest_addr, 
     int count, ULMType_t * dtype, 
     int offset, int length,
@@ -1061,22 +1118,19 @@ inline unsigned int pack_buffer(void *src_addr, void * dest_addr,
   }
 }
 
-
+/* 
+ * This function is introduced to facilitate shared memory implementation.
+ */
 static void
 bcast_pack_for_dma(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count, 
     ULMType_t * dtype, int packing, int copying, int elan_bugged, 
     int DoChecksum, int dma_headers)
 {
-    /*
-         Added new flag:
-            dma_headers == 0
-    
-         In this case, we are using this routine to simply copy the
-         data into the mcast_buff so that it can be unpacked on the 
-         same node with bcat_unpack_after_dma()
-
-         note: dma_headers==0 assumes DoChecksum==0
-
+    /* Added new flag: dma_headers == 0
+     * In this case, we are using this routine to simply copy the
+     * data into the mcast_buff so that it can be unpacked on the 
+     * same node with bcat_unpack_after_dma() 
+     * note: dma_headers==0 assumes DoChecksum==0
      */
   quadrics_coll_header_t        * mesg_env;
   int size ;
@@ -1213,6 +1267,10 @@ bcast_pack_for_dma(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
   END_MARK;
 }
 
+/* This function is introduced to for shared memory implementation.
+ * Only the process involved in off-host communication should do this. 
+ * But the real performance needs to check 
+ */
 static int 
 bcast_unpack_after_dma(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
 	  int count, ULMType_t * dtype, int size, int DoChecksum)
@@ -1337,8 +1395,7 @@ bcast_unpack_after_dma(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
   return errorcode;
 }
 
-
-
+/* The receivers in the broadcast operations */
 int Broadcaster::bcast_recv(quadrics_channel_t * channel)
 {
   Group       * localGroup;
@@ -1436,10 +1493,7 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
   return ULM_SUCCESS;
 }
 
-
-
-
-
+/* The root of a broadcast operation does a bcast_send */
 int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 {
   Group               *localGroup;
@@ -1496,7 +1550,7 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 
   inbounds   = ELAN3_ADDRESSABLE (ctx, addr, length) ? 1 : 0;
 
-  /* Does the data need to be buffered? --Weikuan */
+  /* Does the data need to be buffered? */
   copying = ((length <= BCAST_SMALLMESG ) || (!inbounds) ) ? 1 : 0 ;
 
   /* 
@@ -1623,11 +1677,14 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 	segment->dma_elan + (slot_offset +1)*sizeof(E3_DMA_MAIN));
 
 #ifdef USE_ELAN_SHARED
-    /* now copy the data into mcast_buff to distribute to smp processors on this node*/
-    /* do this copy here so we do not delay starting the dma above */
-    /*  set copying==1 to force a copy
-     *  disable CRC - dont need it for shared memory
-     *  disable filling in DMA headers
+    /* 
+     * Now copy the data into mcast_buff to distribute to smp processors 
+     * on this node, do this copy here so we do not delay starting 
+     * the dma above.  
+     *
+     * set copying==1 to force a copy
+     * disable CRC - dont need it for shared memory
+     * disable filling in DMA headers
      */
     bcast_pack_for_dma(addr, channel->mcast_buff, 
                        count, dtype, packing, 1, elan_bugged, 0, 0);
@@ -1647,6 +1704,7 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
   return ULM_SUCCESS;
 }
 
+/* all processes update their channels index to get synchronized */
 void 
 Broadcaster::update_channels(int next_toack)
 {
@@ -1672,7 +1730,6 @@ Broadcaster::update_channels(int next_toack)
   }
 
   /* Reinitialize the synchronization events */
-
   /*for ( i = ack_index; i < next_toack ; i++)*/
   {
     index = i % total_channels;
@@ -1800,6 +1857,10 @@ Broadcaster::check_channels()
 }
 
 
+/* The manager of a broadcaster (per communicator) does this 
+ * to check outstanding broadcaster operations and
+ * synchronize all others with a broadcast
+ */
 int 
 Broadcaster::sync_parent(int errorcode)
 {
@@ -1921,6 +1982,11 @@ Broadcaster::sync_parent(int errorcode)
   return ULM_SUCCESS;
 }
 
+/* 
+ * All non-manager processes does this to synchronize with others
+ * throught the manager processes.
+ * A root of a broadcaster has to call this if it is not the manager.
+ */
 int 
 Broadcaster::sync_leaves(int errorcode)
 {
@@ -1990,7 +2056,6 @@ Broadcaster::sync_leaves(int errorcode)
 }
 
 #ifdef ENABLE_RELIABILITY
-
 /* A function to retransmit the outstanding broadcast when the
  * hw/bcast is still available */
 int 
@@ -2301,8 +2366,6 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
       rc = bcaster->bcast_recv(channel);
   }
 
-
-
 #ifdef ENABLE_RELIABILITY
   /* Must sync before sharing. To avoid the situation
    * when the other processes are waiting to share the data,
@@ -2325,7 +2388,6 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
     return ULM_ERR_BCAST_FAIL;
 #endif
 
-
   rc = ulm_get_info(ulm_req->ctx_m, ULM_INFO_NUMBER_OF_HOSTS, 
       &total_hosts, sizeof(int));
   rc = ulm_get_info(ulm_req->ctx_m, ULM_INFO_NUMBER_OF_PROCS, 
@@ -2344,12 +2406,11 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
           quadrics_coll_header_t * header;
           header = (quadrics_coll_header_t*)channel->mcast_buff;
           ULM_SPIN_AND_MAKE_PROGRESS(ulm_req->coll_desc->flag != 2);
-          bcast_unpack_after_dma(
-                                 channel->mcast_buff, 
-                                 ulm_req->posted_buff, /*channel->appl_addr, */
-                                 channel->count, 
-                                 channel->data_type, 
-                                 header->sform.mesg_length,0);
+          bcast_unpack_after_dma(channel->mcast_buff, 
+	      ulm_req->posted_buff, /*channel->appl_addr, */
+	      channel->count, 
+	      channel->data_type, 
+	      header->sform.mesg_length,0);
       }
       smpBarrier(barrierData);
   }
@@ -2405,9 +2466,6 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   }
 #endif
 
-
-
-
   /* Record that the message is already in the application buffer */
   if ( !ulm_req->messageDone )
     ulm_req->messageDone = true;
@@ -2430,6 +2488,11 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   return ULM_SUCCESS;
 }
 
+/* 
+ * Restart the broadcast operation over ulm_bcast_interhost.
+ * Since we do not do non-blocking broadcast operation when * reliability 
+ * is turned on, using ulm_bcast_interhost is just fine here.
+ */
 static int bcast_restart (bcast_request_t * ulm_req)
 {
   void * buff ;
@@ -2477,6 +2540,9 @@ static int bcast_restart (bcast_request_t * ulm_req)
   return rc; 
 }
 
+/* 
+ * Have the incomplete broadcast fail-over to point-to-point cases
+ */
 int Communicator::fail_over(bcast_request_t * ulm_req)
 {
   bcast_request_t * temp;

@@ -28,8 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#define INSTANTIATE_QUADRICS_GLOBALS
-
 #include <sys/errno.h>
 #include <unistd.h>
 #include <elan3/elan3.h>
@@ -53,6 +51,7 @@
 /* 'a' power of 2 */
 #endif
 
+#define INSTANTIATE_QUADRICS_GLOBALS
 
 void quadricsInitRecvDescs() {
     long minPagesPerList = 4;
@@ -131,17 +130,29 @@ ELAN3_CTX *getElan3Ctx(int rail) {
     return quadricsQueue[rail].ctx;
 }
 
-#ifndef ELAN_ALIGNUP
-#define ELAN_ALIGNUP(x,a)       (((uintptr_t)(x) + ((a)-1)) & (-(a))) /* 'a' power of 2 */
-#endif
-
 #ifndef offsetof
 #define offsetof(T,F)   ((int)&(((T *)0)->F))
 #endif
 
+/* 
+ * This is following the challenges made in src/init/init_rms.cc,
+ * to accommodate the QCS update. May not cover all different quadrics 
+ * releases across different platforms.
+ */
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+#define elan3_nvps elan_nvps 
+#define elan3_vp2location elan_vp2location
+#define elan3_location2vp elan_location2vp
+#define elan3_maxlocal elan_maxlocal
+#define elan3_nlocal elan_nlocal
+#define elan3_rails elan_rails
+#define elan3_nrails elan_nrails
+/*#define Node loc_node*/
+/*#define Context loc_context*/
+#endif
+
 void quadricsInitQueueInfo()
 {
-
     int pageSize = sysconf(_SC_PAGESIZE);
     E3_uint32 msize = ELAN_ALIGNUP(ELAN_ALLOC_SIZE, pageSize);
     E3_uint32 esize = ELAN_ALIGNUP(ELAN_ALLOCELAN_SIZE, pageSize);
@@ -160,17 +171,10 @@ void quadricsInitQueueInfo()
         exit(1);
     }
 
-#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
-    if (quadricsNRails != elan_rails(&quadricsCap, dev)) {
-        ulm_err(("quadricsInitQueueInfo: elan_rails does not agree with elan_nrails!\n"));
-        exit(1);
-    }
-#else
     if (quadricsNRails != elan3_rails(&quadricsCap, dev)) {
         ulm_err(("quadricsInitQueueInfo: elan3_rails does not agree with elan3_nrails!\n"));
         exit(1);
     }
-#endif
 
     quadricsQueue = (quadricsQueueInfo_t *)ulm_malloc(sizeof(quadricsQueueInfo_t) * quadricsNRails);
     if (!quadricsQueue) {
@@ -181,22 +185,22 @@ void quadricsInitQueueInfo()
 
 #ifdef USE_ELAN_COLL
     if (quadricsHW) {
-    cap = &quadricsCap;
+	cap = &quadricsCap;
 
-    /* Initialize the global memory structure */
-    quadrics_Glob_Mem_Info = (quadricsGlobInfo_t *)
-        ulm_malloc(sizeof(quadricsGlobInfo_t));
+	/* Initialize the global memory structure */
+	quadrics_Glob_Mem_Info = (quadricsGlobInfo_t *)
+	    ulm_malloc(sizeof(quadricsGlobInfo_t));
 
-    quadrics_Glob_Mem_Info->allCtxs = (ELAN3_CTX **)
-        ulm_malloc(sizeof(ELAN3_CTX *)*quadricsNRails);
+	quadrics_Glob_Mem_Info->allCtxs = (ELAN3_CTX **)
+	    ulm_malloc(sizeof(ELAN3_CTX *)*quadricsNRails);
 
-    if (!quadrics_Glob_Mem_Info || ! quadrics_Glob_Mem_Info->allCtxs) {
-        ulm_err(("quadricsInitQueueInfo: malloc for %d bytes for quadrics_Glob_Mem_Info failed!\n",
-                 sizeof(quadricsGlobInfo_t)));
-        ulm_err(("disabling quadrics hardware bcast\n"));
-        quadricsHW=0;
-    }
-    base = quadrics_Glob_Mem_Info;
+	if (!quadrics_Glob_Mem_Info || ! quadrics_Glob_Mem_Info->allCtxs) {
+	    ulm_err(("quadricsInitQueueInfo: malloc for %d bytes for quadrics_Glob_Mem_Info failed!\n",
+		     sizeof(quadricsGlobInfo_t)));
+	    ulm_err(("disabling quadrics hardware bcast\n"));
+	    quadricsHW=0;
+	}
+	base = quadrics_Glob_Mem_Info;
     }
 #endif
 
@@ -268,16 +272,14 @@ void quadricsInitQueueInfo()
     }
 
 #ifdef USE_ELAN_COLL
-    /* Allocate Global Memory, code stolen from libelan. -- Weikuan */
+    /* Allocate Global Memory, code after libelan. -- Weikuan */
     if (quadricsHW) {
-    {
-
         /* Request the minimum about of 'Global' memory to
-        * allocate for the base group
-        */
+         * allocate for the base group
+         */
         int gMainMemSize, gElanMemSize, gElanMemSizeUp;
         maddr_vm_t  gMemMain;
-        sdramaddr_t gMemElan; // *gMemShm;
+        sdramaddr_t gMemElan; 
 
         gMainMemSize = QUADRICS_GLOB_MEM_MAIN;
         gElanMemSize = QUADRICS_GLOB_MEM_ELAN;
@@ -287,16 +289,16 @@ void quadricsInitQueueInfo()
         gElanMemSizeUp = ELAN_ALIGNUP(gElanMemSize, PAGESIZE);
 
         /* Allocate 'Global' Main memory for base allGroup
-            * This is basically what the gallocCreate() code does but we can't
-            * use that as we are boot-strapping here.
-            */
+ 	 * This is basically what the gallocCreate() code does but we can't
+	 * use that as we are boot-strapping here.
+	 */
         ELAN_ADDR gMemMainAddr = ELAN_BAD_ADDR;
         int zfd;
 
         if ((zfd = open ("/dev/zero", O_RDWR)) < 0)
         {
-            ulm_err(("Failed to open /dev/zero - check permissions!\n"));
-            ulm_err(("Disabling optimized hardware broadcast.\n"));
+            ulm_err(("Failed to open /dev/zero - check permissions!\n"
+		  "Disabling optimized hardware broadcast.\n"));
             quadricsHW=0;
             goto quadricsHW_loop_exit;
         }
@@ -331,8 +333,8 @@ void quadricsInitQueueInfo()
         /* Unmap this main memory. */
         (void) munmap( gMemMain, gMainMemSize);
 
-        /* Now map some real main memory against the reserved Elan address
-            * space */
+        /* Now map some real main memory against the 
+	 * reserved Elan address space */
 #ifdef USE_ELAN_SHARED
         /* use shared memory allocated pre-fork */
         gMemMain = elan_coll_sharedpool;
@@ -341,8 +343,8 @@ void quadricsInitQueueInfo()
                              PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED,
                              zfd, 0)) == (void *)-1)
         {
-            ulm_err(("Failed to mmap global main memory \n"));
-            ulm_err(("Disabling optimized hardware broadcast.\n"));
+            ulm_err(("Failed to mmap global main memory"
+		       	"Disabling optimized hardware broadcast.\n"));
             quadricsHW=0;
             goto quadricsHW_loop_exit;
         }
@@ -355,24 +357,24 @@ void quadricsInitQueueInfo()
 
             // check if memory is 32bit addressable
             if (!ELAN3_ADDRESSABLE (p->ctx, gMemMain, gMainMemSize)) {
-                ulm_err(("Failed to allocate addressable memory for Quadrics hardware bcast\n"));
-                ulm_err(("Disabling optimized hardware broadcast.\n"));
+                ulm_err(("Allocated memory is not elan3 addressable "
+			    "Disabling optimized hardware broadcast.\n"));
                 quadricsHW=0;
                 goto quadricsHW_loop_exit;
             }
 
             /* Remove any previous Main mappings */
-            (void) elan3_clearperm_main (p->ctx, (char *)gMemMain, gMainMemSize);
+            (void)elan3_clearperm_main (p->ctx, (char *)gMemMain, gMainMemSize);
 
             /* Remove any previous Elan mappings */
-            (void) elan3_clearperm_elan (p->ctx, gMemMainAddr, gMainMemSize);
+            (void)elan3_clearperm_elan (p->ctx, gMemMainAddr, gMainMemSize);
 
             /* Create a new mapping from SHM to the Elan memory addresses */
             if (elan3_setperm (p->ctx, (char*)gMemMain, gMemMainAddr,
                                gMainMemSize, ELAN_PERM_REMOTEALL) < 0)
             {
-                ulm_err(("Failed setperm main \n"));
-                ulm_err(("Disabling optimized hardware broadcast.\n"));
+                ulm_err(("Failed setperm main " 
+			    "Disabling optimized hardware broadcast.\n"));
                 quadricsHW=0;
                 goto quadricsHW_loop_exit;
             }
@@ -383,22 +385,22 @@ void quadricsInitQueueInfo()
         /* Stash the address and length */
         quadrics_Glob_Mem_Info->globMainMem = (maddr_vm_t) gMemMain;
         quadrics_Glob_Mem_Info->globMainMem_len = QUADRICS_GLOB_MEM_MAIN;
+
         (void) close(zfd);
 
         /*
-            * allocate a chunk of elan (sdram) memory from each rail from
+         * allocate a chunk of elan (sdram) memory from each rail from
          * the elan memory allocator (this means it comes from ctx->sdram)
          */
         {
-
             ELAN_ADDR gMemElanAddr = ELAN_BAD_ADDR;
             for (int i = 0; i < quadricsNRails; i++)
             {
                 quadricsQueueInfo_t *p = &(quadricsQueue[i]);
                 ELAN_ADDR eaddr;
 
-                if ((gMemElan= (sdramaddr_t)elan3_allocElan(p->ctx,
-                                                            PAGESIZE, gElanMemSize)) == NULL)
+                if ((gMemElan= (sdramaddr_t)elan3_allocElan
+			    (p->ctx, PAGESIZE, gElanMemSize)) == NULL)
                 {
                     ulm_err(("elan_baseinit: failed to allocate gmemelan space from elan allocator ctx %lx rail %d : %x\n",
                             p->ctx, i, gMemElan));
@@ -428,41 +430,30 @@ void quadricsInitQueueInfo()
         /* Stash the length */
         quadrics_Glob_Mem_Info->globElanMem_len = QUADRICS_GLOB_MEM_ELAN;
 
+	/* Setup some environment parameters. */
+	base->retryCount = 63;
+	base->dmaType    = DMA_BYTE;
+	base->waitType   = ELAN_POLL_EVENT;
+	base->cap        = cap ;
+	base->nrails     = quadricsNRails;
+	base->nvp        = elan3_nvps(cap);
+	base->myloc      = elan3_vp2location(base->self, cap);
+	base->maxlocals  = elan3_maxlocal(cap);
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+	base->nlocals    = elan3_nlocal(base->myloc.loc_node, cap);
+#else
+	base->nlocals    = elan3_nlocal(base->myloc.Node, cap);
+#endif
     }
 
-    /* Setup some environment parameters. */
-    base->retryCount = 63;
-    base->dmaType    = DMA_BYTE;
-    base->waitType   = ELAN_POLL_EVENT;
-
-#define elan3_nvps elan_nvps 
-#define elan3_vp2location elan_vp2location
-#define elan3_location2vp elan_location2vp
-#define elan3_maxlocal elan_maxlocal
-#define elan3_nlocal elan_nlocal
-#define Node loc_node
-#define Context loc_context
-
-
-    base->cap        = cap ;
-    base->nrails     = quadricsNRails;
-    base->nvp        = elan3_nvps(cap);
-    base->myloc      = elan3_vp2location(base->self, cap);
-    base->maxlocals  = elan3_maxlocal(cap);
-    /*base->hostid     = base->myloc.Node ;*/
-    base->nlocals    = elan3_nlocal(base->myloc.Node, cap);
-
-    }
     // if error detected above, code can disable quadricsHW and jump here:
 quadricsHW_loop_exit:
 #endif
-
 
     /* Break the loop into two, so that a global memory can be created */
     for (int i = 0; i < quadricsNRails; i++) {
 
         quadricsQueueInfo_t *p = &(quadricsQueue[i]);
-
 
         // allocate the E3_Queue object in Elan SDRAM -- round up to nearest block size
         // since we will actually touch q_event as a block copy event (16 bytes > 8 allocated for
@@ -574,19 +565,10 @@ void quadricsInitBeforeFork() {
         exit(1);
     }
 
-#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
-    // calculate quadricsNRails
-    quadricsNRails = elan_nrails(&quadricsCap);
-    if (quadricsNRails <= 0) {
-        ulm_err(("quadricsInitBeforeFork: elan_nrails returned %d rails!\n", quadricsNRails));
-        exit(1);
-    }
-#else
     // calculate quadricsNRails
     quadricsNRails = elan3_nrails(&quadricsCap);
-#endif
     if (quadricsNRails <= 0) {
-        ulm_err(("quadricsInitBeforeFork: elan3_nrails returned %d rails!\n", quadricsNRails));
+        ulm_err(("quadricsInitBeforeFork: elan(3)_nrails returned %d rails!\n", quadricsNRails));
         exit(1);
     }
 
@@ -604,40 +586,43 @@ void quadricsInitBeforeFork() {
         exit(1);
     }
 
-
-
 #ifdef USE_ELAN_COLL
+    /* For the purpose of utilizing quadrics hardware broadcast,
+     * Set up a pool of shared memory buffer before processes fork.
+     * Need to double check if the shared memory pool is available
+     * when there is only one process on the current node?
+     */
     if (quadricsHW) {
-        int gMainMemSize = QUADRICS_GLOB_MEM_MAIN;
-	gMainMemSize = ELAN_ALIGNUP(gMainMemSize, PAGESIZE);
+	FixedSharedMemPool * shmem_pool ; 
+        int gMainMemSize ;
 
-        broadcasters_locks = (Locks *) SharedMemoryPools.getMemorySegment
+	gMainMemSize = ELAN_ALIGNUP(QUADRICS_GLOB_MEM_MAIN, PAGESIZE);
+	shmem_pool   = (FixedSharedMemPool* ) &SharedMemoryPools;
+
+        broadcasters_locks = (Locks *) shmem_pool->getMemorySegment
             (sizeof(Locks), CACHE_ALIGNMENT);
         broadcasters_locks->init();
 
-#ifdef USE_ELAN_SHARED
-        busy_broadcasters = (unique_commid_t *)
-            SharedMemoryPools.getMemorySegment(MAX_BROADCASTERS*sizeof(busy_broadcasters[0]),
-                                               CACHE_ALIGNMENT);
-        for (int i=0; i<MAX_BROADCASTERS; ++i) busy_broadcasters[i].cid=MPI_COMM_NULL;
+	/* Allocate an array of flags recording the broadcast memory 
+	 * in use. And Initialize them as NULL 
+	 */
+	busy_broadcasters = (unique_commid_t *) shmem_pool->getMemorySegment
+	    (MAX_BROADCASTERS * sizeof(busy_broadcasters[0]), 
+	     CACHE_ALIGNMENT);
 
-        // allocate shared memory pool, if it failes, disable quadricsHW 
-        elan_coll_sharedpool=(maddr_vm_t) SharedMemoryPools.getMemorySegment(gMainMemSize,CACHE_ALIGNMENT);
-        if (NULL==elan_coll_sharedpool) {
-            ulm_err(("Failed to allocate shared memory for Quadrics hardware bcast\n"));
-            ulm_err(("Reverting to software broadcast\n"));
+        for (int i=0; i<MAX_BROADCASTERS; ++i) 
+	    busy_broadcasters[i].cid = MPI_COMM_NULL;
+
+        /* Allocate shared memory pool, if failed, disable quadricsHW */
+        elan_coll_sharedpool = (maddr_vm_t) shmem_pool->getMemorySegment
+	    (gMainMemSize, CACHE_ALIGNMENT);
+        if (NULL == elan_coll_sharedpool) {
+            ulm_err(("Failed to allocate shared memory for Quadrics"
+		       	" hardware bcast, Reverting to software broadcast\n"));
             quadricsHW=0;
         }
-#else
-        busy_broadcasters = (unique_commid_t *)
-            ulm_malloc(MAX_BROADCASTERS*sizeof(busy_broadcasters[0]));
-        for (int i=0; i<MAX_BROADCASTERS; ++i) busy_broadcasters[i].cid=MPI_COMM_NULL;
-#endif
-
     }
 #endif
-
-
 }
 
 void quadricsInitAfterFork() {

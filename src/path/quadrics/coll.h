@@ -34,11 +34,7 @@
 
 #include <elan3/elan3.h>
 
-#ifdef YUW_DBG             /* If debug is enabled. --Weikuan */
-
-#ifndef YUW_DBG_LEVEL
-#define YUW_DBG_LEVEL  0
-#endif
+#ifdef DBG_BCAST  /* If debug is enabled. --Weikuan */
 
 #define START_MARK  \
 do { printf("VP %4d: ", myproc());             \
@@ -57,12 +53,34 @@ do { printf("VP %4d: ", myproc());                                      \
 while (0)
 
 #else                     /* If debug is not needed */
+
 #define START_MARK  
 #define END_MARK  
 #define YUW_MARK
-#endif                    /* End of ! YUW_DBG */
 
-#ifdef USE_ELAN_COLL              /* Start of USE_ELAN_COLL. --Weikuan */
+#endif                    /* End of ! DBG_BCAST */
+
+#ifdef USE_ELAN_COLL    
+/* The number of the broadcaster supported and The size of the global buffer 
+ * used per broadcast bcast in main and elan memory 
+ */
+#define MAX_BROADCASTERS                 (64)
+#define NR_BROADCASTER                   (8)
+#define BCAST_CTRL_SIZE                  (4096)
+#define COMM_BCAST_MEM_SIZE              (2*1024*1024 + 128*16)
+#define COMM_BCAST_ELAN_SIZE             (64 * 4 * 32) 
+
+/* Global main memory of 16M, supporting 8 pools of 2M each */
+#define QUADRICS_GLOB_MEM_MAIN    \
+  (NR_BROADCASTER * (COMM_BCAST_MEM_SIZE + BCAST_CTRL_SIZE))
+
+/* Global Elan memory for collective dma structures */
+#define QUADRICS_GLOB_MEM_ELAN    \
+    (NR_BROADCASTER * COMM_BCAST_ELAN_SIZE)
+
+/* Number of channels per broadcaster */
+#define NR_CHANNELS                      (16)
+#define	BCAST_CHAN_LENGTH                (128 * 1024 + 128)
 
 /* Define a type for virtual memory address in the main memory */
 typedef void     * maddr_vm_t ;
@@ -78,51 +96,39 @@ typedef void     * maddr_vm_t ;
 
 #define M2E(M)  (E3_Addr) elan3_main2elan(ctx, (caddr_t) (M))
 #define S2E(S)  (elan3_sdram2elan(ctx, ctx->sdram, (S)))
-#define BYTES_FOR_ALIGN(num, align) ((align) - ((num ) % (align )))
 #define ALLOC_ALIGN                      (64)
                                          
-#define QUADRICS_GLOB_BUFF_POOLS         (8)
 #define SYNC_BRANCH_RATIO                (2)
 #define MAX_NO_RAILS                     (2)
-#define MAX_BROADCASTERS                 (64)
 
-/* Number of memory buffer pools quadrics is supporting */
+/* Protocol cutoff size for messages with different data size */
 #define BCAST_INLINE_SIZE_SMALL          (16)
 #define BCAST_INLINE_SIZE                (80)
 #define BCAST_SMALLMESG                  (16384)
 #define MAX_BCAST_FRAGS                  (2)
                                          
+/* Timeout value for different errors, not used a lot for now.*/
 #define BCAST_RECV_TIMEOUT               (4)
 #define BCAST_SEND_TIMEOUT               (4)
 #define BCAST_SYNC_TIMEOUT               (8)
 #define BCAST_RAIL_TIMEOUT               (16)
 
-/* Number of entries for the colletive descriptor queue */
-#define QUADRICS_NUM_COLL_ENTRIES        (16)
-#define	BCAST_CHANNEL_LENGTH             (128 * 1024 + 128)
-#define E3_DMA_SDRAM_CUTOFF              (128)
-#define CONTROL_MAIN                     (4096)
-#define QUADRICS_GLOB_MEM_MAIN_POOL_SIZE (2*1024*1024 + 128*16)
-
-/* This defines the maximal non-blocking collective in progress */
-#define QUADRICS_GLOB_MEM_ELAN_POOL_SIZE (64 * 4 * 32) 
-
-/* Global main memory of 16M, supporting 8 pools of 2M each */
-#define QUADRICS_GLOB_MEM_MAIN   ( QUADRICS_GLOB_BUFF_POOLS * \
-    (QUADRICS_GLOB_MEM_MAIN_POOL_SIZE + CONTROL_MAIN))
-
-/* Global Elan memory for collective dma structures */
-#define QUADRICS_GLOB_MEM_ELAN   \
-  ( QUADRICS_GLOB_BUFF_POOLS * QUADRICS_GLOB_MEM_ELAN_POOL_SIZE)
-
+/* To find out whether the address is likely to be in the region 
+ * related to elan3 hardware bug 2, last 64 bytes of a page.
+ */
 #define E3_DMA_REVB_BUG_2(SIZE, ADDR, PAGESIZE)           \
 ( (((int) (ADDR) & (PAGESIZE-64)) == (PAGESIZE-64)) && (-(((int) (ADDR) | ~(PAGESIZE-1))) < (SIZE)) )
 
+/* To find out whether ELAN3 have a corresponding virutal address
+ * for this piece of memory, from beginnign to end. 
+ */
 #define ELAN3_ADDRESSABLE(ctx, addr, size)       \
   ((elan3_main2elan(ctx, (char*)addr) != ELAN_BAD_ADDR) &&      \
   (elan3_main2elan(ctx, (char*)addr + size - 1) != ELAN_BAD_ADDR))
 
-
+/* 
+ * To mark different role of the channels.
+ */
 enum 
 { 
   BCAST_IDLE_CHANNEL=0,              /* Channel is idle */
@@ -134,6 +140,9 @@ enum
   BCAST_CHANNEL_TYPES
 };
 
+/* 
+ * To mark the type of the message for different processing
+ */
 enum
 {
   BCAST_MESG_TYPE_INVALID  = 0,
@@ -147,12 +156,15 @@ enum
   BCAST_NUM_COLL_MESG_TYPE
 };
 
+/* This is really an imagination. Nothing has been done to support
+ * hardware bcast based collectives over other interconnects
+ */
 enum {
-       NONE_COLL       = 0x0000,
-       QSNET_COLL      = 0x0001,
-       IBA_COLL        = 0x0002,
-       BLUEGENE_COLL   = 0x0004, 
-       MAX_COLL        = 3
+  NONE_COLL       = 0x0000,
+  QSNET_COLL      = 0x0001,
+  IBA_COLL        = 0x0002,
+  BLUEGENE_COLL   = 0x0004, 
+  MAX_COLL        = 3
 };
 
 /* 
@@ -168,36 +180,36 @@ enum {
 
 typedef struct ulm_coll_env
 {
-  /* 16 bytes */
   int                  coll_type;
   int                  comm_index;
   int                  group_index;
   int                  desc_index;
+  /*  4 * sizeof (int) */
 
-  /* 16 bytes */
   int                  root;
   int                  tag_m;	
   int                  key;	
   int                  checksum;		
+  /*  4 * sizeof (int) */
 } 
 ulm_coll_env_t;
 
 #define      HEADER_COMMON                                                 \
-  /* 16 bytes */                                                           \
   int                  coll_type;                                          \
   int                  comm_index;                                         \
   int                  group_index;                                        \
   int                  desc_index;                                         \
+  /* 4*sizeof(int) */                                                      \
                                                                            \
-  /* 8 bytes */                                                            \
   int                  root;                                               \
   int                  tag_m;	                                           \
+  /* 2*sizeof(int) */                                                      \
                                                                            \
-  /* 16 bytes */                                                           \
   int                  key;                                                \
   int                  mesg_length;   /* The length of contiguous data*/   \
   int                  frag_length;   /* The length of the frag       */   \
   int                  data_length    /* The length of the dma        */   \
+  /* 4*sizeof(int) */                                                      
 
 
 typedef struct quadrics_short_header
@@ -237,7 +249,6 @@ quadrics_coll_header_t;
  * Control structure for a collective operation, 
  * These does not have to be in global elan addressable memory
  */
-
 typedef struct quadrics_channel
 {
     /* link back to the actual request */
@@ -343,12 +354,12 @@ typedef struct quadrics_global_vm_pool
 typedef struct coll_sync
 {
   /* synchronization structures */
-  sdramaddr_t          glob_event[QUADRICS_NUM_COLL_ENTRIES]; /* 16*8 */
-  sdramaddr_t          nack_event[QUADRICS_NUM_COLL_ENTRIES]; 
+  sdramaddr_t          glob_event[NR_CHANNELS]; /* 16*8 */
+  sdramaddr_t          nack_event[NR_CHANNELS]; 
 
   /* subtree control structures */
-  E3_Event_Blk        *recv_blk_main[QUADRICS_NUM_COLL_ENTRIES];
-  E3_Event_Blk        *nack_blk_main[QUADRICS_NUM_COLL_ENTRIES];
+  E3_Event_Blk        *recv_blk_main[NR_CHANNELS];
+  E3_Event_Blk        *nack_blk_main[NR_CHANNELS];
 
   E3_Event_Blk        *glob_env;            /*env Blk, 64 bytes */
 
@@ -360,7 +371,7 @@ typedef struct coll_sync
   sdramaddr_t          src_wait_nack;
   /* 16*8 */
                        
-  /*sdramaddr_t          wait_e[QUADRICS_NUM_COLL_ENTRIES];*/
+  /*sdramaddr_t          wait_e[NR_CHANNELS];*/
                        
   E3_DMA_MAIN         *sync_dma;      /* root uses it for bcast */
   sdramaddr_t          sync_dma_elan; /* corresponding elan structure */
@@ -375,8 +386,8 @@ typedef struct bcast_ctrl
   E3_Event_Blk        *src_blk_main; 
   sdramaddr_t          src_blk_elan;
                        
-  E3_Event_Blk        *recv_blk_main[QUADRICS_NUM_COLL_ENTRIES]; 
-  sdramaddr_t          glob_event[QUADRICS_NUM_COLL_ENTRIES]; /* 16*8 */
+  E3_Event_Blk        *recv_blk_main[NR_CHANNELS]; 
+  sdramaddr_t          glob_event[NR_CHANNELS]; /* 16*8 */
 }
 bcast_ctrl_t;
 

@@ -77,11 +77,11 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
 
     broadcasters_array_len = getenv("LAMPI_NUM_BCASTERS") ? 
       atoi (getenv("LAMPI_NUM_BCASTERS") ) :
-      QUADRICS_GLOB_BUFF_POOLS;
+      NR_BROADCASTER;
 
     broadcasters_array_len = 
-      (broadcasters_array_len > QUADRICS_GLOB_BUFF_POOLS)
-      ? broadcasters_array_len : QUADRICS_GLOB_BUFF_POOLS;
+      (broadcasters_array_len > NR_BROADCASTER)
+      ? broadcasters_array_len : NR_BROADCASTER;
 
     if ( !(broadcasters_array_len >= 8 && broadcasters_array_len <= 64))
     {
@@ -109,8 +109,8 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
 	    ulm_exit((-1, "Unable to allocate resource for Broadcaster \n"));
 	}
 	main_base = (char *)main_base + 
-	  (QUADRICS_GLOB_MEM_MAIN_POOL_SIZE + CONTROL_MAIN);
-	elan_base += (QUADRICS_GLOB_MEM_ELAN_POOL_SIZE);
+	  (COMM_BCAST_MEM_SIZE + BCAST_CTRL_SIZE);
+	elan_base += (COMM_BCAST_ELAN_SIZE);
     }
 
     if (usethreads())
