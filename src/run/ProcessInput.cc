@@ -72,6 +72,7 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
     RunParams.CheckArgs = 1;
     RunParams.OutputPrefix = 0;
     RunParams.Quiet = 0;
+    RunParams.Verbose = 0;
     RunParams.HeartBeatTimeOut = int (HEARTBEATTIMEOUT);
     RunParams.quadricsRailMask = 0;
     RunParams.quadricsHW = 0;

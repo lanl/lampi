@@ -106,7 +106,6 @@ void lampi_init_prefork_debugger(lampiState_t *);
 void lampi_init_prefork_environment(lampiState_t *);
 void lampi_init_prefork_globals(lampiState_t *);
 void lampi_init_prefork_initialize_state_information(lampiState_t *);
-void lampi_init_prefork_parse_setup_data(lampiState_t *);
 void lampi_init_prefork_paths(lampiState_t *);
 void lampi_init_prefork_process_resources(lampiState_t *);
 void lampi_init_prefork_receive_setup_params(lampiState_t *);

@@ -98,8 +98,11 @@ struct RunParams_t {
     /* Is mpirun a terminal? */
     int isatty;
 
-    /* suppress start-up message */
+    /* suppress start-up messages */
     int Quiet;
+
+    /* verbose start-up messages */
+    int Verbose;
 
     /* hostname of mpirun host */
     HostName_t mpirunName;

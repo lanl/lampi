@@ -120,10 +120,14 @@ extern void ClientTVSetup(void);
  */
 void lampi_init_print(const char *string)
 {
-    FILE *fp = fopen("/tmp/ddd/log", "a+");
-    fprintf(fp, "%s\n", string);
-    fflush(fp);
-    fclose(fp);
+    if (0) {
+        FILE *fp = fopen("/tmp/ddd/log", "a+");
+        fprintf(fp, "%s\n", string);
+        fflush(fp);
+        fclose(fp);
+    }
+
+    fprintf(stderr, "LA-MPI: *** %s\n", string);
 }
 
 
@@ -139,38 +143,42 @@ void lampi_init(void)
     }
     initialized = 1;
 
-    lampi_init_prefork_initialize_state_information(&_ulm);     /* init _ulm */
-    lampi_init_prefork_environment(&_ulm);
-    lampi_init_prefork_process_resources(&_ulm);
-    lampi_init_prefork_globals(&_ulm);
-    lampi_init_prefork_resource_management(&_ulm);
-    lampi_init_prefork_check_stdio(&_ulm);
-    lampi_init_prefork_connect_to_mpirun(&_ulm);
-    lampi_init_prefork_receive_setup_params(&_ulm);
-    lampi_init_prefork_ip_addresses(&_ulm);
-    lampi_init_prefork_debugger(&_ulm);
-    lampi_init_prefork_resources(&_ulm);
-    lampi_init_prefork_paths(&_ulm);
-    lampi_init_prefork_stdio(&_ulm);
+    lampi_init_prefork_initialize_state_information(&lampiState);
+    lampi_init_prefork_environment(&lampiState);
+    lampi_init_prefork_process_resources(&lampiState);
+    lampi_init_prefork_globals(&lampiState);
+    lampi_init_prefork_resource_management(&lampiState);
+    lampi_init_prefork_check_stdio(&lampiState);
+    lampi_init_prefork_connect_to_mpirun(&lampiState);
+    lampi_init_prefork_receive_setup_params(&lampiState);
+    lampi_init_prefork_ip_addresses(&lampiState);
+    lampi_init_prefork_debugger(&lampiState);
+    lampi_init_prefork_resources(&lampiState);
+    lampi_init_prefork_paths(&lampiState);
+    lampi_init_prefork_stdio(&lampiState);
 
-    lampi_init_fork(&_ulm);     /* all la-mpi procs created here */
+    lampi_init_fork(&lampiState);     /* all la-mpi procs created here */
 
-    lampi_init_postfork_pids(&_ulm);
-    lampi_init_postfork_debugger(&_ulm);
-    lampi_init_postfork_stdio(&_ulm);
-    lampi_init_postfork_resource_management(&_ulm);
-    lampi_init_postfork_globals(&_ulm);
-    lampi_init_postfork_resources(&_ulm);
-    //lampi_init_debug(&_ulm);
-    lampi_init_postfork_ip_addresses(&_ulm);    /* exchange IP addresses */
-    lampi_init_postfork_paths(&_ulm);
-    lampi_init_postfork_communicators(&_ulm);
+    lampi_init_postfork_pids(&lampiState);
+    lampi_init_postfork_debugger(&lampiState);
+    lampi_init_postfork_stdio(&lampiState);
+    lampi_init_postfork_resource_management(&lampiState);
+    lampi_init_postfork_globals(&lampiState);
+    lampi_init_postfork_resources(&lampiState);
+    //lampi_init_debug(&lampiState);
+    lampi_init_postfork_ip_addresses(&lampiState);    /* exchange IP addresses */
+    lampi_init_postfork_paths(&lampiState);
+    lampi_init_postfork_communicators(&lampiState);
 #ifdef USE_ELAN_COLL
-    lampi_init_postfork_coll_setup(&_ulm);      /* enable hw/bcast support */
+    lampi_init_postfork_coll_setup(&lampiState);      /* enable hw/bcast support */
 #endif
 
-    lampi_init_wait_for_start_message(&_ulm);   /* barrier on all procs */
-    lampi_init_check_for_error(&_ulm);
+    lampi_init_wait_for_start_message(&lampiState);   /* barrier on all procs */
+    if (lampiState.verbose) {
+        fprintf(stderr, "LA-MPI: *** Process %ld is rank %d\n",
+                (long) getpid(), lampiState.global_rank);
+    }
+    lampi_init_check_for_error(&lampiState);
 
     /* daemon process goes into loop */
     if (lampiState.iAmDaemon) {
@@ -179,7 +187,7 @@ void lampi_init(void)
             fprintf(stdout, "LA-MPI: *** Daemon initialized (stdout)\n");
             fflush(stdout);
         }
-        lampi_daemon_loop(&_ulm);
+        lampi_daemon_loop(&lampiState);
     } else if (lampiState.global_rank == 0) {
         if (lampiState.quiet == 0) {
             fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
@@ -290,8 +298,7 @@ void lampi_init_prefork_environment(lampiState_t *s)
     }
 
     lampi_environ_init();
-    if (lampi_environ_find_integer("LAMPI_VERBOSE", &(s->verbose))) {
-    }
+    lampi_environ_find_integer("LAMPI_VERBOSE", &(s->verbose));
     if (s->verbose) {
         lampi_init_print("lampi_init");
         lampi_init_print("lampi_init_prefork_environment");
@@ -924,13 +931,15 @@ void lampi_init_fork(lampiState_t *s)
     }
 
     if (s->useDaemon) {
-        /* adjust rank to account for deamon process */
+        /* adjust rank to account for daemon process */
         s->local_rank--;
-        if (s->local_rank == -1)
+        if (s->local_rank == -1) {
             s->iAmDaemon = 1;
-        else
-                        s->IAmAlive[s->local_rank] = 1;
+        } else {
+            s->IAmAlive[s->local_rank] = 1;
+        }
     }
+
     /*
      * Set global to local process rank offset
      */
@@ -942,8 +951,12 @@ void lampi_init_fork(lampiState_t *s)
         }
         s->global_to_local_offset += s->map_host_to_local_size[h];
     }
-    lampiState.global_rank =
-        lampiState.local_rank + lampiState.global_to_local_offset;
+    if (s->iAmDaemon) {
+        lampiState.global_rank = -1;
+    } else {
+        lampiState.global_rank =
+            lampiState.local_rank + lampiState.global_to_local_offset;
+    }
 
     /* wait until all local processes have started */
     lampiState.client->localBarrier();
@@ -1027,268 +1040,6 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
 }
 
 
-void lampi_init_prefork_parse_setup_data(lampiState_t *s)
-{
-    int tag, recvd;
-    int pathcnt, *paths;
-
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_receive_setup_msg");
-    }
-    //ASSERT: adminMessage buffer contains run params
-    int done = 0;
-    while (!done) {
-        /* read next tag */
-        recvd = s->client->nextTag(&tag);
-        if (recvd != adminMessage::OK) {
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-            return;
-        }
-        switch (tag) {
-            /* more than one set of messages may have this tag -
-             *   one set of input params are sent via a broadcast,
-             *   and the other set of data is per host unique
-             *   data
-             */
-        case adminMessage::RUNPARAMS:
-            break;
-        case adminMessage::ENDRUNPARAMS:
-            /* done reading input params */
-            done = 1;
-            break;
-        case adminMessage::NHOSTS:
-            /* number of hosts, and number of procs per host */
-            s->client->unpackMessage(&(s->nhosts),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            s->client->setNumberOfHosts(s->nhosts);
-            s->map_host_to_local_size = ulm_new(int, s->nhosts);
-            s->client->unpackMessage(s->map_host_to_local_size,
-                                     (adminMessage::packType) sizeof(int),
-                                     s->nhosts);
-
-            break;
-        case adminMessage::HOSTID:
-            s->client->unpackMessage(&(s->hostid),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-                        s->client->setHostRank(s->hostid);
-            break;
-        case adminMessage::TVDEBUG:
-            s->client->unpackMessage(&(s->debug),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            s->client->unpackMessage(&(s->debug_location),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-        case adminMessage::THREADUSAGE:
-            s->client->unpackMessage(&(s->usethreads),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-        case adminMessage::CRC:
-            s->client->unpackMessage(&(s->usecrc),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-        case adminMessage::CHECKARGS:
-            s->client->unpackMessage(&lampiState.checkargs,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-
-        case adminMessage::OUTPUT_PREFIX:
-            s->client->unpackMessage(&(s->output_prefix),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-
-        case adminMessage::QUIET:
-            s->client->unpackMessage(&(s->quiet),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-
-        case adminMessage::ISATTY:
-            s->client->unpackMessage(&(s->isatty),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-
-#if ENABLE_NUMA
-        case adminMessage::CPULIST:
-            // list of cpus to use
-            {
-                int c, cpulistlen, *cpulist;
-                constraint_info my_c;
-                s->client->unpackMessage(&cpulistlen,
-                                         (adminMessage::
-                                          packType) sizeof(int), 1);
-
-                cpulist = ulm_new(int, cpulistlen);
-                s->client->unpackMessage(cpulist,
-                                         (adminMessage::
-                                          packType) sizeof(int),
-                                         cpulistlen);
-                my_c.reset_mask(C_MUST_USE);
-                my_c.set_type(R_CPU);
-
-                for (c = 0; c < cpulistlen; c++) {
-                    my_c.set_num(cpulist[c]);
-                    ULMreq->add_constraint(R_CPU, 1, &my_c);
-                }
-                ulm_delete(cpulist);
-            }
-            break;
-
-        case adminMessage::NCPUSPERNODE:
-            /* number of cpus per node to use */
-            s->client->unpackMessage(&nCpPNode,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if ((nCpPNode < 0) || (nCpPNode > 2)) {
-                ulm_exit((-1, "Incorrect value for nCpPNode :: %d\n",
-                          nCpPNode));
-            }
-            break;
-
-        case adminMessage::USERESOURCEAFFINITY:
-            /* specify if resource affinity is to be used */
-            s->client->unpackMessage(&tmpInt,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for USERESOURCEAFFINITY (%d)\n",
-                          tmpInt));
-            }
-            if (tmpInt == 1) {
-                useRsrcAffinity = true;
-            } else {
-                useRsrcAffinity = false;
-            }
-            break;
-        case adminMessage::DEFAULTRESOURCEAFFINITY:
-            /* specify how to obtain resource affinity list */
-            s->client->unpackMessage(&tmpInt,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for DEFAULTRESOURCEAFFINITY (%d)\n",
-                          tmpInt));
-            }
-            if (tmpInt == 1) {
-                useDfltAffinity = true;
-            } else {
-                useDfltAffinity = false;
-            }
-            break;
-        case adminMessage::MANDATORYRESOURCEAFFINITY:
-            /* specify if resource affinity usage is mandatory */
-            s->client->unpackMessage(&tmpInt,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for MANDATORYRESOURCEAFFINITY (%d)\n",
-                          tmpInt));
-
-            }
-            if (tmpInt == 1) {
-                affinMandatory = true;
-            } else {
-                affinMandatory = false;
-            }
-            break;
-#endif /* ENABLE_NUMA */
-
-
-        case adminMessage::MAXCOMMUNICATORS:
-            /* specify upper limit on communicators */
-            s->client->unpackMessage(&maxCommunicatorInstances,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if (maxCommunicatorInstances < 0) {
-                ulm_exit((-1,
-                          "Incorrect value for MAXCOMMUNICATORS (%d)\n",
-                          maxCommunicatorInstances));
-            }
-            break;
-
-        case adminMessage::NPATHTYPES:
-            s->client->unpackMessage(&pathcnt,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            if (pathcnt) {
-                paths = ulm_new(int, pathcnt);
-                s->client->unpackMessage(paths,
-                                         (adminMessage::packType) sizeof(int),
-                                         pathcnt);
-                for (int i = 0; i < pathcnt; i++) {
-                    switch (paths[i]) {
-                    case PATH_UDP:
-                        s->udp = 1;
-                        break;
-                    case PATH_TCP:
-                        s->tcp = 1;
-                        break;
-                    case PATH_GM:
-                        s->gm = 1;
-                        break;
-                    case PATH_QUADRICS:
-                        s->quadrics = 1;
-                        break;
-                    case PATH_IB:
-                        s->ib = 1;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-            }
-            break;
-
-        case adminMessage::IRECVOUTOFRESRCABORT:
-            /* what to do when out of receive descriptors */
-            irecvDescDescAbortWhenNoResource = false;
-            break;
-
-        case adminMessage::IRECVRESOURCERETRY:
-            /* how many times to retry to get more receive
-             *   descriptors when they are temporaraly unavailable */
-            s->client->unpackMessage(&maxIRecvDescRetries,
-                                     (adminMessage::packType) sizeof(long),
-                                     1);
-            break;
-        case adminMessage::IRCEVMINPAGESPERCTX:
-            /* minimum number of pages allocated to each
-             *   list of receive descirptors */
-            s->client->unpackMessage(&minPgsIn1IRecvDescDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-
-        case adminMessage::IRECVMAXPAGESPERCTX:
-            /* maximum number of pages allocated to each
-             *   list of receive descirptors */
-            s->client->unpackMessage(&maxPgsIn1IRecvDescDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-
-        default:
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-            return;
-        }
-    }
-}
-
-
 void lampi_init_prefork_receive_setup_params(lampiState_t *s)
 {
     int tag, errorCode, recvd, h, i, p;
@@ -1339,7 +1090,6 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(s->map_host_to_local_size,
                               (adminMessage::packType) sizeof(int),
                               s->nhosts);
-
             break;
         case adminMessage::HOSTID:
             s->client->unpack(&(s->hostid),
@@ -1364,17 +1114,21 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&lampiState.checkargs,
                               (adminMessage::packType) sizeof(int), 1);
             break;
-
         case adminMessage::OUTPUT_PREFIX:
             s->client->unpack(&(s->output_prefix),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-
         case adminMessage::QUIET:
             s->client->unpack(&(s->quiet),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-
+        case adminMessage::VERBOSITY:
+            s->client->unpack(&(s->verbose),
+                              (adminMessage::packType) sizeof(int), 1);
+            if (s->verbose) {
+                s->output_prefix = 1;
+            }
+            break;
         case adminMessage::ISATTY:
             s->client->unpack(&(s->isatty),
                               (adminMessage::packType) sizeof(int), 1);
@@ -2029,7 +1783,10 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_stdio");
     }
 
-    /* daemon holds read end of pipe...all other process hold write end together */
+    /*
+     * daemon holds read end of pipe...all other process hold write
+     * end together
+     */
     if (s->iAmDaemon) {
         close(s->commonAlivePipe[1]);
         s->commonAlivePipe[1] = -1;
@@ -2038,6 +1795,11 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         close(s->commonAlivePipe[0]);
         s->commonAlivePipe[0] = -1;
     }
+
+    /* explicitly turn off buffering of my stdio streams */
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+    setbuf(stderr, NULL);
 
     /* do nothing else if stdio is not being managed */
     if (!s->interceptSTDio) {

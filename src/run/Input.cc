@@ -170,6 +170,13 @@ Options_t Options[] =
      SetQuietTrue,
      "Suppress start-up messages", 0, "\0"
     },
+    {"-v",
+     "Verbose",
+     NO_ARGS,
+     NoOpFunction,
+     SetVerboseTrue,
+     "Verbose start-up messages", 0, "\0"
+    },
     {"-dapp",
      "DirectoryOfBinary",
      STRING_ARGS,
@@ -446,6 +453,7 @@ void Usage(FILE *stream)
             "-ssh              Use ssh rather than the default rsh if no other start-up\n"
             "                  mechanism is available.\n"
             "-t                Tag standard output/error with source information.\n"
+            "-v                Verbose start-up information.\n"
             "-threads          Enable thread safety.\n"
             "-qf FLAGSLIST     A comma-delimited list of keywords for operation on\n"
             "                  Quadrics networks.  The keywords supported are \"ack\",\n"
@@ -1628,6 +1636,15 @@ void SetOutputPrefixTrue(const char *InfoStream)
 void SetQuietTrue(const char *InfoStream)
 {
     RunParams.Quiet = 1;
+    RunParams.Verbose = 0;
+}
+
+
+void SetVerboseTrue(const char *InfoStream)
+{
+    RunParams.Quiet = 0;
+    RunParams.Verbose = 1;
+    RunParams.OutputPrefix = 1;
 }
 
 

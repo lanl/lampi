@@ -119,10 +119,9 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
         switch (recvd) {
         case adminMessage::OK:
             if ((tag == adminMessage::CLIENTPIDS) &&
-                (s->
-                 unpack(hostarray[rank],
-                        (adminMessage::packType) sizeof(pid_t),
-                        RunParams.ProcessCount[rank], alarm_time))) {
+                (s->unpack(hostarray[rank],
+                           (adminMessage::packType) sizeof(pid_t),
+                           RunParams.ProcessCount[rank], alarm_time))) {
                 contacted++;
                 break;
             }
@@ -136,10 +135,10 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
         }
     }
 
-    if (0) {                    /* debug */
+    if (RunParams.Verbose) {
         for (int h = 0; h < RunParams.NHosts; h++) {
-            fprintf(stderr, "Host %d (%s) has PIDs", h,
-                    RunParams.HostList[h]);
+            fprintf(stderr, "LA-MPI: *** Host %d (%s) has PIDs",
+                    h, RunParams.HostList[h]);
             for (int p = 0; p < RunParams.ProcessCount[h]; p++) {
                 fprintf(stderr, " %d", hostarray[h][p]);
             }
