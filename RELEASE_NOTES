@@ -294,3 +294,8 @@ Version 1.4.16
 
 - Fixed long machine names, lampi.conf file. Fixed RSH 
 
+Version 1.4.17
+
+- Fixed issue with processes hanging that used Pthreads. Changed MPI_Reduce to allow non-root 
+proccess to provide a null receive buffer.
+
