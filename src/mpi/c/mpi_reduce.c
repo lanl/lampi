@@ -31,6 +31,7 @@
 
 
 #include "internal/mpi.h"
+#include "internal/collective.h"
 
 #ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Reduce = PMPI_Reduce
@@ -40,6 +41,7 @@ int PMPI_Reduce(void *sendbuf, void *recvbuf, int count,
 		MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {
     int rc;
+    ulm_reduce_t    *reduce;
 
     if (_mpi.check_args) {
         rc = MPI_SUCCESS;
@@ -61,8 +63,12 @@ int PMPI_Reduce(void *sendbuf, void *recvbuf, int count,
         }
     }
 
-    rc = _mpi.collective.reduce(sendbuf, recvbuf, count, type, op,
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_REDUCE, &reduce);
+    if ( ULM_SUCCESS == rc )
+    {
+        rc = reduce(sendbuf, recvbuf, count, type, op,
                                 root, comm);
+    }
     rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
 ERRHANDLER:
