@@ -111,6 +111,7 @@ void RunEventLoop(void)
 {
     double heartbeat_time;
     double time;
+    int rc;
     int *fd;
 
     fd = RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
@@ -169,15 +170,11 @@ void RunEventLoop(void)
         }
     }
 
-    /* loop over work */
-    for (;;) {
+    /* main event loop */
 
-        time = ulm_time();
+    while (RunParams.HostsNormalTerminated != RunParams.NHosts) {
 
-        /*
-         * check to see if there is any stdin/stdout/stderr data to
-         * read and then write
-         */
+        /* is there any stdin data to forward? */
         if (RunParams.handleSTDio && RunParams.STDINfd >= 0) {
             if (ScanStdIn(RunParams.STDINfd) != ULM_SUCCESS) {
                 close(RunParams.STDINfd);
@@ -185,28 +182,19 @@ void RunEventLoop(void)
             }
         }
 
-        /* send heartbeat */
+        /* check if any messages have arrived and process */
+        rc = CheckForControlMsgs();
+        if (rc < 0 || RunParams.HostsAbNormalTerminated > 0) {
+            /* last check if any messages have arrived and process */
+            CheckForControlMsgs();
+            Abort();
+        }
+
+        /* send keep-alive heartbeat */
+        time = ulm_time();
         if ((time - heartbeat_time) > (double) RunParams.HeartbeatPeriod) {
             heartbeat_time = time;
             SendHeartBeat(fd, RunParams.NHosts);
-        }
-
-        /* check if any messages have arrived and process */
-        CheckForControlMsgs();
-
-        /* exit if all hosts have terminated normally */
-        if (RunParams.HostsNormalTerminated == RunParams.NHosts) {
-            return;
-        }
-
-        /* abnormal exit */
-        if (RunParams.HostsAbNormalTerminated > 0) {
-            /* last check if any messages have arrived and process */
-            CheckForControlMsgs();
-            ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n",
-                     RunParams.HostsAbNormalTerminated));
-            Abort();
-            exit(EXIT_FAILURE);
         }
     }                           /* end for loop */
 }
