@@ -140,6 +140,7 @@ i?86-pc-linux*)
               CFLAGS="-g -O"
               CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
+           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
         else
            CC="gcc"
            CXX="g++"
