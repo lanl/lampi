@@ -54,6 +54,7 @@ ELAN3_CTX *getElan3Ctx(int rail);
 #include "internal/malloc.h"
 #include "internal/state.h"
 #include "util/Lock.h"
+#include "path/quadrics/state.h"
 
 #ifdef ENABLE_SHARED_MEMORY
 #include "internal/constants.h"
@@ -237,11 +238,17 @@ public:
 	}
 	free(freep);
 	free(allocp);
-	for (int j = 0; j < nrails; j++) {
+    if ( usethreads() )
+        quadricsState.quadricsLock.lock();
+
+    for (int j = 0; j < nrails; j++) {
             free(array[j]);
             elan3_free(getElan3Ctx(j), dummyDone[j]);
 	}
-	free(array);
+    if ( usethreads() )
+        quadricsState.quadricsLock.unlock();
+
+    free(array);
 	free(dummyDone);
     }
 
@@ -257,17 +264,24 @@ public:
 	volatile E3_Event_Blk *result = 0;
 	eventBlkSlot_t *slot;
 	if (usethreads() || sharedMemory)
-	    locks[rail].lock();
-	if (dmaCounts[rail] < concurrentDmas) {
+    {
+        quadricsState.quadricsLock.lock();
+        locks[rail].lock();
+    }
+
+    if (dmaCounts[rail] < concurrentDmas) {
 	    slot = freep[rail];
 	    result = (slot->eventBlk) ? slot->eventBlk :
                 (volatile E3_Event_Blk *)elan3_allocMain(getElan3Ctx(rail),
                                                 E3_BLK_ALIGN, sizeof(E3_Event_Blk));
 	    if (!result) {
-		if (usethreads() || sharedMemory)
-                    locks[rail].unlock();
-		return result;
-	    }
+            if (usethreads() || sharedMemory)
+            {
+                locks[rail].unlock();
+                quadricsState.quadricsLock.unlock();
+            }
+            return result;
+        }
 	    dmaCounts[rail]++;
 	    slot->eventBlk = result;
 	    slot->loc = location;
@@ -296,7 +310,10 @@ public:
                                                     E3_BLK_ALIGN, sizeof(E3_Event_Blk));
                 if (!result) {
                     if (usethreads() || sharedMemory)
+                    {
                         locks[rail].unlock();
+                        quadricsState.quadricsLock.unlock();
+                    }
                     return result;
                 }
                 dmaCounts[rail]++;
@@ -319,8 +336,11 @@ public:
             }
 	}
 	if (usethreads() || sharedMemory)
-	    locks[rail].unlock();
-	return result;
+    {
+        locks[rail].unlock();
+        quadricsState.quadricsLock.unlock();
+    }
+    return result;
     }
 
     //! returns eventBlk back to the proper rail freelist
@@ -331,21 +351,31 @@ public:
      * the same caveats apply to eventBlkLoc as getEventBlk's location...
      */
     void freeEventBlk(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk ** eventBlkLoc = 0) {
-	eventBlkSlot_t *slot = allocp[rail].head;
-	eventBlkSlot_t *prev = 0;
-	if (!eventBlk)
+        eventBlkSlot_t *prev = 0;
+        eventBlkSlot_t *slot;
+
+        if (!eventBlk)
 	    return;
 	if (usethreads() || sharedMemory)
-	    locks[rail].lock();
-	/* find right slot */
-	while (slot) {
+    {
+        quadricsState.quadricsLock.lock();
+        locks[rail].lock();
+    }
+
+    slot = allocp[rail].head;
+
+    /* find right slot */
+    while (slot) {
             if (slot->eventBlk == eventBlk) {
                 if (reclaim) {
                     /* possibly freed, reclaimed already, or reallocated already...if so, return */
                     if ((slot->magic == DMATHROTTLEMAGIC) || (eventBlk == dummyDone[rail])
                         || (slot->loc != eventBlkLoc)) {
                         if (usethreads() || sharedMemory)
+                        {
                             locks[rail].unlock();
+                            quadricsState.quadricsLock.unlock();
+                        }
                         return;
                     }
                 }
@@ -361,10 +391,13 @@ public:
             slot = slot->ptr;
 	}
 	if (!slot) {
-            if (usethreads() || sharedMemory)
-                locks[rail].unlock();
-            return;
-	}
+        if (usethreads() || sharedMemory)
+        {
+            locks[rail].unlock();
+            quadricsState.quadricsLock.unlock();
+        }
+        return;
+    }
 
 	/* put the event block on the free list */
 	if (freep[rail]) {
@@ -377,7 +410,10 @@ public:
 	freep[rail] = slot;
 	dmaCounts[rail]--;
 	if (usethreads() || sharedMemory)
-	    locks[rail].unlock();
+    {
+        locks[rail].unlock();
+        quadricsState.quadricsLock.unlock();
+    }
     }
 
     //! safe way to determine if the event block is ready...if reclaiming is being done
@@ -388,11 +424,16 @@ public:
      * eventBlkLoc is only necessary if reclaim is true...
      */
     bool eventBlkReady(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk **eventBlkLoc = 0) {
-        eventBlkSlot_t *slot = allocp[rail].head;
         bool result = false;
+        eventBlkSlot_t *slot;
+
         if (reclaim) {
             if (usethreads() || sharedMemory)
+            {
+                quadricsState.quadricsLock.lock();
                 locks[rail].lock();
+            }
+            slot = allocp[rail].head;
             while (slot) {
                 if (slot->eventBlk == eventBlk)
                     break;
@@ -407,7 +448,10 @@ public:
                 result = EVENT_BLK_READY(eventBlk);
             }
             if (usethreads() || sharedMemory)
+            {
                 locks[rail].unlock();
+                quadricsState.quadricsLock.unlock();
+            }
         }
         else {
             result = EVENT_BLK_READY(eventBlk);
@@ -427,9 +471,13 @@ public:
 	}
 	for (int i = 0; i < nrails; i++) {
 	    int freeCnt = 0;
-	    eventBlkSlot_t *j = freep[i];
-	    if (j) {
-		if (usethreads() || sharedMemory)
+        eventBlkSlot_t *j;
+
+        if (usethreads() || sharedMemory)
+            locks[i].lock();
+        j = freep[i];
+        if (j) {
+            if (usethreads() || sharedMemory)
 		    locks[i].lock();
 		fprintf(fp, "Rail %d:\n", i);
 		while (j) {
@@ -437,9 +485,9 @@ public:
                             j->loc, (j->magic == DMATHROTTLEMAGIC) ? "correct" : "incorrect");
 		    j = (eventBlkSlot_t *) j->ptr;
 		}
-		if (usethreads() || sharedMemory)
-		    locks[i].unlock();
 	    }
+        if (usethreads() || sharedMemory)
+            locks[i].unlock();
 	}
 	fflush(fp);
     }

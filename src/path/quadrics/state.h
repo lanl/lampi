@@ -39,7 +39,6 @@
 #include "mem/FreeLists.h"
 #include "queue/SeqTrackingList.h"
 
-#include "path/quadrics/dmaThrottle_new.h"
 #include "path/quadrics/peerMemoryTracking.h"
 #include "path/quadrics/header.h"
 #include "path/quadrics/addrCache.h"
@@ -48,6 +47,14 @@
 #define QUADRICS_MEMREQ_MINRETRANSMIT 30
 #define QUADRICS_MEMRLS_TIMEOUT 120
 #define ELAN_BCAST_BUF_SZ 16384
+
+struct quadricsState_t
+{
+    Locks	quadricsLock;		/* elan3 library is not thread safe. */
+};
+
+extern quadricsState_t		quadricsState;
+
 
 typedef struct quadricsQueueInfo {
     bool railOK;
@@ -72,6 +79,7 @@ typedef struct quadricsQueueInfo {
 
 class quadricsSendFragDesc;
 class quadricsRecvFragDesc;
+class dmaThrottle;
 
 extern dmaThrottle *quadricsThrottle;
 extern peerMemoryTracker **quadricsPeerMemory;

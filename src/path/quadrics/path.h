@@ -179,30 +179,48 @@ public:
                        ELAN3_CTX **ctx, int *rail) {
         int i, r, lr = quadricsLastRail;
 
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
         for (i = 1; i <= quadricsNRails; i++) {
             r = (lr + i) % quadricsNRails;
             if (quadricsQueue[r].railOK) {
                 *rail = r;
                 *ctx = quadricsQueue[r].ctx;
                 quadricsLastRail = r;
+                if ( usethreads() )
+                    quadricsState.quadricsLock.unlock();
+
                 return true;
             }
         }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
         return false;
     }
 
     bool getCtxAndRail(ELAN3_CTX **ctx, int *rail) {
         int i, r, lr = quadricsLastRail;
 
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
         for (i = 1; i <= quadricsNRails; i++) {
             r = (lr + i) % quadricsNRails;
             if (quadricsQueue[r].railOK) {
                 *rail = r;
                 *ctx = quadricsQueue[r].ctx;
                 quadricsLastRail = r;
+                if ( usethreads() )
+                    quadricsState.quadricsLock.unlock();
+
                 return true;
             }
         }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
         return false;
     }
 
@@ -214,6 +232,9 @@ public:
         bool railAvail = false;
         int bufCounts[NUMBER_BUFTYPES];
         size_t sz;
+
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
 
         for (i = 1; i <= quadricsNRails; i++) {
             r = (lr + i) % quadricsNRails;
@@ -229,17 +250,26 @@ public:
                     *rail = r;
                     *ctx = quadricsQueue[r].ctx;
                     quadricsLastRail = r;
+                    if ( usethreads() )
+                        quadricsState.quadricsLock.unlock();
+
                     return true;
                 }
                 else {
                     *rail = r;
                     *ctx = quadricsQueue[r].ctx;
                     quadricsLastRail = r;
+                    if ( usethreads() )
+                        quadricsState.quadricsLock.unlock();
+
                     return true;
                 }
             }
         }
         *errorCode = (railAvail) ? ULM_SUCCESS : ULM_ERR_BAD_PATH;
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
         return false;
     }
 

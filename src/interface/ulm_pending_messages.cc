@@ -49,6 +49,9 @@ extern "C" int ulm_pending_messages(int *flag)
     int i;
 
     *flag = 0;
+    if (usethreads())
+        communicatorsLock.lock();
+
     for (i = 0; i < nCommunicatorInstancesInUse; i++) {
 	comm = communicators[activeCommunicators[i]];
 	if (comm->areQueuesEmpty() == false) {
@@ -57,5 +60,8 @@ extern "C" int ulm_pending_messages(int *flag)
 	}
     }
 
+    if (usethreads())
+        communicatorsLock.unlock();
+    
     return ULM_SUCCESS;
 }

@@ -133,8 +133,13 @@ int udpRecvFragDesc::pullFrags(int &retVal)
 	if (count > 0 && FD_ISSET(longsock, &readmask)) {
 	    desc = (udpRecvFragDesc *) UDPRecvFragDescs.getElement(getMemPoolIndex(), retVal);
 	    if (retVal != ULM_SUCCESS)
-		return bytesRecvd;
-	    UDPGlobals::checkLongMessageSocket = false;	// will be reset as necessary
+        {
+            if (usethreads()) {
+                UDPGlobals::longMessageLock.unlock();
+            }
+            return bytesRecvd;
+        }
+        UDPGlobals::checkLongMessageSocket = false;	// will be reset as necessary
 	    desc->sockfd = longsock;
 	    desc->shortMsg = false;
 	    desc->copyError = false;

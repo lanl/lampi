@@ -814,6 +814,9 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     if ((returnValue == ULM_ERR_OUT_OF_RESOURCE) ||
                         (returnValue == ULM_ERR_FATAL)) {
                         *errorCode = returnValue;
+                        if (usethreads())
+                            quadricsQueue[i].rcvLock.unlock();
+
                         return false;
                     }
                     if (usethreads())
@@ -842,6 +845,9 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     quadricsQueue[i].q_fptr = quadricsQueue[i].q_base;
 
                 // read q_state from ELAN
+                if ( usethreads() )
+                    quadricsState.quadricsLock.lock();
+
                 qstate = elan3_read32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
                                             offsetof(E3_Queue, q_state));
 
@@ -864,6 +870,9 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 elan3_waitevent(ctx, quadricsQueue[i].sdramQAddr +
                                 offsetof(E3_Queue, q_event));
 
+                if ( usethreads() )
+                    quadricsState.quadricsLock.unlock();
+                
                 // now process the received data so that when we are
                 // done the ELAN will have had the time to reset the
                 // receive event block if more data has arrived...
