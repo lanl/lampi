@@ -42,6 +42,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -141,6 +142,7 @@ void lampi_init(void)
     lampi_init_prefork_process_resources(&_ulm);
     lampi_init_prefork_globals(&_ulm);
     lampi_init_prefork_resource_management(&_ulm);
+    lampi_init_prefork_check_stdio(&_ulm);
     lampi_init_prefork_connect_to_mpirun(&_ulm);
     lampi_init_prefork_receive_setup_params(&_ulm);
     lampi_init_prefork_ip_addresses(&_ulm);
@@ -1777,6 +1779,48 @@ void lampi_init_postfork_debugger(lampiState_t *s)
     }
 }
 
+void lampi_init_prefork_check_stdio(lampiState_t *s)
+{
+    int nullfd;
+    struct stat dummy_stat;
+
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_stdio");
+    }
+
+    /* do nothing if stdio is not being managed */
+    if (!s->interceptSTDio) {
+        return;
+    }
+
+    /*
+     * try to make sure stdin/stdout/stderr exist....
+     */
+    if (fstat(STDIN_FILENO, &dummy_stat) < 0) {
+        nullfd = open("/dev/null", O_RDONLY);
+        if ((nullfd >= 0) && (STDIN_FILENO != nullfd)) {
+            dup2(nullfd, STDIN_FILENO);
+            close(nullfd);
+        }
+    }
+    if (fstat(STDOUT_FILENO, &dummy_stat) < 0) {
+        nullfd = open("/dev/null", O_WRONLY);
+        if ((nullfd >= 0) && (STDOUT_FILENO != nullfd)) {
+            dup2(nullfd, STDOUT_FILENO);
+            close(nullfd);
+        }
+    }
+    if (fstat(STDERR_FILENO, &dummy_stat) < 0) {
+        nullfd = open("/dev/null", O_WRONLY);
+        if ((nullfd >= 0) && (STDERR_FILENO != nullfd)) {
+            dup2(nullfd, STDERR_FILENO);
+            close(nullfd);
+        }
+    }
+}
 
 void lampi_init_prefork_stdio(lampiState_t *s)
 {
