@@ -1875,10 +1875,19 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         return;
     }
 
-    if(pipe(fd) < 0) {
-        ulm_err(("Error: pipe(): errno = %d\n", errno));
-        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
-        return;
+    if (ENABLE_PTY_STDIO) {
+        /* use a pty for stdout to avoid application buffering */
+        if (openpty(&fd[1], &fd[0], NULL, NULL, NULL) < 0) {
+            ulm_err(("Error: openpty(): errno = %d\n", errno));
+            s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+            return;
+        }
+    } else {
+        if(pipe(fd) < 0) {
+            ulm_err(("Error: pipe(): errno = %d\n", errno));
+            s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+            return;
+        }
     }
     stdin_parent = fd[1];
     stdin_child = fd[0];
