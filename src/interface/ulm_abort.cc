@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include "internal/cLock.h"
 #include "internal/log.h"
 #include "internal/profiler.h"
 #include "ulm/ulm.h"
@@ -43,28 +44,41 @@
  * User abort function
  *
  * \param comm		Communicator ID
- * \param errorCode	Exit code to pass to _exit()
+ * \param errorCode	Exit code to pass to exit()
  * \return		Function never returns
  */
 extern "C" int _ulm_abort(int comm, int errorCode, char *file, int line)
 {
+    struct sigaction action, oldaction;
+
     fprintf(stderr,
             "%s:%d: LA-MPI Aborting: Calling ulm_abort(comm=%d, error=%d)\n",
             file, line, comm, errorCode);
 
-    // set IAmAlive entry to zero
-    if (lampiState.IAmAlive) {
-    	lampiState.IAmAlive[lampiState.local_rank] = 0;
+    if (lampiState.AbnormalExit) {
+        /* block SIGCHLD processing */
+        action.sa_handler = SIG_IGN;
+        action.sa_flags = 0;
+        sigaction(SIGCHLD, &action, &oldaction);
+        lock(&(lampiState.AbnormalExit->lockData));
+        if (lampiState.AbnormalExit->flag == 0) {
+                /* store our information for the client daemon */
+                lampiState.AbnormalExit->flag = 1;
+                lampiState.AbnormalExit->pid = getpid();
+                lampiState.AbnormalExit->signal = 0;
+                lampiState.AbnormalExit->status = errorCode;
+        }
+        unlock(&(lampiState.AbnormalExit->lockData));
+        /* unblock SIGCHLD processing */
+        sigaction(SIGCHLD, &oldaction, NULL);
     }
 
-    // must bypass ClientEnd which is registered by atexit() to exit now
-    // and generate SIGCHLD to ULM client daemon
     fflush(stdout);
     fflush(stderr);
 #ifdef __osf__
     raise(SIGHUP);
 #else
-    _exit(errorCode);
+    exit(errorCode);
 #endif
     // never reached but shuts up nosy compilers...
     return errorCode;
