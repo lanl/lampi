@@ -174,7 +174,7 @@ ssize_t udpRecvFragDesc::handleShortSocket()
 
     do {
     count = recvmsg(sockfd, &msgHdr, 0);
-    
+
 	if (count > 0) {
 #ifdef HEADER_ON
 	 long type = ulm_ntohi(header.msg.type);
@@ -239,11 +239,10 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     iov[0].iov_base = (char *) &header;
     iov[0].iov_len = sizeof(udp_header);;
 
-
     do {
     count = recvmsg(sockfd, &msgHdr, MSG_PEEK);
-    
-	if (count > 0) {
+
+	if (count >= 0) {
 #ifdef HEADER_ON
             long type = ulm_ntohi(header.msg.type);
 #else
