@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "run/Run.h"
+#include "util/misc.h"
 
 /* this routine is used to set up some of mpirun's process
  *   characteristics
@@ -24,11 +25,12 @@ void lampirun_init_proc()
      */
     mpirunSetTerminateInitiated(0);
 
+        
     /*
      * Install signal handlers
      */
+    set_sa_restart();
     MPIrunInstallSigHandler();
-
 
     /* return */
     return;
