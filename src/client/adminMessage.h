@@ -285,6 +285,9 @@ public:
     enum { UNKNOWN_HOST_ID = -1 };
 
     int socketToServer_m;
+    int serverSocket_m;
+    bool cancelConnect_m;
+    bool socketsToProcess_m[MAXSOCKETS];
 
 private:
 
@@ -310,7 +313,6 @@ private:
     static struct sigaction oldSignals, newSignals;
     static jmp_buf savedEnv;
 
-    int serverSocket_m;
     bool clientSocketActive_m[MAXSOCKETS];
     int ranks_m[MAXSOCKETS];
     int processCount[MAXSOCKETS];
