@@ -112,6 +112,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *);
 void lampi_init_prefork_ip_addresses(lampiState_t *);
 void lampi_init_prefork_resource_management(lampiState_t *);
 void lampi_init_prefork_resources(lampiState_t *);
+void lampi_init_prefork_check_stdio(lampiState_t *);
 void lampi_init_prefork_stdio(lampiState_t *);
 void lampi_init_prefork_stdio_pipe(lampiState_t *);
 void lampi_init_prefork_stdio_pty(lampiState_t *);
