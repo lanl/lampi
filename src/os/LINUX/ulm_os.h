@@ -36,7 +36,7 @@
 
 #define RESTRICT_MACRO __restrict__
 
-#ifdef __i386
+#if defined(__i386) || defined(__x86_64__)
 #define PAGESIZE    4096
 #define SMPPAGESIZE 4096
 #define intwordaligned(a)   ( ( ((long)(a)&3L) == 0L) ? 1 : 0 )

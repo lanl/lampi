@@ -68,6 +68,10 @@ public:
 #include "os/LINUX/i686/SMPDevParams.h"
 #endif
 
+#if defined(__linux__) && defined(__x86_64__)
+#include "os/LINUX/x86_64/SMPDevParams.h"
+#endif
+
 #if defined(__linux__) && defined(__alpha)
 #include "os/LINUX/alpha/SMPDevParams.h"
 #endif
@@ -115,7 +119,7 @@ typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logica
 typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 
-#if defined(__linux__) && defined(__i386)
+#if defined(__linux__) && (defined(__i386) || defined(__x86_64_))
 typedef SMPSharedMem_log_dev<440*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 

@@ -293,6 +293,7 @@ x86_64-unknown-linux*)
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"
+        IB_PREFIX="${IB_PREFIX:-/usr/mellanox}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""

@@ -50,6 +50,10 @@
 #include "os/LINUX/i686/atomic.h"
 #endif
 
+#if defined (__linux__) && defined(__x86_64__)
+#include "os/LINUX/x86_64/atomic.h"
+#endif
+
 #ifdef __CYGWIN__
 #include "os/CYGWIN/atomic.h"
 #endif
