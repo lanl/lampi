@@ -147,7 +147,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
         int nodeID = bproc_nodenumber((struct sockaddr *) &Child, size);
         /* find order in list */
         for (j = 0; j < RunParameters->NHosts; j++) {
-            int node = atoi(RunParameters->HostList[j]);
+            int node = bproc_getnodebyname(RunParameters->HostList[j]);
             int foundNode = 0;
             if (node == nodeID)
                 foundNode = 1;

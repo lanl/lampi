@@ -122,7 +122,7 @@ UDPNetwork::UDPNetwork(int num_hosts, int num_procs, int len_name,
 #ifdef BPROC
         int size = sizeof(struct sockaddr);
         int RetVal =
-            bproc_nodeaddr(atoi(hostName),
+            bproc_nodeaddr(bproc_getnodebyname(hostName),
                            (struct sockaddr *) &hostAddrs[i], &size);
         if (RetVal != 0) {
             ulm_err((" UDPNetwork::UDPNetwork :: error returned from the bproc_nodeaddr call :: errno - %d \n", errno));

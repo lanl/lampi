@@ -100,7 +100,7 @@ int socketToNodeId(int numHosts, HostName_t* hostList,
     int nodeID = bproc_nodenumber((struct sockaddr *) client, size);
     /* find order in list */
     for (j = 0; j < numHosts ; j++) {
-        if( atoi(hostList[j]) == nodeID ) {
+        if( bproc_getnodebyname(hostList[j]) == nodeID ) {
             /* if this host index already used - continue */
             if( assignNewId && (hostsAssigned[j]) )
                 continue;
