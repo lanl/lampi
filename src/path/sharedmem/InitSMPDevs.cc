@@ -39,7 +39,7 @@
 #include <new>
 
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "util/Utility.h"
 #include "util/cbQueue.h"
 #include "internal/constants.h"

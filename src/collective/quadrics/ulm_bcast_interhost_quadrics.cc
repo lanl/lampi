@@ -42,7 +42,7 @@
 #include <elan/elan.h>
 #include <rms/rmscall.h>
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "util/MemFunctions.h"
 #include "internal/constants.h"
 #include "internal/types.h"

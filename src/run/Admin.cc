@@ -114,60 +114,51 @@ static int GetIOFromClient(int *fd)
 /*
  * Read control messages sent to mpirun from the client daemons
  */
-int CheckForControlMsgs(int MaxDesc,
-                        int *fd, /* ClientSocketFDList */
-                        int NHosts,
-                        double *HeartBeat,
-                        int *HostsNormalTerminated,
-                        int *HostsAbNormalTerminated,
-                        int *ActiveHosts,
-                        int *ProcessCnt,
-                        pid_t **PIDsOfAppProcs,
-                        double *TimeFirstCheckin,
-                        int *ActiveClients)
+int CheckForControlMsgs(void)
 {
+    int *fd = RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
     int error = 0;
     int rc;
+    int maxfd;
     ssize_t size;
     struct timeval timeout;
     ulm_fd_set_t fdset;
     ulm_iovec_t iov;
     unsigned tag;
 
-    extern int StdInCTS;   // stdin flow control (defined in Daemonize.cc)
+    extern int StdInCTS;   // stdin flow control (defined in Run.cc)
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 100000;
 
     memset(&fdset, 0, sizeof(fdset));
-    for (int i = 0; i < NHosts; i++) {
+    maxfd = 0;
+    for (int i = 0; i < RunParams.NHosts; i++) {
         if (fd[i] > 0) {
-            FD_SET(fd[i], (fd_set *) & fdset);
+            FD_SET(fd[i], (fd_set *) &fdset);
+            maxfd = ULM_MAX(maxfd, fd[i]);
         }
     }
 
-    rc = select(MaxDesc, (fd_set *) & fdset, NULL, NULL, &timeout);
+    rc = select(maxfd + 1, (fd_set *) &fdset, NULL, NULL, &timeout);
     if (rc <= 0) {
         return rc;
     }
 
-    for (int host = 0; host < NHosts; host++) {
-        if ((fd[host] > 0) && (FD_ISSET(fd[host], (fd_set *) & fdset))) {
+    for (int host = 0; host < RunParams.NHosts; host++) {
+        if ((fd[host] > 0) && (FD_ISSET(fd[host], (fd_set *) &fdset))) {
             /* Read tag value */
             size = RecvSocket(fd[host], &tag, sizeof(unsigned), &error);
-            /* one end of pipe closed */
-            if (size == 0 || error != ULM_SUCCESS) {
-                ulm_dbg(("RecvSocket: host=%i size=%ld error=%d\n",
-                         host, (long) size, error));
+            /* remote end of socket closed */
+            if (size == 0) {
+                ulm_err(("Error: Lost connection to daemon on host %d\n",
+                         host));
                 fd[host] = -1;
-                if (ActiveHosts[host]) {
-                    (*HostsAbNormalTerminated)++;
-                } else {
-                    (*ActiveClients)--;
-                }
-                continue;
+                RunParams.ActiveHost[host] = 0;
+                RunParams.HostsAbNormalTerminated++;
+                KillAppProcs(host);
             }
-            if (size < 0) {
+            if (size < 0 || error != ULM_SUCCESS) {
                 ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
                          host, (long) size, error));
                 Abort();
@@ -177,24 +168,8 @@ int CheckForControlMsgs(int MaxDesc,
 
             case HEARTBEAT:
                 if (RunParams.Verbose) {
-                    ulm_err(("*** heartbeat from host %d "
-                             "(period = %d, timeout = %d)\n",
-                             host,
-                             RunParams.HeartbeatPeriod,
-                             RunParams.HeartbeatTimeout));
-                }
-                if (RunParams.doHeartbeat) {
-#ifndef HAVE_CLOCK_GETTIME
-                    struct timeval t;
-                    gettimeofday(&t, NULL);
-                    HeartBeat[host] =
-                        (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
-#else
-                    struct timespec t;
-                    clock_gettime(CLOCK_REALTIME, &t);
-                    HeartBeat[host] =
-                        (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
-#endif
+                    ulm_err(("*** heartbeat from host %d (period = %d)\n",
+                             host, RunParams.HeartbeatPeriod));
                 }
                 break;
 
@@ -236,16 +211,16 @@ int CheckForControlMsgs(int MaxDesc,
 
                 ulm_free(ru);
 
-                if (ActiveHosts[host]) {
-                    (*HostsNormalTerminated)++;
+                if (RunParams.ActiveHost[host] != 0) {
+                    RunParams.HostsNormalTerminated++;
                 }
-                ActiveHosts[host] = 0;
+                RunParams.ActiveHost[host] = 0;
 
                 // if all hosts have terminated normally notify
                 // all hosts, so that they can stop network
                 // processing and shut down.
 
-                if ((*HostsNormalTerminated) == NHosts) {
+                if (RunParams.HostsNormalTerminated == RunParams.NHosts) {
 
                     if (RunParams.Verbose) {
                         ulm_err(("*** all hosts reported normal exit\n"));
@@ -254,7 +229,7 @@ int CheckForControlMsgs(int MaxDesc,
                     tag = ALLHOSTSDONE;
                     iov.iov_base = (char *) &tag;
                     iov.iov_len = (ssize_t) (sizeof(unsigned));
-                    for (int j = 0; j < NHosts; j++) {
+                    for (int j = 0; j < RunParams.NHosts; j++) {
                         /* send request if socket still open */
                         if (fd[j] > 0) {
                             if (RunParams.Verbose) {
@@ -264,10 +239,10 @@ int CheckForControlMsgs(int MaxDesc,
                             size = SendSocket(fd[j], 1, &iov);
                             /* if size <= 0 assume connection lost */
                             if (size <= 0) {
-                                if (ActiveHosts[host]) {
-                                    (*HostsAbNormalTerminated)++;
+                                if (RunParams.ActiveHost[host]) {
+                                    RunParams.HostsAbNormalTerminated++;
                                 }
-                                ActiveHosts[host] = 0;
+                                RunParams.ActiveHost[host] = 0;
                             }
                         }
                     }
@@ -278,7 +253,6 @@ int CheckForControlMsgs(int MaxDesc,
                 if (RunParams.Verbose) {
                     ulm_err(("*** host %d done\n", host));
                 }
-                (*ActiveClients)--;
                 fd[host] = -1;
                 break;
 
@@ -303,7 +277,7 @@ int CheckForControlMsgs(int MaxDesc,
                     ulm_err(("*** stdio: receiving output from host %d\n",
                              host));
                 }
-                ActiveHosts[host] = GetIOFromClient(&fd[host]);
+                RunParams.ActiveHost[host] = GetIOFromClient(&fd[host]);
                 break;
 
             case STDIOMSG_CTS:

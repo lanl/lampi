@@ -392,23 +392,23 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
         p->status = 0;
     }
 
-     /*
-      * clear process mask...except for __pthread_sig_restart
-      * used by glibc-LinuxThreads pthreads library
-      */
-     sigemptyset(&signals);
-     sigaddset(&signals, SIGCHLD);
-     if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
-         perror("sigprocmask failed");
-         abort();
-     }
+    /*
+     * clear process mask...except for __pthread_sig_restart
+     * used by glibc-LinuxThreads pthreads library
+     */
+    (void) sigemptyset(&signals);
+    (void) sigaddset(&signals, SIGCHLD);
+    if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
+        perror("sigprocmask failed");
+        abort();
+    }
 
     /*
      * Install SIGCHLD handler
      */
 
     action.sa_handler = sigchld_handler;
-    sigfillset(&action.sa_mask);
+    (void) sigfillset(&action.sa_mask);
     action.sa_flags = SA_NOCLDSTOP;
     if (sigaction(SIGCHLD, &action, NULL) < 0) {
         perror("sigaction failed");
@@ -425,7 +425,7 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     }
     if (action.sa_handler != SIG_IGN) {
         action.sa_handler = fatal_signal_handler;
-        sigemptyset(&action.sa_mask);
+        (void) sigemptyset(&action.sa_mask);
         action.sa_flags = 0;
         if (sigaction(SIGHUP, &action, NULL) < 0) {
             perror("sigaction failed");
@@ -439,7 +439,7 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     }
     if (action.sa_handler != SIG_IGN) {
         action.sa_handler = fatal_signal_handler;
-        sigemptyset(&action.sa_mask);
+        (void) sigemptyset(&action.sa_mask);
         action.sa_flags = 0;
         if (sigaction(SIGINT, &action, NULL) < 0) {
             perror("sigaction failed");
@@ -453,7 +453,7 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     }
     if (action.sa_handler != SIG_IGN) {
         action.sa_handler = fatal_signal_handler;
-        sigemptyset(&action.sa_mask);
+        (void) sigemptyset(&action.sa_mask);
         action.sa_flags = 0;
         if (sigaction(SIGTERM, &action, NULL) < 0) {
             perror("sigaction failed");
@@ -584,8 +584,8 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
          * clear process mask...except for __pthread_sig_restart
          * used by glibc-LinuxThreads pthreads library
          */
-        sigemptyset(&signals);
-        sigaddset(&signals, SIGCHLD);
+        (void) sigemptyset(&signals);
+        (void) sigaddset(&signals, SIGCHLD);
         if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
             perror("sigprocmask failed");
             abort();
@@ -616,7 +616,7 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         }
         if (action.sa_handler != SIG_IGN) {
             action.sa_handler = fatal_signal_handler;
-            sigemptyset(&action.sa_mask);
+            (void) sigemptyset(&action.sa_mask);
             action.sa_flags = 0;
             if (sigaction(SIGHUP, &action, NULL) < 0) {
                 perror("sigaction failed");
@@ -630,7 +630,7 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         }
         if (action.sa_handler != SIG_IGN) {
             action.sa_handler = fatal_signal_handler;
-            sigemptyset(&action.sa_mask);
+            (void) sigemptyset(&action.sa_mask);
             action.sa_flags = 0;
             if (sigaction(SIGINT, &action, NULL) < 0) {
                 perror("sigaction failed");
@@ -644,7 +644,7 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         }
         if (action.sa_handler != SIG_IGN) {
             action.sa_handler = fatal_signal_handler;
-            sigemptyset(&action.sa_mask);
+            (void) sigemptyset(&action.sa_mask);
             action.sa_flags = 0;
             if (sigaction(SIGTERM, &action, NULL) < 0) {
                 perror("sigaction failed");
@@ -692,7 +692,7 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
  */
 int fork_many(int nprocs, enum fork_many_type type, volatile pid_t *local_pids)
 {
-	int rank;
+    int rank;
     if (type == FORK_MANY_TYPE_TREE) {
         rank=fork_many_tree(0, nprocs, local_pids);
     } else {

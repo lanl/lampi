@@ -1,9 +1,7 @@
 SRC_MPIRUN += \
 	src/init/environ.cc \
 	src/run/Abort.cc \
-	src/run/CheckForControlMsgs.cc \
-	src/run/CheckHeartBeat.cc \
-	src/run/Daemonize.cc \
+	src/run/Admin.cc \
 	src/run/Debugger.cc \
 	src/run/GetAppHostData.cc \
 	src/run/GetClientApp.cc \
@@ -20,6 +18,7 @@ SRC_MPIRUN += \
 	src/run/Log.cc \
 	src/run/ProcessInput.cc \
 	src/run/RearrangeHostList.cc \
+        src/run/Run.cc \
 	src/run/RunParams.cc \
 	src/run/SendInputDataToClients.cc \
 	src/run/SetupClientHostInfo.cc \

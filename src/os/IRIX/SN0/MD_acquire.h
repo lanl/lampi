@@ -57,7 +57,7 @@ extern "C" {
 #include "internal/log.h"
 #include "internal/new.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "os/IRIX/SN0/MD_acquireGlobals.h"
 
 class

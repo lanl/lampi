@@ -81,13 +81,6 @@ Options_t Options[] =
      Version,
      "Print version and exit"
     },
-    {{"v", "verbose"},
-     "Verbose",
-     NO_ARGS,
-     NoOpFunction,
-     SetVerboseTrue,
-     "Verbose start-up messages"
-    },
     /* HostCount must be before HostList */
     {{"N", "nhosts"},
      "HostCount",
@@ -146,7 +139,7 @@ Options_t Options[] =
      NO_ARGS,
      NoOpFunction,
      SetVerboseTrue,
-     "Verbose start-up messages"
+     "Extremely verbose progress information"
     },
     {{"w", "warn"},
      "Warn",
@@ -303,13 +296,6 @@ Options_t Options[] =
      NoOpFunction,
      SetHeartbeatPeriod,
      "Period in seconds of heartbeats between mpirun and daemon processes"
-    },
-    {{"heartbeat-timeout"},
-     "HeartbeatTimeout",
-     STRING_ARGS,
-     NoOpFunction,
-     SetHeartbeatTimeout,
-     "Interval without seeing a heartbeat before the application is terminated"
     },
     {{"minsmprecvdesc"},
      "MinSMPrecvdescpages",
@@ -1781,37 +1767,8 @@ void SetHeartbeatPeriod(const char *InfoStream)
         Usage(stderr);
         exit(EXIT_FAILURE);
     }
-
-    if (RunParams.HeartbeatPeriod <= 0) {
-        RunParams.doHeartbeat = 0;
-        RunParams.HeartbeatPeriod = -1;
-        RunParams.HeartbeatTimeout = -1;
-    }
 }
 
-
-void SetHeartbeatTimeout(const char *InfoStream)
-{
-    char *ptr;
-    int index = MatchOption("HeartbeatTimeout");
-    if (index < 0) {
-        ulm_err(("Error: Option HeartbeatTimeout not found\n"));
-        Abort();
-    }
-
-    RunParams.HeartbeatTimeout = strtol(Options[index].InputData, &ptr, 10);
-    if (ptr == Options[index].InputData) {
-        ulm_err(("Error: Parsing HeartbeatTimeout (%s)\n", Options[index].InputData));
-        Usage(stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    if (RunParams.HeartbeatTimeout <= 0) {
-        RunParams.doHeartbeat = 0;
-        RunParams.HeartbeatPeriod = -1;
-        RunParams.HeartbeatTimeout = -1;
-    }
-}
 
 #if ENABLE_NUMA
 

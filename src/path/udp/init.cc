@@ -33,7 +33,7 @@
 #endif
 
 #include "client/SocketGeneric.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"   // for ShareMemDescPool
 #include "internal/log.h"
 #include "internal/malloc.h"

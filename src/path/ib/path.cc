@@ -49,7 +49,7 @@ extern "C" {
 #include "path/ib/sendFrag.h"
 #include "path/ib/recvFrag.h"
 #include "path/ib/header.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"
 
 #define IB_MIN_SEND_FRAGS_FOR_ACK  10

@@ -81,7 +81,7 @@ int InstallSigHandler(void)
      *            proceeding.
      */
     sa.sa_handler = handler;
-    sigfillset(&sa.sa_mask);
+    (void) sigfillset(&sa.sa_mask);
     sa.sa_flags = 0;
     if (sigaction(SIGHUP, &sa, NULL)) {
         ulm_err(("Error: trapping SIGHUP\n"));

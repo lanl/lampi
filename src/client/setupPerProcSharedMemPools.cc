@@ -36,7 +36,7 @@
 
 #include "ulm/errors.h"
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 
 // per-proc shared memory pool for use before the fork (will apply
 // memory affinity to each pool

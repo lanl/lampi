@@ -61,7 +61,7 @@
 #include "queue/contextID.h"
 #include "queue/globals.h"
 #include "client/adminMessage.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "util/Lock.h"
 #include "util/MemFunctions.h"
 #include "util/Utility.h"
@@ -1137,16 +1137,8 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&(s->isatty),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-        case adminMessage::DOHEARTBEAT:
-            s->client->unpack(&(s->doHeartbeat),
-                              (adminMessage::packType) sizeof(int), 1);
-            break;
         case adminMessage::HEARTBEATPERIOD:
             s->client->unpack(&(s->HeartbeatPeriod),
-                              (adminMessage::packType) sizeof(int), 1);
-            break;
-        case adminMessage::HEARTBEATTIMEOUT:
-            s->client->unpack(&(s->HeartbeatTimeout),
                               (adminMessage::packType) sizeof(int), 1);
             break;
 

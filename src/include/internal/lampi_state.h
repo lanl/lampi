@@ -161,9 +161,7 @@ typedef struct {
     int verbose;                    /* verbose start-up messages */
     int warn;                       /* enable warning messages */
     int isatty;                     /* is mpirun a tty? */
-    int doHeartbeat;                /* Should we do heartbeats? */
     int HeartbeatPeriod;            /* Period in seconds of heartbeat between mpirun and daemons */
-    int HeartbeatTimeout;           /* Interval without seeing a heartbeat before the application is terminated */
     size_t StderrBytesWritten;      /* number of bytes written to stderr */
     size_t StdoutBytesWritten;      /* number of bytes written to stdout */
     int *NewLineLast;               /* insert newline character? */

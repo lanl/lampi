@@ -46,7 +46,7 @@
 #include "internal/types.h"
 #include "internal/state.h"
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "client/SocketGeneric.h"
 
 /*
@@ -55,7 +55,7 @@
  * This routine needs to make sure that the "stdio" from the user
  * application is deliverd properly to mpirun, for output.
  */
-void ClientOrderlyShutdown(int ControlSocketToULMRunFD)
+void ClientOrderlyShutdown(lampiState_t *s)
 {
     unsigned int Tag;
     ssize_t IOReturn;
@@ -74,9 +74,9 @@ void ClientOrderlyShutdown(int ControlSocketToULMRunFD)
     Tag = NORMALTERM;
     IOVec[0].iov_base = (char *) &Tag;
     IOVec[0].iov_len = (ssize_t) sizeof(unsigned int);
-    IOVec[1].iov_base = (char *) lampiState.rusage;
+    IOVec[1].iov_base = (char *) s->rusage;
     IOVec[1].iov_len = (ssize_t) sizeof(struct rusage) * local_nprocs();
-    IOReturn = SendSocket(ControlSocketToULMRunFD, 2, IOVec);
+    IOReturn = SendSocket(s->client->socketToServer_m, 2, IOVec);
 
     /* abort here on error, since not aborting will cause Client to
      *  spin wainting on an ack that will never arive, since the Normalterm

@@ -344,6 +344,10 @@ int SpawnRsh(unsigned int *AuthData,
                     RunParams.WorkingDirList[i]);
             sprintf(ExecArgs[AppEntry], "%s", RunParams.ExeList[i]);
 
+            for (int j = 0; ExecArgs[j]; j++) {
+                fprintf(stderr, " %s", ExecArgs[j]);
+            }
+            fprintf(stderr, "\n");
             execvp(ExecArgs[0], ExecArgs);
             printf(" after execv\n");
 

@@ -42,7 +42,7 @@
 #include "queue/globals.h"
 #include "queue/barrier.h"
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "os/IRIX/SN0/barrierFunctions.h"
 #include "os/IRIX/SN0/fetchAndOp.h"
 #include "internal/constants.h"

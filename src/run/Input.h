@@ -83,7 +83,6 @@ void NotImplementedFunction(const char *msg);
 void SetCheckArgsFalse(const char *msg);
 void SetConnectTimeout(const char *msg);
 void SetHeartbeatPeriod(const char *msg);
-void SetHeartbeatTimeout(const char *msg);
 void SetOutputPrefixTrue(const char *msg);
 void SetQuietTrue(const char *msg);
 void SetVerboseTrue(const char *msg);

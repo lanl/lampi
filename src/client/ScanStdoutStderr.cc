@@ -48,7 +48,7 @@
 #include "internal/profiler.h"
 #include "internal/types.h"
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "client/SocketGeneric.h"
 #include "queue/globals.h"
 
@@ -100,16 +100,12 @@ static int readFromDescriptor(int ClientFD, int *ServerFD, int StdioFD,
  * children on this particular Client host, and forward the data to
  * the Server.
  */
-int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
-                           int *ServerFD,
-                           int NFDs, int MaxDescriptor,
-                           PrefixName_t * IOPreFix, int *LenIOPreFix,
-                           size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten, int *NewLineLast,
-                           lampiState_t * state)
+int ClientScanStdoutStderr(lampiState_t *s)
 {
+    int *ServerFD = &(s->client->socketToServer_m);
     int i, RetVal, NumberReads, nfds;
-    fd_set ReadSet;
+    int maxfd;
+    ulm_fd_set_t ReadSet;
     ssize_t lenR, lenW;
     struct timeval WaitTime;
     WaitTime.tv_sec = 0;
@@ -117,95 +113,101 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     NumberReads = 0;
 
     /* check to see if there is any data to read */
+    maxfd = 0;
     nfds = 0;
-    FD_ZERO(&ReadSet);
-    for (i = 0; i < NFDs; i++) {
-        if (ClientStdoutFDs[i] >= 0) {
-            FD_SET(ClientStdoutFDs[i], &ReadSet);
+    ULM_FD_ZERO(&ReadSet);
+    for (i = 0; i < s->local_size + 1; i++) {
+        if (s->STDOUTfdsFromChildren[i] >= 0) {
+            ULM_FD_SET(s->STDOUTfdsFromChildren[i], &ReadSet);
+            maxfd = ULM_MAX(maxfd, s->STDOUTfdsFromChildren[i]);
             nfds++;
         }
     }
-    for (i = 0; i < NFDs; i++) {
-        if (ClientStderrFDs[i] >= 0) {
-            FD_SET(ClientStderrFDs[i], &ReadSet);
+    for (i = 0; i < s->local_size + 1; i++) {
+        if (s->STDERRfdsFromChildren[i] >= 0) {
+            ULM_FD_SET(s->STDERRfdsFromChildren[i], &ReadSet);
+            maxfd = ULM_MAX(maxfd, s->STDERRfdsFromChildren[i]);
             nfds++;
         }
     }
-    if (state->commonAlivePipe[0] >= 0) {
-        FD_SET(state->commonAlivePipe[0], &ReadSet);
+    if (s->commonAlivePipe[0] >= 0) {
+        FD_SET(s->commonAlivePipe[0], &ReadSet);
+        maxfd = ULM_MAX(maxfd, s->commonAlivePipe[0]);
         nfds++;
     }
 
-    if (nfds == 0)
+    if (nfds == 0) {
         return 0;
+    }
 
-    RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
-    if (RetVal <= 0)
+    RetVal = select(maxfd + 1, (fd_set *) &ReadSet, NULL, NULL, &WaitTime);
+    if (RetVal <= 0) {
         return RetVal;
+    }
 
-    if ((state->commonAlivePipe[0] >= 0)
-        && (FD_ISSET(state->commonAlivePipe[0], &ReadSet))) {
+    if ((s->commonAlivePipe[0] >= 0)
+        && (ULM_FD_ISSET(s->commonAlivePipe[0], &ReadSet))) {
         /* all processes must have exited...pipe has been closed */
-        for (i = 0; i < (NFDs - 1); i++) {
-            state->IAmAlive[i] = 0;
+        for (i = 0; i < s->local_size; i++) {
+            s->IAmAlive[i] = 0;
         }
-        close(state->commonAlivePipe[0]);
-        state->commonAlivePipe[0] = -1;
+        close(s->commonAlivePipe[0]);
+        s->commonAlivePipe[0] = -1;
     }
 
     /* read data from standard error */
-    for (i = 0; i < NFDs; i++) {
-        if ((ClientStderrFDs[i] > 0)
-            && (FD_ISSET(ClientStderrFDs[i], &ReadSet))) {
-            /* clear ClientStderrFDs[i] from ReadSet in case it is
+    for (i = 0; i < s->local_size + 1; i++) {
+        if ((s->STDERRfdsFromChildren[i] > 0)
+            && (ULM_FD_ISSET(s->STDERRfdsFromChildren[i], &ReadSet))) {
+            /* clear s->STDERRfdsFromChildren[i] from ReadSet in case it is
              * also standard output */
-            FD_CLR(ClientStderrFDs[i], &ReadSet);
+            ULM_FD_CLR(s->STDERRfdsFromChildren[i], &ReadSet);
             lenR =
-                readFromDescriptor(ClientStderrFDs[i], ServerFD,
-                                   STDERR_FILENO, NewLineLast + i,
+                readFromDescriptor(s->STDERRfdsFromChildren[i], ServerFD,
+                                   STDERR_FILENO, s->NewLineLast + i,
                                    lastClientStderrFD,
                                    lastNewLineLastToServerStderr,
-                                   IOPreFix[i], LenIOPreFix[i], &lenW,
-                                   state);
+                                   s->IOPreFix[i], s->LenIOPreFix[i], &lenW,
+                                   s);
             if (lenR > 0) {
                 NumberReads++;
                 if (lenW > 0) {
-                    (*StderrBytesWritten) += lenW;
-                    lastClientStderrFD = ClientStderrFDs[i];
-                    lastNewLineLastToServerStderr = NewLineLast[i];
+                    s->StderrBytesWritten += lenW;
+                    lastClientStderrFD = s->STDERRfdsFromChildren[i];
+                    lastNewLineLastToServerStderr = s->NewLineLast[i];
                 }
             } else {
                 // lenR <= 0
-                close(ClientStderrFDs[i]);
-                ClientStderrFDs[i] = -1;
+                close(s->STDERRfdsFromChildren[i]);
+                s->STDERRfdsFromChildren[i] = -1;
             }
         }
     }
 
     /* read data from standard out */
-    for (i = 0; i < NFDs; i++) {
-        if ((ClientStdoutFDs[i] > 0)
-            && (FD_ISSET(ClientStdoutFDs[i], &ReadSet))) {
-            /* clear ClientStderrFDs[i] from ReadSet in case it is
+    for (i = 0; i < s->local_size + 1; i++) {
+        if ((s->STDOUTfdsFromChildren[i] > 0)
+            && (ULM_FD_ISSET(s->STDOUTfdsFromChildren[i], &ReadSet))) {
+            /* clear s->STDERRfdsFromChildren[i] from ReadSet in case it is
              * also standard output */
-            FD_CLR(ClientStdoutFDs[i], &ReadSet);
+            ULM_FD_CLR(s->STDOUTfdsFromChildren[i], &ReadSet);
             lenR =
-                readFromDescriptor(ClientStdoutFDs[i], ServerFD,
-                                   STDOUT_FILENO, NewLineLast + i,
+                readFromDescriptor(s->STDOUTfdsFromChildren[i], ServerFD,
+                                   STDOUT_FILENO, s->NewLineLast + i,
                                    lastClientStdoutFD,
                                    lastNewLineLastToServerStdout,
-                                   IOPreFix[i], LenIOPreFix[i], &lenW,
-                                   state);
+                                   s->IOPreFix[i], s->LenIOPreFix[i], &lenW,
+                                   s);
             if (lenR > 0) {
                 NumberReads++;
                 if (lenW > 0) {
-                    (*StdoutBytesWritten) += lenW;
-                    lastClientStdoutFD = ClientStdoutFDs[i];
-                    lastNewLineLastToServerStdout = NewLineLast[i];
+                    s->StdoutBytesWritten += lenW;
+                    lastClientStdoutFD = s->STDOUTfdsFromChildren[i];
+                    lastNewLineLastToServerStdout = s->NewLineLast[i];
                 }
             } else {
-                close(ClientStdoutFDs[i]);
-                ClientStdoutFDs[i] = -1;
+                close(s->STDOUTfdsFromChildren[i]);
+                s->STDOUTfdsFromChildren[i] = -1;
             }
         }
     }

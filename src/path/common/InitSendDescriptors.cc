@@ -40,7 +40,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/malloc.h"

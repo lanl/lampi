@@ -36,17 +36,18 @@
 #endif
 
 #include "internal/profiler.h"
+#include "internal/state.h"
 #include "queue/globals.h"
 
 /*
  *  This routine is used to check how many children are still alive
  */
-int ClientCheckIfChildrenAlive(int *ProcessCount, int hostIndex, int *IAmAlive)
+int ClientCheckIfChildrenAlive(lampiState_t *s)
 {
     /* check for normal termination */
     int sum = 0;
-    for (int i = 0; i < ProcessCount[hostIndex]; i++) {
-        if (IAmAlive[i] == 1) {
+    for (int i = 0; i < s->local_size; i++) {
+        if (s->IAmAlive[i] == 1) {
             sum++;
         }
     }

@@ -40,7 +40,7 @@
 #include <unistd.h>
 
 #include "init/init.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "util/dclock.h"
 #include "util/misc.h"
 

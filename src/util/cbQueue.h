@@ -37,6 +37,7 @@
 #include <new>
 
 #include "internal/malloc.h"
+#include "internal/system.h"
 #include "util/Lock.h"
 
 /*

@@ -41,8 +41,7 @@ int parseString(char ***ArgList, const char *InputBuffer,
 void FreeStringMem(char ***ArgList, int NArgs);
 int NStringArgs(char *InputBuffer, int NSeparators,
                 char *SeparatorList);
-int SendHeartBeat(int *ClientSocketFDList, int NHosts,
-                  int MaxDescriptor);
+int SendHeartBeat(int *fd, int n);
 void poisonMemory(void *ptr, ssize_t lenInBytes, int pattern);
 int createDoubleLinkList(SharedMemDblLinkList **);
 void bcopy2(const void *source, void *destination, unsigned long copylen);

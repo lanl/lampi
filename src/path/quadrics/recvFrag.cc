@@ -37,7 +37,7 @@
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/state.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"	// for getMemPoolIndex()
 #include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
 #include "path/quadrics/recvFrag.h"

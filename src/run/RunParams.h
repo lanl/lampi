@@ -87,6 +87,10 @@ struct RunParams_t {
     int MaxProcessCount;
 
     /* Number of hosts that terminated normally */
+    int *ActiveHost;   /* ActiveHost[i] == 0, daemon terminated    *
+                        *                  1, daemon still running */
+
+    /* Number of hosts that terminated normally */
     int HostsNormalTerminated;
 
     /* Number of hosts that terminated abnormally */
@@ -229,14 +233,8 @@ struct RunParams_t {
     /* Connect timeout period - in seconds */
     int ConnectTimeout;
 
-    /* Should we do heartbeats? */
-    int doHeartbeat;
-
     /* Period in seconds of heartbeat between mpirun and daemons */
     int HeartbeatPeriod;
-
-    /* Interval without seeing a heartbeat before the application is terminated */
-    int HeartbeatTimeout;
 
     // list of environment variables to set on each host
     int nEnvVarsToSet;

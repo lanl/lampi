@@ -38,7 +38,7 @@
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "os/IRIX/request.h"
 
 int resource_info::get_other(int n)

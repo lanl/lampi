@@ -36,7 +36,7 @@
 
 #define ULM_GLOBAL_DEFINE
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "init/init.h"
 #include "internal/log.h"
 #include "internal/profiler.h"

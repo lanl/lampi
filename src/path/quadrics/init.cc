@@ -39,7 +39,7 @@
 #include <elan/version.h>
 #include <rms/rmscall.h>
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"
 #include "internal/log.h"
 #include "internal/malloc.h"

@@ -182,7 +182,7 @@ adminMessage::adminMessage()
 
     /* all signals will be blocked while handleAlarm is running */
     newSignals.sa_handler = &handleAlarm;
-    sigfillset(&newSignals.sa_mask);
+    (void) sigfillset(&newSignals.sa_mask);
     newSignals.sa_flags = 0;
 
     /* initialize collective resources */
@@ -904,8 +904,8 @@ void *server_connect_accept(void *arg)
     t.tv_usec = 10000;
 
     /* disable SIGALRM for this thread */
-    sigemptyset(&signals);
-    sigaddset(&signals, SIGALRM);
+    (void) sigemptyset(&signals);
+    (void) sigaddset(&signals, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &signals, (sigset_t *) NULL);
 
     /* enable deferred cancel mode for this thread */

@@ -53,6 +53,10 @@ static int TerminateInitiated = 0;
  */
 void AbortFunction(const char *file, int line)
 {
+    int *fd = RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
+    int tag;
+    ulm_iovec_t iovec;
+
     if (!RunParams.ClientsSpawned) {
 
         _ulm_set_file_line(file, line);
@@ -67,38 +71,41 @@ void AbortFunction(const char *file, int line)
         _ulm_set_file_line(file, line);
         _ulm_log("mpirun exiting: aborting clients\n");
 
-        if (0 == ENABLE_RMS) {
+        if (!fd) {
+            exit(EXIT_FAILURE);
+        }
 
-            int tag;
-            ulm_iovec_t iovec;
-            int *fd =
-                RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
+        if (ENABLE_RMS) {
+            exit(EXIT_FAILURE);
+        }
 
-            TerminateInitiated = 1;
+        TerminateInitiated = 1;
 
-            /* send abort message to each host */
-            tag = TERMINATENOW;
-            iovec.iov_base = (char *) &tag;
-            iovec.iov_len = (ssize_t) sizeof(int);
-            if (fd) {
-                for (int i = 0; i < RunParams.NHosts; i++) {
-                    /* send only to hosts that are still alive */
-                    if (fd[i] > 0) {
-                        if (SendSocket(fd[i], 1, &iovec) <= 0) {
-                            /* with failed send, register host as down */
-                            close(fd[i]);
-                            fd[i] = -1;
-                            RunParams.HostsAbNormalTerminated++;
-                        }
+        /* send abort message to each host */
+        tag = TERMINATENOW;
+        iovec.iov_base = (char *) &tag;
+        iovec.iov_len = (ssize_t) sizeof(int);
+        if (fd) {
+            for (int i = 0; i < RunParams.NHosts; i++) {
+                /* send only to hosts that are still alive */
+                if (fd[i] > 0) {
+                    if (SendSocket(fd[i], 1, &iovec) <= 0) {
+                        /* with failed send, register host as down */
+                        close(fd[i]);
+                        fd[i] = -1;
+                        RunParams.HostsAbNormalTerminated++;
                     }
                 }
             }
         }
-
-        /* last ditch clean-up (on some platforms) */
-        KillAppProcs(-1);
     }
 
+    /* one last attempt to clean up errant processes */
+    for (int h = 0; h < RunParams.NHosts; h++) {
+        if (RunParams.ActiveHost[h]) {
+            KillAppProcs(h);
+        }
+    }
 
     LogJobAbort();
 

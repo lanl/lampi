@@ -60,6 +60,10 @@
  */
 void KillAppProcs(int host)
 {
+    if (host < 0 || host >= RunParams.NHosts || !RunParams.AppPIDs) {
+        return;
+    }
+
     if (RunParams.UseRMS) {
 
         /* Let RMS handle clean-up (should never get here) */
@@ -71,7 +75,9 @@ void KillAppProcs(int host)
         /* kill local processes */
 
         if (host == 0 && RunParams.AppPIDs) {
-            ulm_err(("Killing processes\n"));
+            if (RunParams.Verbose) {
+                ulm_err(("Killing processes on host %d\n", host));
+            }
             for (int i = 0; i < RunParams.ProcessCount[host]; i++) {
                 pid_t pid = RunParams.AppPIDs[0][i];
                 if (RunParams.Verbose) {
@@ -95,18 +101,16 @@ void KillAppProcs(int host)
          * (local PIDs are the same as remote PIDs)
          */
 
-        if (RunParams.AppPIDs) {
-            ulm_err(("Killing processes\n"));
-            for (int h = 0; h < RunParams.NHosts; h++) {
-                for (int p = 0; p < RunParams.ProcessCount[h]; p++) {
-                    pid_t pid = RunParams.AppPIDs[h][p];
-                    if (RunParams.Verbose) {
-                        ulm_err(("Executing \"kill(%d, SIGKILL)\"\n", pid));
-                    }
-                    if (kill(pid, SIGKILL) < 0) {
-                        ulm_dbg(("kill: %d - No such process\n", pid));
-                    }
-                }
+        if (RunParams.Verbose) {
+            ulm_err(("Killing processes on host %d\n", host));
+        }
+        for (int p = 0; p < RunParams.ProcessCount[host]; p++) {
+            pid_t pid = RunParams.AppPIDs[host][p];
+            if (RunParams.Verbose) {
+                ulm_err(("Executing \"kill(%d, SIGKILL)\"\n", pid));
+            }
+            if (kill(pid, SIGKILL) < 0) {
+                ulm_dbg(("kill: %d - No such process\n", pid));
             }
         }
 
@@ -117,13 +121,13 @@ void KillAppProcs(int host)
 
     } else {
 
-        /* try to kill using rsh */
+        /* try to kill using rsh or ssh */
 
         char cmd[ULM_MAX_COMMAND_STRING + 1];
         size_t n = 0;
 
-        if (host < 0 || host >= RunParams.NHosts || !RunParams.AppPIDs) {
-            return;
+        if (RunParams.Verbose) {
+            ulm_err(("Killing processes on host %d\n", host));
         }
 
         /* is host reachable? */
@@ -137,7 +141,11 @@ void KillAppProcs(int host)
         }
 
         /* kill remote processes */
-        n += sprintf(cmd + n, "rsh %s kill -9", RunParams.HostList[host]);
+        if (RunParams.UseSSH) {
+            n += sprintf(cmd + n, "ssh %s kill -9", RunParams.HostList[host]);
+        } else {
+            n += sprintf(cmd + n, "rsh %s kill -9", RunParams.HostList[host]);
+        }
         for (int i = 0; i < RunParams.ProcessCount[host]; i++) {
             n += sprintf(cmd + n, " %u", RunParams.AppPIDs[host][i]);
             if (n >= ULM_MAX_COMMAND_STRING) {

@@ -107,81 +107,24 @@ static int ScanStdIn(int fdin)
 }
 
 
-void Daemonize(void)
+void RunEventLoop(void)
 {
-    int ActiveClients;
-    int i, MaxDescriptorCtl, RetVal;
-    double *HeartBeatTime = NULL;
-    double LastTime = 0.0;
-    double DeltaTime = 0.0;
-    double TimeInSeconds = 0.0;
-    double TimeFirstCheckin = 0.0;
-    int *ClientSocketFDList, NHosts, *ProcessCnt;
-    HostName_t *HostList;
-    adminMessage *server;
-    int *HostsNormalTerminated = &RunParams.HostsNormalTerminated;
-    int *HostsAbNormalTerminated = &RunParams.HostsAbNormalTerminated;
-#ifndef HAVE_CLOCK_GETTIME
-    struct timeval Time;
-#else
-    struct timespec Time;
-#endif                          /* LINUX */
-    int *ActiveHosts;           /* if ActiveHost[i] == 1, app still running
-                                 *                    -1, Client init not done
-                                 *                     0, Client terminated ok
-                                 */
-    pid_t **PIDsOfAppProcs;     /* list of PID's for all Client's children */
+    double heartbeat_time;
+    double time;
+    int *fd;
 
-    /* Initialization */
-    server = RunParams.server;
-    NHosts = RunParams.NHosts;
-    ProcessCnt = RunParams.ProcessCount;
-    HostList = RunParams.HostList;
-    ActiveClients = RunParams.NHosts;
-    ClientSocketFDList =
-        RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
+    fd = RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
 
     /* setup list of active hosts */
-    ActiveHosts = ulm_new(int, NHosts);
-    for (i = 0; i < NHosts; i++) {
-        ActiveHosts[i] = -1;
-    }
-    TimeFirstCheckin = -1.0;
-
-    /* setup array to hold list of app PID's */
-    PIDsOfAppProcs = ulm_new(pid_t *, NHosts);
-    for (i = 0; i < NHosts; i++) {
-        PIDsOfAppProcs[i] = ulm_new(pid_t, ProcessCnt[i]);
+    RunParams.ActiveHost = ulm_new(int, RunParams.NHosts);
+    for (int i = 0; i < RunParams.NHosts; i++) {
+        RunParams.ActiveHost[i] = 1;
     }
 
-#ifndef HAVE_CLOCK_GETTIME
-    gettimeofday(&Time, NULL);
-    TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
-#else
-    clock_gettime(CLOCK_REALTIME, &Time);
-    TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
-#endif
-    LastTime = TimeInSeconds;
+    heartbeat_time = ulm_time();
 
-    if (RunParams.doHeartbeat) {
-        /* setup initial control data */
-        HeartBeatTime = ulm_new(double, NHosts);
-
-        for (i = 0; i < NHosts; i++) {
-            HeartBeatTime[i] = TimeInSeconds;
-        }
-        LastTime = 0;
-    }
-
-    /* find the largest descriptor - used for select */
-    MaxDescriptorCtl = 0;
-    for (i = 0; i < NHosts; i++) {
-        if (ClientSocketFDList[i] > MaxDescriptorCtl)
-            MaxDescriptorCtl = ClientSocketFDList[i];
-    }
-    MaxDescriptorCtl++;
-    *HostsNormalTerminated = 0;
-    *HostsAbNormalTerminated = 0;
+    RunParams.HostsNormalTerminated = 0;
+    RunParams.HostsAbNormalTerminated = 0;
 
     /* setup stdin file descriptor to be non-blocking */
     if (RunParams.STDINfd >= 0) {
@@ -229,6 +172,8 @@ void Daemonize(void)
     /* loop over work */
     for (;;) {
 
+        time = ulm_time();
+
         /*
          * check to see if there is any stdin/stdout/stderr data to
          * read and then write
@@ -240,98 +185,28 @@ void Daemonize(void)
             }
         }
 
-        if (RunParams.doHeartbeat) {
-        
-            /* send heartbeat */
-#ifndef HAVE_CLOCK_GETTIME
-            gettimeofday(&Time, NULL);
-            TimeInSeconds =
-                (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
-#else
-            clock_gettime(CLOCK_REALTIME, &Time);
-            TimeInSeconds =
-                (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
-#endif
-            DeltaTime = TimeInSeconds - LastTime;
-            if (DeltaTime > (double) RunParams.HeartbeatPeriod) {
-                LastTime = TimeInSeconds;
-                RetVal = SendHeartBeat(ClientSocketFDList, NHosts,
-                                       MaxDescriptorCtl);
-            }
+        /* send heartbeat */
+        if ((time - heartbeat_time) > (double) RunParams.HeartbeatPeriod) {
+            heartbeat_time = time;
+            SendHeartBeat(fd, RunParams.NHosts);
         }
 
         /* check if any messages have arrived and process */
-        RetVal = CheckForControlMsgs(MaxDescriptorCtl,
-                                     ClientSocketFDList,
-                                     NHosts,
-                                     HeartBeatTime,
-                                     HostsNormalTerminated,
-                                     HostsAbNormalTerminated,
-                                     ActiveHosts,
-                                     ProcessCnt,
-                                     PIDsOfAppProcs,
-                                     &TimeFirstCheckin,
-                                     &ActiveClients);
+        CheckForControlMsgs();
 
         /* exit if all hosts have terminated normally */
-        if (!ActiveClients) {
+        if (RunParams.HostsNormalTerminated == RunParams.NHosts) {
             return;
         }
 
         /* abnormal exit */
-        if (((*HostsNormalTerminated + *HostsAbNormalTerminated) == NHosts)
-            && (*HostsAbNormalTerminated > 0)) {
+        if (RunParams.HostsAbNormalTerminated > 0) {
             /* last check if any messages have arrived and process */
-            RetVal = CheckForControlMsgs(MaxDescriptorCtl,
-                                         ClientSocketFDList,
-                                         NHosts,
-                                         HeartBeatTime,
-                                         HostsNormalTerminated,
-                                         HostsAbNormalTerminated,
-                                         ActiveHosts,
-                                         ProcessCnt,
-                                         PIDsOfAppProcs,
-                                         &TimeFirstCheckin,
-                                         &ActiveClients);
-
+            CheckForControlMsgs();
             ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n",
-                     *HostsAbNormalTerminated));
+                     RunParams.HostsAbNormalTerminated));
             Abort();
             exit(EXIT_FAILURE);
-        }
-
-        /*
-         * check to see if any hosts have timed out - the first
-         * host to time out it the return value of CheckHeartBeat
-         */
-        if (RunParams.doHeartbeat) {
-            if (DeltaTime > (double) RunParams.HeartbeatPeriod) {
-                RetVal = CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
-                                        ActiveHosts);
-
-                if (RetVal < NHosts) {
-                    // Terminate all hosts
-                    ulm_err(("Error: No heartbeat from LA-MPI daemon on host %d\n", RetVal));
-                    ClientSocketFDList[RetVal] = -1;
-                    KillAppProcs(RetVal);
-                    Abort();
-                }
-            }
-        }
-
-        /* 
-         * check to see if all clients have started up - if not and
-         * timeout period expired - abort
-         */
-        if (TimeFirstCheckin > 0
-            && TimeInSeconds - TimeFirstCheckin > STARTUPINTERVAL) {
-            ulm_err(("Error: mpirun terminating abnormally.\n"));
-            ulm_err(("Clients did not startup.  List: "));
-            for (i = 0; i < NHosts; i++)
-                if (ActiveHosts[i] == -1)
-                    ulm_err((" %d ", i));
-            ulm_err(("\n"));
-            Abort();
         }
     }                           /* end for loop */
 }

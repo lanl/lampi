@@ -35,7 +35,7 @@
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/mpi.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 
 extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 			    void *recvbuf, int recvcnt, ULMType_t *recvtype,

@@ -42,7 +42,7 @@
 #include <sys/mman.h>
 #include "util/Lock.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "mem/ULMMallocMacros.h"
 #include "mem/PoolChunks.h"
 

@@ -40,7 +40,7 @@
 
 #include "queue/Group.h"
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "util/Lock.h"
 #include "collective/coll_tree.h"
 #include "internal/constants.h"

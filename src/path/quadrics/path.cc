@@ -39,7 +39,7 @@
 #include "internal/malloc.h"
 #include "internal/state.h"
 #include "path/quadrics/path.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 
 // all rails version
 bool quadricsPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)

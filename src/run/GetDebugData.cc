@@ -57,9 +57,7 @@ void GetDebugDefault(const char *InfoStream)
     RunParams.dbg.Spawned = 1;
     RunParams.dbg.WaitInDaemon = 0;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.doHeartbeat = 0;
     RunParams.HeartbeatPeriod = -1;
-    RunParams.HeartbeatTimeout = -1;
 }
 
 
@@ -76,9 +74,7 @@ void GetDebugDaemon(const char *InfoStream)
     RunParams.dbg.Spawned = 1;
     RunParams.dbg.WaitInDaemon = 1;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.doHeartbeat = 0;
     RunParams.HeartbeatPeriod = -1;
-    RunParams.HeartbeatTimeout = -1;
 }
 
 
@@ -97,7 +93,5 @@ void GetGDB(const char *InfoStream)
     RunParams.dbg.WaitInDaemon = 0;
     RunParams.dbg.GDB = 1;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.doHeartbeat = 0;
     RunParams.HeartbeatPeriod = -1;
-    RunParams.HeartbeatTimeout = -1;
 }

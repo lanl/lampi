@@ -113,10 +113,10 @@ ssize_t RecvSocket(int SourceFD, void *OutputBuffer,
         if ((RetVal < 0) && (errno != EINTR)) {
             *error = errno;
             if (errno != ECONNRESET)
-                ulm_err(("return from readv %d errno %d pid %u\n", RetVal, errno,getpid()));
+                ulm_err(("return from readv %d errno %d pid %u\n",
+                         RetVal, errno,getpid()));
             break;
-        }
-        else if (RetVal == 0) {
+        } else if (RetVal == 0) {
             break;
         }
         TotalRead += (RetVal < 0) ? 0 : RetVal;

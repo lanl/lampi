@@ -36,7 +36,7 @@
 #include <errno.h>
 
 #include "queue/globals.h"	// for communicators
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "path/udp/path.h"

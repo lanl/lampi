@@ -553,8 +553,8 @@ static void *connectThread(void *arg)
     }
 
     /* enable SIGALRM for this thread */
-    sigemptyset(&signals);
-    sigaddset(&signals, SIGALRM);
+    (void) sigemptyset(&signals);
+    (void) sigaddset(&signals, SIGALRM);
     pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *) NULL);
 
     if (!s->serverConnect(RunParams.ProcessCount,
@@ -646,9 +646,9 @@ int mpirun(int argc, char **argv)
     }
 
     /* set signal mask to block SIGALRM */
-    sigemptyset(&newsignals);
-    sigaddset(&newsignals, SIGALRM);
-    sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
+    (void) sigemptyset(&newsignals);
+    (void) sigaddset(&newsignals, SIGALRM);
+    (void) sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
 
     /* spawn thread to do adminMessage::serverConnect() processing */
     RunParams.server->cancelConnect_m = false;
@@ -852,7 +852,7 @@ int mpirun(int argc, char **argv)
         int term_status;
         wait(&term_status);
     } else {
-        Daemonize();
+        RunEventLoop();
     }
 
     /* free memory */

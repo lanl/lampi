@@ -94,19 +94,29 @@ typedef struct {
  * Platform dependent time operations.
  */
 
-#ifndef HAVE_CLOCK_GETTIME
+#ifdef HAVE_CLOCK_GETTIME
 
-typedef struct timeval ulm_timeval_t;
-#define ulm_timeofday(t)	gettimeofday(&(t), NULL)
-#define ulm_timesec(t)		(double)(t).tv_sec + ((double)(t).tv_usec)*1e-6
+#include <time.h>
+
+static inline double ulm_time(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_REALTIME, &t);
+    return (double) t.tv_sec + (double) t.tv_nsec * 1e-9;
+}
 
 #else
 
-typedef struct timespec ulm_timeval_t;
-#define ulm_timeofday(t)	clock_gettime(CLOCK_REALTIME, &(t))
-#define ulm_timesec(t)		(double)(t).tv_sec + ((double)(t).tv_nsec)*1e-9
+#include <sys/time.h>
 
-#endif                          /* LINUX */
+static inline double ulm_time(void)
+{
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return (double) t.tv_sec + (double) t.tv_usec * 1e-6;
+}
+
+#endif
 
 /*
  * For Apple/darwin, we have to explicitly define the iovec since the
@@ -134,6 +144,7 @@ typedef struct {
 #define ULM_FD_CLR(fd,fds)   FD_CLR((fd),(fd_set*)(fds))
 #define ULM_FD_ISSET(fd,fds) FD_ISSET((fd),(fd_set*)(fds))
 
+#define ULM_MAX(X,Y)         ((X) > (Y) ? (X) : (Y))
 
 #define ulm_readv(fd, iov, iovc) \
 		readv((fd), (const struct iovec *)(iov), (iovc))

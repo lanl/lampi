@@ -35,10 +35,12 @@
 #define _FREELISTS
 
 #include <new>
+#include <string.h>
 
 #include "util/Links.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
+#include "internal/system.h"
 #include "internal/types.h"
 #include "mem/MemoryPool.h"
 #include "mem/FixedSharedMemPool.h"
@@ -49,8 +51,8 @@
 #include "os/IRIX/SN0/acquire.h"
 #endif
 
-/* Externs */
 extern FixedSharedMemPool PerProcSharedMemoryPools;
+extern FixedSharedMemPool SharedMemoryPools;
 
 /*
  * This template is used to manage shared memory free lists.  
@@ -95,8 +97,10 @@ public:
             }
 
             if (memoryPool_m) {
-                memoryPool_m->MemoryPool_t<MemProt, MemFlags, SharedMemFlag>
-                    ::~MemoryPool_t();
+                // memoryPool_m->MemoryPool_t<MemProt, MemFlags, SharedMemFlag>::~MemoryPool_t();
+                memoryPool_m->MemoryPool_t<MemProt, MemFlags, SharedMemFlag>::
+                    ~MemoryPool_t<MemProt, MemFlags, SharedMemFlag>();
+
                 if (freeMemPool_m && (MemFlags != SharedMemFlag)) {
                     ulm_free(memoryPool_m);
                     memoryPool_m = 0;

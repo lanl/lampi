@@ -76,9 +76,7 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
     RunParams.OutputPrefix = 0;
     RunParams.Quiet = 0;
     RunParams.Verbose = 0;
-    RunParams.doHeartbeat = 1;
-    RunParams.HeartbeatPeriod = 1;
-    RunParams.HeartbeatTimeout = 30;
+    RunParams.HeartbeatPeriod = 37;
     RunParams.quadricsRailMask = 0;
     RunParams.quadricsHW = 0;
     RunParams.dbg.GDB = 0;
@@ -264,13 +262,6 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
                 RunParams.handleSTDio = 0;
                 break;
             }
-        }
-    }
-
-    /* sanity check */
-    if (RunParams.doHeartbeat) {
-        if (RunParams.HeartbeatTimeout <= RunParams.HeartbeatPeriod) {
-            RunParams.HeartbeatTimeout = 2 * RunParams.HeartbeatPeriod;
         }
     }
 

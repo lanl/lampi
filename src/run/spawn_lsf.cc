@@ -63,11 +63,12 @@
 
 
 #if ENABLE_LSF
+
 extern "C" {
 #include <lsf/lsf.h>
 }
 extern char **environ;
-#endif
+
 
 #ifndef NGROUPS_MAX
 #define NGROUPS_MAX 20
@@ -130,7 +131,6 @@ static bool canExecute(struct stat *rstat)
 
 static void handleLsfTasks(int signo)
 {
-#if ENABLE_LSF
     int i, taskID;
     LS_WAIT_T status;
 
@@ -150,7 +150,6 @@ static void handleLsfTasks(int signo)
             }
         }
     } while (1);
-#endif
 
     return;
 }
@@ -194,11 +193,9 @@ static void HostBuildEnvList(int host, char *localHostName,
      * Allocate and fill in all the individual environment variables.
      */
 
-#if ENABLE_LSF
     for (envVar = 0; envVar < nEnviron; envVar++) {
         AllocateAndFillEnv(envVar, environ[envVar]);
     }
-#endif
 	
     sprintf(Temp, "LAMPI_ADMIN_AUTH0=%u", AuthData[0]);
     AllocateAndFillEnv(envVar++, Temp);
@@ -275,7 +272,6 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
     int idx, host;
     struct sigaction action;
     int NHostsStarted=0;
-#if ENABLE_LSF
     int RetVal;
     struct stat rstat;
 
@@ -283,10 +279,6 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
         ls_perror("ls_initrex");
         Abort();
     }
-#else
-    printf("Trying to use LSF without LSF compiled in.\n");
-    Abort();
-#endif
 
     lsfTasks = ulm_new(int, RunParams.NHosts);
     for (host = 0; host < RunParams.NHosts; host++) {
@@ -294,7 +286,7 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
     }
 
     action.sa_handler = handleLsfTasks;
-    sigfillset(&action.sa_mask);
+    (void) sigfillset(&action.sa_mask);
     action.sa_flags = 0;
     if (sigaction(SIGUSR1, &action, (struct sigaction *)NULL) < 0) {
         ulm_err(("Error: Can't set SIGUSR1 handler to handleLsfTasks!\n"));
@@ -302,13 +294,11 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
     }
 
     nEnviron = 0;
-#if ENABLE_LSF
     /*
      * Pre-calculate the number of entires and maxi space needed for
      * the environment variable list that global to all hosts.
      */
     for (nEnviron = 0; environ[nEnviron] != NULL; nEnviron++);
-#endif /* ENABLE_LSF */
 
     NumEnvs = nEnviron;
     NumEnvs += 7;               /* 3 for auth, 1 for working dir, 1 for ENABLE_LSF */
@@ -342,7 +332,6 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
         HostBuildEnvList(host, LocalHostName, AuthData, ReceivingSocket);
         HostBuildExecArg(host, argc, argv);
 
-#if ENABLE_LSF
         if ((RetVal = ls_chdir(RunParams.HostList[host],
                                RunParams.WorkingDirList[host])) < 0) {
             ulm_err(("Error: can't LSF remote change directory, ls_chdir(\"%s\",\"%s\") returned %d lserrno %d (error: %s)!\n", 
@@ -373,7 +362,6 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
                      RunParams.HostList[host]));
             Abort();
         }
-#endif
 
         (*ListHostsStarted)[NHostsStarted] = host;
         NHostsStarted++;
@@ -390,3 +378,14 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
     }                           /* end of for loop for each remote host */
     return 0;
 }
+
+#else
+
+int SpawnLsf(unsigned int *AuthData, int ReceivingSocket, 
+             int **ListHostsStarted,
+             int argc, char **argv)
+{
+    return -1;
+}
+
+#endif

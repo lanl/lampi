@@ -40,7 +40,7 @@
 #include "queue/Communicator.h"
 #include "ulm/ulm.h"
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"
 
 //!

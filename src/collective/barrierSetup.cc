@@ -35,7 +35,7 @@
 #include "config.h"
 #endif
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "collective/barrier.h"
 #include "internal/constants.h"
 #include "internal/types.h"

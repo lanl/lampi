@@ -38,7 +38,7 @@
 #include <stdio.h>
 
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "os/atomic.h"

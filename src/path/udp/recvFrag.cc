@@ -45,7 +45,7 @@
 #include "path/udp/state.h"
 #include "path/udp/UDPEarlySend.h"
 #include "queue/globals.h"	// for RecvFrag queues
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"	// for getMemPoolIndex()
 #include "util/MemFunctions.h"
 #include "path/udp/path.h"

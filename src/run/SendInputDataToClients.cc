@@ -661,15 +661,6 @@ int SendInitialInputDataToClients(void)
              1))
         DataError("isatty");
 
-    // doHeartbeat
-    tag = adminMessage::DOHEARTBEAT;
-    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
-        TagError("DOHEARTBEAT");
-    if (!server->
-        pack(&(RunParams.doHeartbeat), (adminMessage::packType) sizeof(int),
-             1))
-        DataError("doHeartbeat");
-
     // HeartbeatPeriod
     tag = adminMessage::HEARTBEATPERIOD;
     if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
@@ -678,15 +669,6 @@ int SendInitialInputDataToClients(void)
         pack(&(RunParams.HeartbeatPeriod), (adminMessage::packType) sizeof(int),
              1))
         DataError("HeartbeatPeriod");
-
-    // HeartbeatTimeout
-    tag = adminMessage::HEARTBEATTIMEOUT;
-    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
-        TagError("HEARTBEATTIMEOUT");
-    if (!server->
-        pack(&(RunParams.HeartbeatTimeout), (adminMessage::packType) sizeof(int),
-             1))
-        DataError("HeartbeatTimeout");
 
 #if ENABLE_NUMA
     /* cpu list */

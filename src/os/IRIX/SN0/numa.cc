@@ -44,7 +44,7 @@ bool setAffinity(void *addr, size_t size, int pool)
 #include "internal/log.h"
 #include "internal/state.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "queue/globals.h"
 #include "os/IRIX/acquire.h"
 

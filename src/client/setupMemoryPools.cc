@@ -36,7 +36,7 @@
 #include <new>
 
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/system.h"

@@ -41,19 +41,7 @@
 
 #define Abort() AbortFunction(__FILE__, __LINE__)
 void AbortFunction(const char *, int);
-int CheckForControlMsgs(int MaxDescriptor,
-                        int *ClientSocketFDList,
-                        int NHosts,
-                        double *HeartBeatTime,
-                        int *HostsNormalTerminated,
-                        int *HostsAbNormalTerminated,
-                        int *ActiveHosts,
-                        int *ProcessCnt,
-                        pid_t **PIDsOfAppProcs,
-                        double *TimeFirstCheckin,
-                        int *ActiveClients);
-int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts, int *ActiveHosts);
-void Daemonize(void);
+int CheckForControlMsgs(void);
 void DebuggerInit(void);
 void FixRunParams(int nhosts);
 void InitProc(void);
@@ -67,6 +55,7 @@ void PrintRusage(const char *label, struct rusage *ru);
 void PrintTotalRusage(void);
 int ProcessInput(int argc, char **argv, int *FirstAppArg);
 void RearrangeHostList(const char *InfoStream);
+void RunEventLoop(void);
 void ScanInput(int argc, char **argv, int *FirstAppArg);
 int SendInitialInputDataToClients(void);
 int Spawn(unsigned int *AuthData, int ReceivingSocket,

@@ -704,7 +704,7 @@ private:
     }
 };
 
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include <string.h>
 
 inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)

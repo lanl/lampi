@@ -45,16 +45,21 @@
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/profiler.h"
+#include "internal/state.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "client/SocketGeneric.h"
 
 /*
  * Abort all local children, notify the server, and abort.
  */
-void ClientAbort(int ServerSocketFD, int *ProcessCount, int hostIndex,
-                 pid_t *ChildPIDs, unsigned int MessageType, int Notify)
+void ClientAbort(lampiState_t *s, unsigned int MessageType, int Notify)
 {
+    int *ProcessCount = s->map_host_to_local_size;
+    int hostIndex = s->hostid;
+    int ServerSocketFD = s->client->socketToServer_m;
+    pid_t *ChildPIDs = (pid_t *) s->local_pids;
+
     /* kill all children */
     for (int i = 0; i < ProcessCount[hostIndex]; i++) {
         if (ChildPIDs[i] != -1) {

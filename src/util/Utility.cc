@@ -231,50 +231,51 @@ void FreeStringMem(char ***ArgList, int NArgs)
     ulm_free((*ArgList));
 }
 
-/*
- * This routine is used to send a heartbeat message.  All that is sent
- * is a tag.  To avoid clock synchronization broblems, the receiving
- * end supplies the time stamp.
- */
 
-int SendHeartBeat(int *ClientSocketFDList, int NHosts,
-                  int MaxDescriptor)
+/*
+ * This routine is used to send a heartbeat message on each of n
+ * sockets.  All that is sent is a tag.  To avoid clock
+ * synchronization problems, the receiving end supplies the time
+ * stamp.
+ */
+int SendHeartBeat(int *fd, int n)
 {
+    int maxfd;
+    int rc;
+    struct timeval tv;
+    ulm_fd_set_t fdset;
+    ulm_iovec_t iov[2];
     unsigned int tag;
-    long RetVal;
-    ssize_t IOReturn;
-    int i;
-    struct timeval WaitTime;
-    ulm_fd_set_t WriteSet;
-    ulm_iovec_t IOVec[2];
 
     tag = HEARTBEAT;
-    IOVec[0].iov_base = &tag;
-    IOVec[0].iov_len = (ssize_t) (sizeof(unsigned int));
+    iov[0].iov_base = &tag;
+    iov[0].iov_len = (ssize_t) (sizeof(unsigned int));
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    bzero(&fdset, sizeof(fdset));
 
-    WaitTime.tv_sec = 0;
-    WaitTime.tv_usec = 0;
+    maxfd = 0;
+    for (int i = 0; i < n; i++) {
+        if (fd[i] >= 0) {
+            FD_SET(fd[i], (fd_set *) & fdset);
+            maxfd = ULM_MAX(maxfd, fd[i]);
+        }
+    }
 
-    bzero(&WriteSet, sizeof(WriteSet));
-    for (i = 0; i < NHosts; i++)
-        if (ClientSocketFDList[i] >= 0)
-            FD_SET(ClientSocketFDList[i], (fd_set *)&WriteSet);
+    rc = select(maxfd + 1, NULL, (fd_set *) &fdset, NULL, &tv);
+    if (rc < 0) {
+        return rc;
+    }
 
-    RetVal = select(MaxDescriptor, NULL, (fd_set *)&WriteSet, NULL, &WaitTime);
-    if (RetVal < 0)
-        return (int) RetVal;
-
-    /* send heart beat time stamp to each host */
-    if (RetVal > 0) {
-        for (i = 0; i < NHosts; i++) {
-            if ((ClientSocketFDList[i] >= 0)
-                && (FD_ISSET(ClientSocketFDList[i], (fd_set *)&WriteSet))) {
-                IOReturn =
-                    SendSocket(ClientSocketFDList[i], 1, IOVec);
-                if (IOReturn < 0)
-                    return (int) IOReturn;
+    /* send heart beat on each socket */
+    if (rc > 0) {
+        for (int i = 0; i < n; i++) {
+            if ((fd[i] >= 0) && (FD_ISSET(fd[i], (fd_set *) &fdset))) {
+                if (SendSocket(fd[i], 1, iov) < 0)
+                    return -1;
             }
         }
     }
+
     return 0;
 }

@@ -37,7 +37,7 @@
 
 #include "queue/ReliabilityInfo.h"
 #include "queue/globals.h"
-#include "client/ULMClient.h"
+#include "client/daemon.h"
 #include "internal/log.h"
 #include "internal/system.h"
 

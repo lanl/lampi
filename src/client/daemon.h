@@ -31,37 +31,25 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#ifndef _ULMCLIENT
+#define _ULMCLIENT
 
-#include "internal/profiler.h"
-#include "internal/constants.h"
-#include "run/RunParams.h"
+#include <sys/types.h>
 
-/*
- * This routine is used to compute the number of hosts still sending
- * heart beat messages.  If all hosts are still active, the return value
- * is the number of hosts, and if not, the return value is the host ProcID
- * of the first host to timeout
- */
-int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
-                   int *ActiveHosts)
-{
-    int i;
-    double DeltaT;
+#include "internal/linkage.h"
+#include "internal/state.h"
+#include "internal/types.h"
+#include "init/init.h" /* for lampiState_t */
 
-    if (RunParams.doHeartbeat == 0) {
-        return NHosts;
-    }
+void ClientAbort(lampiState_t *s, unsigned int MessageType, int Notify);
+int ClientCheckIfChildrenAlive(lampiState_t *s);
+int ClientCheckForControlMsgs(lampiState_t *s);
+int ClientRecvStdin(int *ServerFD, int *ClientFD);
+int ClientSendStdin(int *ServerFD, int *ClientFD);
+int ClientScanStdoutStderr(lampiState_t *s);
+void ClientOrderlyShutdown(lampiState_t *s);
+void setupMemoryPools(void);
+int setupCore(void);
+int setupPerProcSharedMemPools(int nPools);
 
-    for (i = 0; i < NHosts; i++) {
-        DeltaT = Time - HeartBeatTime[i];
-        if ((DeltaT > RunParams.HeartbeatTimeout) &&
-            (ActiveHosts[i] != 0)) {
-            return i;
-        }
-    }
-
-    return NHosts;
-}
+#endif                          /* _ULMCLIENT */
