@@ -94,10 +94,10 @@ void mpi_type_hvector_f(MPI_Fint *count,
 #pragma weak pmpi_type_create_hvector_ = mpi_type_create_hvector_f
 #pragma weak pmpi_type_create_hvector__ = mpi_type_create_hvector_f
 
-#pragma weak MPI_TYPE_HVECTOR = mpi_type_hvector_f
-#pragma weak mpi_type_hvector = mpi_type_hvector_f
-#pragma weak mpi_type_hvector_ = mpi_type_hvector_f
-#pragma weak mpi_type_hvector__ = mpi_type_hvector_f
+#pragma weak MPI_TYPE_CREATE_HVECTOR = mpi_type_create_hvector_f
+#pragma weak mpi_type_create_hvector = mpi_type_create_hvector_f
+#pragma weak mpi_type_create_hvector_ = mpi_type_create_hvector_f
+#pragma weak mpi_type_create_hvector__ = mpi_type_create_hvector_f
 
 #pragma weak PMPI_TYPE_HVECTOR = mpi_type_hvector_f
 #pragma weak pmpi_type_hvector = mpi_type_hvector_f
