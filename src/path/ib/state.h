@@ -257,7 +257,7 @@ typedef struct {
     /* size of send completion queue */
     VAPI_cqe_num_t send_cq_size;
     /* tokens for each available send frag. desc. */
-    unsigned int send_frag_avail;
+    int send_frag_avail;
     /* flow-control tokens to avoid recv CQ overflow */
     VAPI_cqe_num_t recv_cq_tokens;
     /* flow-control tokens to avoid send CQ overflow */

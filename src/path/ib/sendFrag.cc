@@ -388,7 +388,8 @@ int hca, int port)
 {
     if (qp_type_m != UD_QP) {
         ulm_exit((-1, "ibSendFragDesc::init() control msg. qp_type_m "
-        "is %d (not UD_QP %d)\n", qp_type_m, UD_QP));
+        "is %d (not UD_QP: %d hca: %d send_frag_avail: %d)\n", qp_type_m, UD_QP,
+        hca, ib_state.hca[hca].send_frag_avail));
         return false;
     }
 
@@ -412,23 +413,44 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
 {
     VAPI_ret_t vapi_result;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
+    bool locked_here = false;
+    bool got_tokens = false;
 
     *errorCode = ULM_SUCCESS;
 
-    if ((state_m & POSTED) == 0) {
-        vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
-        if (vapi_result != VAPI_OK) {
-            ulm_warn(("ibSendFragDesc::post send of desc. %p failed with %s\n",
-                this, VAPI_strerror(vapi_result)));
-            return false;
-        }
-        state_m = (state)(state_m | POSTED);
+    if (usethreads() && !ib_state.locked) {
+        ib_state.lock.lock();
+        ib_state.locked = true;
+        locked_here = true;
+    }
 
-        return true;
+    if ((state_m & POSTED) == 0) {
+        // try to get tokens and send...
+        if ((h->ud.sq_tokens >= 1) && (h->send_cq_tokens >= 1)) {
+            (h->ud.sq_tokens)--;
+            (h->send_cq_tokens)--;
+            got_tokens = true;
+        } 
+        if (got_tokens) {
+            vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            if (vapi_result == VAPI_OK) {
+                state_m = (state)(state_m | POSTED);
+                if (locked_here) {
+                    ib_state.locked = false;
+                    ib_state.lock.unlock();
+                }
+                return true;
+            }
+            else {
+                (h->ud.sq_tokens)++;
+                (h->send_cq_tokens)++;
+                ulm_warn(("ibSendFragDesc::post send of desc. %p failed with %s\n",
+                    this, VAPI_strerror(vapi_result)));
+            }
+        }
     }
 #ifdef ENABLE_RELIABILITY
     else if ((state_m & LOCALACKED) != 0) {
-        bool got_tokens = false;
         // try to get tokens and resend...
         if ((h->ud.sq_tokens >= 1) && (h->send_cq_tokens >= 1)) {
             (h->ud.sq_tokens)--;
@@ -439,14 +461,24 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
             vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m & ~LOCALACKED);
+                if (locked_here) {
+                    ib_state.locked = false;
+                    ib_state.lock.unlock();
+                }
                 return true;
             }
             else {
+                (h->ud.sq_tokens)++;
+                (h->send_cq_tokens)++;
                 ulm_warn(("ibSendFragDesc::post resend of desc. %p failed with %s\n", 
                     this, VAPI_strerror(vapi_result)));
             }
         }
     }
 #endif
+    if (locked_here) {
+        ib_state.locked = false;
+        ib_state.lock.unlock();
+    }
     return false;
 }

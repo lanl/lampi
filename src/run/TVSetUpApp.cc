@@ -76,12 +76,31 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
             if (RunParameters.GDBDebug) {
                 char title[64];
                 char command[256];
-                sprintf(title, "rank: %d (pid: %ld host: %s)", cnt, (long)MPIR_proctable[cnt].pid,
-                        MPIR_proctable[cnt].host_name);
-                sprintf(command, "xterm -title \"%s\" -e gdb %s %ld &", title, MPIR_proctable[cnt].executable_name,
+                bool use_gdbserver = (getenv("GDBDIRECTATTACH") != 0) ? false : true;
+
+                sprintf(title, "rank: %d (pid: %ld host: %s)", cnt, 
+                    (long)MPIR_proctable[cnt].pid,
+                    MPIR_proctable[cnt].host_name);
+
+                if (use_gdbserver) {
+                    sprintf(command, "xterm -title \"%s\" -e gdb %s &", title,
+                        MPIR_proctable[cnt].executable_name);
+                    ulm_warn(("spawning: \"%s\"\n", command));
+                    system(command);
+                    sprintf(command, "bpsh %s gdbserver localhost:%d --attach %ld &",
+                        (MPIR_proctable[cnt].host_name + 1), (9000 + cnt), 
                         (long)MPIR_proctable[cnt].pid);
-                ulm_warn(("spawning: \"%s\"\n",command));
-                system(command);
+                    ulm_warn(("spawning: \"%s\"\n", command));
+                    system(command);
+
+                }
+                else {
+                    sprintf(command, "xterm -title \"%s\" -e gdb %s %ld &", title, 
+                        MPIR_proctable[cnt].executable_name,
+                        (long)MPIR_proctable[cnt].pid);
+                    ulm_warn(("spawning: \"%s\"\n",command));
+                    system(command);
+                }
             }
 #endif
             cnt++;

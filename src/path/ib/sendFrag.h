@@ -110,9 +110,9 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
             // are associated with this descriptor
             state_m = (state)(state_m & IBRESOURCES);
 
+            (ib_state.hca[hca_index_m].send_frag_avail)++;
             WhichQueue = IBFRAGFREELIST;
             ib_state.hca[hca_index_m].send_frag_list.returnElementNoLock(this, 0);
-            (ib_state.hca[hca_index_m].send_frag_avail)++;
 
             if (locked_here) {
                 ib_state.locked = false;

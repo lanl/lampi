@@ -86,7 +86,7 @@ bool ibRecvFragDesc::AckData(double timeNow)
         j = i + ib_state.next_send_hca;
         j = (j >= ib_state.num_active_hcas) ? j - ib_state.num_active_hcas : j; 
         hca = ib_state.active_hcas[j];
-        if ((ib_state.hca[hca].ud.sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1)) {
+        if (ib_state.hca[hca].send_frag_avail >= 1) {
             k = ib_state.next_send_port;
             k = (k >= ib_state.hca[hca].num_active_ports) ? k - ib_state.hca[hca].num_active_ports : k;
             // set port and hca index values...
@@ -96,9 +96,6 @@ bool ibRecvFragDesc::AckData(double timeNow)
             ib_state.next_send_hca = (k == (ib_state.hca[hca].num_active_ports - 1)) ? 
                 ((j + 1) % ib_state.num_active_hcas) : j;
             ib_state.next_send_port = (j == ib_state.next_send_hca) ? k : 0;
-            // decrement tokens...
-            (ib_state.hca[hca_index].ud.sq_tokens)--;
-            (ib_state.hca[hca_index].send_cq_tokens)--;
             break; 
         }
     }
@@ -116,8 +113,6 @@ bool ibRecvFragDesc::AckData(double timeNow)
     sfd = ib_state.hca[hca_index].send_frag_list.getElementNoLock(0, returnValue);
     if (returnValue != ULM_SUCCESS) {
         int dummyCode;
-        (ib_state.hca[hca_index].ud.sq_tokens)++;
-        (ib_state.hca[hca_index].send_cq_tokens)++;
         if (locked_here) {
             ib_state.locked = false;
             ib_state.lock.unlock();
@@ -125,6 +120,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
         path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
         return false;
     }
+    // decrement token count of available send frag. desc.
+    (ib_state.hca[hca_index].send_frag_avail)--;
 
     p = (ibDataAck_t *)((unsigned long)(sfd->sg_m[0].addr));
     p->thisFragSeq = seq_m;
@@ -320,6 +317,7 @@ void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
     (h->ud.rq_tokens)--;
 
     if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 }
@@ -469,7 +467,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         sfd->parentSendDesc_m = 0;
 
         if (sfd->done(timeNow, &errorCode)) {
-            sfd->free();
+            sfd->free(true);
         }
         else {
             // we need to wait for local completion notification
@@ -487,6 +485,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
             ib_state.hca[sfd->hca_index_m].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
 
             if (locked_here) {
+                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
         }
