@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "internal/types.h"
+#include "os/atomic.h"
 
 struct bsendData_t;
 
@@ -48,6 +49,14 @@ class pathContainer_t;
 /*
  * LA-MPI run-time state
  */
+
+typedef struct {
+        lockStructure_t lockData;   /* lock since this info will be in shared memory */
+        volatile int flag;          /* has a child exited abnormally? */
+        pid_t pid;                  /* pid of child */
+        int signal;                 /* signal propagated from child */
+        int status;                 /* exit status of child */
+} abnormalExitInfo;
 
 typedef struct {
 
@@ -122,12 +131,7 @@ typedef struct {
      * abnormal exit handling
      */
 
-    struct {
-        int flag;                   /* has a child exited abnormally? */
-        pid_t pid;                  /* pid of child */
-        int signal;                 /* signal propagated from child */
-        int status;                 /* exit status of child */
-    } AbnormalExit;
+    abnormalExitInfo *AbnormalExit;
 
 
     /* 
