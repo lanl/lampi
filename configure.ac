@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.4.2,lampi-support@lanl.gov)
+AC_INIT(lampi,1.4.3,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -124,10 +124,14 @@ RMS_BROKEN_PREFIX=""
 
 romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
+              
+# Default features
 
+enable_shared_memory=${enable_shared_memory:-yes}
+enable_reliability=${enable_reliability:-yes}
+enable_check_api_args=${enable_check_api_args:-yes}
 enable_dynamic=${enable_dynamic:-yes}
 enable_static=${enable_static:-yes}
-with_romio=${with_romio:-no}
 
 # Host dependent features.
 
@@ -166,11 +170,6 @@ i?86-pc-linux*)
         MODULES_OS="$MODULES_OS src/os/LINUX/i686"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
@@ -212,10 +211,6 @@ i?86-pc-cygwin*)
         MODULES_OS="$MODULES_OS src/os/CYGWIN"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
@@ -258,11 +253,6 @@ ia64-unknown-linux*)
         MODULES_OS="$MODULES_OS src/os/LINUX/ia64"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"
@@ -295,11 +285,6 @@ x86_64-unknown-linux*)
         MODULES_OS="$MODULES_OS src/os/LINUX/x86_64"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"
@@ -349,13 +334,6 @@ alpha*-dec*)
         MODULES_OS="$MODULES_OS src/os/TRU64"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_rms=${enable_rms:-yes}
-        enable_qsnet=${enable_qsnet:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"
@@ -399,11 +377,6 @@ powerpc-apple-darwin*)
         CXXFLAGS="$CFLAGS -Wno-deprecated"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"
@@ -448,12 +421,6 @@ mips-sgi-irix*)
         MODULES_OS="$MODULES_OS src/os/IRIX"
 
         # default features for this host
-        enable_shared_memory=${enable_shared_memory:-yes}
-        enable_udp=${enable_udp:-yes}
-        enable_tcp=${enable_tcp:-yes}
-        enable_lsf=${enable_lsf:-yes}
-        enable_reliability=${enable_reliability:-yes}
-        enable_check_api_args=${enable_check_api_args:-yes}
 
         # default paths for this host
         GM_PREFIX="${GM_PREFIX:-/opt/gm}"

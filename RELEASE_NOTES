@@ -215,3 +215,8 @@ Version 1.4.1
 Version 1.4.2
 
 - Release for lightning.
+
+Version 1.4.3
+
+- Fixed problem with synchronous send completion.
+- Changed configure to disable all network paths by default.
