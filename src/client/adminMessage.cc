@@ -961,7 +961,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             {
                 char    hostn[50];
                 
-                if ( true == peerName(i, hostn, 50))
+                if ( true == peerName(i, hostn, 50, true))
                 {
                     ulm_err(("\thostrank %d peer info: IP %s process count %d PID %ld\n", i,
                              hostn, processCount[i], (long)daemonPIDs_m[i]));
@@ -2957,7 +2957,7 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes, bool useDottedIP
     char	*dotted;
     int sockfd = (hostrank == -1) ? socketToServer_m : clientRank2FD(hostrank);
     struct sockaddr_in addr;
-    //struct hostent *h;
+    struct hostent *h;
 #ifdef __linux__
     socklen_t addrlen = sizeof(struct sockaddr_in);
 #else
