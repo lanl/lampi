@@ -374,9 +374,13 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     }
 
      /*
-      * clear process mask
+      * clear process mask...except for __pthread_sig_restart
+      * used by glibc-LinuxThreads pthreads library
       */
      sigfillset(&signals);
+#ifdef __linux__
+     sigdelset(&signals, __SIGRTMIN);
+#endif
      if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
          perror("sigprocmask failed");
          abort();
@@ -560,9 +564,13 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         sigset_t signals;
 
         /*
-         * clear process mask
+         * clear process mask...except for __pthread_sig_restart
+         * used by glibc-LinuxThreads pthreads library
          */
         sigfillset(&signals);
+#ifdef __linux__
+        sigdelset(&signals, __SIGRTMIN);
+#endif
         if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
             perror("sigprocmask failed");
             abort();
