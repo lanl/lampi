@@ -226,9 +226,8 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
      * 0000000, 0000001, 0000002, etc.
      */
     putenv("BPROC_RANK=XXXXXXX");
-    if (bproc_vexecmove_io
-        (nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
-         argv - 1, environ) < 0) {
+    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 3,
+                           exec_args[EXEC_NAME], argv - 1, environ) < 0) {
         ulm_err(("SpawnBproc: bproc_vexecmove: error %s\n",
                  bproc_strerror(errno)));
         ret_status = errno;
@@ -244,6 +243,7 @@ int SpawnBproc(unsigned int *AuthData, int ReceivingSocket,
             ret_status = pids[i];
             goto CLEANUP_ABNORMAL;
         }
+        RunParams.DaemonPIDs[i] = pids[i];
     }
 
     /* clean up the memory allocations */
