@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,162 +73,6 @@ enum {
     AUTH2,
     ADMIN_END
 };
-
-
-//void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts)
-//{
-//    int errorCode,tag;
-//    int contacted = 0;
-//
-//    // free and reallocate memory for HostList if needed
-//    if (!RunParameters->HostList || (nhosts != RunParameters->HostListSize)) {
-//        if (RunParameters->HostList) {
-//            ulm_delete(RunParameters->HostList);
-//        }
-//        RunParameters->HostList = ulm_new(HostName_t,  nhosts);
-//    }
-//    // get the new HostList info from the server adminMessage object
-//    for (int i = 0; i < nhosts; i++) {
-//        if (!server->
-//            peerName(i, RunParameters->HostList[i],
-//                     ULM_MAX_HOSTNAME_LEN)) {
-//            ulm_err(("server could not get remote IP hostname/address for hostrank %d\n", i));
-//            Abort();
-//        }
-//    }
-//
-//    // resize ProcessCount and DaemonPIDs arrays and get info from other hosts
-//    if (nhosts != RunParameters->NHosts) {
-//        ulm_delete(RunParameters->ProcessCount);
-//        ulm_delete(RunParameters->DaemonPIDs);
-//
-//        RunParameters->ProcessCount = ulm_new(int, nhosts);
-//        RunParameters->DaemonPIDs = ulm_new(pid_t,  nhosts);
-//    }
-//
-//    server->reset(adminMessage::SEND);
-//    tag=adminMessage::NHOSTS;
-//    server->pack(&tag, (adminMessage::packType)sizeof(int), 1);
-//    server->pack(&nhosts, (adminMessage::packType)sizeof(int), 1);
-//    tag=adminMessage::THREADUSAGE;
-//    server->pack(&tag, (adminMessage::packType)sizeof(int), 1);
-//    server->pack(&(RunParameters->UseThreads), (adminMessage::packType)sizeof(bool), 1);
-//    tag=adminMessage::TVDEBUG;
-//    server->pack(&tag, (adminMessage::packType)sizeof(int), 1);
-//    server->pack(&(RunParameters->TVDebug), (adminMessage::packType)sizeof(int), 1);
-//    server->pack(&(RunParameters->TVDebugApp), (adminMessage::packType)sizeof(int), 1);
-//    tag=adminMessage::CRC;
-//    server->pack(&tag, (adminMessage::packType)sizeof(int), 1);
-//    server->pack(&(RunParameters->UseCRC), (adminMessage::packType)sizeof(bool), 1);
-//    if (!server->broadcast(adminMessage::RUNPARAMS, &errorCode)) {
-//        ulm_err(("Error: Can't broadcast RUNPARAMS message (error %d)\n",
-//                 errorCode));
-//        Abort();
-//    }
-//    // now receive the information from the other hosts
-//    while (contacted < nhosts) {
-//        int rank, tag;
-//        int recvd = server->receiveFromAny(&rank, &tag, &errorCode,
-//                                           ALARMTIME * 1000);
-//        switch (recvd) {
-//        case (adminMessage::OK):
-//            if ((tag != adminMessage::RUNPARAMS) || (rank >= nhosts)) {
-//                ulm_err(("RUNPARAMS receiveFromAny(%d, %d) invalid rank or tag\n", rank, tag));
-//                Abort();
-//            }
-//            server->unpack(&(RunParameters->ProcessCount[rank]),
-//                           (adminMessage::packType) sizeof(int), 1);
-//            server->unpack(&(RunParameters->DaemonPIDs[rank]),
-//                           (adminMessage::packType) sizeof(pid_t), 1);
-//            contacted++;
-//            break;
-//        default:
-//            ulm_err(("RUNPARAMS receiveFromAny() returned code %d error %d\n", recvd, errorCode));
-//            Abort();
-//            break;
-//        }
-//    }
-//
-//    // resize and copy the first element from the following lists: DirName_t WorkingDirList[], ExeName_t ExeList[],
-//    // DirName_t UserAppDirList[], int NPathTypes[], int *ListPathTypes[] if necessary
-//    if (RunParameters->NHosts < nhosts) {
-//        DirName_t *wdl = RunParameters->WorkingDirList;
-//        ExeName_t *el = RunParameters->ExeList;
-//        DirName_t *uadl = RunParameters->UserAppDirList;
-//        int *nndt = RunParameters->NPathTypes;
-//        int **lndt = RunParameters->ListPathTypes;
-//
-//        RunParameters->WorkingDirList = ulm_new(DirName_t,  nhosts);
-//        RunParameters->ExeList = ulm_new(ExeName_t,  nhosts);
-//        RunParameters->NPathTypes = ulm_new(int, nhosts);
-//        RunParameters->ListPathTypes = ulm_new( int *, nhosts);
-//        if (uadl) {
-//            RunParameters->UserAppDirList = ulm_new(DirName_t,  nhosts);
-//        }
-//
-//        for (int i = 0; i < nhosts; i++) {
-//            strncpy(RunParameters->WorkingDirList[i], wdl[0],
-//                    ULM_MAX_PATH_LEN);
-//            strncpy(RunParameters->ExeList[i], el[0], ULM_MAX_PATH_LEN);
-//            if (uadl) {
-//                strncpy(RunParameters->UserAppDirList[i], uadl[0],
-//                        ULM_MAX_PATH_LEN);
-//            }
-//            RunParameters->NPathTypes[i] = nndt[0];
-//            RunParameters->ListPathTypes[i] =
-//                ulm_new(int, nndt[0]);
-//            for (int j = 0; j < nndt[0]; j++) {
-//                RunParameters->ListPathTypes[i][j] = lndt[0][j];
-//            }
-//        }
-//
-//        ulm_delete(wdl);
-//        ulm_delete(el);
-//        if (uadl) {
-//            ulm_delete(uadl);
-//        }
-//        for (int i = 0; i < RunParameters->NHosts; i++) {
-//            ulm_delete(lndt[i]);
-//        }
-//        ulm_delete(lndt);
-//        ulm_delete(nndt);
-//    }
-//    // disallow network setup if only one host
-//    if (nhosts == 1) {
-//        RunParameters->NPathTypes[0] = 0;
-//    }
-//    // send network device types to each host
-//    else {
-//        for (int i = 0; i < nhosts; i++) {
-//            if (RunParameters->NPathTypes[i] < 1) {
-//                ulm_err(("At least one network device type must be specified (host %d nhosts %d)!\n", i, nhosts));
-//                Abort();
-//            }
-//            server->reset(adminMessage::SEND);
-//            server->pack(&(RunParameters->NPathTypes[i]),
-//                         (adminMessage::packType) sizeof(int), 1);
-//            server->pack(RunParameters->ListPathTypes[i],
-//                         (adminMessage::packType) sizeof(int),
-//                         RunParameters->NPathTypes[i]);
-//            if (!server->send(i, adminMessage::NETDEVS, &errorCode)) {
-//                ulm_err(("Error: Can't send NETDEVS message (error %d)\n",
-//                         errorCode));
-//                Abort();
-//            }
-//        }
-//    }
-//
-//    // set the number of hosts to the true known number...
-//    RunParameters->NHosts = nhosts;
-//            
-//    // send end of input marker
-//    server->reset(adminMessage::SEND);
-//    if( !server->broadcast(adminMessage::ENDRUNPARAMS, &errorCode) ) {
-//        ulm_err(("Error: Can't broadcast ENDRUNPARAMS message (error %d)\n",
-//                 errorCode));
-//        Abort();
-//    }
-//}
 
 static int quadricsNRails(int railmask)
 {
@@ -464,7 +311,6 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
             ulm_free(admin_vars);
             admin_vars = 0;
         }
-
     }
 
     /* check if prun already returned with error */

@@ -1,51 +1,55 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-
 
 #ifndef _MPIRUNJOBPARAMS
 #define _MPIRUNJOBPARAMS
 
 #include <unistd.h>
 
+#include "internal/options.h"
 #include "internal/types.h"
 #include "client/adminMessage.h"
+#include "client/SocketAdminNetwork.h"
+#include "run/ResourceSpecs.h"
+#ifdef ENABLE_SHARED_MEMORY
+#include "path/sharedmem/SharedMemJobParams.h"
+#endif
 #ifdef ENABLE_UDP
 # include "path/udp/setupInfo.h"
 #endif
 #ifdef ENABLE_GM
 # include "path/gm/setupInfo.h"
 #endif
-#include "client/SocketAdminNetwork.h"
-#include "path/sharedmem/SharedMemJobParams.h"
-#include "run/ResourceSpecs.h"
 
 // structure to hold input environment variables
 typedef struct ulmEnvSet {
@@ -54,36 +58,6 @@ typedef struct ulmEnvSet {
     bool *setForThisHost_m;
     char **envString_m;
 } ulmENVSettings;
-
-/*
- *  information characterizing the inter-host network (both
- *  "administartive" and "compute" for a job.
- */
-typedef struct ULMRunNetworkTypes {
-    /* structure with the administrative network info */
-    SocketAdminNetwork_t TCPAdminstrativeNetwork;
-
-    /* shared memory setup */
-    int UseSharedMemory;
-
-    /* structure for UDP setup */
-    int UseUDP;
-#ifdef ENABLE_UDP
-    UDPNetworkSetupInfo UDPSetup;
-#endif
-
-    /* structure for GM setup */
-    int UseGM;
-#ifdef ENABLE_GM
-    GMNetworkSetupInfo GMSetup;
-#endif
-
-    /* structure for Quadrics setup */
-    int UseQSW;
-
-    /* structure with the Shared Memory requested setup */
-    SharedMemJobParams_t SharedMemSetup;
-} ULMRunNetworkTypes_t;
 
 /*
  *  structure characterizing a job
@@ -134,8 +108,23 @@ typedef struct ULMRunParams {
     /* list of "compute" network interface types used - per host list */
     int **ListPathTypes;
 
-    /* pointer to struct with Network Data */
-    ULMRunNetworkTypes_t Networks;
+    /* information about the available networks */
+    struct {
+        int UseSharedMemory;
+        int UseUDP;
+        int UseQSW;
+        int UseGM;
+        SocketAdminNetwork_t TCPAdminstrativeNetwork;
+#ifdef ENABLE_SHARED_MEMORY
+        SharedMemJobParams_t SharedMemSetup;
+#endif
+#ifdef ENABLE_UDP
+        UDPNetworkSetupInfo UDPSetup;
+#endif
+#ifdef ENABLE_GM
+        GMNetworkSetupInfo GMSetup;
+#endif
+    } Networks;
 
 #ifdef ENABLE_NUMA
     int *CpuList;
@@ -190,8 +179,8 @@ typedef struct ULMRunParams {
     /* list of Client daemon process pid's */
     pid_t *DaemonPIDs;
 
-	/* server instance. */
-	adminMessage *server;
+    /* server instance. */
+    adminMessage *server;
 	
     /* Heartbeat Time out period - in seconds */
     int HeartBeatTimeOut;
