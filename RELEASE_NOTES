@@ -208,4 +208,6 @@ Version 1.4.0
 - New Infiniband VAPI network path. Currently supports one-process per
   node (more processes may hang on exit).
 
+Version 1.4.1
 
+- Bug fix release.
