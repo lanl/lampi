@@ -280,3 +280,8 @@ Version 1.4.13
 - Added check for validity of executable when running under bproc or RMS
 
 - Fixed bug when using '-env' runtime arg
+
+Version 1.4.14
+
+- Fixes to read STDIN from mpirun and direct it to proccess 0 of the application
+
