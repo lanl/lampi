@@ -10645,9 +10645,8 @@ alpha*-dec*)
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
 
-        # on ASCI-Q, header files are broken.  Use header files we have installed
-        # in src/path/quadrics/elan3:
-        RMS_BROKEN_PREFIX="$srcdir/src/path/quadrics"
+        # on ASCI-Q, header files are broken. Use alternate ones.
+        RMS_BROKEN_PREFIX="/usr/local/compaq/test"
         RMS_PREFIX="${RMS_PREFIX:-/usr/opt/rms}"
         ROMIO_FS="ufs nfs cfs"
 
