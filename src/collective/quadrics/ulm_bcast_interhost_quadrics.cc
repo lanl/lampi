@@ -189,8 +189,6 @@ int Broadcaster::init_bcaster
       (ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN))); 
   }
 
-  desc_avail = tn;
-
   for ( i = 0 ; i < tn ; i++)
   {
     channels[i]->mcast_buff    = (char*)base + (BCAST_CHANNEL_LENGTH)*i;
@@ -760,6 +758,7 @@ int Broadcaster::hardware_coll_init( )
     }
 
     /* Create the segment for noncontiguous vps */
+    desc_avail = total_channels;
     segment_create();
 
     init_coll_events();
