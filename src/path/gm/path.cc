@@ -493,12 +493,20 @@ void gmPath::callback(struct gm_port *port,
     if (usethreads())
         gmState.localDevList[sfd->dev_m].Lock.unlock();
 
-    // fail if there was a failure -- first cut, no fault tolerance!
-    if (status != GM_SUCCESS) {
-        ulm_exit(("Error: gmPath::callback called with error status (%d)\n",
-                  (int) status));
+    switch(status) {
+        case GM_TRY_AGAIN:
+        case GM_BUSY:
+        case GM_SEND_TIMED_OUT:
+            // try again if the receiver is busy 
+            bsd->FragsToSend.Append(sfd);
+            return;
+        case GM_SUCCESS:
+            break;
+        default:
+            // otherwise fail if there was a failure 
+            ulm_exit(("Error: gmPath::callback called with error status (%d)\n", (int) status));
     }
-    
+
     // Register frag as acked, if this is not a synchronous message first fragment.
     // If it is, we need to wait for a fragment ACK upon matching the message.
     if (usethreads())
