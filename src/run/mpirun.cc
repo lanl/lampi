@@ -38,6 +38,7 @@
  * - go into a service loop until time to terminate.
  */
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -433,15 +434,41 @@ bool exchangeGMInfo(int *errorCode,adminMessage *s)
     return returnValue;
 }
 
+void *server_connect(void *arg) 
+{
+    int nprocs = *(int *)arg;
+    int connectTimeOut = MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
+    sigset_t signals;
+
+    /* enable SIGALRM for this thread */
+    sigemptyset(&signals);
+    sigaddset(&signals, SIGALRM);
+    pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *)NULL);
+
+    /* enable asynchronous cancel mode for this thread */
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *)NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *)NULL);
+
+    if (!server->serverConnect(RunParameters.ProcessCount,
+                               RunParameters.HostList,
+                               RunParameters.NHosts, connectTimeOut)) {
+        ulm_err(("Error: Server/client connection failed\n"));
+        pthread_exit((void *)0);
+    }
+    pthread_exit((void *)1);
+}
 
 int main(int argc, char **argv)
 {
     int i, rc, NULMArgs, ErrorReturn, FirstAppArgument;
-    int *IndexULMArgs, connectTimeOut;
+    int *IndexULMArgs;
     int ReceivingSocket;
     unsigned int AuthData[3];
     int errorCode = 0;
     double t;
+    pthread_t sc_thread;
+    void *sc_thread_return;
+    sigset_t newsignals, oldsignals;
 #ifdef USE_CT
     FILE	*fp;
 #endif
@@ -500,6 +527,17 @@ int main(int argc, char **argv)
         Abort();
     }
 
+    /* set signal mask to block SIGALRM */
+    sigemptyset(&newsignals);
+    sigaddset(&newsignals, SIGALRM);
+    sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
+
+    /* spawn thread to do adminMessage::serverConnect() processing */
+    if (pthread_create(&sc_thread, (pthread_attr_t *)NULL, server_connect, (void *)&nprocs) != 0) {
+        ulm_err(("Error: can't create serverConnect() thread!\n"));
+        Abort();
+    }
+
     /*
      * Spawn user app
      */
@@ -507,6 +545,7 @@ int main(int argc, char **argv)
                       &RunParameters, FirstAppArgument, argc, argv);
     if( rc != ULM_SUCCESS ) {
         ulm_err(("Error: Can't spawn application (%d)\n", rc));
+        pthread_cancel(sc_thread);
         Abort();
     }
     
@@ -523,13 +562,22 @@ int main(int argc, char **argv)
     ulm_dbg(("\nmpirun: collecting daemon info...\n"));
     timing_cur = second();
     sprintf(timing_out[timing_scnt++], "Collecting daemon info (t = 0).\n");
-    connectTimeOut = MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
-    if (!server->serverConnect(RunParameters.ProcessCount,
-                               RunParameters.HostList,
-                               RunParameters.NHosts, connectTimeOut)) {
-        ulm_err(("Error: Server/client connection failed\n"));
+
+    /* join with serverConnect() processing thread */
+    if (pthread_join(sc_thread, &sc_thread_return) == 0) {
+        int return_value = (int)sc_thread_return;
+        if (return_value == 0) {
+            ulm_err(("Error: serverConnect() thread failed!\n"));
+            Abort();
+        }
+    }
+    else {
+        ulm_err(("Error: pthread_join() with serverConnect() thread failed!\n"));
         Abort();
     }
+
+    /* set signal mask to unblock SIGALRM */
+    sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *)NULL);
 
     timing_stmp = second();
     sprintf(timing_out[timing_scnt++], "Done collecting daemon info (t = %lf).\n", timing_stmp - timing_cur);

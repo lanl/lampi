@@ -64,9 +64,7 @@ LDFLAGS		+= -L $(LSF_PREFIX)/lib
 LDLIBS		+= -llsf
 endif
 
-ifdef USE_CT
 LDLIBS		+= -lpthread
-endif
 
 # BPROC support
 #USE_BPROC	:= 1

@@ -29,7 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -149,6 +149,100 @@ static int setup_socket(struct sockaddr_in *listenaddr)
 
 #endif
 
+#ifdef BPROC
+
+static int *pids = 0;
+static int iosock_fd[3];
+static int max_sock_fd = -1;
+
+void *accept_thread(void *arg) {
+    ULMRunParams_t *RunParameters = (ULMRunParams_t *)arg;
+	int nHosts = RunParameters->NHosts;
+    int connectCount = 0, i, hostID = 0;
+    fd_set rset;
+    struct timeval tmo = { 300, 0 };
+
+    /* enable asynchronous cancel mode for this thread */
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *)NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *)NULL);
+
+    /*   the front end sits in an select loop
+     *   when the remote side connects. the front end accepts.
+     *   the remote end sends two
+     *   things back. the pid and rfd (the process id
+     *   and what type of file descriptor (stderr,stdout,stdin)
+     */
+    while (connectCount < 3 * nHosts) {
+	FD_ZERO(&rset);
+	/* set the sockets to listen on */
+	for (int fdIndex = 0; fdIndex < 3; fdIndex++) {
+	    FD_SET(iosock_fd[fdIndex], &rset);
+	}
+
+	/* see if any sockets to accept */
+	int nRead = select(max_sock_fd + 1, &rset, NULL, NULL, &tmo);
+	if (nRead > 0) {
+	    for (int sock = 0; sock < 3; sock++) {
+		if (FD_ISSET(iosock_fd[sock], &rset)) {
+		    int fd = -1, pid = -1, rfd = -1;
+		    socklen_t sa_size;
+		    struct sockaddr sa;
+		    sa_size = sizeof(sa);
+		    fd = accept(iosock_fd[sock], &sa, &sa_size);
+		    if (fd == -1 && errno != EAGAIN) {
+			perror("accept");
+			close(iosock_fd[sock]);
+            pthread_exit((void *)0);
+		    }
+		    if (read(fd, &pid, sizeof(pid)) != sizeof(pid) ||
+			read(fd, &rfd, sizeof(rfd)) != sizeof(rfd)) {
+			fprintf(stderr,
+				"mpirun_spawn_bproc: failed to read pid or fd"
+				" from IO connection.\n");
+			close(fd);
+		    }
+		    /* find host index that corresponds to this pid */
+		    for (i = 0; i < nHosts; i++)
+			if (pid == pids[i]) {
+			    hostID = i;
+			}
+		    switch (rfd) {
+		    case STDIN_FILENO:
+			if (RunParameters->STDINfds[hostID] != -1)
+			    break;
+			RunParameters->STDINfds[hostID] = fd;
+			connectCount++;
+fprintf(stderr, "std in %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
+fflush(stderr);
+			//      printf("stdin for pid = %d\n", pid);
+			break;
+		    case STDOUT_FILENO:
+			if (RunParameters->STDOUTfds[hostID] != -1)
+			    break;
+			RunParameters->STDOUTfds[hostID] = fd;
+			connectCount++;
+fprintf(stderr, "std out %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
+fflush(stderr);
+			//      printf("stdout for pid = %d\n", pid);
+			break;
+		    case STDERR_FILENO:
+			if (RunParameters->STDERRfds[hostID] != -1)
+			    break;
+			RunParameters->STDERRfds[hostID] = fd;
+			//      printf("stderr for pid = %d\n", pid);
+			connectCount++;
+fprintf(stderr, "std err %d for pid = %d, hostID = %d, connectCount = %d\n", fd, pid, hostID, connectCount);
+fflush(stderr);
+			break;
+		    }
+		}
+	    }			/* end sock loop */
+	}			/* end nread > 0 */
+    }				/* end while (connectCount < 3 * nHosts) */
+    pthread_exit((void *)1);
+}
+#endif
+
 int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 		       int **ListHostsStarted, ULMRunParams_t * RunParameters,
 		       int FirstAppArgument, int argc, char **argv)
@@ -160,19 +254,13 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char *tmp_args = NULL;
     char hostList[MAXHOSTNAMELEN];
     int *nodes = 0;
-    int *pids = 0;
     int argsUsed = 0;
     int i = 0;
     int nHosts = 0;
-    int hostID = 0;
     int ret_status = 0;
     size_t len = 0;
     struct bproc_io_t io[3];
     struct sockaddr_in addr;
-    int iosock_fd[3];
-    int max_sock_fd = -1, connectCount = 0;
-    fd_set rset;
-    struct timeval tmo = { 300, 0 };
     char *auth0_str = "LAMPI_ADMIN_AUTH0";
     char *auth1_str = "LAMPI_ADMIN_AUTH1";
     char *auth2_str = "LAMPI_ADMIN_AUTH2";
@@ -183,6 +271,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_SOCKET[MAXBUFFERLEN];
     char LAMPI_AUTH[MAXBUFFERLEN];
     char LAMPI_SERVER[MAXBUFFERLEN];
+    pthread_t a_thread;
+    void *a_thread_return;
 
     /* initialize some values */
     memset(LAMPI_SOCKET, 0, MAXBUFFERLEN);
@@ -288,83 +378,41 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 
     }
 
+    /* spawn accept() processing thread */
+    if (pthread_create(&a_thread, (pthread_attr_t *)NULL, accept_thread, RunParameters) != 0) {
+        ulm_err(("Error: unable to create accept thread!\n"));
+        goto CLEANUP_ABNORMAL;
+    }
 
+fprintf(stderr,"about to call bproc_vexecmove_io(nHosts = %d, nodes = %p, pids = %p, io = %p, 3, exec_args[EXEC_NAME] = %s, argv[%d] = %p, environ = %p\n",
+    nHosts, nodes, pids, io, exec_args[EXEC_NAME], FirstAppArgument - 1, argv + (FirstAppArgument -1), environ);
+fflush(stderr);
     if (bproc_vexecmove_io
 	(nHosts, nodes, pids, io, 3, exec_args[EXEC_NAME],
 	 argv + (FirstAppArgument - 1), environ) < 0) {
 	fprintf(stderr, "bproc error  %s at line = %i in file= %s\n",
 		strerror(errno), __LINE__, __FILE__);
 	ret_status = errno;
+    /* cancel accept() processing thread */
+    pthread_cancel(a_thread);
 	goto CLEANUP_ABNORMAL;
     }
+fprintf(stderr,"success --- bproc_vexecmove_io(nHosts = %d, nodes = %p, pids = %p, io = %p, 3, exec_args[EXEC_NAME] = %s, argv[%d] = %p, environ = %p\n",
+    nHosts, nodes, pids, io, exec_args[EXEC_NAME], FirstAppArgument - 1, argv + (FirstAppArgument -1), environ);
+fflush(stderr);
 
-    /*   the front end sits in an select loop
-     *   when the remote side connects. the front end accepts.
-     *   the remote end sends two
-     *   things back. the pid and rfd (the process id
-     *   and what type of file descriptor (stderr,stdout,stdin)
-     */
-    while (connectCount < 3 * nHosts) {
-	FD_ZERO(&rset);
-	/* set the sockets to listen on */
-	for (int fdIndex = 0; fdIndex < 3; fdIndex++) {
-	    FD_SET(iosock_fd[fdIndex], &rset);
-	}
-
-	/* see if any sockets to accept */
-	int nRead = select(max_sock_fd + 1, &rset, NULL, NULL, &tmo);
-	if (nRead > 0) {
-	    for (int sock = 0; sock < 3; sock++) {
-		if (FD_ISSET(iosock_fd[sock], &rset)) {
-		    int fd = -1, pid = -1, rfd = -1;
-		    socklen_t sa_size;
-		    struct sockaddr sa;
-		    sa_size = sizeof(sa);
-		    fd = accept(iosock_fd[sock], &sa, &sa_size);
-		    if (fd == -1 && errno != EAGAIN) {
-			perror("accept");
-			close(iosock_fd[sock]);
-			goto CLEANUP_ABNORMAL;
-		    }
-		    if (read(fd, &pid, sizeof(pid)) != sizeof(pid) ||
-			read(fd, &rfd, sizeof(rfd)) != sizeof(rfd)) {
-			fprintf(stderr,
-				"mpirun_spawn_bproc: failed to read pid or fd"
-				" from IO connection.\n");
-			close(fd);
-		    }
-		    /* find host index that corresponds to this pid */
-		    for (i = 0; i < nHosts; i++)
-			if (pid == pids[i]) {
-			    hostID = i;
-			}
-		    switch (rfd) {
-		    case STDIN_FILENO:
-			if (RunParameters->STDINfds[hostID] != -1)
-			    break;
-			RunParameters->STDINfds[hostID] = fd;
-			connectCount++;
-			//      printf("stdin for pid = %d\n", pid);
-			break;
-		    case STDOUT_FILENO:
-			if (RunParameters->STDOUTfds[hostID] != -1)
-			    break;
-			RunParameters->STDOUTfds[hostID] = fd;
-			connectCount++;
-			//      printf("stdout for pid = %d\n", pid);
-			break;
-		    case STDERR_FILENO:
-			if (RunParameters->STDERRfds[hostID] != -1)
-			    break;
-			RunParameters->STDERRfds[hostID] = fd;
-			//      printf("stderr for pid = %d\n", pid);
-			connectCount++;
-			break;
-		    }
-		}
-	    }			/* end sock loop */
-	}			/* end nread > 0 */
-    }				/* end while (connectCount < 3 * nHosts) */
+    /* join accept() processing thread */
+    if (pthread_join(a_thread, &a_thread_return) == 0) {
+        int return_value = (int)a_thread_return;
+        if (return_value == 0) {
+            ulm_err(("Error: accept thread error!\n"));
+            goto CLEANUP_ABNORMAL;
+        }
+    }
+    else {
+        ulm_err(("Error: unable to join accept thread!\n"));
+        goto CLEANUP_ABNORMAL;
+    }
 
     // clean up the memory allocations
     ulm_free(exec_args[EXEC_NAME]);
