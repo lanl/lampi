@@ -50,9 +50,6 @@
  */
 void lampi_init_prefork_process_resources(lampiState_t *s)
 {
-    /* set system calls to restart after signals */
-    set_sa_restart();
-
     /*
      * Reset the max number of file descriptors which may be used by
      * the client daemon
@@ -60,6 +57,9 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
 
     struct rlimit rl;
     int returnValue;
+
+    /* set system calls to restart after signals */
+    set_sa_restart();
 
     if (s->error) {
         return;
