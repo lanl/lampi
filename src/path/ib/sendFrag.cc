@@ -409,7 +409,7 @@ int hca, int port)
     return ud_init();
 }
 
-bool ibSendFragDesc::post(double timeNow, int *errorCode)
+bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
 {
     VAPI_ret_t vapi_result;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
@@ -418,9 +418,8 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
 
     *errorCode = ULM_SUCCESS;
 
-    if (usethreads() && !ib_state.locked) {
+    if (usethreads() && !already_locked) {
         ib_state.lock.lock();
-        ib_state.locked = true;
         locked_here = true;
     }
 
@@ -436,7 +435,6 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m | POSTED);
                 if (locked_here) {
-                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 return true;
@@ -462,7 +460,6 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m & ~LOCALACKED);
                 if (locked_here) {
-                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 return true;
@@ -477,7 +474,6 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
     }
 #endif
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
     return false;

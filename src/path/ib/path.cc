@@ -96,9 +96,8 @@ inline void ibPath::checkSendCQs(void)
             }
             cq_empty_cnt = 0;
 
-            if (usethreads() && !ib_state.locked) {
+            if (usethreads()) {
                 ib_state.lock.lock();
-                ib_state.locked = true;
                 locked_here = true;
             }
 
@@ -123,7 +122,6 @@ inline void ibPath::checkSendCQs(void)
     }
 
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 }
@@ -159,7 +157,7 @@ inline bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode
                     // remove frag from FragsToAck list
                     afd = sfd;
                     sfd = (ibSendFragDesc *)message->FragsToAck.RemoveLinkNoLock((Links_t *)afd);
-                    afd->free(true);
+                    afd->free(false);
                 }
             }
         }
@@ -175,7 +173,8 @@ inline bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode
 }
 
 // all HCAs version
-inline bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
+inline bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, 
+int *errorCode, bool already_locked)
 {
     bool result = true;
 
@@ -189,13 +188,14 @@ inline bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, in
         int j = ib_state.active_hcas[i];
         if ((ib_state.hca[j].ctlMsgsToSendFlag & ( ((1 << (endIndex + 1)) - 1) &
                                                    ~((1 << startIndex) - 1) )) != 0)
-            result = (sendCtlMsgs(j, timeNow, startIndex, endIndex, errorCode, true) && result);
+            result = (sendCtlMsgs(j, timeNow, startIndex, endIndex, 
+                errorCode, true, already_locked) && result);
     }
     return result;
 }
 
 inline bool ibPath::sendCtlMsgs(int hca_index, double timeNow, int startIndex, 
-int endIndex, int *errorCode, bool skipCheck)
+int endIndex, int *errorCode, bool skipCheck, bool already_locked)
 {
     ibSendFragDesc *sfd, *afd;
     ib_hca_state_t *p = &(ib_state.hca[hca_index]);
@@ -223,9 +223,8 @@ int endIndex, int *errorCode, bool skipCheck)
         slist = &(p->ctlMsgsToSend[i]);
         alist = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads() && !ib_state.locked) {
+        if (usethreads() && !already_locked) {
             ib_state.lock.lock();
-            ib_state.locked = true;
             locked_here = true;
         }
 
@@ -243,7 +242,7 @@ int endIndex, int *errorCode, bool skipCheck)
 
             if (OKToSend) {
                 /* post send request */
-                if (sfd->post(timeNow, errorCode)) {
+                if (sfd->post(timeNow, errorCode, (locked_here || already_locked))) {
 #ifdef ENABLE_RELIABILITY
                     sfd->timeSent_m = timeNow;
                     (sfd->numTransmits_m)++;
@@ -261,7 +260,6 @@ int endIndex, int *errorCode, bool skipCheck)
                     // which is the default for now...
                     *errorCode = ULM_ERR_BAD_PATH;
                     if (locked_here) {
-                        ib_state.locked = false;
                         ib_state.lock.unlock();
                     }
                     return false;
@@ -280,7 +278,6 @@ int endIndex, int *errorCode, bool skipCheck)
             p->ctlMsgsToAckFlag |= mask;
 
         if (locked_here) {
-            ib_state.locked = false;
             ib_state.lock.unlock();
         }
     }
@@ -288,7 +285,8 @@ int endIndex, int *errorCode, bool skipCheck)
 }
 
 // all HCAs version
-inline bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
+inline bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode,
+bool already_locked)
 {
     bool result = true;
 
@@ -302,13 +300,14 @@ inline bool ibPath::cleanCtlMsgs(double timeNow, int startIndex, int endIndex, i
         int j = ib_state.active_hcas[i];
         if ((ib_state.hca[j].ctlMsgsToAckFlag & ( ((1 << (endIndex + 1)) - 1) &
                                                   ~((1 << startIndex) - 1) )) != 0)
-            result = (cleanCtlMsgs(j, timeNow, startIndex, endIndex, errorCode, true) && result);
+            result = (cleanCtlMsgs(j, timeNow, startIndex, endIndex, 
+                errorCode, true, already_locked) && result);
     }
     return result;
 }
 
 inline bool ibPath::cleanCtlMsgs(int hca_index, double timeNow, int startIndex, 
-int endIndex, int *errorCode, bool skipCheck)
+int endIndex, int *errorCode, bool skipCheck, bool already_locked)
 {
     ibSendFragDesc *sfd, *afd;
     ib_hca_state_t *p = &(ib_state.hca[hca_index]);
@@ -335,9 +334,8 @@ int endIndex, int *errorCode, bool skipCheck)
 
         list = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads() && !ib_state.locked) {
+        if (usethreads() && !already_locked) {
             ib_state.lock.lock(); 
-            ib_state.locked = true;
             locked_here = true;
         }
 
@@ -350,7 +348,7 @@ int endIndex, int *errorCode, bool skipCheck)
                 afd = sfd;
                 sfd = (ibSendFragDesc *)list->RemoveLinkNoLock(afd);
                 // free resources associated with the frag send desc.
-                afd->free(true);
+                afd->free(already_locked || locked_here);
             }
             else if (*errorCode == ULM_ERR_BAD_SUBPATH) {
                 // mark this HCA as bad, if it not already, and
@@ -359,7 +357,6 @@ int endIndex, int *errorCode, bool skipCheck)
                 // which is the default for now...
                 *errorCode = ULM_ERR_BAD_PATH;
                 if (locked_here) {
-                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 return false;
@@ -372,7 +369,6 @@ int endIndex, int *errorCode, bool skipCheck)
             p->ctlMsgsToAckFlag |= mask;
 
         if (locked_here) {
-            ib_state.locked = false;
             ib_state.lock.unlock();
         }
     }
@@ -394,12 +390,12 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     if (!ib_state.ack && message->FragsToAck.size()) {
         if (timeNow < 0)
             timeNow = dclock();
+        // thread lock must not be held...
         sendDone(message, timeNow, errorCode);
     }
 
-    if (usethreads() && !ib_state.locked) {
+    if (usethreads()) {
         ib_state.lock.lock();
-        ib_state.locked = true;
         locked_here = true;
     }
 
@@ -452,7 +448,6 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             // should currently be impossible with just UD QP service since
             // all of the descriptors should already exist and be available
             if (locked_here) {
-                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
             *errorCode = returnValue;
@@ -491,7 +486,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
         if (OKToSend) {
             /* post IB request */
-            if (sfd->post(timeNow, errorCode)) {
+            if (sfd->post(timeNow, errorCode, locked_here)) {
 #ifdef ENABLE_RELIABILITY
                 sfd->timeSent_m = timeNow;
                 (sfd->numTransmits_m)++;
@@ -520,7 +515,6 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
                 if (locked_here) {
-                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 *errorCode = ULM_ERR_BAD_PATH;
@@ -530,7 +524,6 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     } // end send fragment for loop
 
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 
@@ -548,19 +541,20 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // only zero length messages can free the user data buffer now
                 send_done_now =
                     (message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
-                    (message->NumSent == message->numfrags) &&
+                    (message->NumSent == (int)message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             } else {
                 // same remark as above...will be changing
                 send_done_now =
                     (message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
-                    (message->NumSent == message->numfrags) &&
+                    (message->NumSent == (int)message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             }
         }
         else {
             if (timeNow < 0)
                 timeNow = dclock();
+            // thread lock must not be held...
             send_done_now = sendDone(message, timeNow, errorCode);
         }
 
@@ -570,7 +564,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     }
 
     if ((message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
-        (message->NumSent == message->numfrags)) {
+        (message->NumSent == (int)message->numfrags)) {
         *incomplete = false;
     }
 
@@ -584,8 +578,8 @@ inline bool ibPath::push(double timeNow, int *errorCode)
     // check send completion queues
     checkSendCQs();
 
-    result = (sendCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
-    result = (cleanCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
+    result = (sendCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode, false) && result);
+    result = (cleanCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode, false) && result);
 
     return result;
 }
@@ -638,9 +632,8 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             }
             cq_empty_cnt = 0;
 
-            if (usethreads() && !ib_state.locked) {
+            if (usethreads() && !locked_here) {
                 ib_state.lock.lock();
-                ib_state.locked = true;
                 locked_here = true;
             }
 
@@ -760,7 +753,6 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
     }
 
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 
@@ -836,7 +828,7 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	    message->clearToSend_m=true;
 	    (message->NumAcked)++;
 	    // return frag descriptor to free list, adjust tokens, etc.
-        FragDesc->free(true);
+        FragDesc->free(false);
     }
 
 	// reset FragDesc to previous value, if appropriate, to iterate over list correctly...
@@ -856,9 +848,8 @@ void ibPath::finalize(void)
     int i;
     bool locked_here = false;
 
-    if (usethreads() && !ib_state.locked) {
+    if (usethreads()) {
         ib_state.lock.lock();
-        ib_state.locked = true;
         locked_here = true;
     }
 
@@ -940,7 +931,6 @@ void ibPath::finalize(void)
     }
 
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 }

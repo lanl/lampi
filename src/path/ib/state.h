@@ -283,8 +283,6 @@ typedef struct {
     ib_memory_registration_cache mr_cache;
     /* memory allocator for registered memory */
     ib_memory_allocator mem_alloc;
-    /* set if thread lock is held -- to prevent recursive locking only */
-    bool locked;
     /* total number of HCAs */
     u_int32_t num_hcas;
     /* number of HCAs that have at least one port in the ACTIVE state */

@@ -74,9 +74,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
         timeNow = dclock();
     }
 
-    if (usethreads() && !ib_state.locked) {
+    if (usethreads()) {
         ib_state.lock.lock();
-        ib_state.locked = true;
         locked_here = true;
     }
 
@@ -105,22 +104,20 @@ bool ibRecvFragDesc::AckData(double timeNow)
 
     if ((hca_index < 0) || (port_index < 0)) {
         int dummyCode;
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
         if (locked_here) {
-            ib_state.locked = false;
             ib_state.lock.unlock();
         }
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
         return false;
     }
 
     sfd = ib_state.hca[hca_index].send_frag_list.getElementNoLock(0, returnValue);
     if (returnValue != ULM_SUCCESS) {
         int dummyCode;
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
         if (locked_here) {
-            ib_state.locked = false;
             ib_state.lock.unlock();
         }
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
         return false;
     }
     // decrement token count of available send frag. desc.
@@ -133,12 +130,11 @@ bool ibRecvFragDesc::AckData(double timeNow)
     if (returnValue != ULM_SUCCESS) {
         int dummyCode;
         sfd->hca_index_m = hca_index;
-        sfd->free(false);
+        sfd->free(locked_here);
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
         if (locked_here) {
-            ib_state.locked = false;
             ib_state.lock.unlock();
         }
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
         return false;
     }
 
@@ -155,13 +151,12 @@ bool ibRecvFragDesc::AckData(double timeNow)
     list->AppendNoLock((Links_t *)sfd);
     ib_state.hca[hca_index].ctlMsgsToSendFlag |= (1 << MESSAGE_DATA_ACK);
 
+    path->sendCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode, locked_here);
+    path->cleanCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode, locked_here);
+
     if (locked_here) {
-        ib_state.locked = false;
         ib_state.lock.unlock();
     }
-
-    path->sendCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode);
-    path->cleanCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode);
 
     return true;
 }
@@ -234,7 +229,6 @@ bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
 void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
 {
     VAPI_ret_t vapi_result;
-    bool locked_here = false;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
 
     // repost the descriptor 
@@ -246,20 +240,9 @@ void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
         exit(1);
     }
 
-    // decrement tokens...don't need to check values...
-    if (usethreads() && !ib_state.locked) {
-        ib_state.lock.lock();
-        ib_state.locked = true;
-        locked_here = true;
-    }
-
+    // thread lock should already be held...
     (h->recv_cq_tokens)--;
     (h->ud.rq_tokens)--;
-
-    if (locked_here) {
-        ib_state.locked = false;
-        ib_state.lock.unlock();
-    }
 }
 
 void ibRecvFragDesc::msgData(double timeNow)
@@ -286,7 +269,15 @@ void ibRecvFragDesc::msgData(double timeNow)
     srcProcID_m = communicators[ctx_m]->
         remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m];
 
+    if (usethreads()) {
+        ib_state.lock.unlock();
+    }
+
     communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
+
+    if (usethreads()) {
+        ib_state.lock.lock();
+    }
 }
 
 void ibRecvFragDesc::msgDataAck(double timeNow)
@@ -294,6 +285,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
     ibDataAck_t *p = (ibDataAck_t *)addr_m;
     ibSendFragDesc *sfd = (ibSendFragDesc *)p->ptrToSendDesc.ptr;
     volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc_m;
+    bool already_locked = usethreads();
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
 
@@ -320,7 +312,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
         }
 #endif
 
-        handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
+        handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd, already_locked);
         ((SendDesc_t *)bsd)->Lock.unlock();
 
     ReturnDescToPool(getMemPoolIndex());
@@ -370,7 +362,7 @@ inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *s
 #endif
 
 inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
-                                                 ibSendFragDesc *sfd)
+                                                 ibSendFragDesc *sfd, bool already_locked)
 {
     short whichQueue = sfd->WhichQueue;
     ibDataAck_t *p = (ibDataAck_t *)addr_m;
@@ -411,15 +403,14 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         sfd->parentSendDesc_m = 0;
 
         if (sfd->done(timeNow, &errorCode)) {
-            sfd->free(true);
+            sfd->free(already_locked);
         }
         else {
             // we need to wait for local completion notification
             // before we free this descriptor...
             // put on ctlMsgsToAck list for later cleaning by push()
-            if (usethreads() && !ib_state.locked) {
+            if (usethreads() && !already_locked) {
                 ib_state.lock.lock();
-                ib_state.locked = true;
                 locked_here = true;
             }
 
@@ -427,9 +418,8 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
                 &(ib_state.hca[sfd->hca_index_m].ctlMsgsToAck[MESSAGE_DATA]);
             list->AppendNoLock((Links_t *)sfd);
             ib_state.hca[sfd->hca_index_m].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
-
+    
             if (locked_here) {
-                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
         }
@@ -450,7 +440,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
             bsd->FragsToSend.Append((Links_t *)sfd);
         }
         // move message to incomplete queue
-        if (bsd->NumSent == bsd->numfrags) {
+        if (bsd->NumSent == (int)bsd->numfrags) {
             // sanity check, is frag really in UnackedPostedSends queue
             if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
                 ulm_exit((-1, "Error: Send descriptor not "

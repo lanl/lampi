@@ -93,7 +93,6 @@ void ibSetup(lampiState_t *s)
     // set some defaults here...
     ib_state.max_ud_2k_buffers = 2048;
     ib_state.max_outst_frags = 100;
-    ib_state.locked = false;
 
     // client daemon does info exchanges only
     if (s->iAmDaemon) {

@@ -76,7 +76,7 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         bool init(void);
         bool ud_init(void);
         bool get_remote_ud_info(VAPI_ud_av_hndl_t *ah, VAPI_qp_num_t *qp);
-        bool post(double timeNow, int *errorCode);
+        bool post(double timeNow, int *errorCode, bool already_locked);
 
         bool done(double timeNow, int *errorCode)
         {
@@ -90,13 +90,12 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         }
 
         // return descriptor to fragment list, adjust tokens, etc.
-        void free(bool needToLock = true)
+        void free(bool already_locked = false)
         {
             bool locked_here = false;
 
-            if (needToLock && usethreads() && !ib_state.locked) {
+            if (usethreads() && !already_locked) {
                 ib_state.lock.lock();
-                ib_state.locked = true;
                 locked_here = true;
             }
 
@@ -115,7 +114,6 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
             ib_state.hca[hca_index_m].send_frag_list.returnElementNoLock(this, 0);
 
             if (locked_here) {
-                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
         }

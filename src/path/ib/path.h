@@ -100,15 +100,17 @@ class ibPath : public BasePath_t {
 #endif
 
         bool sendCtlMsgs(int hca, double timeNow, int startIndex, int endIndex,
-            int *errorCode, bool skipCheck = false);
+            int *errorCode, bool skipCheck = false, bool already_locked = false);
 
         // all HCAs version
-        bool sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
+        bool sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode,
+            bool already_locked);
 
         bool cleanCtlMsgs(int hca, double timeNow, int startIndex, int endIndex,
-            int *errorCode, bool skipCheck = false);
+            int *errorCode, bool skipCheck = false, bool already_locked = false);
 
         // all HCAs version
-        bool cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
+        bool cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode,
+            bool already_locked);
 };
 #endif
