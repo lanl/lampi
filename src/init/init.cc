@@ -151,7 +151,6 @@ void lampi_init(void)
     lampi_init_prefork_resource_management(&lampiState);
     lampi_init_prefork_check_stdio(&lampiState);
     lampi_init_prefork_connect_to_mpirun(&lampiState);
-    lampi_init_prefork_send_version_string(&lampiState);
     lampi_init_prefork_receive_setup_params(&lampiState);
     lampi_init_prefork_ip_addresses(&lampiState);
     lampi_init_prefork_debugger(&lampiState);
@@ -237,8 +236,6 @@ void lampi_init_check_for_error(lampiState_t *s)
           "Initialization failed connecting to daemon" },
         { ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN,
           "Initialization failed connecting to mpirun" },
-        { ERROR_LAMPI_INIT_PREFORK_SEND_VERSION_STRING,
-          "Initialization failed sending version string to mpirun" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS,
           "Initialization failed receiving run-time parameters" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY,
@@ -918,8 +915,15 @@ void lampi_init_fork(lampiState_t *s)
 
     s->local_pids[0] = getpid();
     /* control flag set to increment */
-    s->local_rank = fork_many(totalLocalProcs, FORK_MANY_TYPE_TREE,
-                              s->local_pids);
+    if (totalLocalProcs > 4) {
+        s->local_rank = fork_many(totalLocalProcs,
+                                  FORK_MANY_TYPE_TREE,
+                                  s->local_pids);
+    } else {
+        s->local_rank = fork_many(totalLocalProcs,
+                                  FORK_MANY_TYPE_LINEAR,
+                                  s->local_pids);
+    }
     mb();
 
     set_sa_restart();
@@ -1092,7 +1096,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
         case adminMessage::HOSTID:
             s->client->unpack(&(s->hostid),
                               (adminMessage::packType) sizeof(int), 1);
-                        s->client->setHostRank(s->hostid);
+            s->client->setHostRank(s->hostid);
             break;
         case adminMessage::TVDEBUG:
             s->client->unpack(&(s->debug),
@@ -1140,56 +1144,56 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
 #if ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
-            {
-                int c, cpulistlen, *cpulist;
-                constraint_info my_c;
-                s->client->unpack(&cpulistlen,
-                                  (adminMessage::packType) sizeof(int), 1);
+        {
+            int c, cpulistlen, *cpulist;
+            constraint_info my_c;
+            s->client->unpack(&cpulistlen,
+                              (adminMessage::packType) sizeof(int), 1);
 
-                cpulist = ulm_new(int, cpulistlen);
-                s->client->unpack(cpulist,
-                                  (adminMessage::packType) sizeof(int),
-                                  cpulistlen);
-                my_c.reset_mask(C_MUST_USE);
-                my_c.set_type(R_CPU);
+            cpulist = ulm_new(int, cpulistlen);
+            s->client->unpack(cpulist,
+                              (adminMessage::packType) sizeof(int),
+                              cpulistlen);
+            my_c.reset_mask(C_MUST_USE);
+            my_c.set_type(R_CPU);
 
-                for (c = 0; c < cpulistlen; c++) {
-                    my_c.set_num(cpulist[c]);
-                    ULMreq->add_constraint(R_CPU, 1, &my_c);
-                }
-                ulm_delete(cpulist);
+            for (c = 0; c < cpulistlen; c++) {
+                my_c.set_num(cpulist[c]);
+                ULMreq->add_constraint(R_CPU, 1, &my_c);
             }
-            break;
+            ulm_delete(cpulist);
+        }
+        break;
 
         case adminMessage::NCPUSPERNODE:
             /* number of cpus per node to use */
             s->client->unpack(&nCpPNode,
                               (adminMessage::packType) sizeof(int), 1);
             if ((nCpPNode < 0) || (nCpPNode > 2)) {
-                ulm_exit(("Incorrect value for nCpPNode :: %d\n",
-                          nCpPNode));
-            }
-            break;
+            ulm_exit(("Incorrect value for nCpPNode :: %d\n",
+                      nCpPNode));
+        }
+        break;
 
-        case adminMessage::USERESOURCEAFFINITY:
-            /* specify if resource affinity is to be used */
-            s->client->unpack(&tmpInt,
-                              (adminMessage::packType) sizeof(int), 1);
-            if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit(("Incorrect value for USERESOURCEAFFINITY (%d)\n",
-                          tmpInt));
-            }
-            if (tmpInt == 1) {
-                useRsrcAffinity = true;
-            } else {
-                useRsrcAffinity = false;
-            }
-            break;
-        case adminMessage::DEFAULTRESOURCEAFFINITY:
-            /* specify how to obtain resource affinity list */
-            s->client->unpack(&tmpInt,
-                              (adminMessage::packType) sizeof(int), 1);
-            if ((tmpInt < 0) || (tmpInt > 1)) {
+    case adminMessage::USERESOURCEAFFINITY:
+        /* specify if resource affinity is to be used */
+        s->client->unpack(&tmpInt,
+                          (adminMessage::packType) sizeof(int), 1);
+        if ((tmpInt < 0) || (tmpInt > 1)) {
+        ulm_exit(("Incorrect value for USERESOURCEAFFINITY (%d)\n",
+                  tmpInt));
+    }
+    if (tmpInt == 1) {
+        useRsrcAffinity = true;
+    } else {
+        useRsrcAffinity = false;
+    }
+    break;
+case adminMessage::DEFAULTRESOURCEAFFINITY:
+    /* specify how to obtain resource affinity list */
+    s->client->unpack(&tmpInt,
+                      (adminMessage::packType) sizeof(int), 1);
+    if ((tmpInt < 0) || (tmpInt > 1)) {
                 ulm_exit(("Incorrect value for DEFAULTRESOURCEAFFINITY (%d)\n",
                           tmpInt));
             }
@@ -1310,6 +1314,16 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
         s->IAmAlive = (int *)
             SharedMemoryPools.getMemorySegment((s->local_size + 1) *
                                                sizeof(int), PAGESIZE);
+#ifdef HAVE_SYS_RESOURCE_H
+        if (s->useDaemon) {
+            s->rusage = (struct rusage *)
+                SharedMemoryPools.getMemorySegment(s->local_size *
+                                                   sizeof(struct rusage),
+                                                   PAGESIZE);
+            memset(s->rusage, 0, s->local_size * sizeof(struct rusage));
+        }
+#endif
+
         s->AbnormalExit = (abnormalExitInfo *)
             SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
         memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
@@ -1353,32 +1367,6 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     lampi_init_prefork_receive_setup_params_ib(s);
     lampi_init_prefork_receive_setup_params_tcp(s);
 
-}
-
-
-void lampi_init_prefork_send_version_string(lampiState_t *s)
-{
-    if (s->error) {
-        return;
-    }
-
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_send_version_string");
-    }
-
-    char version[ULM_MAX_VERSION_STRING];
-    int errorCode;
-
-    memset(version, '\0', sizeof(version));
-    strncpy(version, PACKAGE_VERSION, sizeof(version) - 1);
-    s->client->reset(adminMessage::SEND);
-    s->client->pack((void *) version,
-                    (adminMessage::packType) sizeof(char), sizeof(version));
-    s->client->send(-1, adminMessage::CLIENTVERSION, &errorCode);
-    if (errorCode != ULM_SUCCESS) {
-        s->error = ERROR_LAMPI_INIT_PREFORK_SEND_VERSION_STRING;
-        return;
-    }
 }
 
 
@@ -1556,14 +1544,21 @@ void lampi_init_postfork_pids(lampiState_t *s)
     if ((s->useDaemon && s->iAmDaemon) ||
         (!s->useDaemon && (s->local_rank == 0))) {
 
+        char version[ULM_MAX_VERSION_STRING];
         int errorCode;
         int tag;
         int goahead;
+
+        memset(version, '\0', sizeof(version));
+        strncpy(version, PACKAGE_VERSION, sizeof(version) - 1);
 
         s->client->reset(adminMessage::SEND);
         s->client->pack((void *) s->local_pids,
                         (adminMessage::packType) sizeof(pid_t),
                         s->local_size);
+        s->client->pack((void *) version,
+                        (adminMessage::packType) sizeof(char),
+                        sizeof(version));
         s->client->send(-1, adminMessage::CLIENTPIDS, &errorCode);
 
         /* wait for goahead from mpirun */

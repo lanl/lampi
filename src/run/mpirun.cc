@@ -110,6 +110,8 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
     bool returnValue = true;
     int rank, tag, contacted = 0;
     int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
+    char version[ULM_MAX_VERSION_STRING];
+    int bad_versions = 0;
 
     while (contacted < RunParams.NHosts) {
         int recvd = s->receiveFromAny(&rank, &tag, errorCode,
@@ -120,8 +122,22 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
             if ((tag == adminMessage::CLIENTPIDS) &&
                 (s->unpack(hostarray[rank],
                            (adminMessage::packType) sizeof(pid_t),
-                           RunParams.ProcessCount[rank], alarm_time))) {
+                           RunParams.ProcessCount[rank], alarm_time)) &&
+                (s->unpack(version,
+                           (adminMessage::packType) sizeof(char),
+                           sizeof(version), alarm_time))) {
                 contacted++;
+                if (RunParams.Verbose) {
+                    fprintf(stderr,
+                            "LA-MPI: *** host %d has version libmpi-%s\n",
+                            rank, version);
+                }
+                if (strcmp(PACKAGE_VERSION, version)) {
+                    ulm_err(("Error: host %d: version mismatch: "
+                             "mpirun-%s != libmpi-%s\n",
+                             rank, PACKAGE_VERSION, version));
+                    bad_versions++;
+                }
                 break;
             }
             // otherwise fall through...
@@ -145,6 +161,11 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
         }
     }
 
+    if (bad_versions) {
+        ulm_err(("Error: While checking version numbers\n"));
+        Abort();
+    }
+
     /* release clients */
 
     if (returnValue) {
@@ -157,49 +178,6 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
     }
 
     return returnValue;
-}
-
-
-/*
- * collect library version numbers from clients and check for
- * consistency
- */
-static bool checkClientVersions(void)
-{
-    adminMessage *s = RunParams.server;
-    bool status = true;
-    int rc, rank, tag, contacted = 0;
-    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
-    char version[ULM_MAX_VERSION_STRING];
-    int errorCode;
-
-    while (contacted < RunParams.NHosts) {
-        rc = s->receiveFromAny(&rank, &tag, &errorCode,
-                               (alarm_time == -1) ? -1 : alarm_time * 1000);
-        if (rc == adminMessage::OK) {
-            if ((tag == adminMessage::CLIENTVERSION) &&
-                (s->unpack(version,
-                           (adminMessage::packType) sizeof(char),
-                           sizeof(version), alarm_time))) {
-                contacted++;
-            }
-            if (RunParams.Verbose) {
-                fprintf(stderr,
-                        "LA-MPI: *** host %d has version libmpi-%s\n",
-                        rank, version);
-            }
-            if (strcmp(PACKAGE_VERSION, version)) {
-                ulm_err(("Error: host %d: version mismatch: "
-                         "mpirun-%s != libmpi-%s\n",
-                         rank, PACKAGE_VERSION, version));
-                status = false;
-            }
-        } else {
-            status = false;
-        }
-    }
-
-    return status;
 }
 
 
@@ -564,7 +542,6 @@ int mpirun(int argc, char **argv)
     int FirstAppArg;
     int *ListHostsStarted;
     int ReceivingSocket;
-    int nprocs;
     int rc;
     pthread_t sc_thread;
     sigset_t newsignals;
@@ -600,22 +577,30 @@ int mpirun(int argc, char **argv)
     getAuthData(AuthData);
 
     /* calculate the total number of processes */
-    nprocs = 0;
+    RunParams.TotalProcessCount = 0;
+    RunParams.MaxProcessCount = 0;
     for (int i = 0; i < RunParams.NHosts; i++) {
-        nprocs += RunParams.ProcessCount[i];
+        RunParams.TotalProcessCount += RunParams.ProcessCount[i];
+        if (RunParams.MaxProcessCount < RunParams.ProcessCount[i]) {
+            RunParams.MaxProcessCount = RunParams.ProcessCount[i];
+        }
     }
+
+    LogJobStart();
 
     /* create a new server admin connection/message object */
     RunParams.server = new adminMessage;
 
     /* intialize the object as a server */
     if (!RunParams.server ||
-        !RunParams.server->serverInitialize((int *) AuthData, nprocs,
+        !RunParams.server->serverInitialize((int *) AuthData,
+                                            RunParams.TotalProcessCount,
                                             &ReceivingSocket)) {
         ulm_err(("Error: Unable to initialize server socket (auth[0] %d"
-                 " auth[1] %d auth[2] %d nprocs %d port %d)\n",
-                 AuthData[0], AuthData[1], AuthData[2], nprocs,
-                 ReceivingSocket));
+                 " auth[1] %d auth[2] %d RunParams.TotalProcessCount %d"
+                 " port %d)\n",
+                 AuthData[0], AuthData[1], AuthData[2],
+                 RunParams.TotalProcessCount, ReceivingSocket));
         Abort();
     }
 
@@ -629,7 +614,7 @@ int mpirun(int argc, char **argv)
     if (use_connect_thread) {
         if (pthread_create
             (&sc_thread, (pthread_attr_t *) NULL, connectThread,
-             (void *) &nprocs) != 0) {
+             (void *) &(RunParams.TotalProcessCount)) != 0) {
             ulm_err(("Error: can't create serverConnect() thread!\n"));
             Abort();
         }
@@ -663,7 +648,8 @@ int mpirun(int argc, char **argv)
      * spawning user app.
      */
     if (0 == use_connect_thread) {
-        if (connectThread((void *) &nprocs) == (void *) -1) {
+        if (connectThread((void *) &(RunParams.TotalProcessCount)) ==
+            (void *) -1) {
             Abort();
         }
     }
@@ -705,12 +691,6 @@ int mpirun(int argc, char **argv)
     /* now all daemon processes have connected back to mpirun */
     RunParams.ClientsSpawned = 1;
 
-    /* check that version numbers of mpirun and libmpi are consistent */
-    if (!checkClientVersions()) {
-        ulm_err(("Error: While checking version numbers\n"));
-        Abort();
-    }
-
     /* update runtime information using returned host information */
     FixRunParams(RunParams.server->nhosts());
     getSocketsToClients();
@@ -722,7 +702,8 @@ int mpirun(int argc, char **argv)
     ulm_dbg(("\nmpirun: sending initial input to daemons...\n"));
     rc = SendInitialInputDataToClients();
     if (rc != ULM_SUCCESS) {
-        ulm_err(("Error: While sending initial input data to clients (%d)\n", rc));
+        ulm_err(("Error: While sending initial input data to clients (%d)\n",
+                 rc));
         Abort();
     }
 
@@ -772,7 +753,8 @@ int mpirun(int argc, char **argv)
 
     /* InfiniBand information exchange - postfork */
     if (!exchangeIBInfo(&rc)) {
-        ulm_err(("Error: While exchanging InfiniBand (IB) information (%d)\n", rc));
+        ulm_err(("Error: While exchanging InfiniBand (IB) information (%d)\n",
+                 rc));
         Abort();
     }
 
@@ -780,7 +762,7 @@ int mpirun(int argc, char **argv)
     if (RunParams.Quiet == 0) {
         fprintf(stderr,
                 "LA-MPI: *** %d process(es) on %d host(s):",
-                nprocs, RunParams.NHosts);
+                RunParams.TotalProcessCount, RunParams.NHosts);
         for (int h = 0; h < RunParams.NHosts; h++) {
             struct hostent *hptr;
 
@@ -801,7 +783,8 @@ int mpirun(int argc, char **argv)
 
     /* release all processes explicitly with barrier admin. message */
     if (!releaseClients(&rc)) {
-        ulm_err(("Error: Timed out while waiting to release clients (%d)\n", rc));
+        ulm_err(("Error: Timed out while waiting to release clients (%d)\n",
+                 rc));
         Abort();
     }
 
@@ -820,6 +803,9 @@ int mpirun(int argc, char **argv)
     ulm_delete(RunParams.AppPIDs);
     ulm_delete(RunParams.Networks.
                TCPAdminstrativeNetwork.SocketsToClients);
+
+    LogJobExit();
+    PrintTotalRusage();
 
     return EXIT_SUCCESS;
 }
