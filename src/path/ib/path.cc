@@ -796,7 +796,7 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	    FragDesc->parentSendDesc_m = 0;
 	    // free all of the other resources after we unlock the frag
 	    free_send_resources = true;
-	} else if (received_seq_no < FragDesc->frag_seq_m) {
+	} else {
 	    unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
 		(1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
 	    if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
@@ -809,18 +809,8 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
         FragDesc=TmpDesc;
 		continue;
 	    }
-	} else {
-	    // simply recalculate the next time to look at this send descriptor for retransmission
-	    unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    double timeToResend = FragDesc->timeSent_m + (RETRANS_TIME * max_multiple);
-	    if (message->earliestTimeToResend == -1) {
-                message->earliestTimeToResend = timeToResend;
-            } else if (timeToResend < message->earliestTimeToResend) {
-                message->earliestTimeToResend = timeToResend;
-            }
-	}
-
+    }
+    
 	if (free_send_resources) {
 	    message->clearToSend_m=true;
 	    (message->NumAcked)++;

@@ -284,6 +284,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     rf = 0;
                     break;
                 }
+                rf->Init();
             }
 
             if (usethreads())

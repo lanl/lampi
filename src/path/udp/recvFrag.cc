@@ -96,6 +96,7 @@ int udpRecvFragDesc::pullFrags(int &retVal)
 	    desc = (udpRecvFragDesc *) UDPRecvFragDescs.getElement(getMemPoolIndex(), retVal);
 	    if (retVal != ULM_SUCCESS)
 		return bytesRecvd;
+        desc->Init();
 	    desc->sockfd = shortsock;
 	    desc->shortMsg = true;
 	    desc->copyError = false;
@@ -142,6 +143,7 @@ int udpRecvFragDesc::pullFrags(int &retVal)
             }
             return bytesRecvd;
         }
+        desc->Init();
         UDPGlobals::checkLongMessageSocket = false;	// will be reset as necessary
 	    desc->sockfd = longsock;
 	    desc->shortMsg = false;
