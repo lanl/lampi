@@ -38,6 +38,8 @@
  *  Created by Rob Aulwes on Fri Jan 24 2003.
  */
 
+#include <signal.h>
+
 #include "misc.h"
 #include "internal/malloc.h"
 
