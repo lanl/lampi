@@ -122,28 +122,33 @@ void lampi_daemon_loop(lampiState_t *s)
     }                           /* end for(;;) */
 }
 
+
 /*
  * terminate all the worker process after client caught a sigchld
  * from a abnormally terminating child process with pid PIDofChild
  */
 static void CleanupOnAbnormalChildTermination(lampiState_t *s)
 {
-    int TerminatedLocalProcess = 0, TerminatedGlobalProcess = 0;
     unsigned tag;
     ulm_iovec_t iov[2];
     abnormal_term_msg_t abnormal_term_msg;
 
+    memset(&abnormal_term_msg, 0, sizeof(abnormal_term_msg));
+
     /* figure out which process terminated abnormally */
     for (int i = 0; i < s->local_size; i++) {
         if (s->AbnormalExit->pid == s->local_pids[i]) {
-            TerminatedLocalProcess = i;
-            TerminatedGlobalProcess = i;
+            abnormal_term_msg.pid    = (unsigned) s->AbnormalExit->pid;
+            abnormal_term_msg.lrank  = (unsigned) i;
+            abnormal_term_msg.grank  = (unsigned) i;
+            abnormal_term_msg.signal = (unsigned) s->AbnormalExit->signal;
+            abnormal_term_msg.status = (unsigned) s->AbnormalExit->status;
             s->IAmAlive[i] = -1;
+            s->local_pids[i] = -1;
         }
     }
-    s->local_pids[TerminatedLocalProcess] = -1;
     for (int i = 0; i < s->hostid; i++) {
-        TerminatedGlobalProcess += s->map_host_to_local_size[i];
+        abnormal_term_msg.grank += s->map_host_to_local_size[i];
     }
 
     if (s->verbose) {
@@ -168,12 +173,6 @@ static void CleanupOnAbnormalChildTermination(lampiState_t *s)
     }
 
     tag = ABNORMALTERM;
-    abnormal_term_msg.pid    = (unsigned) s->local_pids;
-    abnormal_term_msg.lrank  = (unsigned) TerminatedLocalProcess;
-    abnormal_term_msg.grank  = (unsigned) TerminatedGlobalProcess;
-    abnormal_term_msg.signal = (unsigned) s->AbnormalExit->signal;
-    abnormal_term_msg.status = (unsigned) s->AbnormalExit->status;
-
     iov[0].iov_base = &tag;
     iov[0].iov_len = (ssize_t) (sizeof(unsigned int));
     iov[1].iov_base = &abnormal_term_msg;
