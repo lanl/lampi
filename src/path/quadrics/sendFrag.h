@@ -750,7 +750,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     }
 
     // overwrite fragEnvelope->commonHdr values
-    fragEnvelope->commonHdr.ctlMsgType = (unsigned short)cmType;
+    fragEnvelope->commonHdr.type = (ulm_uint32_t)cmType;
     fragEnvelope->commonHdr.checksum = 0;
 
     /* sender side control message types */
@@ -783,8 +783,8 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     case MESSAGE_DATA_ACK:
     {
         quadricsDataAck_t *p = &(fragEnvelope->msgDataAck);
-        p->senderID = myproc();
-        p->destID = globalDestID;
+        p->src_proc = myproc();
+        p->dest_proc = globalDestID;
     }
     break;
     case MEMORY_RELEASE:

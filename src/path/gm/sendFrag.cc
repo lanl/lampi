@@ -103,7 +103,7 @@ bool gmSendFragDesc::init(int globalDestProc,
 		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT);
         }
 
-        header->common.ctlMsgType = MESSAGE_DATA;
+        header->common.type = MESSAGE_DATA;
         header->user_tag = parentSendDesc_m->posted_m.tag_m;
         header->senderID = myproc();
         header->destID = globalDestProc_m;

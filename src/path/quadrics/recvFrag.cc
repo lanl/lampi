@@ -148,7 +148,7 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
         else if (!send_specific_ack) {
             // if the frag is a duplicate but has not been delivered to the user process,
             // then set the field to 0 so the other side doesn't interpret
-            // these fields (it will only use the received_fragseq and delivered_fragseq fields
+            // these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
             p->thisFragSeq = 0;
             p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
             if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
@@ -178,7 +178,7 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
     // fill in other fields
     p->ctxAndMsgType = envelope.msgDataHdr.ctxAndMsgType;
     p->tag_m = envelope.msgDataHdr.tag_m;
-    p->sendFragDescPtr = envelope.msgDataHdr.sendFragDescPtr;
+    p->ptrToSendDesc = envelope.msgDataHdr.sendFragDescPtr;
 
     // use incoming ctx and rail!
     sfd->init(
@@ -280,7 +280,7 @@ bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDe
     // from ourself or another local process
     if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
         sptr = &(reliabilityInfo->sender_ackinfo[local_myproc()]);
-        tptr = &(sptr->process_array[p->senderID]);
+        tptr = &(sptr->process_array[p->src_proc]);
     } else {
         ulm_err(("quadricsRecvFragDesc::check...Ack received ack of unknown "
                  "message type %d\n", msgType_m));
@@ -476,7 +476,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 void quadricsRecvFragDesc::msgDataAck(double timeNow)
 {
     quadricsDataAck_t *p = &(envelope.msgDataAck);
-    quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->sendFragDescPtr.ptr;
+    quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->ptrToSendDesc.ptr;
     volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc;
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);

@@ -885,7 +885,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     rd->DataOK = false;
                     rd->path = this;
 
-                    switch (rd->envelope.commonHdr.ctlMsgType) {
+                    switch (rd->envelope.commonHdr.type) {
                     case MESSAGE_DATA:
                         rd->msgData(timeNow);
                         break;
@@ -902,8 +902,8 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                         rd->memReqAck();
                         break;
                     default:
-                        ulm_exit((-1, "quadricsPath::receive bad ctlMsgType %d\n",
-                                  (int)rd->envelope.commonHdr.ctlMsgType));
+                        ulm_exit((-1, "quadricsPath::receive bad type %d\n",
+                                  (int)rd->envelope.commonHdr.type));
                         break;
                     }
                 }

@@ -34,6 +34,7 @@
 #define _QUADRICS_MESSAGES
 
 #include "internal/types.h"
+#include "path/common/BaseDesc.h"
 
 /* value for struct quadricsCommon.ctlMsgType */
 enum quadricsCtlMsgTypes {
@@ -46,7 +47,7 @@ enum quadricsCtlMsgTypes {
 };
 
 struct quadricsCommon {
-    unsigned short ctlMsgType;		//!< message type used to select the proper structure definition
+    ulm_uint32_t type;		//!< message type used to select the proper structure definition
 };
 
 #define FULLCMN_PADDING 30
@@ -56,7 +57,7 @@ struct quadricsCommon {
  */
 
 struct quadricsFullCommon {
-    unsigned short ctlMsgType;		//!< message type used to select the proper structure definition
+    ulm_uint32_t type;		//!< message type used to select the proper structure definition
     ulm_uint32_t padding[FULLCMN_PADDING];
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
@@ -88,19 +89,10 @@ struct quadricsDataHdr {
 #define ACKSTATUS_DATAGOOD 0x1			//!< data arrived okay (value for ackStatus below)
 #define ACKSTATUS_DATACORRUPT 0x2		//!< data arrived corrupted (value for ackStatus below)
 #define ACKSTATUS_AGGINFO_ONLY 0x4		//!< ack fields for a specific frag are not valid (OR'ed with ackStatus)
-#define DATAACK_PADDING 17
+#define DATAACK_PADDING 16
 
-struct quadricsDataAck {
-    struct quadricsCommon common;
-    ulm_uint32_t ctxAndMsgType;		//!< context ID and message type (pt-to-pt v. multicast)
+struct quadricsDataAck : public BaseAck_t {
     ulm_int32_t tag_m;			//!< user tag value for this message
-    ulm_int32_t senderID;		//!< global process id of the ACK sender
-    ulm_int32_t destID;			//!< global process id of the ACK receiver
-    ulm_uint32_t ackStatus;		//!< ACK flags (see above definitions)
-    ulm_ptr_t sendFragDescPtr;		//!< a pointer to this frag's quadricsSendFragDesc (valid for receiver only)
-    ulm_uint64_t thisFragSeq;		//!< the frag sequence value of the received frag being ACKed
-    ulm_uint64_t deliveredFragSeq;	//!< the largest in-order frag seq. value of frags delivered to the app
-    ulm_uint64_t receivedFragSeq;		//!< the largest in-order frag seq. vallue of frags received
     ulm_uint32_t padding[DATAACK_PADDING];
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };

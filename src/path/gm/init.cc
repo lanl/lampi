@@ -179,6 +179,13 @@ void gmSetup(lampiState_t *s)
     localBaseDevInfo_t *allBaseDevInfo, *localBaseDevInfo;
     unsigned int tmpNodeID;
 
+    /* sanity checks */
+    if( sizeof(gmHeaderDataAck) != HEADER_SIZE ) {
+	    ulm_err((" sizeof gmHeaderDataAck = %ld - should be %ld \n",sizeof(gmHeaderDataAck),HEADER_SIZE));
+	    s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+    	    return;
+    }
+
     unsigned long long PoolSize;
     long long maxLen;
     size_t PgSize;

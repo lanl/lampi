@@ -50,7 +50,7 @@ enum {
 };
 
 struct gmHeaderCommon {
-    unsigned short ctlMsgType;          // message type used to select the proper structure definition
+    unsigned short type;          // message type used to select the proper structure definition
 };
 
 // if dataChecksum is a CRC, then it is stored in the native integer
@@ -73,17 +73,8 @@ struct gmHeaderData {
     ulm_uint32_t checksum;              // additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
-struct gmHeaderDataAck {
-    gmHeaderCommon common;
-    ulm_uint32_t ctxAndMsgType;       // context ID and message type (pt-to-pt v. multicast)
+struct gmHeaderDataAck : public BaseAck_t {
     ulm_int32_t  tag_m;               // user tag value for this message
-    ulm_uint32_t senderID;              // global process id of the ACK sender
-    ulm_uint32_t destID;                // global process id of the ACK receiver
-    ulm_uint32_t ackStatus;             // ACK flags (see above definitions)
-    ulm_ptr_t    sendFragDescPtr;       // a pointer to this frag's quadricsSendFragDesc (valid for receiver only)
-    ulm_uint64_t thisFragSeq;           // the frag sequence value of the received frag being ACKed
-    ulm_uint64_t deliveredFragSeq;      // the largest in-order frag seq. value of frags delivered to the app
-    ulm_uint64_t receivedFragSeq;       // the largest in-order frag seq. vallue of frags received
     ulm_uint32_t padding[DATAACK_PADDING];
     ulm_uint32_t checksum;              // additive checksum or CRC of all 128 - 4 bytes of the control message
 };

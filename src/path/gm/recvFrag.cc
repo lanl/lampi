@@ -124,7 +124,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
             } else if (!send_specific_ack) {
                 // if the frag is a duplicate but has not been delivered to the user process,
                 // then set the field to 0 so the other side doesn't interpret
-                // these fields (it will only use the received_fragseq and delivered_fragseq fields
+                // these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
                 p->thisFragSeq = 0;
                 p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
                 if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
@@ -159,12 +159,12 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
     // fill in other fields of header
 
-    p->common.ctlMsgType = MESSAGE_DATA_ACK;
+    p->type = MESSAGE_DATA_ACK;
     p->ctxAndMsgType = gmHeader_m->data.ctxAndMsgType;
     p->tag_m = tag_m;
-    p->senderID = myproc();
-    p->destID = gmHeader_m->data.senderID;
-    p->sendFragDescPtr = gmHeader_m->data.sendFragDescPtr;
+    p->src_proc = myproc();
+    p->dest_proc = gmHeader_m->data.senderID;
+    p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
     p->thisFragSeq = 0;
     p->checksum = 0;
 
@@ -192,8 +192,8 @@ bool gmRecvFragDesc::AckData(double timeNow)
                           gmState.log2Size,
                           sizeof(gmHeader),
                           GM_LOW_PRIORITY,
-                          gmState.localDevList[dev_m].remoteDevList[p->destID].node_id,
-                          gmState.localDevList[dev_m].remoteDevList[p->destID].port_id,
+                          gmState.localDevList[dev_m].remoteDevList[p->dest_proc].node_id,
+                          gmState.localDevList[dev_m].remoteDevList[p->dest_proc].port_id,
                           ackCallback,
                           (void *) buf);
 
@@ -240,7 +240,7 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 void gmRecvFragDesc::msgDataAck()
 {
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
-    gmPath::callback(NULL, p->sendFragDescPtr.ptr, GM_SUCCESS);
+    gmPath::callback(NULL, p->ptrToSendDesc.ptr, GM_SUCCESS);
     ReturnDescToPool(0);
 }
 

@@ -34,6 +34,7 @@
 #define _UDP_HEADER_H_
 
 #include "internal/types.h"
+#include "path/common/BaseDesc.h"
 
 #define PTR_PADDING 4
 
@@ -132,37 +133,14 @@ struct udp_message_header_t
 //!----------------------------------------------------------------------------
 //! UDP ACK payload header
 //!----------------------------------------------------------------------------
-struct udp_ack_header_t
+struct udp_ack_header_t : public BaseAck_t
 {
     //
     // The first 5 items are identical with udp_message_header (except that
     // dest_proc and src_proc have been reversed).  This allows copies
     // to be made from a message header to an ack header.
     //
-
-    ulm_uint32_t type;		 //!< type of message
-    ulm_int32_t ctxAndMsgType;	 //!< used for context of global ProcID ids
-    ulm_int32_t dest_proc;	 //!< global ProcID of original sending process
-    ulm_int32_t src_proc;	 //!< global ProcID of the acknowledging process;
-    ulm_ptr_t udpio;		 //!< pointer to original send frag desc
-    ulm_uint64_t single_mseq;	 //!< message sequence number of single frag
-    ulm_uint64_t single_fseq;	 //!< frag sequence number within message
-    ulm_uint64_t single_fragseq; //!< frag sequence number
-
-    // last consecutive in-order frag received but not necessarily
-    // delivered to the src_proc - this sequence indicates frags that do not
-    // need to be retransmitted CONDITIONALLY! Therefore this number may
-    // decrease, if data is received in error.
-    ulm_uint64_t received_fragseq; //!< largest in-order rec'd frag sequence
-
-    // last consecutive in-order frag delivered to the src_proc (i.e., copied
-    // out of ULM's library buffers successfully) - this sequence indicates
-    // data that has been delivered; all send resources may be freed for frags
-    // <= delivered_fragseq.
-    ulm_uint64_t delivered_fragseq; //!< largest in-order delivered frag seq
-
-    ulm_int32_t ack_or_nack;	 //!< GOODACK/NACK of single message frag
-};
+} ;
 
 typedef struct udp_message_header_t udp_message_header;
 typedef struct udp_ack_header_t udp_ack_header;

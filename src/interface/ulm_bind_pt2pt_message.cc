@@ -55,7 +55,7 @@
  */
 extern "C" int ulm_bind_pt2pt_message(ULMRequest_t *request, int ctx,int destination)
 {
-    SendDesc_t *SendDesc;
+    SendDesc_t *SendDesc=(SendDesc_t *)NULL;
     int errorCode = ULM_SUCCESS;
     int globalDestID;
 

@@ -412,6 +412,37 @@ public:
 };
 
 
+/* base ack class */
+struct BaseAck
+{
+  public:
+    ulm_uint32_t type;		 //!< type of message
+    ulm_int32_t ctxAndMsgType;	 //!< used for context of global ProcID ids
+    ulm_int32_t dest_proc;	 //!< global ProcID of original sending process
+    ulm_int32_t src_proc;	 //!< global ProcID of the acknowledging process;
+    ulm_ptr_t ptrToSendDesc;	 //!< pointer to original send frag desc
+    //ulm_uint64_t single_mseq;	 //!< message sequence number of single frag
+    //ulm_uint64_t single_fseq;	 //!< frag sequence number within message
+    ulm_uint64_t thisFragSeq;    //!< frag sequence number
+
+    // last consecutive in-order frag received but not necessarily
+    // delivered to the src_proc - this sequence indicates frags that do not
+    // need to be retransmitted CONDITIONALLY! Therefore this number may
+    // decrease, if data is received in error.
+    ulm_uint64_t receivedFragSeq; //!< largest in-order rec'd frag sequence
+
+    // last consecutive in-order frag delivered to the src_proc (i.e., copied
+    // out of ULM's library buffers successfully) - this sequence indicates
+    // data that has been delivered; all send resources may be freed for frags
+    // <= delivered_fragseq.
+    ulm_uint64_t deliveredFragSeq; //!< largest in-order delivered frag seq
+
+    ulm_int32_t ackStatus;	 //!< GOODACK/NACK of single message frag
+
+};
+
+typedef struct BaseAck BaseAck_t;
+
 #ifdef USE_ELAN_COLL
 
 typedef struct {

@@ -302,7 +302,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 rf->dev_m = i;
                 rf->length_m = gm_ntoh_u32(event->recv.length) - sizeof(gmHeader);
 
-                switch (rf->gmHeader_m->common.ctlMsgType) {
+                switch (rf->gmHeader_m->common.type) {
                 case MESSAGE_DATA:
                     rf->msgData(timeNow);
                     break;
@@ -311,7 +311,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     break;
                 default:
                     ulm_warn(("gmPath::receive() received message of unknown type %d\n",
-                              rf->gmHeader_m->common.ctlMsgType));
+                              rf->gmHeader_m->common.type));
                     break;
                 }
                 rf = 0;

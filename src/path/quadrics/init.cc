@@ -485,6 +485,12 @@ void quadricsInitQueueInfo()
 }
 
 void quadricsInitBeforeFork() {
+
+	/* sanity check on sizes of data elements */
+	if( sizeof(quadricsDataAck) !=128 ) {
+		ulm_err(("size of quadricsDataAck is : %ld - !=128 bytes \n",sizeof(quadricsDataAck) ));
+		exit(1);
+	}
     // get capability
     if (rms_getcap(0, &quadricsCap) < 0) {
         ulm_err(("quadricsInitBeforeFork: rms_getcap(0, %p) failed!\n", &quadricsCap));
