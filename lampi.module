@@ -1,0 +1,8 @@
+/usr/local/opt/modulefiles/lampi_1.3.1
+
+setenv MODULE_lampi_1.3.1 1;
+setenv LAMPI_ROOT /usr/local/packages/lampi/lampi_1.3.1/;
+setenv MPI_ROOT ${LAMPI_ROOT}
+setenv PATH ${LAMPI_ROOT}/bin:${PATH};
+setenv MANPATH ${LAMPI_ROOT}/man:${MANPATH};
+setenv LD_LIBRARY_PATH ${LAMPI_ROOT}/lib:${LD_LIBRARY_PATH};

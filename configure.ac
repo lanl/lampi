@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.3.0-3,lampi-support@lanl.gov)
+AC_INIT(lampi,1.3.1,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
