@@ -80,6 +80,11 @@ lampi_init_func_t lampi_init_postfork_udp = noop;
 lampi_init_func_t lampi_init_allforked_udp = noop;
 #endif
 
+#ifndef ENABLE_TCP
+lampi_init_func_t lampi_init_prefork_tcp = noop;
+lampi_init_func_t lampi_init_postfork_tcp = noop;
+#endif
+
 #ifndef ENABLE_INFINIBAND
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_ib = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_ib = noop;
