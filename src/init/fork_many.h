@@ -39,5 +39,7 @@ enum fork_many_type {
 };
 
 int fork_many(int nprocs, enum fork_many_type type, volatile pid_t *local_pids);
+void wait_for_children(void);
+void daemon_wait_for_children(void);
 
 #endif /* _FORK_MANY_H_ */

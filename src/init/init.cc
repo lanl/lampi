@@ -53,6 +53,7 @@
 #include "init/environ.h"
 #include "init/fork_many.h"
 #include "init/init.h"
+#include "internal/cLock.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/new.h"
@@ -912,6 +913,9 @@ void lampi_init_fork(lampiState_t *s)
     s->iAmDaemon = 0;
     totalLocalProcs += (s->useDaemon) ? 1 : 0;
 
+    if (s->useDaemon)
+        atexit(wait_for_children);
+
     s->local_pids =
         (volatile pid_t *) SharedMemoryPools.
         getMemorySegment(sizeof(pid_t) * totalLocalProcs, CACHE_ALIGNMENT);
@@ -1363,6 +1367,10 @@ void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
         s->IAmAlive = (int *)
             SharedMemoryPools.getMemorySegment((s->local_size + 1) *
                                                sizeof(int), PAGESIZE);
+        s->AbnormalExit = (abnormalExitInfo *)
+            SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
+        memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
+        cLockInit(&(s->AbnormalExit->lockData));
     }
     // allocate cpus - need to have this setup for memory locality
     //   initialization.
@@ -1661,6 +1669,10 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
         s->IAmAlive = (int *)
             SharedMemoryPools.getMemorySegment((s->local_size + 1) *
                                                sizeof(int), PAGESIZE);
+        s->AbnormalExit = (abnormalExitInfo *)
+            SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
+        memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
+        cLockInit(&(s->AbnormalExit->lockData));
     }
     // allocate cpus - need to have this setup for memory locality
     //   initialization.

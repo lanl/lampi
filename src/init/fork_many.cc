@@ -74,7 +74,7 @@ struct child_process {
     struct child_process *next;
     pid_t pid;
     int rank;
-    int exited;
+    volatile int exited;
     int status;
 };
 
@@ -100,6 +100,54 @@ static void debug(int level, const char *fmt, ...)
         fflush(stderr);
         va_end(ap);
     }
+}
+
+/*
+ * special client daemon wait for children called in loop
+ * code before normal exit...
+ */
+void daemon_wait_for_children(void)
+{
+    struct child_process *p;
+    bool keepGoing;
+    
+    do {
+        keepGoing = false;
+        for (p = child_list; p; p = p->next) {
+            if ((p->pid != -1) && (p->exited != 1))
+                keepGoing = true;
+        }
+    } while (keepGoing && (lampiState.AbnormalExit->flag == 0));
+
+    return;
+}
+
+/*
+ * Exit handler (see atexit()) to wait around for children to 
+ * exit
+ */
+void wait_for_children(void)
+{
+    struct child_process *p;
+    bool keepGoing;
+    
+    if (!lampiState.useDaemon || 
+        (lampiState.useDaemon && lampiState.iAmDaemon)) {
+        return;
+    }
+
+    do {
+        keepGoing = false;
+        for (p = child_list; p; p = p->next) {
+            if ((p->pid != -1) && (p->exited != 1))
+                keepGoing = true;
+        }
+        /* wait around if children have not exited, or client daemon has not
+         * seen abnormal exit yet...
+         */
+    } while (keepGoing && (lampiState.AbnormalExit->flag < 2));
+
+    return;
 }
 
 /*
@@ -170,13 +218,16 @@ static void sigchld_handler(int signo)
 
     if (abnormal_exit) {
         if (lampiState.useDaemon) {
-            if (lampiState.iAmDaemon) {
-                lampiState.AbnormalExit.flag = 1;
-                lampiState.AbnormalExit.pid = abnormal_pid;
-                lampiState.AbnormalExit.signal = abnormal_signal;
-                lampiState.AbnormalExit.status = abnormal_exitstatus;
+            lock(&(lampiState.AbnormalExit->lockData));
+            if (lampiState.AbnormalExit->flag == 0) {
+                /* store this information for the client daemon */
+                lampiState.AbnormalExit->flag = 1;
+                lampiState.AbnormalExit->pid = abnormal_pid;
+                lampiState.AbnormalExit->signal = abnormal_signal;
+                lampiState.AbnormalExit->status = abnormal_exitstatus;
             }
-            else {
+            unlock(&(lampiState.AbnormalExit->lockData));
+            if (!lampiState.iAmDaemon) {
                 ulm_dbg(("Abnormal Exit: (signal = %d).\n", abnormal_signal));
                 exit(EXIT_FAILURE);
             }
