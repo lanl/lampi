@@ -93,7 +93,7 @@ public:
     int sendType;                   // send type
     int tag_m;                      // user specified tag
     ssize_t bsendOffset;            // bsend buffer allocation offset
-    unsigned int dstProcID_m;       // destination process ProcID
+    int dstProcID_m;                // destination process ProcID
     unsigned long PostedLength;     // length of the data
     unsigned long isendSeq_m;        // library specified tag
     unsigned numfrags;              // number of frags that will be sent
@@ -285,8 +285,8 @@ public:
     unsigned int fragIndex_m;    // fragment index within the message
     unsigned int maxSegSize_m;   // maximum segment size - this is the stripe size used for all but
                                  // the last frag of a message.
-    unsigned int srcProcID_m;    // sending process ProcID       
-    unsigned int dstProcID_m;    // destination process ProcID
+    int srcProcID_m;             // sending process ProcID       
+    int dstProcID_m;             // destination process ProcID
     int tag_m;                   // user specified tag
     int ctx_m;                   // context ID (communicator index)
     unsigned long long seq_m;    // sequence number of this frag
