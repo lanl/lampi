@@ -37,8 +37,6 @@
 
 void lampi_init_prefork_quadrics(lampiState_t *s)
 {
-    int recvd, tag, errorCode;
-
     if (s->error) {
         return;
     }
@@ -165,7 +163,6 @@ void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *s)
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
 {
     int errorCode; 
-    int rank;
     int recvd;
     int tag;
 
