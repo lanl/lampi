@@ -48,6 +48,7 @@ enum {
     I_INTEGER1 = 0,
     I_INTEGER2,
     I_INTEGER4,
+    I_INTEGER8,
     I_REAL2,
     I_REAL4,
     I_REAL8,
@@ -71,6 +72,7 @@ static ULMTypeMapElt_t pair[NUMBER_OF_FORTRAN_TYPES];
 MPI_Datatype MPI_INTEGER1 = &(type[I_INTEGER1]);
 MPI_Datatype MPI_INTEGER2 = &(type[I_INTEGER2]);
 MPI_Datatype MPI_INTEGER4 = &(type[I_INTEGER4]);
+MPI_Datatype MPI_INTEGER8 = &(type[I_INTEGER8]);
 MPI_Datatype MPI_REAL2 = &(type[I_REAL2]);
 MPI_Datatype MPI_REAL4 = &(type[I_REAL4]);
 MPI_Datatype MPI_REAL8 = &(type[I_REAL8]);
@@ -134,6 +136,9 @@ ptr_table_t *_mpif_create_type_table(void)
 
     type[I_INTEGER4].extent = 4;
     type[I_INTEGER4].op_index = _MPI_INT_OP_INDEX;
+
+    type[I_INTEGER8].extent = 8;
+    type[I_INTEGER8].op_index = _MPI_LONG_LONG_OP_INDEX;
 
     type[I_REAL2].extent = 2;
     type[I_REAL2].op_index = _MPI_FLOAT_OP_INDEX;
@@ -217,6 +222,7 @@ ptr_table_t *_mpif_create_type_table(void)
     add_fortran_datatype(table, MPI_INTEGER1, &error);
     add_fortran_datatype(table, MPI_INTEGER2, &error);
     add_fortran_datatype(table, MPI_INTEGER4, &error);
+    add_fortran_datatype(table, MPI_INTEGER8, &error);
     add_fortran_datatype(table, MPI_REAL2, &error);
     add_fortran_datatype(table, MPI_REAL4, &error);
     add_fortran_datatype(table, MPI_REAL8, &error);
