@@ -48,7 +48,7 @@
 #include "util/dclock.h"
 #ifdef ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
-#endif                          // SHARED_MEMORY
+#endif // SHARED_MEMORY
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/new.h"
@@ -279,6 +279,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         ulm_warn(("Warning: Unable to allocate space for communicator cache\n"));
         return ULM_ERR_OUT_OF_RESOURCE;
     }
+
     //if (setCtxCache) {
     //    // non-empty cache
     //    cacheSize = Communicator::MAX_COMM_CACHE_SIZE;
@@ -312,14 +313,12 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     next_expected_isendSeqs =
         ulm_new(ULM_64BIT_INT, remoteGroup->groupSize);
     if (!next_expected_isendSeqs) {
-        ulm_exit((-1,
-                  "Error: Communicator::init: "
+        ulm_exit((-1, "Error: Communicator::init: "
                   "Unable to allocate space for next_expected_isendSeqs\n"));
     }
     next_expected_isendSeqsLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!next_expected_isendSeqsLock) {
-        ulm_exit((-1,
-                  "Error: Communicator::init: Unable to allocate "
+        ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
                   "space for next_expected_isendSeqsLock\n"));
     }
     // !!!!! threaded-lock
@@ -332,8 +331,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // set up receive lock
     recvLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!recvLock) {
-        ulm_exit((-1,
-                  "Error: Communicator::init: "
+        ulm_exit((-1, "Error: Communicator::init: "
                   "Unable to allocate space for recvLock\n"));
     }
     //!!!!! threaded-lock
@@ -344,8 +342,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // next sequence number to be assigned for a send
     next_isendSeqs = ulm_new(ULM_64BIT_INT, remoteGroup->groupSize);
     if (!next_isendSeqs) {
-        ulm_exit((-1,
-                  "Error: Communicator::init: "
+        ulm_exit((-1, "Error: Communicator::init: "
                   "Unable to allocate space for next_isendSeqs\n"));
     }
 
@@ -354,8 +351,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 
     next_isendSeqsLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!next_isendSeqsLock) {
-        ulm_exit((-1,
-                  "Error: Communicator::init: "
+        ulm_exit((-1, "Error: Communicator::init: "
                   "Unable to allocate space for next_isendSeqsLock\n"));
     }
     //!!!!! threaded-lock
@@ -380,8 +376,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.PostedSpecificRecv[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.PostedSpecificRecv) {
-            ulm_exit((-1,
-                      "Error: Communicator::init: Unable to allocate "
+            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.PostedSpecificRecv[proc]\n"));
         }
         // initialize locks
@@ -398,8 +393,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.MatchedRecv[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.MatchedRecv[proc]) {
-            ulm_exit((-1,
-                      "Error: Communicator::init: Unable to allocate"
+            ulm_exit((-1, "Error: Communicator::init: Unable to allocate"
                       "space for privateQueues.MatchedRecv[proc]\n"));
         }
         // Initialize locks
@@ -416,8 +410,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.AheadOfSeqRecvFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.AheadOfSeqRecvFrags[proc]) {
-            ulm_exit((-1,
-                      "Error: Communicator::init: Unable to allocate "
+            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.AheadOfSeqRecvFrags[proc]\n"));
         }
         // initialize lock
@@ -435,8 +428,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.OkToMatchRecvFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.OkToMatchRecvFrags[proc]) {
-            ulm_exit((-1,
-                      "Error: Communicator::init: Unable to allocate "
+            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.OkToMatchRecvFrags[proc]\n"));
         }
         // initialize locks
@@ -455,8 +447,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.OkToMatchSMPFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.OkToMatchSMPFrags[proc]) {
-            ulm_exit((-1,
-                      "Error: Communicator::init: Unable to allocate "
+            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.OkToMatchSMPFrags[proc]\n"));
         }
         // initialize locks
@@ -482,6 +473,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         ulm_err(("Error: initializeCollectives (%d)\n", RetVal));
         return RetVal;
     }
+
     // initialize multicast members
     multicast_vpid = 0;
     elan_mcast_buf = 0;
@@ -495,7 +487,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 // ulm_bcast_quadrics.  The size of the buffer is returned
 // in *sz, and a pointer to the buffer is the return value
 // of the method.  In case of error, zero is returned.
-void *Communicator::getMcastBuf(int rail, size_t * sz)
+void* Communicator::getMcastBuf(int rail, size_t *sz)
 {
 #ifndef  ENABLE_QSNET
     *sz = 0;
@@ -510,31 +502,33 @@ void *Communicator::getMcastBuf(int rail, size_t * sz)
         *sz = MCAST_BUF_SZ;
         return elan_mcast_buf[rail];
     }
+
     // allocate buffers
-    elan_mcast_buf = (unsigned char **)
+    elan_mcast_buf = (unsigned char **) 
         ulm_malloc(quadricsNRails * sizeof(unsigned char *));
     for (i = 0; i < quadricsNRails; i++) {
         ctx = getElan3Ctx(i);
-        elan_mcast_buf[i] = (unsigned char *)
+        elan_mcast_buf[i] = (unsigned char *) 
             elan3_allocMain(ctx, getpagesize(), MCAST_BUF_SZ);
         if (elan_mcast_buf[i] == NULL) {
             ulm_err(("Cannot allocate memory for multicast"));
             *sz = 0;
-            return 0;
+            return 0;            
         }
-
-        ulm_reduce_p2p(&elan_mcast_buf[i], &q, 1, (ULMType_t *) MPI_LONG,
+        
+        ulm_reduce_p2p(&elan_mcast_buf[i], &q, 1, (ULMType_t *) MPI_LONG, 
                        (ULMOp_t *) MPI_MAX, 0, contextID);
-        ulm_bcast_p2p(&q, 1, (ULMType_t *) MPI_LONG, 0, contextID);
+        ulm_bcast_p2p(&q, 1, (ULMType_t *) MPI_LONG,
+                      0, contextID);
 
         if (q > elan_mcast_buf[i]) {
-            p = (unsigned char *)
+            p = (unsigned char *) 
                 elan3_allocMain(ctx, getpagesize(), q - elan_mcast_buf[i]);
             if (p == NULL) {
                 ulm_err(("Cannot allocate memory for multicast"));
                 *sz = 0;
                 return 0;
-            }
+            }            
             elan_mcast_buf[i] = q;
         }
     }
@@ -561,13 +555,14 @@ int Communicator::getMcastVpid(int rail, int *vp)
     int i, rc;
     int myVp, mcast_vp;
     int lowvp, highvp;
-    int _hw_ctx[4] = { 0, 0, 0, 0 };
+    int _hw_ctx[4] = {0, 0, 0, 0};
 
     // see if we've already computed this value...
     if (multicast_vpid) {
         *vp = multicast_vpid[rail];
         return ULM_SUCCESS;
-    }
+    } 
+    
     // set up multicast vpids
     multicast_vpid = (int *) ulm_malloc(quadricsNRails * sizeof(int));
     for (i = 0; i < quadricsNRails; i++) {
@@ -579,6 +574,7 @@ int Communicator::getMcastVpid(int rail, int *vp)
         *vp = -1;
         return ULM_SUCCESS;
     }
+
     // fill out array of vpids
     vpids = (int *) ulm_malloc(localGroup->groupSize * sizeof(int));
     for (i = 0; i < localGroup->groupSize; i++) {
@@ -593,7 +589,7 @@ int Communicator::getMcastVpid(int rail, int *vp)
     // for use in ulm_bcast_quadrics.
     myVp = localGroup->mapGroupProcIDToGlobalProcID[localGroup->ProcID];
     for (i = 0; i < localGroup->groupSize; i++) {
-        loc = elan3_vp2location(vpids[i], &quadricsCap);
+        loc = elan3_vp2location(vpids[i],  &quadricsCap);
         _hw_ctx[loc.Context]++;
     }
     for (i = 0; i < 4; i++) {
@@ -602,17 +598,18 @@ int Communicator::getMcastVpid(int rail, int *vp)
             break;
         }
     }
-    if (hw_ctx_stripe == -1) {  // no stripe exists
+    if (hw_ctx_stripe == -1) { // no stripe exists
         *vp = -1;
         return ULM_SUCCESS;
     }
+
     // In order to set up a broadcast vpid, we must determine
     // the processes IN THE STRIPE with the lowest, highest
     // ranks.
-    lowvp = localGroup->groupSize - 1;
+    lowvp = localGroup->groupSize - 1; 
     highvp = 0;
     for (i = 0; i < localGroup->groupSize; i++) {
-        loc = elan3_vp2location(vpids[i], &quadricsCap);
+        loc = elan3_vp2location(vpids[i],  &quadricsCap);
         if (loc.Context == hw_ctx_stripe) {
             if (vpids[i] < lowvp) {
                 lowvp = vpids[i];
@@ -633,8 +630,8 @@ int Communicator::getMcastVpid(int rail, int *vp)
         }
         rc = elan3_addbcastvp(ctx, multicast_vpid[i], lowvp, highvp);
         if (rc < 0) {
-            ulm_err(("mcast_vp=%d, lowvp=%d, highvp=%d \n", mcast_vp,
-                     lowvp, highvp));
+            ulm_err(("mcast_vp=%d, lowvp=%d, highvp=%d \n",
+                     mcast_vp, lowvp, highvp));
             perror("elan3_addbcastvp returned -1");
             return ULM_ERROR;
         }
@@ -716,7 +713,7 @@ int Communicator::freeCommunicator()
 void CheckForAckedMessages(double timeNow)
 {
     // Loop over the sends that have not yet been acked.
-    BaseSendDesc_t *SendDesc = 0;
+    SendDesc_t *SendDesc = 0;
     int errorCode;
 
     // lock list to make sure reads are atomic
@@ -724,9 +721,9 @@ void CheckForAckedMessages(double timeNow)
     if (usethreads())
         UnackedPostedSends.Lock.lock();
 
-    for (SendDesc = (BaseSendDesc_t *) UnackedPostedSends.begin();
-         SendDesc != (BaseSendDesc_t *) UnackedPostedSends.end();
-         SendDesc = (BaseSendDesc_t *) SendDesc->next) {
+    for (SendDesc = (SendDesc_t *) UnackedPostedSends.begin();
+         SendDesc != (SendDesc_t *) UnackedPostedSends.end();
+         SendDesc = (SendDesc_t *) SendDesc->next) {
 
         int LockReturn = 1;
         if (usethreads())
@@ -741,17 +738,25 @@ void CheckForAckedMessages(double timeNow)
                 /* for synchronus sends, mark send as complete - overkill
                  *   for the rest of the send types - if we don't mark
                  *   send done here, wait or test will never complete */
-                if (!SendDesc->messageDone)
+                if (!SendDesc->messageDone) {
                     SendDesc->messageDone = REQUEST_COMPLETE;
+                    if (!SendDesc->persistent) {
+                        ulm_type_release(SendDesc->datatype);
+                        ulm_type_release(SendDesc->bsendDatatype);
+                    }
+                }
 
                 if ((SendDesc->freeCalled)
                     || (SendDesc->persistFreeCalled)) {
                     /* a call to free the mpi object has been made,
                      *   so ok to free this descriptor */
-                    BaseSendDesc_t *TmpDesc =
-                        (BaseSendDesc_t *) UnackedPostedSends.
-                        RemoveLinkNoLock(SendDesc);
+                    SendDesc_t *TmpDesc = (SendDesc_t *)
+                        UnackedPostedSends.RemoveLinkNoLock(SendDesc);
                     SendDesc->WhichQueue = ONNOLIST;
+                    if (SendDesc->persistent) {
+                        ulm_type_release(SendDesc->datatype);
+                        ulm_type_release(SendDesc->bsendDatatype);
+                    }
                     if (usethreads())
                         SendDesc->Lock.unlock();
                     if (SendDesc->freeCalled)
@@ -784,26 +789,26 @@ int CheckForRetransmits()
 {
     int errorCode = ULM_SUCCESS;
 
-    BaseSendDesc_t *sendDesc = 0;
+    SendDesc_t *sendDesc = 0;
     // Loop over sends that have not been acked
 
     // lock list to make sure reads are atomic
     UnackedPostedSends.Lock.lock();
 
-    for (sendDesc = (BaseSendDesc_t *) UnackedPostedSends.begin();
-         sendDesc != (BaseSendDesc_t *) UnackedPostedSends.end();
-         sendDesc = (BaseSendDesc_t *) sendDesc->next) {
+    for (sendDesc = (SendDesc_t *) UnackedPostedSends.begin();
+         sendDesc != (SendDesc_t *) UnackedPostedSends.end();
+         sendDesc = (SendDesc_t *) sendDesc->next) {
 
         // lock descriptor
         sendDesc->Lock.lock();
 
         //check for retransmit
         if (sendDesc->path_m->retransmitP(sendDesc)) {
-            BaseSendDesc_t *TmpDesc = 0;
+            SendDesc_t *TmpDesc = 0;
             do {
                 if (sendDesc->path_m->resend(sendDesc, &errorCode)) {
                     // move to incomplete isend list
-                    TmpDesc = (BaseSendDesc_t *)
+                    TmpDesc = (SendDesc_t *)
                         UnackedPostedSends.RemoveLinkNoLock(sendDesc);
                     IncompletePostedSends.Append(sendDesc);
                 } else if (errorCode == ULM_SUCCESS) {
@@ -826,7 +831,7 @@ int CheckForRetransmits()
 // revisit                    sendDesc->path_m->init(sendDesc);
 // revisit
 // revisit                    // put the descriptor on the incomplete list
-// revisit                    TmpDesc = (BaseSendDesc_t *)
+// revisit                    TmpDesc = (SendDesc_t *)
 // revisit                        UnackedPostedSends.RemoveLinkNoLock(sendDesc);
 // revisit                    IncompletePostedSends.Append(sendDesc);
                 } else {
@@ -859,9 +864,9 @@ int CheckForRetransmits()
     // lock list to make sure reads are atomic
     IncompletePostedSends.Lock.lock();
 
-    for (sendDesc = (BaseSendDesc_t *) IncompletePostedSends.begin();
-         sendDesc != (BaseSendDesc_t *) IncompletePostedSends.end();
-         sendDesc = (BaseSendDesc_t *) sendDesc->next) {
+    for (sendDesc = (SendDesc_t *) IncompletePostedSends.begin();
+         sendDesc != (SendDesc_t *) IncompletePostedSends.end();
+         sendDesc = (SendDesc_t *) sendDesc->next) {
 
         // lock descriptor
         sendDesc->Lock.lock();
@@ -876,28 +881,27 @@ int CheckForRetransmits()
                         break;
                     } else if (errorCode == ULM_ERR_BAD_PATH) {
                         // rebind message to new path
-// revisit                        sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
-// revisit                        // select a new path
-// revisit                        Communicator *commPtr =
-// revisit                            communicators[sendDesc->ctx_m];
-// revisit                        errorCode =
-// revisit                            ((commPtr->
-// revisit                              pt2ptPathSelectionFunction)) ((void *)
-// revisit                                                            sendDesc);
-// revisit                        if (errorCode != ULM_SUCCESS) {
-// revisit                            sendDesc->Lock.unlock();
-// revisit                            ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
-// revisit                            return errorCode;
-// revisit                        }
-// revisit                        // initialize the descriptor for this path
-// revisit                        sendDesc->path_m->init(sendDesc);
+                        if (0) { // +++++++ REVISIT +++++
+                            sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
+                            // select a new path
+                            Communicator *commPtr =
+                                communicators[sendDesc->ctx_m];
+                            errorCode =
+                                ((commPtr->pt2ptPathSelectionFunction)) ((void **) &sendDesc, 0, 0);
+                            if (errorCode != ULM_SUCCESS) {
+                                sendDesc->Lock.unlock();
+                                ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
+                                return errorCode;
+                            }
+                            // initialize the descriptor for this path
+                            sendDesc->path_m->init(sendDesc);
+                        } // -------- REVISIT -------------
                     } else {
                         // unbind should free frag descriptors, etc.
                         sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
                         // resend failed with fatal error
                         sendDesc->Lock.unlock();
-                        ulm_exit((-1,
-                                  "Error: CheckForRetransmits: resend "
+                        ulm_exit((-1, "Error: CheckForRetransmits: resend "
                                   "failed with fatal error.\n"));
                     }
                 }
@@ -1043,9 +1047,8 @@ int Communicator::initializeCollectives(int useSharedMemCollOpts)
             for (int dN = 0; dN < N_COLLCTL_PER_COMM; dN++) {
 
                 for (int lp = 0;
-                     lp <
-                     localGroup->groupHostData[localGroup->
-                                               hostIndexInGroup].
+                     lp < localGroup->
+                     groupHostData[localGroup->hostIndexInGroup].
                      nGroupProcIDOnHost; lp++) {
                     sharedCollectiveData[dN].controlFlags[lp].flag =
                         READY_TO_READ;
@@ -1076,7 +1079,8 @@ int Communicator::initializeCollectives(int useSharedMemCollOpts)
             collectiveMem = SMPPAGESIZE;
 
         /* allocate pool */
-        sharedCollectiveData = (CollectiveSMBuffer_t *)
+        sharedCollectiveData =
+            (CollectiveSMBuffer_t *)
             ulm_malloc(sizeof(CollectiveSMBuffer_t)
                        * N_COLLCTL_PER_COMM);
         if (!sharedCollectiveData) {
@@ -1206,8 +1210,9 @@ int Communicator::initializeCollectives(int useSharedMemCollOpts)
     }
 
     /* scratch space */
-    collectiveOpt.recvScratchSpace =
-        (size_t *) ulm_malloc(sizeof(size_t) * localGroup->groupSize);
+    collectiveOpt.recvScratchSpace = (size_t *) ulm_malloc(sizeof(size_t) *
+                                                           localGroup->
+                                                           groupSize);
     if (!(collectiveOpt.recvScratchSpace)) {
         return ULM_ERR_OUT_OF_RESOURCE;
     }
@@ -1241,8 +1246,8 @@ void Communicator::freeCollectivesResources()
          */
         SharedMemForCollective->lock.lock();
         SharedMemForCollective->collCtlData[collectivePoolIndex].nFreed++;
-        int nToFree = localGroup->hostIndexInGroup;
-        nToFree = localGroup->groupHostData[nToFree].nGroupProcIDOnHost;
+        int nToFree=localGroup->hostIndexInGroup;
+        nToFree=localGroup->groupHostData[nToFree].nGroupProcIDOnHost;
         /* free resource if last to free */
         if (SharedMemForCollective->collCtlData[collectivePoolIndex].
             nFreed == nToFree) {

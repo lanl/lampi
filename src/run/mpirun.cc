@@ -220,7 +220,7 @@ bool releaseClients(int *errorCode)
 
 #ifdef ENABLE_CT
     ulm_dbg(("\nmpirun: synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
-	//server->synchronize(RunParameters.NHosts + 1);
+	server->synchronize(RunParameters.NHosts + 1);
     ulm_dbg(("\nmpirun: done synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
 	return returnValue;
 #endif
@@ -448,7 +448,7 @@ void *server_connect(void *arg)
     if (!server->serverConnect(RunParameters.ProcessCount,
                                RunParameters.HostList,
                                RunParameters.NHosts, connectTimeOut)) {
-        ulm_err(("Error: Server/client connection failed\n"));
+        ulm_err(("Error: Server/client connection failed.\n"));
         pthread_exit((void *)0);
     }
     pthread_exit((void *)1);
@@ -539,7 +539,16 @@ int main(int argc, char **argv)
     rc = SpawnUserApp(AuthData, ReceivingSocket, &ListHostsStarted,
                       &RunParameters, FirstAppArgument, argc, argv);
     if( rc != ULM_SUCCESS ) {
-        ulm_err(("Error: Can't spawn application (%d)\n", rc));
+        char **p;
+
+        ulm_err(("Error: Can't spawn application\n"));
+        ulm_warn(("Command:"));
+        for (p = argv; *p; p++) {
+            fprintf(stderr, " %s", *p);
+        }
+        fprintf(stderr, "\n");
+        ulm_warn(("Are PATH and LD_LIBRARY_PATH correct?\n"));
+
         server->cancelConnect_m = true;
         pthread_join(sc_thread, (void **)NULL);
         Abort();
@@ -656,7 +665,7 @@ int main(int argc, char **argv)
 
     /* UDP port information exchange - postfork */
     if (!exchangeUDPPorts(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchanging UDP ports (%d)\n", ErrorReturn));
+        ulm_err(("Error: While exchangind UDP ports (%d)\n", ErrorReturn));
         Abort();
     }
 

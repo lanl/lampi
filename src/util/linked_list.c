@@ -32,7 +32,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "internal/malloc.h"
-/*  #include "util/linked_list.h" */
+//#include "util/linked_list.h"
 #include "linked_list.h"
 
 /* listsize: number of elements in list */
@@ -150,7 +150,7 @@ void *remove_item(link_t *listp, link_t **newlist, int (*fn)(void*, void*), void
 		if ((*fn)(listp->data, context) == 1) 
 		{
 			item = listp->data;
-			/*  check if we're removing first item in list. */
+			// check if we're removing first item in list.
 			if ( ptr )
 				ptr->next = listp->next;
 			else

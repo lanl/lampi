@@ -46,7 +46,7 @@ extern "C" int ulm_scatter_p2p(void *sendbuf, int sendcount,
         ULMType_t *recvtype, int root, int comm)
 {
     int proc, nproc, self, rc, tag, completed;
-    ULMRequestHandle_t rreq, *sreq;
+    ULMRequest_t rreq, *sreq;
     ULMStatus_t status;
     unsigned char *ptr;
 
@@ -65,8 +65,8 @@ extern "C" int ulm_scatter_p2p(void *sendbuf, int sendcount,
         }
 
         /* allocate array of send request handles */
-        sreq = (ULMRequestHandle_t *)
-            malloc(nproc * sizeof(ULMRequestHandle_t));
+        sreq = (ULMRequest_t *)
+            malloc(nproc * sizeof(ULMRequest_t));
         if (sreq == NULL) {
             return ULM_ERROR;
         }

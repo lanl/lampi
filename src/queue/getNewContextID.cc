@@ -42,7 +42,7 @@ int Communicator::getNewContextID(int *outputContextID)
     int returnValue = MPI_SUCCESS;
     int generateNewContextID = 0;
     int minRoot, remoteLeader, tag;
-    ULMRequestHandle_t recvRequest, sendRequest;
+    ULMRequest_t recvRequest, sendRequest;
     ULMStatus_t sendStatus, recvStatus;
 
 

@@ -37,7 +37,7 @@ int	test_sping(state_t *state)
 	int rep;
 	int tag = 0xDD << 16;
 	double t, t0, t1;
-	ULMRequestHandle_t req;
+	ULMRequest_t req;
 	ULMStatus_t status;
 	char s[256];
 	unsigned char *buf1, *buf2, *bufo, *bufi;

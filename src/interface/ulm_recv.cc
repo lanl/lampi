@@ -55,7 +55,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
                         int sourceProc, int tag, int comm,
                         ULMStatus_t *status)
 {
-    ULMRequestHandle_t requestPtr;
+    ULMRequest_t requestPtr;
     RecvDesc_t recvDesc;
     RequestDesc_t *request=(RequestDesc_t *)(&recvDesc);
     Communicator *commPtr;
@@ -77,20 +77,20 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
 
     // set receive address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        recvDesc.AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
+        recvDesc.addr_m = (void *)((char *)buf + dtype->type_map[0].offset);
     }
     else {
-        recvDesc.AppAddr = buf;
+        recvDesc.addr_m = buf;
     }
 
     // set destination process (need to check for completion)
-    recvDesc.posted_m.proc.source_m = sourceProc;
+    recvDesc.posted_m.peer_m = sourceProc;
 
     // set communicator
     recvDesc.ctx_m = comm;
 
     // set tag
-    recvDesc.posted_m.UserTag_m = tag;
+    recvDesc.posted_m.tag_m = tag;
 
     // set posted length
     if (dtype == NULL) {
@@ -121,23 +121,23 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     }
 
     // fill in status object
-    status->tag = recvDesc.reslts_m.UserTag_m;
-    status->proc.source = recvDesc.reslts_m.proc.source_m;
+    status->tag_m = recvDesc.reslts_m.tag_m;
+    status->peer_m = recvDesc.reslts_m.peer_m;
     if (recvDesc.posted_m.length_m != recvDesc.reslts_m.length_m) {
         if (recvDesc.posted_m.length_m > recvDesc.reslts_m.length_m) {
-            status->error = ULM_ERR_RECV_LESS_THAN_POSTED;
+            status->error_m = ULM_ERR_RECV_LESS_THAN_POSTED;
         } else {
             // truncation error
-            status->error = ULM_ERR_RECV_MORE_THAN_POSTED;
+            status->error_m = ULM_ERR_RECV_MORE_THAN_POSTED;
         }
     } else {
-        status->error = ULM_SUCCESS;
+        status->error_m = ULM_SUCCESS;
     }
-    status->matchedSize = recvDesc.DataReceived;
-    status->persistent = false;
+    status->length_m = recvDesc.DataReceived;
+    status->persistent_m = 0;
 
     // fill in remainder of status object
-    status->state = ULM_STATUS_COMPLETE;
+    status->state_m = ULM_STATUS_COMPLETE;
 
     return ULM_SUCCESS;
 }

@@ -91,7 +91,6 @@ public:
     //! stores an address (void *) in the LIFO
     bool push(void *addr) {
         bool result = false;
-
         if ((nentries + 1) <= arraySize) {
             baseArray[nentries++] = addr;
             result = true;

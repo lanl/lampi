@@ -60,7 +60,7 @@ public:
 
     ~udpPath() {}
 
-    bool packData(BaseSendDesc_t *message, udpSendFragDesc *frag);
+    bool packData(SendDesc_t *message, udpSendFragDesc *frag);
 
     virtual bool receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL) {
         int error = ULM_SUCCESS;
@@ -85,7 +85,7 @@ public:
             return true;
     }
 
-    virtual bool bind(BaseSendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount, int *errorCode) {
+    virtual bool bind(SendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount, int *errorCode) {
         if (isActive()) {
             *errorCode = ULM_SUCCESS;
             message->path_m = this;
@@ -96,11 +96,11 @@ public:
         }
     }
 
-    virtual void unbind(BaseSendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount) {
+    virtual void unbind(SendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount) {
         ulm_err(("udpPath::unbind - called, not implemented yet...\n"));
     }
 
-    virtual bool init(BaseSendDesc_t *message) {
+    virtual bool init(SendDesc_t *message) {
         message->numfrags = 1;
        	message->pathInfo.udp.numFragsCopied = 0; 
 	if (message->posted_m.length_m > maxShortPayloadSize_g) {
@@ -110,10 +110,10 @@ public:
         return true;
     }
 
-    virtual bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode);
+    virtual bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
 
 #ifdef ENABLE_RELIABILITY
-    virtual bool retransmitP(BaseSendDesc_t *message) {
+    virtual bool retransmitP(SendDesc_t *message) {
         if (RETRANS_TIME == -1 || message->earliestTimeToResend == -1
             || message->FragsToAck.size() == 0)
             return false;
@@ -123,7 +123,7 @@ public:
             return false;
     }
 
-    virtual bool resend(BaseSendDesc_t *message, int *errorCode);
+    virtual bool resend(SendDesc_t *message, int *errorCode);
 #endif
 };
 

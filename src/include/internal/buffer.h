@@ -56,7 +56,7 @@ struct ULMBufferRange_t {
     ssize_t len;
 
     /* pointer to request object that "owns" allocation */
-    ULMRequestHandle_t request;
+    ULMRequest_t request;
 
     /* send descriptor reference count; decremented in ReturnDesc */
     int refCount;
@@ -91,10 +91,10 @@ struct bsendData_t {
 typedef struct bsendData_t  bsendData_t;
 
 ULMBufferRange_t *ulm_bsend_alloc(ssize_t size, int freeAtZero);
-ULMBufferRange_t *ulm_bsend_find_alloc(ssize_t offset, ULMRequestHandle_t request);
+ULMBufferRange_t *ulm_bsend_find_alloc(ssize_t offset, ULMRequest_t request);
 void ulm_bsend_clean_alloc(int wantToDetach);
-int ulm_bsend_increment_refcount(ULMRequestHandle_t request, ssize_t offset);
-int ulm_bsend_decrement_refcount(ULMRequestHandle_t request, ssize_t offset);
+int ulm_bsend_increment_refcount(ULMRequest_t request, ssize_t offset);
+int ulm_bsend_decrement_refcount(ULMRequest_t request, ssize_t offset);
 
 CDECL_END
 

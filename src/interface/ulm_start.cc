@@ -33,11 +33,11 @@
 
 #include <stdio.h>
 
-#include "internal/profiler.h"
-#include "internal/options.h"
-#include "ulm/ulm.h"
 #include "internal/log.h"
+#include "internal/options.h"
+#include "internal/profiler.h"
 #include "queue/globals.h"
+#include "ulm/ulm.h"
 
 /*
  *  Start processing the request - either send or receive.
@@ -45,61 +45,65 @@
  *  \param request      ULM request handle
  *  \return             ULM return code
  */
-extern "C" int ulm_start(ULMRequestHandle_t *request)
+extern "C" int ulm_start(ULMRequest_t *request)
 {
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
-    int errorCode;
-    int comm = tmpRequest->ctx_m;
+    RequestDesc_t *RequestDesc = (RequestDesc_t *) (*request);
+    int comm = RequestDesc->ctx_m;
     Communicator *commPtr = communicators[comm];
+    int rc;
 
-    if (tmpRequest->requestType == REQUEST_TYPE_SEND) {
-        /* send */
-        BaseSendDesc_t *SendDescriptor = (BaseSendDesc_t *) tmpRequest;
-        /* for persistant send, may need to reset request */
-        if (tmpRequest->persistent) {
-            /*
-             * check to see if the SendDescriptor can be reused, or if
-             * we need to allocate a new one. If 0 ==
-             * SendDescriptor->numfrag, then the send descriptor was
-             * initialized but a send was never started, so we can
-             * reuse its resources.
-             */
+    if (RequestDesc->requestType == REQUEST_TYPE_RECV) {
+
+        rc = commPtr->irecv_start(request);
+
+    } else if (RequestDesc->requestType == REQUEST_TYPE_SEND) {
+
+        SendDesc_t *SendDesc = (SendDesc_t *) RequestDesc;
+
+        // for persistent send, may need to reset request
+        if (RequestDesc->persistent) {
+
+            // check to see if the SendDesc can be reused, or if we
+            // need to allocate a new one. If 0 == SendDesc->numfrag,
+            // then the send descriptor was initialized but a send was
+            // never started, so we can reuse its resources.
+
             int reuseDesc = 0;
-            if (((SendDescriptor->numfrags <= SendDescriptor->NumAcked) &&
-                 (SendDescriptor->messageDone == REQUEST_COMPLETE) &&
-                 (ONNOLIST == SendDescriptor->WhichQueue)) ||
-                (ULM_STATUS_INITED == SendDescriptor->status)) {
+            if (((SendDesc->numfrags <= SendDesc->NumAcked) &&
+                 (SendDesc->messageDone == REQUEST_COMPLETE) &&
+                 (ONNOLIST == SendDesc->WhichQueue)) ||
+                (ULM_STATUS_INITED == SendDesc->status)) {
                 reuseDesc = 1;
             }
             if (!reuseDesc) {
-                /* allocate new descriptor */
-                int dest = SendDescriptor->posted_m.proc.destination_m;
-                BaseSendDesc_t *tmpSendDesc = SendDescriptor;
-                errorCode =
-                    communicators[comm]->
-                    pt2ptPathSelectionFunction((void **) (&SendDescriptor),
-                                               comm, dest);
-                if (errorCode != ULM_SUCCESS) {
-                    return errorCode;
+
+                // allocate new descriptor
+
+                SendDesc_t *oldSendDesc = SendDesc;
+                int dest = SendDesc->posted_m.peer_m;
+
+                rc = commPtr->pt2ptPathSelectionFunction((void **) (&SendDesc),
+                                                         comm, dest);
+                if (rc != ULM_SUCCESS) {
+                    return rc;
                 }
 
-                /* fill in new descriptor information */
-                tmpSendDesc->
-                    shallowCopyTo((RequestDesc_t *) SendDescriptor);
+                // fill in new descriptor information
+                oldSendDesc->shallowCopyTo((RequestDesc_t *) SendDesc);
 
-                SendDescriptor->WhichQueue = REQUESTINUSE;
-                SendDescriptor->status = ULM_STATUS_INITED;
+                SendDesc->WhichQueue = REQUESTINUSE;
+                SendDesc->status = ULM_STATUS_INITED;
 
-                /* reset the old descriptor */
-                tmpSendDesc->persistent = false;
+                // reset the old descriptor
+                oldSendDesc->persistent = false;
 
-                /* wait/test can't be called on the descriptor
-                 *   any more, since we change the handle that
-                 *   is returned to the app
-                 */
-                tmpSendDesc->messageDone = REQUEST_RELEASED;
+                // wait/test can't be called on the descriptor any
+                // more, since we change the handle that is returned
+                // to the app
 
-                if (tmpSendDesc->sendType == ULM_SEND_BUFFERED) {
+                oldSendDesc->messageDone = REQUEST_RELEASED;
+
+                if (oldSendDesc->sendType == ULM_SEND_BUFFERED) {
                     size_t size;
                     void *buf, *sendBuffer;
                     int count, commctx, rc;
@@ -109,15 +113,16 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
                     if (usethreads())
                         lock(&(lampiState.bsendData->Lock));
 
-                    // grab a new alloc block for new descriptor using same info
-                    // as current descriptor
-                    /* get the allocation */
-                    ulm_bsend_info_get(tmpSendDesc, &buf, &size, &count,
+                    // grab a new alloc block for new descriptor using
+                    // same info as current descriptor
+
+                    ulm_bsend_info_get(oldSendDesc, &buf, &size, &count,
                                        &dtype, &commctx);
                     newAlloc = ulm_bsend_alloc(size, 0);
 
                     if (newAlloc == NULL) {
-                        /* not enough buffer space - check progress, clean prev. alloc. and try again */
+                        // not enough buffer space - check progress,
+                        // clean prev. alloc. and try again
                         if (lampiState.usethreads)
                             unlock(&(lampiState.bsendData->Lock));
                         ulm_make_progress();
@@ -127,56 +132,40 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
                         newAlloc = ulm_bsend_alloc(size, 1);
 
                         if (newAlloc == NULL) {
-                            /* unlock buffer pool */
+                            // unlock buffer pool
                             unlock(&(lampiState.bsendData->Lock));
-                            rc = MPI_ERR_BUFFER;
-                            _mpi_errhandler(comm, rc, __FILE__, __LINE__);
-
-                            /* return error code */
+                            rc = ULM_ERR_BUFFER;
                             return rc;
                         }
                     }
-                    ulm_bsend_info_set(SendDescriptor, buf, size, count,
-                                       dtype);
-                    sendBuffer =
-                        (void *) ((unsigned char *) lampiState.bsendData->
-                                  buffer + newAlloc->offset);
-                    if ((dtype != NULL) && (dtype->layout == CONTIGUOUS)
-                        && (dtype->num_pairs != 0)) {
-                        SendDescriptor->AppAddr =
-                            (void *) ((char *) sendBuffer +
-                                      dtype->type_map[0].offset);
-                    } else
-                        SendDescriptor->AppAddr = sendBuffer;
-                    SendDescriptor->bsendOffset = newAlloc->offset;
-
-                    newAlloc->request = SendDescriptor;
+                    ulm_bsend_info_set(SendDesc, buf, size, count, dtype);
+                    sendBuffer = (void *) ((unsigned char *) lampiState.bsendData->buffer +
+                                           newAlloc->offset);
+                    if (dtype && dtype->layout == CONTIGUOUS && dtype->num_pairs != 0) {
+                        SendDesc->addr_m = (void *) ((char *) sendBuffer +
+                                                      dtype->type_map[0].offset);
+                    } else {
+                        SendDesc->addr_m = sendBuffer;
+                    }
+                    SendDesc->bsendOffset = newAlloc->offset;
+                    newAlloc->request = SendDesc;
 
                     if (usethreads())
                         unlock(&(lampiState.bsendData->Lock));
                 }
 
-                /* if ( tmpSendDesc->sendType == ULM_SEND_BUFFERED ) */
-                /* reset local parameters */
-                *request = SendDescriptor;
-                tmpRequest = (RequestDesc_t *) (*request);
+                *request = SendDesc;
             }
         }
-        errorCode = commPtr->isend_start(&SendDescriptor);
-        if (errorCode != ULM_SUCCESS) {
-            return errorCode;
-        }
-    } else if (tmpRequest->requestType == REQUEST_TYPE_RECV) {
-        // receive
-        errorCode = commPtr->irecv_start(request);
-        if (errorCode != ULM_SUCCESS) {
-            return errorCode;
-        }
+
+        rc = commPtr->isend_start(&SendDesc);
+
     } else {
+
         ulm_err(("Error: ulm_start: Unrecognized message request %d\n",
-                 tmpRequest->requestType));
-        errorCode = ULM_ERR_REQUEST;
+                 RequestDesc->requestType));
+        rc = ULM_ERR_REQUEST;
     }
 
-    return errorCode;
+    return rc;
 }

@@ -1,35 +1,34 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
- * California. This material was produced under U.S. Government
- * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
- * operated by the University of California for the U.S. Department of
- * Energy. The Government is granted for itself and others acting on
- * its behalf a paid-up, nonexclusive, irrevocable worldwide license
- * in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years
- * after October 10,2002 subject to additional five-year worldwide
- * renewals, the Government is granted for itself and others acting on
- * its behalf a paid-up, nonexclusive, irrevocable worldwide license
- * in this material to reproduce, prepare derivative works, distribute
- * copies to the public, perform publicly and display publicly, and to
- * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
- * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
- * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
- * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
- * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
- * PRIVATELY OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of California. This material 
+ * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
+ * National Laboratory, which is operated by the University of California for 
+ * the U.S. Department of Energy. The Government is granted for itself and 
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
+ * license in this material to reproduce, prepare derivative works, and 
+ * perform publicly and display publicly. Beginning five (5) years after 
+ * October 10,2002 subject to additional five-year worldwide renewals, the 
+ * Government is granted for itself and others acting on its behalf a paid-up, 
+ * nonexclusive, irrevocable worldwide license in this material to reproduce, 
+ * prepare derivative works, distribute copies to the public, perform publicly 
+ * and display publicly, and to permit others to do so. NEITHER THE UNITED 
+ * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
+ * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
+ * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+ * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
+ * OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it
- * and/or modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or any later version.  Accordingly, this
- * program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it and/or 
+ * modify it under the terms of the GNU Lesser General Public License as 
+ * published by the Free Software Foundation; either version 2 of the License, 
+ * or any later version.  Accordingly, this program is distributed in the hope 
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * GNU Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+
 
 #ifndef _DMA_THROTTLE
 #define _DMA_THROTTLE
@@ -91,10 +90,10 @@ class dmaThrottle {
 
     //! eventBlk is used by Elan DMA, ptr is used by freelist algorithm
     struct eventBlkSlot {
-        volatile E3_Event_Blk *eventBlk;
-        volatile E3_Event_Blk **loc;
-        struct eventBlkSlot *ptr;
-        int magic;
+	volatile E3_Event_Blk *eventBlk;
+	volatile E3_Event_Blk **loc;
+	struct eventBlkSlot *ptr;
+	int magic;
     };
 
     typedef struct eventBlkSlot eventBlkSlot_t;
@@ -108,25 +107,25 @@ class dmaThrottle {
 
 private:
 
-    E3_Event_Blk ** dummyDone;
-    bool sharedMemory;          //!< true if dmaThrottle write structures are in shared memory
-    bool reclaim;               //!< true if we try to reclaim events
-    int concurrentDmas;         //!< the maximum number of concurrent DMAs per rail to allow
-    int nrails;                 //!< the number of Quadrics rails to control DMA access to
-    int *dmaCounts;             //!< the number of current DMAs for a given rail
-    Locks *locks;               //!< a lock per rail if we're using shared memory or we're threaded
-    eventBlkSlot_t **freep;     //!< pointers to the heads of the freelists (one per rail)
-    allocPtrs_t *allocp;        //!< pointers to head and tail of the allocated lists (one per rail)
-    eventBlkSlot_t **array;     //!< event info blocks to be allocated
+    E3_Event_Blk **dummyDone;
+    bool sharedMemory;		//!< true if dmaThrottle write structures are in shared memory
+    bool reclaim;		//!< true if we try to reclaim events
+    int concurrentDmas;		//!< the maximum number of concurrent DMAs per rail to allow
+    int nrails;			//!< the number of Quadrics rails to control DMA access to
+    int *dmaCounts;		//!< the number of current DMAs for a given rail
+    Locks *locks;		//!< a lock per rail if we're using shared memory or we're threaded
+    eventBlkSlot_t **freep;	//!< pointers to the heads of the freelists (one per rail)
+    allocPtrs_t *allocp;	//!< pointers to head and tail of the allocated lists (one per rail)
+    eventBlkSlot_t **array;	//!< event info blocks to be allocated
 
     //! substitute any previously allocated "done" event blocks with dummyDone
     int reclaimEventBlks(int rail) {
-        int result = 0;
-        eventBlkSlot_t *slot = allocp[rail].head;
-        eventBlkSlot_t *prev = 0;
-        while (slot) {
+	int result = 0;
+	eventBlkSlot_t *slot = allocp[rail].head;
+    eventBlkSlot_t *prev = 0;
+	while (slot) {
             eventBlkSlot_t *next = slot->ptr;
-            volatile E3_Event_Blk **loc = slot->loc;
+            volatile E3_Event_Blk **loc =slot->loc;
             if ((loc != 0) && EVENT_BLK_READY(*loc)) {
                 /* substitute dummyDone[rail] for the "done" event block */
                 *loc = dummyDone[rail];
@@ -151,7 +150,8 @@ private:
                     allocp[rail].head = next;
                 if (slot == allocp[rail].tail)
                     allocp[rail].tail = prev;
-            } else {
+            }
+            else {
                 prev = slot;
             }
             slot = next;
@@ -162,108 +162,94 @@ private:
 public:
 
     //! the default constructor
-    dmaThrottle(bool shared = true, bool reclaimval =
-                true, int dmasperrail = 128, int numrails = 2) {
-        /* initialize private parameters */
+    dmaThrottle(bool shared = true, bool reclaimval = true,
+		int dmasperrail = 128, int numrails = 2) {
+	/* initialize private parameters */
 #ifdef ENABLE_SHARED_MEMORY
-        sharedMemory = shared;
+	sharedMemory = shared;
 #else
-        sharedMemory = false;
+	sharedMemory = false;
 #endif
-        reclaim = reclaimval;
-        concurrentDmas = dmasperrail;
-        nrails = numrails;
+	reclaim = reclaimval;
+	concurrentDmas = dmasperrail;
+	nrails = numrails;
 
-        // don't ever use shared memory if we are the only local process
-        if (local_nprocs() == 1)
+	// don't ever use shared memory if we are the only local process
+	if (local_nprocs() == 1)
             sharedMemory = false;
 
-        /* get the appropriate memory */
+	/* get the appropriate memory */
 #ifdef ENABLE_SHARED_MEMORY
-        if (sharedMemory) {
-            locks =
-                (Locks *) SharedMemoryPools.getMemorySegment(nrails *
-                                                             sizeof(Locks),
-                                                             CACHE_ALIGNMENT);
-            dmaCounts =
-                (int *) SharedMemoryPools.getMemorySegment(nrails *
-                                                           sizeof(int),
-                                                           CACHE_ALIGNMENT);
-        } else {
+	if (sharedMemory) {
+            locks = (Locks *) SharedMemoryPools.getMemorySegment(nrails * sizeof(Locks),
+                                                                 CACHE_ALIGNMENT);
+            dmaCounts = (int *)SharedMemoryPools.getMemorySegment(nrails * sizeof(int),
+                                                                  CACHE_ALIGNMENT);
+	} else {
 #endif
             locks = (Locks *) ulm_malloc(nrails * sizeof(Locks));
-            dmaCounts = (int *) ulm_malloc(nrails * sizeof(int));
+            dmaCounts = (int *)ulm_malloc(nrails * sizeof(int));
 #ifdef ENABLE_SHARED_MEMORY
-        }
+	}
 #endif
     }
 
 
     void postQuadricsInit() {
-        freep =
-            (eventBlkSlot_t **) ulm_malloc(nrails *
-                                           sizeof(eventBlkSlot_t *));
-        allocp = (allocPtrs_t *) ulm_malloc(nrails * sizeof(allocPtrs_t));
-        array =
-            (eventBlkSlot_t **) ulm_malloc(nrails *
-                                           sizeof(eventBlkSlot_t *));
-        dummyDone =
-            (E3_Event_Blk **) ulm_malloc(nrails * sizeof(E3_Event_Blk *));
-        for (int j = 0; j < nrails; j++) {
+	freep = (eventBlkSlot_t **) ulm_malloc(nrails * sizeof(eventBlkSlot_t *));
+	allocp = (allocPtrs_t *) ulm_malloc(nrails * sizeof(allocPtrs_t));
+	array = (eventBlkSlot_t **) ulm_malloc(nrails * sizeof(eventBlkSlot_t *));
+	dummyDone = (E3_Event_Blk **) ulm_malloc(nrails * sizeof(E3_Event_Blk *));
+	for (int j = 0; j < nrails; j++) {
             allocp[j].head = allocp[j].tail = 0;
-            array[j] =
-                (eventBlkSlot_t *) ulm_malloc(concurrentDmas *
-                                              sizeof(eventBlkSlot_t));
-            dummyDone[j] =
-                (E3_Event_Blk *) elan3_allocMain(getElan3Ctx(j),
-                                                 E3_BLK_ALIGN,
-                                                 sizeof(E3_Event_Blk));
-        }
+            array[j] = (eventBlkSlot_t *) ulm_malloc(concurrentDmas * sizeof(eventBlkSlot_t));
+            dummyDone[j] = (E3_Event_Blk *)elan3_allocMain(getElan3Ctx(j), E3_BLK_ALIGN, sizeof(E3_Event_Blk));
+	}
 
-        /* initialize structures */
-        for (int i = 0; i < nrails; i++) {
+	/* initialize structures */
+	for (int i = 0; i < nrails; i++) {
             /* clear dmaCounts[rail] */
             dmaCounts[i] = 0;
-            /* run the lock constructor */
-            new(&locks[i]) Locks;
-            /* build the freelist */
-            freep[i] = &(array[i][0]);
-            for (int j = 0; j < (concurrentDmas - 1); j++) {
-                array[i][j].eventBlk = 0;
-                array[i][j].loc = 0;
-                array[i][j].ptr = &(array[i][j + 1]);
-                array[i][j].magic = DMATHROTTLEMAGIC;
-            }
-            array[i][concurrentDmas - 1].eventBlk = 0;
-            array[i][concurrentDmas - 1].loc = 0;
-            array[i][concurrentDmas - 1].ptr = 0;
-            array[i][concurrentDmas - 1].magic = DMATHROTTLEMAGIC;
-            /* fill in dummyDone with 0xff in all bytes so that it will appear "done" */
-            memset((void *) dummyDone[i], 0xff, sizeof(E3_Event_Blk));
-        }
+	    /* run the lock constructor */
+	    new(&locks[i]) Locks;
+	    /* build the freelist */
+	    freep[i] = &(array[i][0]);
+	    for (int j = 0; j < (concurrentDmas - 1); j++) {
+		array[i][j].eventBlk = 0;
+		array[i][j].loc = 0;
+		array[i][j].ptr = &(array[i][j + 1]);
+		array[i][j].magic = DMATHROTTLEMAGIC;
+	    }
+	    array[i][concurrentDmas - 1].eventBlk = 0;
+	    array[i][concurrentDmas - 1].loc = 0;
+	    array[i][concurrentDmas - 1].ptr = 0;
+	    array[i][concurrentDmas - 1].magic = DMATHROTTLEMAGIC;
+	    /* fill in dummyDone with 0xff in all bytes so that it will appear "done" */
+	    memset((void *)dummyDone[i], 0xff, sizeof(E3_Event_Blk));
+	}
     }
 
     //! the default destructor
     ~dmaThrottle() {
-        /* we only free memory resources for process-private malloc'ed memory */
-        if (!sharedMemory) {
+	/* we only free memory resources for process-private malloc'ed memory */
+	if (!sharedMemory) {
             free(locks);
             free(dmaCounts);
-        }
-        free(freep);
-        free(allocp);
-        if (usethreads())
-            quadricsState.quadricsLock.lock();
+	}
+	free(freep);
+	free(allocp);
+    if ( usethreads() )
+        quadricsState.quadricsLock.lock();
 
-        for (int j = 0; j < nrails; j++) {
+    for (int j = 0; j < nrails; j++) {
             free(array[j]);
             elan3_free(getElan3Ctx(j), dummyDone[j]);
-        }
-        if (usethreads())
-            quadricsState.quadricsLock.unlock();
+	}
+    if ( usethreads() )
+        quadricsState.quadricsLock.unlock();
 
-        free(array);
-        free(dummyDone);
+    free(array);
+	free(dummyDone);
     }
 
     //! returns an pointer to an event block on the proper rail freelist, or 0 if nothing is available
@@ -274,58 +260,57 @@ public:
      * using the "same" dmaThrottle. location can be set to 0 so that the returned event block is
      * not reclaimed; it can be ignored altogether if reclaim is false.
      */
-    volatile E3_Event_Blk *getEventBlk(int rail,
-                                       volatile E3_Event_Blk ** location =
-                                       0) {
-        volatile E3_Event_Blk *result = 0;
-        eventBlkSlot_t *slot;
-        if (usethreads() || sharedMemory) {
-            quadricsState.quadricsLock.lock();
-            locks[rail].lock();
+    volatile E3_Event_Blk *getEventBlk(int rail, volatile E3_Event_Blk ** location = 0) {
+	volatile E3_Event_Blk *result = 0;
+	eventBlkSlot_t *slot;
+	if (usethreads() || sharedMemory)
+    {
+        quadricsState.quadricsLock.lock();
+        locks[rail].lock();
+    }
+
+    if (dmaCounts[rail] < concurrentDmas) {
+	    slot = freep[rail];
+	    result = (slot->eventBlk) ? slot->eventBlk :
+                (volatile E3_Event_Blk *)elan3_allocMain(getElan3Ctx(rail),
+                                                E3_BLK_ALIGN, sizeof(E3_Event_Blk));
+	    if (!result) {
+            if (usethreads() || sharedMemory)
+            {
+                locks[rail].unlock();
+                quadricsState.quadricsLock.unlock();
+            }
+            return result;
         }
+	    dmaCounts[rail]++;
+	    slot->eventBlk = result;
+	    slot->loc = location;
+	    slot->magic = 0;
+	    freep[rail] = slot->ptr;
 
-        if (dmaCounts[rail] < concurrentDmas) {
-            slot = freep[rail];
-            result =
-                (slot->eventBlk) ? slot->
-                eventBlk : (volatile E3_Event_Blk *)
-                elan3_allocMain(getElan3Ctx(rail), E3_BLK_ALIGN,
-                                sizeof(E3_Event_Blk));
-            if (!result) {
-                if (usethreads() || sharedMemory) {
-                    locks[rail].unlock();
-                    quadricsState.quadricsLock.unlock();
-                }
-                return result;
-            }
-            dmaCounts[rail]++;
-            slot->eventBlk = result;
-            slot->loc = location;
-            slot->magic = 0;
-            freep[rail] = slot->ptr;
-
-            /* put it on the allocated list */
-            if (!allocp[rail].head) {
-                allocp[rail].head = allocp[rail].tail = slot;
-                slot->ptr = 0;
-            } else {
-                allocp[rail].tail->ptr = slot;
-                slot->ptr = 0;
-                allocp[rail].tail = slot;
-            }
-            /* reset the event block */
-            E3_RESET_BCOPY_BLOCK(result);
-            mb();
-        } else if (reclaim) {
+	    /* put it on the allocated list */
+	    if (!allocp[rail].head) {
+		allocp[rail].head = allocp[rail].tail = slot;
+		slot->ptr = 0;
+	    }
+	    else {
+		allocp[rail].tail->ptr = slot;
+		slot->ptr = 0;
+		allocp[rail].tail = slot;
+	    }
+	    /* reset the event block */
+	    E3_RESET_BCOPY_BLOCK(result);
+        mb();
+	}
+	else if (reclaim) {
             if (reclaimEventBlks(rail) > 0) {
                 slot = freep[rail];
-                result =
-                    (slot->eventBlk) ? slot->
-                    eventBlk : (volatile E3_Event_Blk *)
-                    elan3_allocMain(getElan3Ctx(rail), E3_BLK_ALIGN,
-                                    sizeof(E3_Event_Blk));
+                result = (slot->eventBlk) ? slot->eventBlk :
+                    (volatile E3_Event_Blk *)elan3_allocMain(getElan3Ctx(rail),
+                                                    E3_BLK_ALIGN, sizeof(E3_Event_Blk));
                 if (!result) {
-                    if (usethreads() || sharedMemory) {
+                    if (usethreads() || sharedMemory)
+                    {
                         locks[rail].unlock();
                         quadricsState.quadricsLock.unlock();
                     }
@@ -340,7 +325,8 @@ public:
                 /* put it on the allocated list */
                 if (!allocp[rail].head) {
                     allocp[rail].head = allocp[rail].tail = slot;
-                } else {
+                }
+                else {
                     allocp[rail].tail->ptr = slot;
                     allocp[rail].tail = slot;
                 }
@@ -348,12 +334,13 @@ public:
                 E3_RESET_BCOPY_BLOCK(result);
                 mb();
             }
-        }
-        if (usethreads() || sharedMemory) {
-            locks[rail].unlock();
-            quadricsState.quadricsLock.unlock();
-        }
-        return result;
+	}
+	if (usethreads() || sharedMemory)
+    {
+        locks[rail].unlock();
+        quadricsState.quadricsLock.unlock();
+    }
+    return result;
     }
 
     //! returns eventBlk back to the proper rail freelist
@@ -363,29 +350,29 @@ public:
      *
      * the same caveats apply to eventBlkLoc as getEventBlk's location...
      */
-    void freeEventBlk(int rail, volatile E3_Event_Blk * eventBlk,
-                      volatile E3_Event_Blk ** eventBlkLoc = 0) {
+    void freeEventBlk(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk ** eventBlkLoc = 0) {
         eventBlkSlot_t *prev = 0;
         eventBlkSlot_t *slot;
 
         if (!eventBlk)
-            return;
-        if (usethreads() || sharedMemory) {
-            quadricsState.quadricsLock.lock();
-            locks[rail].lock();
-        }
+	    return;
+	if (usethreads() || sharedMemory)
+    {
+        quadricsState.quadricsLock.lock();
+        locks[rail].lock();
+    }
 
-        slot = allocp[rail].head;
+    slot = allocp[rail].head;
 
-        /* find right slot */
-        while (slot) {
+    /* find right slot */
+    while (slot) {
             if (slot->eventBlk == eventBlk) {
                 if (reclaim) {
                     /* possibly freed, reclaimed already, or reallocated already...if so, return */
-                    if ((slot->magic == DMATHROTTLEMAGIC)
-                        || (eventBlk == dummyDone[rail])
+                    if ((slot->magic == DMATHROTTLEMAGIC) || (eventBlk == dummyDone[rail])
                         || (slot->loc != eventBlkLoc)) {
-                        if (usethreads() || sharedMemory) {
+                        if (usethreads() || sharedMemory)
+                        {
                             locks[rail].unlock();
                             quadricsState.quadricsLock.unlock();
                         }
@@ -402,29 +389,31 @@ public:
             }
             prev = slot;
             slot = slot->ptr;
-        }
-        if (!slot) {
-            if (usethreads() || sharedMemory) {
-                locks[rail].unlock();
-                quadricsState.quadricsLock.unlock();
-            }
-            return;
-        }
-
-        /* put the event block on the free list */
-        if (freep[rail]) {
-            slot->ptr = freep[rail];
-        } else {
-            slot->ptr = 0;
-        }
-        slot->loc = 0;
-        slot->magic = DMATHROTTLEMAGIC;
-        freep[rail] = slot;
-        dmaCounts[rail]--;
-        if (usethreads() || sharedMemory) {
+	}
+	if (!slot) {
+        if (usethreads() || sharedMemory)
+        {
             locks[rail].unlock();
             quadricsState.quadricsLock.unlock();
         }
+        return;
+    }
+
+	/* put the event block on the free list */
+	if (freep[rail]) {
+	    slot->ptr = freep[rail];
+	} else {
+	    slot->ptr = 0;
+	}
+	slot->loc = 0;
+	slot->magic = DMATHROTTLEMAGIC;
+	freep[rail] = slot;
+	dmaCounts[rail]--;
+	if (usethreads() || sharedMemory)
+    {
+        locks[rail].unlock();
+        quadricsState.quadricsLock.unlock();
+    }
     }
 
     //! safe way to determine if the event block is ready...if reclaiming is being done
@@ -434,13 +423,13 @@ public:
      *
      * eventBlkLoc is only necessary if reclaim is true...
      */
-    bool eventBlkReady(int rail, volatile E3_Event_Blk * eventBlk,
-                       volatile E3_Event_Blk ** eventBlkLoc = 0) {
+    bool eventBlkReady(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk **eventBlkLoc = 0) {
         bool result = false;
         eventBlkSlot_t *slot;
 
         if (reclaim) {
-            if (usethreads() || sharedMemory) {
+            if (usethreads() || sharedMemory)
+            {
                 quadricsState.quadricsLock.lock();
                 locks[rail].lock();
             }
@@ -451,19 +440,20 @@ public:
                 slot = slot->ptr;
             }
             /* various conditions that indicate that reclaiming has occurred */
-            if (!slot || (slot->magic == DMATHROTTLEMAGIC)
-                || (eventBlk == dummyDone[rail])
+            if (!slot || (slot->magic == DMATHROTTLEMAGIC) || (eventBlk == dummyDone[rail])
                 || (slot->loc != eventBlkLoc)) {
                 result = true;
             } else {
                 /* event not reclaimed...just check the event block... */
                 result = EVENT_BLK_READY(eventBlk);
             }
-            if (usethreads() || sharedMemory) {
+            if (usethreads() || sharedMemory)
+            {
                 locks[rail].unlock();
                 quadricsState.quadricsLock.unlock();
             }
-        } else {
+        }
+        else {
             result = EVENT_BLK_READY(eventBlk);
         }
         return result;
@@ -471,41 +461,35 @@ public:
 
     //! prints the current state of the dmaThrottle object (for debugging purposes)
     void dump(FILE * fp) {
+	fprintf(fp, "dmaThrottle at %p, sharedMemory = %s, reclaim = %s:\n", this,
+		sharedMemory ? "true" : "false", reclaim ? "true" : "false");
+	fprintf(fp, "\tmax quadrics rails = %d, max concurrent dmas per rail = %d\n", nrails,
+		concurrentDmas);
+	fprintf(fp, "\tlocks = %p, freep = %p, array = %p\n", locks, freep, array);
+	for (int j = 0; j < nrails; j++) {
+	    fprintf(fp, "\tarray[%d] = %p\n", j, array[j]);
+	}
+	for (int i = 0; i < nrails; i++) {
+	    int freeCnt = 0;
+        eventBlkSlot_t *j;
 
-        fprintf(fp,
-                "dmaThrottle at %p, sharedMemory = %s, reclaim = %s:\n",
-                this, sharedMemory ? "true" : "false",
-                reclaim ? "true" : "false");
-        fprintf(fp,
-                "\tmax quadrics rails = %d, max concurrent dmas per rail = %d\n",
-                nrails, concurrentDmas);
-        fprintf(fp, "\tlocks = %p, freep = %p, array = %p\n", locks, freep,
-                array);
-        for (int j = 0; j < nrails; j++) {
-            fprintf(fp, "\tarray[%d] = %p\n", j, array[j]);
-        }
-        for (int i = 0; i < nrails; i++) {
-            int freeCnt = 0;
-            eventBlkSlot_t *j;
-
+        if (usethreads() || sharedMemory)
+            locks[i].lock();
+        j = freep[i];
+        if (j) {
             if (usethreads() || sharedMemory)
-                locks[i].lock();
-            j = freep[i];
-            if (j) {
-                fprintf(fp, "Rail %d:\n", i);
-                while (j) {
-                    fprintf(fp,
-                            "\tfreelist slot %p eventBlk[%d] = %p, loc = %p, magic %s\n",
-                            j, freeCnt++, j->eventBlk, j->loc,
-                            (j->magic ==
-                             DMATHROTTLEMAGIC) ? "correct" : "incorrect");
-                    j = (eventBlkSlot_t *) j->ptr;
-                }
-            }
-            if (usethreads() || sharedMemory)
-                locks[i].unlock();
-        }
-        fflush(fp);
+		    locks[i].lock();
+		fprintf(fp, "Rail %d:\n", i);
+		while (j) {
+		    fprintf(fp, "\tfreelist slot %p eventBlk[%d] = %p, loc = %p, magic %s\n", j, freeCnt++, j->eventBlk,
+                            j->loc, (j->magic == DMATHROTTLEMAGIC) ? "correct" : "incorrect");
+		    j = (eventBlkSlot_t *) j->ptr;
+		}
+	    }
+        if (usethreads() || sharedMemory)
+            locks[i].unlock();
+	}
+	fflush(fp);
     }
 };
 

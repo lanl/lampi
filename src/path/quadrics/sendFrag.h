@@ -40,9 +40,9 @@
 
 #include <elan3/elan3.h>
 
-#include "queue/globals.h"      // needed for reliabilityInfo...
-#include "util/DblLinkList.h"   // needed for DoubleLinkList
-#include "path/common/BaseDesc.h"       // needed for BaseSendDesc_t
+#include "queue/globals.h"             // needed for reliabilityInfo...
+#include "util/DblLinkList.h"        // needed for DoubleLinkList
+#include "path/common/BaseDesc.h"        // needed for SendDesc_t
 #include "path/quadrics/header.h"
 #include "path/quadrics/state.h"
 #include "path/quadrics/dmaThrottle_new.h"
@@ -55,56 +55,53 @@
 
 /* process-private send frag descriptors, could be stored in array of lists indexed by rail index */
 
-class quadricsSendFragDesc:public Links_t {
+class quadricsSendFragDesc : public Links_t {
 public:
 
     // default constructor
-
     quadricsSendFragDesc(int poolIndex = 0) {
         fragEnvelope = NULL;
-        elanFragEnvelope = (E3_Addr) NULL;
-        elanEnvelope = (sdramaddr_t) NULL;
-        elanElanEnvelope = (E3_Addr) NULL;
+        elanFragEnvelope = (E3_Addr)NULL;
+        elanEnvelope = (sdramaddr_t)NULL;
+        elanElanEnvelope = (E3_Addr)NULL;
         mainDMADesc = NULL;
     }
 
     // default destructor
-
-    virtual ~quadricsSendFragDesc()
-        {
-            if (srcEnvelope) {
-                quadricsHdrs.free(srcEnvelope);
-                srcEnvelope = 0;
-            }
-            freeEachSendResources();
-            freeInitOnceResources();
-            flags = 0;
+    virtual ~quadricsSendFragDesc() {
+        if (srcEnvelope) {
+            quadricsHdrs.free(srcEnvelope);
+            srcEnvelope = 0;
         }
+        freeEachSendResources();
+        freeInitOnceResources();
+        flags = 0;
+    }
 
-    BaseSendDesc_t *parentSendDesc; //!< pointer to "owning" message descriptor
-    ELAN3_CTX *ctx;                 //!< pointer to Quadrics context for DMA...
-    int cmType;                     //!< type of control message (data, mem. req., mem. release)
-    int flags;                      //!< state of this frag (see QSF_* defines)
-    int rail;                       //!< Quadrics rail index of ctx
-    int nEachSendRscs;              //!< number of "each send" resources have been alloc.
-    int nDMADescsNeeded;            //!< number of DMA descs. needed to send this frag
-    int numTransmits;               //!< number of times that we have attempted transmission
-    int globalDestID;               //!< global destination process ID
-    int tmap_index;                 //!< typemap index for datatypes
-    bool usePackBuffer;             //!< need to pack data, or not...
-    bool freeWhenDone;              //!< free or possibly retransmit when done...
-    unsigned char *srcAddr;         //!< base pointer to user application data
-    void *destAddr;                 //!< pointer to remote data buffer
-    int destBufType;                //!< for peerMemoryTracker.push()
-    size_t sequential_offset;       //!< "contiguous" byte offset as if all data was packed
-    size_t fragLength;              //!< frag data length in bytes
-    double timeSent;                //!< time that the frag was enqueued for DMA...
-    unsigned long long frag_seq;    //!< duplicate/dropped detection sequence number
-    quadricsCtlHdr_t *srcEnvelope;  //!< not necessarily aligned memory to store frag envelope info
+    SendDesc_t *parentSendDesc;     //!< pointer to "owning" message descriptor
+    ELAN3_CTX *ctx;                     //!< pointer to Quadrics context for DMA...
+    int cmType;                         //!< type of control message (data, mem. req., mem. release)
+    int flags;                          //!< state of this frag (see QSF_* defines)
+    int rail;                           //!< Quadrics rail index of ctx
+    int nEachSendRscs;                  //!< number of "each send" resources have been alloc.
+    int nDMADescsNeeded;                //!< number of DMA descs. needed to send this frag
+    int numTransmits;                   //!< number of times that we have attempted transmission
+    int globalDestID;                   //!< global destination process ID
+    int tmap_index;                     //!< typemap index for datatypes
+    bool usePackBuffer;                 //!< need to pack data, or not...
+    bool freeWhenDone;                  //!< free or possibly retransmit when done...
+    unsigned char *srcAddr;             //!< base pointer to user application data
+    void *destAddr;                     //!< pointer to remote data buffer
+    int destBufType;                    //!< for peerMemoryTracker.push()
+    size_t sequential_offset;           //!< "contiguous" byte offset as if all data was packed
+    size_t fragLength;                  //!< frag data length in bytes
+    double timeSent;                    //!< time that the frag was enqueued for DMA...
+    unsigned long long frag_seq;        //!< duplicate/dropped detection sequence number
+    quadricsCtlHdr_t *srcEnvelope;      //!< not necessarily aligned memory to store frag envelope info
     //   before init
 
     /* set up by init() once (context dependent) */
-    quadricsCtlHdr_t *fragEnvelope; //!< ptr to 64-byte aligned memory for frag envelope info
+    quadricsCtlHdr_t *fragEnvelope;     //!< ptr to 64-byte aligned memory for frag envelope info
 #define ELAN3_PAGE_BUG_WORKAROUND
 #ifdef ELAN3_PAGE_BUG_WORKAROUND
     // in rare cases, we need to allocate extra memory and then
@@ -113,30 +110,35 @@ public:
     // Whenever fragEnvelope is allocated, fragEnvelope_orig is also set
     // (even if we do not need to shift the fragEnvelope pointer)
     // so we always free fragEnvelope_orig 
-    quadricsCtlHdr_t *fragEnvelope_orig;
+    quadricsCtlHdr_t *fragEnvelope_orig;  
 #endif
-    E3_Addr elanFragEnvelope;       //!< Elan address of fragEnvelope
-    sdramaddr_t elanEnvelope;       //!< SDRAM frag envelope info copy (for performance)
-    E3_Addr elanElanEnvelope;       //!< Elan address of elanEnvelope
-    E3_DMA_MAIN *mainDMADesc;       //!< array of ptrs to Elan-addr. 64-byte algn. main memory DMA descs.
+    E3_Addr elanFragEnvelope;           //!< Elan address of fragEnvelope
+    sdramaddr_t elanEnvelope;           //!< SDRAM frag envelope info copy (for performance)
+    E3_Addr elanElanEnvelope;           //!< Elan address of elanEnvelope
+    E3_DMA_MAIN *mainDMADesc;           //!< array of ptrs to Elan-addr. 64-byte algn. main memory DMA descs.
 
     /* allocated every send, if needed (context dependent) */
-    unsigned char *packedData;      //!< ptr to Elan-addr. 64-byte aligned main memory for frag data
-    sdramaddr_t srcEvent[3];        //!< E3_Event memory on Elan
+    unsigned char *packedData;          //!< ptr to Elan-addr. 64-byte aligned main memory for frag data
+    sdramaddr_t srcEvent[3];            //!< E3_Event memory on Elan
     E3_Addr elanSrcEvent[3];
-    sdramaddr_t elanDMADesc[3];     //!< E3_DMA memory on Elan
-    volatile E3_Event_Blk *srcEventBlk;     //!< obtained via dmaThrottle()
+    sdramaddr_t elanDMADesc[3];         //!< E3_DMA memory on Elan
+    volatile E3_Event_Blk *srcEventBlk; //!< obtained via dmaThrottle()
 
     // called each time this descriptor is removed from the free list
     // ...should be called until true is returned...
-    bool init(BaseSendDesc_t * message = 0,
-              ELAN3_CTX * context = 0,
+    bool init(SendDesc_t *message = 0,
+              ELAN3_CTX *context = 0,
               enum quadricsCtlMsgTypes cmtype = MESSAGE_DATA,
               int railnum = 0,
-              int destID = 0, int dtypeIndex = 0, unsigned char *addr =
-              0, size_t soffset = 0, size_t flen = 0, void *dstaddr =
-              0, int dstBufType = 0, bool needsPacking = false, void *srcenv =
-              0)
+              int destID = 0,
+              int dtypeIndex = 0,
+              unsigned char *addr = 0,
+              size_t soffset = 0,
+              size_t flen = 0,
+              void *dstaddr = 0,
+              int dstBufType = 0,
+              bool needsPacking = false,
+              void *srcenv = 0)
         {
             bool result = true;
 
@@ -164,7 +166,7 @@ public:
                 srcAddr = addr;
                 destAddr = dstaddr;
                 destBufType = dstBufType;
-                srcEnvelope = (quadricsCtlHdr_t *) srcenv;
+                srcEnvelope = (quadricsCtlHdr_t *)srcenv;
 
                 flags |= QSF_INFO_INITIALIZED;
             }
@@ -172,22 +174,19 @@ public:
             /* calculate how many DMA descriptors are needed */
             if (fragLength <= CTLHDR_DATABYTES) {
                 nDMADescsNeeded = 1;
-            } else {
+            }
+            else {
                 /* get buffer to pack data if needed */
-                if (usePackBuffer
-                    ||
-                    (elan3_addressable
-                     (ctx, (srcAddr + sequential_offset), fragLength) == FALSE)) {
-                    if (!packedData) {
-                        if (usethreads())
+                if (usePackBuffer ||
+                    (elan3_addressable(ctx,(srcAddr + sequential_offset), fragLength) == FALSE)) {
+                    if (!packedData)
+                    {
+                        if ( usethreads() )
                             quadricsState.quadricsLock.lock();
-                        packedData =
-                            (unsigned char *) elan3_allocMain(ctx, E3_BLK_ALIGN,
-                                                              fragLength);
-                        if (usethreads())
+                        packedData = (unsigned char *)elan3_allocMain(ctx, E3_BLK_ALIGN, fragLength);
+                        if ( usethreads() )
                             quadricsState.quadricsLock.unlock();
                     }
-
                     if (!packedData) {
                         return false;
                     }
@@ -197,14 +196,12 @@ public:
                  * page, and does the DMA straddle into the next page? If so,
                  * then we use an additional DMA to avoid an Elan3 bug... */
                 unsigned long mask = ~(ctx->pageSize - 1);
-                unsigned char *buf =
-                    (packedData) ? (packedData) : (srcAddr + sequential_offset);
-                if ((((unsigned long) buf & mask) !=
-                     ((unsigned long) (buf + 64) & mask))
-                    && (((unsigned long) buf & mask) !=
-                        ((unsigned long) (buf + fragLength) & mask))) {
+                unsigned char *buf = (packedData) ? (packedData) : (srcAddr + sequential_offset);
+                if ( (((unsigned long)buf & mask) != ((unsigned long)(buf + 64) & mask)) &&
+                     (((unsigned long)buf & mask) != ((unsigned long)(buf + fragLength) & mask)) ) {
                     nDMADescsNeeded = 3;
-                } else {
+                }
+                else {
                     nDMADescsNeeded = 2;
                 }
             }
@@ -249,14 +246,13 @@ public:
         }
 
     // only called if new context and rail needed to resend...
-    bool reinit(ELAN3_CTX * context, int railnum, void *destMemAddr)
+    bool reinit(ELAN3_CTX *context, int railnum, void *destMemAddr)
         {
             bool needDestMemory = (destAddr) ? true : false;
             // save destination memory address...
             if (destAddr) {
                 if (quadricsDoAck) {
-                    quadricsPeerMemory[rail]->push(globalDestID, destBufType,
-                                                   destAddr);
+                    quadricsPeerMemory[rail]->push(globalDestID, destBufType, destAddr);
                 }
                 destAddr = 0;
             }
@@ -282,8 +278,7 @@ public:
             if (destAddr) {
                 /* reuse destination buffer only if we are doing ACKs */
                 if (quadricsDoAck) {
-                    quadricsPeerMemory[rail]->push(globalDestID, destBufType,
-                                                   destAddr);
+                    quadricsPeerMemory[rail]->push(globalDestID, destBufType, destAddr);
                 }
                 destAddr = 0;
             }
@@ -295,12 +290,11 @@ public:
               freeEachSendResources();
             */
             if (packedData) {
-                if (usethreads())
+                if ( usethreads() )
                     quadricsState.quadricsLock.lock();
                 elan3_free(ctx, packedData);
-                if (usethreads())
+                if ( usethreads() )
                     quadricsState.quadricsLock.unlock();
-
                 packedData = 0;
             }
             if (srcEventBlk) {
@@ -310,36 +304,6 @@ public:
             flags = QSF_INITONCE_COMPLETE;
         }
 
-    void dumpit(char *txt)
-        {
-            // get the fragEnvelope
-            E3_DMA_MAIN *qdma = mainDMADesc;
-            quadricsCtlHdr_t *envelope;
-            quadricsDataHdr_t *p;
-
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
-
-            elan3_copy32_from_sdram(ctx->sdram, elanDMADesc[nDMADescsNeeded - 1],
-                                    qdma);
-            envelope = (quadricsCtlHdr_t *) elan3_elan2main(ctx, qdma->dma_source);
-            if (envelope->commonHdr.ctlMsgType == MESSAGE_DATA) {
-                p = &(envelope->msgDataHdr);
-                if (p->destID != qdma->dma_destCookieProc.cookie_vproc) {
-                    fprintf(stderr,
-                            "myproc %d thread %x: %s: frag = %p, sender = %d, destID = %d, "
-                            "dest_cookie = %d, frag_seq = %lld\n", myproc(),
-                            pthread_self(), txt, this, p->senderID, p->destID,
-                            qdma->dma_destCookieProc.cookie_vproc, p->frag_seq);
-                    fflush(stderr);
-                }
-            }
-
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
-
-        }
-
     // wrapper around elan3_putdma() to allow path timeout check...
     bool enqueue(double timeNow, int *errorCode)
         {
@@ -347,9 +311,8 @@ public:
 
 #ifdef ENABLE_RELIABILITY
             if (flags & QSF_DMA_ENQUEUED) {
-                if ((srcEventBlk == 0)
-                    || quadricsThrottle->eventBlkReady(rail, srcEventBlk,
-                                                       &srcEventBlk)) {
+                if ((srcEventBlk == 0) ||
+                    quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
                     // if "done" then reinitialize and prime the events and queue DMA
                     return reinitAndResend(errorCode);
                 } else {
@@ -362,18 +325,18 @@ public:
                     }
                     return false;
                 }
-            } else {
+            }
+            else {
 #endif
                 /* this memory barrier should be unnecessary, if handled by elan3_putdma() */
                 mb();
 
-                if (usethreads())
+                if ( usethreads() )
                     quadricsState.quadricsLock.lock();
                 elan3_putdma(ctx, elanDMADesc[0]);
-                if (usethreads())
+                if ( usethreads() )
                     quadricsState.quadricsLock.unlock();
                 flags |= QSF_DMA_ENQUEUED;
-
                 return true;
 #ifdef ENABLE_RELIABILITY
             }
@@ -386,33 +349,32 @@ public:
 
             if (flags & QSF_DMA_ENQUEUED) {
 #ifdef ENABLE_RELIABILITY
-                if ((srcEventBlk != 0)
-                    && quadricsThrottle->eventBlkReady(rail, srcEventBlk,
-                                                       &srcEventBlk)) {
+                if ((srcEventBlk != 0) &&
+                    quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
                     return true;
-                } else {
+                }
+                else {
                     if ((timeNow - timeSent) >= QUADRICS_BADRAIL_DMA_TIMEOUT) {
                         if (freeWhenDone) {
                             if (destAddr) {
                                 if (quadricsDoAck) {
-                                    quadricsPeerMemory[rail]->push(globalDestID,
-                                                                   destBufType,
-                                                                   destAddr);
+                                    quadricsPeerMemory[rail]->
+                                        push(globalDestID, destBufType, destAddr);
                                 }
                                 destAddr = 0;
                             }
                             discardEachSendResources();
                             discardInitOnceResources();
                             return true;
-                        } else {
+                        }
+                        else {
                             *errorCode = ULM_ERR_BAD_SUBPATH;
                         }
                     }
                     return false;
                 }
 #else
-                return quadricsThrottle->eventBlkReady(rail, srcEventBlk,
-                                                       &srcEventBlk);
+                return quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk);
 #endif
             }
             return (freeWhenDone) ? true : false;
@@ -428,20 +390,19 @@ public:
 #endif
 
             if (usecrc()) {
-                csum =
-                    uicrc(fragEnvelope,
-                          sizeof(quadricsCtlHdr_t) - sizeof(ulm_uint32_t));
+                csum = uicrc(fragEnvelope, sizeof(quadricsCtlHdr_t) - sizeof(ulm_uint32_t));
 #if BYTE_ORDER == LITTLE_ENDIAN
                 /* byte swap if little endian - so CRC of header + CRC yields 0 */
-                csump = (unsigned char *) &csum;
-                tmpp = (unsigned char *) &tmp;
+                csump = (unsigned char *)&csum;
+                tmpp = (unsigned char *)&tmp;
                 tmpp[0] = csump[3];
                 tmpp[1] = csump[2];
                 tmpp[2] = csump[1];
                 tmpp[3] = csump[0];
                 csum = tmp;
 #endif
-            } else {
+            }
+            else {
                 csum = 0;
                 for (i = 0; i < CTLHDR_WORDS; i++) {
                     csum += fragEnvelope->words[i];
@@ -470,12 +431,13 @@ private:
              * if ENABLE_RELIABILITY is defined -- since it is recorded and ACK'ed...
              */
             if (!quadricsDoAck) {
-                if ((parentSendDesc->sendType != ULM_SEND_SYNCHRONOUS)
-                    || (sequential_offset != 0)) {
+                if ((parentSendDesc->sendType != ULM_SEND_SYNCHRONOUS) ||
+                    (sequential_offset != 0)) {
                     frag_seq = 0;
                     return;
                 }
             }
+
             // thread-safe allocation of frag sequence number in header
 
             if (usethreads())
@@ -486,271 +448,246 @@ private:
         }
 #endif
 
-    bool initInitOnceResources()
-        {
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
+    bool initInitOnceResources() {
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
 
-            if (!mainDMADesc) {
-                mainDMADesc =
-                    (E3_DMA_MAIN *) elan3_allocMain(ctx, E3_DMA_ALIGN,
-                                                    sizeof(E3_DMA_MAIN));
-            }
-
-            while (!fragEnvelope) {     // dummy loop to break out of
-                unsigned long mask = ~(ctx->pageSize - 1);
-
-                fragEnvelope =
-                    (quadricsCtlHdr_t *) elan3_allocMain(ctx, E3_BLK_ALIGN,
-                                                         sizeof(quadricsCtlHdr_t));
-                if (!fragEnvelope)
-                    break;
-#ifdef ELAN3_PAGE_BUG_WORKAROUND
-                fragEnvelope_orig = fragEnvelope;
-
-                if (((unsigned long) fragEnvelope & mask) !=
-                    ((unsigned long) ((unsigned char *) fragEnvelope +
-                                      64) & mask)) {
-                    // due to elan3 bug, we cannot allow fragEnvelope in last 64 bytes
-                    // of a page.  Try again, but allocate 64 extra bytes:
-                    // Note: trying to allocate with 128 byte alignment (using 2*E3_BLK_ALIGN) 
-                    // causes segfaults later.  
-                    elan3_free(ctx, fragEnvelope);
-
-                    fragEnvelope =
-                        (quadricsCtlHdr_t *) elan3_allocMain(ctx, E3_BLK_ALIGN,
-                                                             sizeof
-                                                             (quadricsCtlHdr_t) +
-                                                             64);
-                    if (!fragEnvelope)
-                        break;
-                    fragEnvelope_orig = fragEnvelope;   // save original address
-
-                    if (((unsigned long) fragEnvelope & mask) !=
-                        ((unsigned long) ((unsigned char *) fragEnvelope +
-                                          64) & mask)) {
-                        // we are still near page boundary, so shift pointer to next page:
-                        fragEnvelope =
-                            (quadricsCtlHdr_t *) (((char *) fragEnvelope) + 64);
-                        // because of this trick, be sure not to free fragEnvelope
-                        // use fragEnvelope_orig instead
-                    }
-                }
-#endif
-                elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
-            }
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
-
-            /* PERFORMANCE is worse!
-               if (elanEnvelope == (sdramaddr_t)NULL) {
-               elanEnvelope = elan3_allocElan(ctx, E3_BLK_ALIGN, sizeof(quadricsCtlHdr_t));
-               if (elanEnvelope != (sdramaddr_t)NULL) {
-               elanElanEnvelope = elan3_sdram2elan(ctx, ctx->sdram, elanEnvelope);
-               }
-               }
-            */
-            if (!mainDMADesc || !fragEnvelope) {
-                /* free everything to avoid partial sends from
-                 * holding enough Elan-addressable main memory
-                 * resources to prevent any frag from being
-                 * sent...
-                 */
-                freeInitOnceResources();
-                return false;
-            }
-            flags |= QSF_INITONCE_COMPLETE;
-            return true;
+        if (!mainDMADesc) {
+            mainDMADesc = (E3_DMA_MAIN *)elan3_allocMain(ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN));
         }
 
-    void freeInitOnceResources()
-        {
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
-
-            if (mainDMADesc) {
-                elan3_free(ctx, mainDMADesc);
-                mainDMADesc = 0;
-            }
-            if (fragEnvelope) {
+        while (!fragEnvelope) { // dummy loop to break out of
+            unsigned long mask = ~(ctx->pageSize - 1);
+            fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
+                                                                   sizeof(quadricsCtlHdr_t));
+            if (!fragEnvelope) break;
 #ifdef ELAN3_PAGE_BUG_WORKAROUND
-                // in this case, whenever fragEnvelope!=NULL, we have also 
-                // set fragEnvelope_orig, which is the original address of 
-                // the block of memory and must be used to free it.
-                elan3_free(ctx, fragEnvelope_orig);
-#else
+            fragEnvelope_orig=fragEnvelope;
+
+            if (((unsigned long)fragEnvelope & mask) !=
+                ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
+                // due to elan3 bug, we cannot allow fragEnvelope in last 64 bytes
+                // of a page.  Try again, but allocate 64 extra bytes:
+                // Note: trying to allocate with 128 byte alignment (using 2*E3_BLK_ALIGN) 
+                // causes segfaults later.  
                 elan3_free(ctx, fragEnvelope);
+                fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
+                                     sizeof(quadricsCtlHdr_t)+64);
+                if (!fragEnvelope) break;
+                fragEnvelope_orig=fragEnvelope;  // save original address
+
+                if (((unsigned long)fragEnvelope & mask) !=
+                    ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
+                    // we are still near page boundary, so shift pointer to next page:
+                    fragEnvelope=(quadricsCtlHdr_t *) ( ((char *) fragEnvelope) + 64);
+                    // because of this trick, be sure not to free fragEnvelope
+                    // use fragEnvelope_orig instead
+                }
+            }
 #endif
-                fragEnvelope = 0;
-            }
-            if (elanEnvelope != (sdramaddr_t) NULL) {
-                elan3_freeElan(ctx, elanEnvelope);
-                elanEnvelope = (sdramaddr_t) NULL;
-            }
-            flags &= ~QSF_INITONCE_COMPLETE;
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
+            elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
+        }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
 
+        /* PERFORMANCE is worse!
+           if (elanEnvelope == (sdramaddr_t)NULL) {
+           elanEnvelope = elan3_allocElan(ctx, E3_BLK_ALIGN, sizeof(quadricsCtlHdr_t));
+           if (elanEnvelope != (sdramaddr_t)NULL) {
+           elanElanEnvelope = elan3_sdram2elan(ctx, ctx->sdram, elanEnvelope);
+           }
+           }
+        */
+        if (!mainDMADesc || !fragEnvelope) {
+            /* free everything to avoid partial sends from
+             * holding enough Elan-addressable main memory
+             * resources to prevent any frag from being
+             * sent...
+             */
+            freeInitOnceResources();
+            return false;
+        }
+        flags |= QSF_INITONCE_COMPLETE;
+        return true;
+    }
+
+    void freeInitOnceResources() {
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
+        if (mainDMADesc) {
+            elan3_free(ctx, mainDMADesc);
+            mainDMADesc = 0;
+        }
+        if (fragEnvelope) {
+#ifdef ELAN3_PAGE_BUG_WORKAROUND
+            // in this case, whenever fragEnvelope!=NULL, we have also 
+            // set fragEnvelope_orig, which is the original address of 
+            // the block of memory and must be used to free it.
+            elan3_free(ctx, fragEnvelope_orig);
+#else
+            elan3_free(ctx, fragEnvelope);
+#endif
+            fragEnvelope = 0;
+        }
+        if (elanEnvelope != (sdramaddr_t)NULL) {
+            elan3_freeElan(ctx, elanEnvelope);
+            elanEnvelope = (sdramaddr_t)NULL;
+        }
+        flags &= ~QSF_INITONCE_COMPLETE;
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
+    }
+
+    void discardInitOnceResources() {
+        if (mainDMADesc) {
+            mainDMADesc = 0;
+        }
+        if (fragEnvelope) {
+            fragEnvelope = 0;
+        }
+        if (elanEnvelope != (sdramaddr_t)NULL) {
+            elanEnvelope = (sdramaddr_t)NULL;
+        }
+        flags &= ~QSF_INITONCE_COMPLETE;
+    }
+
+    bool initEachSendResources() {
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
+        for (int i = nEachSendRscs; i < nDMADescsNeeded; i++) {
+            // an E3_BlockCopyEvent is larger than an E3_Event...go figure!!
+            srcEvent[i] = elan3_allocElan(ctx, E3_EVENT_ALIGN, sizeof(E3_BlockCopyEvent));
+            if (srcEvent[i] != (sdramaddr_t)NULL) {
+                elanDMADesc[i] = elan3_allocElan(ctx, E3_DMA_ALIGN, sizeof(E3_DMA));
+                elanSrcEvent[i] = elan3_sdram2elan(ctx, ctx->sdram, srcEvent[i]);
+            } else {
+                elanDMADesc[i] = (sdramaddr_t)NULL;
+            }
+            nEachSendRscs += ((srcEvent[i] != (sdramaddr_t)NULL) &&
+                              (elanDMADesc[i] != (sdramaddr_t)NULL)) ? 1 : 0;
+        }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
+        if (!srcEventBlk) {
+            srcEventBlk = quadricsThrottle->getEventBlk(rail, &srcEventBlk);
+        }
+        if ((nEachSendRscs < nDMADescsNeeded) || !srcEventBlk) {
+            /* free everything to avoid partial sends from
+             * holding enough Elan memory resources to
+             * prevent any frag from being sent...
+             */
+            freeEachSendResources();
+        }
+        return (nEachSendRscs >= nDMADescsNeeded);
+    }
+
+    void freeEachSendResources() {
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
+        for (int i = 0; i < nEachSendRscs; i++) {
+            if (srcEvent[i] != (sdramaddr_t)NULL) {
+                elan3_freeElan(ctx, srcEvent[i]);
+            }
+            if (elanDMADesc[i] != (sdramaddr_t)NULL) {
+                elan3_freeElan(ctx, elanDMADesc[i]);
+            }
+        }
+        nEachSendRscs = 0;
+        if (packedData) {
+            elan3_free(ctx, packedData);
+            packedData = 0;
+        }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
+        if (srcEventBlk) {
+            quadricsThrottle->freeEventBlk(rail, srcEventBlk, &srcEventBlk);
+            srcEventBlk = 0;
+        }
+    }
+
+    void discardEachSendResources(bool keepPackedData = true) {
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
+
+        for (int i = 0; i < nEachSendRscs; i++) {
+            srcEvent[i] = (sdramaddr_t)NULL;
+            elanDMADesc[i] = (sdramaddr_t)NULL;
+        }
+        nEachSendRscs = 0;
+        if (packedData && !keepPackedData) {
+            elan3_free(ctx, packedData);
+            packedData = 0;
         }
 
-    void discardInitOnceResources()
-        {
-            if (mainDMADesc) {
-                mainDMADesc = 0;
-            }
-            if (fragEnvelope) {
-                fragEnvelope = 0;
-            }
-            if (elanEnvelope != (sdramaddr_t) NULL) {
-                elanEnvelope = (sdramaddr_t) NULL;
-            }
-            flags &= ~QSF_INITONCE_COMPLETE;
-        }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
 
-    bool initEachSendResources()
-        {
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
+        srcEventBlk = 0;
+    }
 
-            for (int i = nEachSendRscs; i < nDMADescsNeeded; i++) {
-                // an E3_BlockCopyEvent is larger than an E3_Event...go figure!!
-                srcEvent[i] =
-                    elan3_allocElan(ctx, E3_EVENT_ALIGN,
-                                    sizeof(E3_BlockCopyEvent));
-                if (srcEvent[i] != (sdramaddr_t) NULL) {
-                    elanDMADesc[i] =
-                        elan3_allocElan(ctx, E3_DMA_ALIGN, sizeof(E3_DMA));
-                    elanSrcEvent[i] =
-                        elan3_sdram2elan(ctx, ctx->sdram, srcEvent[i]);
-                } else {
-                    elanDMADesc[i] = (sdramaddr_t) NULL;
-                }
-                nEachSendRscs += ((srcEvent[i] != (sdramaddr_t) NULL)
-                                  && (elanDMADesc[i] !=
-                                      (sdramaddr_t) NULL)) ? 1 : 0;
-            }
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
 
-            if (!srcEventBlk) {
-                srcEventBlk = quadricsThrottle->getEventBlk(rail, &srcEventBlk);
-            }
-            if ((nEachSendRscs < nDMADescsNeeded) || !srcEventBlk) {
-                /* free everything to avoid partial sends from
-                 * holindent: Standard input:650: Error:Stmt nesting error.
-                 ding enough Elan memory resources to
-                 * prevent any frag from being sent...
-                 */
-                freeEachSendResources();
-            }
-            return (nEachSendRscs >= nDMADescsNeeded);
-        }
+    bool reinitAndResend(int *errorCode) {
 
-    void freeEachSendResources()
-        {
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
+        *errorCode = ULM_SUCCESS;
 
-            for (int i = 0; i < nEachSendRscs; i++) {
-                if (srcEvent[i] != (sdramaddr_t) NULL) {
-                    elan3_freeElan(ctx, srcEvent[i]);
-                }
-                if (elanDMADesc[i] != (sdramaddr_t) NULL) {
-                    elan3_freeElan(ctx, elanDMADesc[i]);
-                }
-            }
-            nEachSendRscs = 0;
-            if (packedData) {
-                elan3_free(ctx, packedData);
-                packedData = 0;
-            }
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
-
-            if (srcEventBlk) {
-                quadricsThrottle->freeEventBlk(rail, srcEventBlk, &srcEventBlk);
-                srcEventBlk = 0;
-            }
-        }
-
-    void discardEachSendResources(bool keepPackedData = true)
-        {
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
-
-            for (int i = 0; i < nEachSendRscs; i++) {
-                srcEvent[i] = (sdramaddr_t) NULL;
-                elanDMADesc[i] = (sdramaddr_t) NULL;
-            }
-            nEachSendRscs = 0;
-            if (packedData && !keepPackedData) {
-                elan3_free(ctx, packedData);
-                packedData = 0;
-            }
-
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
-
+        // free the done/ready event block
+        if (srcEventBlk) {
+            quadricsThrottle->freeEventBlk(rail, srcEventBlk, &srcEventBlk);
             srcEventBlk = 0;
         }
 
+        // get a new event block from the DMA throttler
+        srcEventBlk = quadricsThrottle->getEventBlk(rail, &srcEventBlk);
 
-    bool reinitAndResend(int *errorCode)
-        {
-
-            *errorCode = ULM_SUCCESS;
-
-            // free the done/ready event block
-            if (srcEventBlk) {
-                quadricsThrottle->freeEventBlk(rail, srcEventBlk, &srcEventBlk);
-                srcEventBlk = 0;
-            }
-            // get a new event block from the DMA throttler
-            srcEventBlk = quadricsThrottle->getEventBlk(rail, &srcEventBlk);
-
-            // if we don't get it, then return without sending
-            if (!srcEventBlk)
-                return false;
+        // if we don't get it, then return without sending
+        if (!srcEventBlk)
+            return false;
 
 
-            // reinitialize and reprime the appropriate events
-            if (usethreads())
-                quadricsState.quadricsLock.lock();
+        // reinitialize and reprime the appropriate events
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
 
-            switch (nDMADescsNeeded) {
-            case 1:
-                elan3_initevent_main(ctx, srcEvent[0], quadricsQueue[rail].doneBlk,
-                                     (E3_Event_Blk *) srcEventBlk);
-                elan3_primeevent(ctx, srcEvent[0], 1);
-                break;
-            case 2:
-                elan3_initevent(ctx, srcEvent[0]);
-                elan3_initevent_main(ctx, srcEvent[1], quadricsQueue[rail].doneBlk,
-                                     (E3_Event_Blk *) srcEventBlk);
-                elan3_primeevent(ctx, srcEvent[1], 1);
-                elan3_waitdmaevent(ctx, elanDMADesc[1], srcEvent[0]);
-                break;
-            case 3:
-                elan3_initevent(ctx, srcEvent[0]);
-                elan3_initevent(ctx, srcEvent[1]);
-                elan3_waitdmaevent(ctx, elanDMADesc[1], srcEvent[0]);
-                elan3_initevent_main(ctx, srcEvent[2], quadricsQueue[rail].doneBlk,
-                                     (E3_Event_Blk *) srcEventBlk);
-                elan3_primeevent(ctx, srcEvent[2], 1);
-                elan3_waitdmaevent(ctx, elanDMADesc[2], srcEvent[1]);
-                break;
-            }
-
-            /* this memory barrier should be unnecessary, if handled by elan3_putdma() */
-            mb();
-
-            // enqueue the first DMA descriptor
-            elan3_putdma(ctx, elanDMADesc[0]);
-            if (usethreads())
-                quadricsState.quadricsLock.unlock();
-
-            return true;
+        switch (nDMADescsNeeded) {
+        case 1:
+            elan3_initevent_main(ctx, srcEvent[0], quadricsQueue[rail].doneBlk,
+                                 (E3_Event_Blk *)srcEventBlk);
+            elan3_primeevent(ctx, srcEvent[0], 1);
+            break;
+        case 2:
+            elan3_initevent(ctx, srcEvent[0]);
+            elan3_initevent_main(ctx, srcEvent[1], quadricsQueue[rail].doneBlk,
+                                 (E3_Event_Blk *)srcEventBlk);
+            elan3_primeevent(ctx, srcEvent[1], 1);
+            elan3_waitdmaevent(ctx, elanDMADesc[1], srcEvent[0]);
+            break;
+        case 3:
+            elan3_initevent(ctx, srcEvent[0]);
+            elan3_initevent(ctx, srcEvent[1]);
+            elan3_waitdmaevent(ctx, elanDMADesc[1], srcEvent[0]);
+            elan3_initevent_main(ctx, srcEvent[2], quadricsQueue[rail].doneBlk,
+                                 (E3_Event_Blk *)srcEventBlk);
+            elan3_primeevent(ctx, srcEvent[2], 1);
+            elan3_waitdmaevent(ctx, elanDMADesc[2], srcEvent[1]);
+            break;
         }
+
+        /* this memory barrier should be unnecessary, if handled by elan3_putdma() */
+        mb();
+
+        // enqueue the first DMA descriptor
+        elan3_putdma(ctx, elanDMADesc[0]);
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
+
+        return true;
+    }
 };
 
 #include "client/ULMClient.h"
@@ -760,7 +697,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
 {
     E3_DMA_MAIN *qdma = mainDMADesc;
 
-    if (usethreads())
+    if ( usethreads() )
         quadricsState.quadricsLock.lock();
 
     /* initialize the QDMA descriptor */
@@ -768,24 +705,22 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     qdma->dma_dest = 0;
     qdma->dma_destEvent = quadricsQueue[rail].elanQAddr;        // global queue object
     qdma->dma_size = sizeof(quadricsCtlHdr_t);
-    qdma->dma_source =
-        (elanEnvelope !=
-         (sdramaddr_t) NULL) ? elanElanEnvelope : elanFragEnvelope;
+    qdma->dma_source = (elanEnvelope != (sdramaddr_t)NULL) ? elanElanEnvelope : elanFragEnvelope;
     qdma->dma_srcEvent = elanSrcEvent[index];
-    qdma->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID);     // Quadrics VPIDs
+    qdma->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID); // Quadrics VPIDs
     qdma->dma_destCookieProc.cookie_vproc = globalDestID;
 
     elan3_copy32_to_sdram(ctx->sdram, qdma, elanDMADesc[index]);
 
     /* initialize the corresponding event as a block copy event */
 
-    elan3_initevent_main(ctx, srcEvent[index], quadricsQueue[rail].doneBlk, (E3_Event_Blk *) srcEventBlk);      // global "done" block
+    elan3_initevent_main(ctx, srcEvent[index], quadricsQueue[rail].doneBlk, (E3_Event_Blk *)srcEventBlk); // global "done" block
 
     /* now prime the event so that it goes off */
 
     elan3_primeevent(ctx, srcEvent[index], 1);
 
-    if (usethreads())
+    if ( usethreads() )
         quadricsState.quadricsLock.unlock();
 
     /* initialize the quadricsCtlHdr_t with info that we have */
@@ -813,72 +748,71 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         quadricsHdrs.free(srcEnvelope);
         srcEnvelope = 0;
     }
+
     // overwrite fragEnvelope->commonHdr values
-    fragEnvelope->commonHdr.ctlMsgType = (unsigned short) cmType;
+    fragEnvelope->commonHdr.ctlMsgType = (unsigned short)cmType;
     fragEnvelope->commonHdr.checksum = 0;
 
     /* sender side control message types */
 
     switch (cmType) {
     case MESSAGE_DATA:
-        {
-            quadricsDataHdr_t *p = &(fragEnvelope->msgDataHdr);
-            if (parentSendDesc->sendType == ULM_SEND_SYNCHRONOUS) {
-                p->ctxAndMsgType =
-                    GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                             MSGTYPE_PT2PT_SYNC);
-            } else {
-                p->ctxAndMsgType =
-                    GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                             MSGTYPE_PT2PT);
-            }
-            p->tag_m = parentSendDesc->posted_m.UserTag_m;
-            p->senderID = myproc();
-            p->destID = globalDestID;
-            p->msgLength = parentSendDesc->posted_m.length_m;
-            p->frag_seq = frag_seq;
-            p->isendSeq_m = parentSendDesc->isendSeq_m;
-            p->sendFragDescPtr.ptr = this;
-            p->dataSeqOffset = sequential_offset;
-            p->dataLength = fragLength;
-            // we send E3_Addr 32-bit addresses
-            p->dataElanAddr = (ulm_uint32_t) destAddr;
+    {
+        quadricsDataHdr_t *p = &(fragEnvelope->msgDataHdr);
+        if (parentSendDesc->sendType == ULM_SEND_SYNCHRONOUS) {
+            p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
+                                                        MSGTYPE_PT2PT_SYNC);
         }
-        break;
+        else {
+            p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
+                                                        MSGTYPE_PT2PT);
+        }
+        p->tag_m = parentSendDesc->posted_m.tag_m;
+        p->senderID = myproc();
+        p->destID = globalDestID;
+        p->msgLength = parentSendDesc->posted_m.length_m;
+        p->frag_seq = frag_seq;
+        p->isendSeq_m = parentSendDesc->isendSeq_m;
+        p->sendFragDescPtr.ptr = this;
+        p->dataSeqOffset = sequential_offset;
+        p->dataLength = fragLength;
+        // we send E3_Addr 32-bit addresses
+        p->dataElanAddr = (ulm_uint32_t)destAddr;
+    }
+    break;
     case MESSAGE_DATA_ACK:
-        {
-            quadricsDataAck_t *p = &(fragEnvelope->msgDataAck);
-            p->senderID = myproc();
-            p->destID = globalDestID;
-        }
-        break;
+    {
+        quadricsDataAck_t *p = &(fragEnvelope->msgDataAck);
+        p->senderID = myproc();
+        p->destID = globalDestID;
+    }
+    break;
     case MEMORY_RELEASE:
-        {
-            quadricsMemRls_t *p = &(fragEnvelope->memRelease);
-            p->senderID = myproc();
-            p->destID = globalDestID;
-        }
-        break;
+    {
+        quadricsMemRls_t *p = &(fragEnvelope->memRelease);
+        p->senderID = myproc();
+        p->destID = globalDestID;
+    }
+    break;
     case MEMORY_REQUEST:
-        {
-            quadricsMemReq_t *p = &(fragEnvelope->memRequest);
-            p->msgLength = parentSendDesc->posted_m.length_m;
-            p->sendMessagePtr.ptr = parentSendDesc;
-            p->tag_m = parentSendDesc->posted_m.UserTag_m;
-            p->senderID = myproc();
-            p->destID = globalDestID;
-            p->ctxAndMsgType =
-                GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                         MSGTYPE_PT2PT);
-        }
-        break;
+    {
+        quadricsMemReq_t *p = &(fragEnvelope->memRequest);
+        p->msgLength = parentSendDesc->posted_m.length_m;
+        p->sendMessagePtr.ptr = parentSendDesc;
+        p->tag_m = parentSendDesc->posted_m.tag_m;
+        p->senderID = myproc();
+        p->destID = globalDestID;
+        p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
+                                                    MSGTYPE_PT2PT);
+    }
+    break;
     case MEMORY_REQUEST_ACK:
-        {
-            quadricsMemReqAck_t *p = &(fragEnvelope->memRequestAck);
-            p->senderID = myproc();
-            p->destID = globalDestID;
-        }
-        break;
+    {
+        quadricsMemReqAck_t *p = &(fragEnvelope->memRequestAck);
+        p->senderID = myproc();
+        p->destID = globalDestID;
+    }
+    break;
     }
 
     /* copy any data and checksum control message header if this is a data frag */
@@ -889,36 +823,37 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
                 /* non-contiguous data - checksum free */
                 fragEnvelope->msgDataHdr.dataChecksum =
                     packBuffer(fragEnvelope->msgDataHdr.data);
-            } else {
+            }
+            else {
                 if (usecrc()) {
                     /* copy contiguous data into fragEnvelope - CRC relatively expensive */
-                    fragEnvelope->msgDataHdr.dataChecksum =
-                        bcopy_uicrc((srcAddr + sequential_offset),
-                                    fragEnvelope->msgDataHdr.data,
-                                    fragLength, fragLength);
-                } else {
+                    fragEnvelope->msgDataHdr.dataChecksum = bcopy_uicrc((srcAddr + sequential_offset),
+                                                                        fragEnvelope->msgDataHdr.data, fragLength, fragLength);
+                }
+                else {
                     /* copy contiguous data into fragEnvelope - checksum almost free */
-                    fragEnvelope->msgDataHdr.dataChecksum =
-                        bcopy_uicsum((srcAddr + sequential_offset),
-                                     fragEnvelope->msgDataHdr.data,
-                                     fragLength, fragLength);
+                    fragEnvelope->msgDataHdr.dataChecksum = bcopy_uicsum((srcAddr + sequential_offset),
+                                                                         fragEnvelope->msgDataHdr.data, fragLength, fragLength);
                 }
             }
-        } else {
+        }
+        else {
             if (usePackBuffer) {
                 /* contiguous data in non-elan addressable memory or non-contiguous data
                  * - checksum almost free */
                 fragEnvelope->msgDataHdr.dataChecksum =
                     packBuffer(packedData);
-            } else if (quadricsDoChecksum) {
+            }
+            else if (quadricsDoChecksum) {
                 if (usecrc()) {
                     /* calculate CRC for contiguous data which is already Elan addressable */
-                    fragEnvelope->msgDataHdr.dataChecksum =
-                        uicrc((srcAddr + sequential_offset), fragLength);
-                } else {
+                    fragEnvelope->msgDataHdr.dataChecksum = uicrc((srcAddr + sequential_offset),
+                                                                  fragLength);
+                }
+                else {
                     /* checksum contiguous data which is already Elan addressable */
-                    fragEnvelope->msgDataHdr.dataChecksum =
-                        uicsum((srcAddr + sequential_offset), fragLength);
+                    fragEnvelope->msgDataHdr.dataChecksum = uicsum((srcAddr + sequential_offset),
+                                                                   fragLength);
                 }
             }
         }
@@ -929,25 +864,22 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         fragEnvelope->commonHdr.checksum = csumCtlHdr();
 
     /* copy the QDMA payload to SDRAM for performance, if allocated successfully */
-    if (elanEnvelope != (sdramaddr_t) NULL) {
-        if (usethreads())
+    if (elanEnvelope != (sdramaddr_t)NULL) {
+        if ( usethreads() )
             quadricsState.quadricsLock.lock();
 
-        elan3_blkcopy64_to_sdram(ctx->sdram, fragEnvelope, elanEnvelope,
-                                 sizeof(quadricsCtlHdr_t));
-        if (usethreads())
+        elan3_blkcopy64_to_sdram(ctx->sdram, fragEnvelope, elanEnvelope, sizeof(quadricsCtlHdr_t));
+        if ( usethreads() )
             quadricsState.quadricsLock.unlock();
-
     }
 
     /* chain this QDMA descriptor off of the event at chainedIndex, if valid index */
     if (chainedIndex >= 0) {
-        if (usethreads())
+        if ( usethreads() )
             quadricsState.quadricsLock.lock();
 
-        elan3_waitdmaevent(ctx, elanDMADesc[index],
-                           srcEvent[chainedIndex]);
-        if (usethreads())
+        elan3_waitdmaevent(ctx, elanDMADesc[index], srcEvent[chainedIndex]);
+        if ( usethreads() )
             quadricsState.quadricsLock.unlock();
     }
 
@@ -964,29 +896,24 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
     if (elanbug) {
         unsigned long mask = (ctx->pageSize - 1);
         if (usePackBuffer) {
-            toEndOfPageBytes =
-                ctx->pageSize - (((unsigned long) packedData) & mask);
-        } else {
-            toEndOfPageBytes =
-                ctx->pageSize -
-                (((unsigned long) srcAddr + sequential_offset) & mask);
+            toEndOfPageBytes = ctx->pageSize - (((unsigned long)packedData) & mask);
+        }
+        else {
+            toEndOfPageBytes = ctx->pageSize - (((unsigned long)srcAddr + sequential_offset) & mask);
         }
     }
 
     /* initialize the first DMA descriptor */
-    if (usethreads())
+    if ( usethreads() )
         quadricsState.quadricsLock.lock();
 
     d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
-    d->dma_dest = (E3_Addr) destAddr;
-    d->dma_destEvent = (E3_Addr) 0;
+    d->dma_dest = (E3_Addr)destAddr;
+    d->dma_destEvent = (E3_Addr)0;
     d->dma_size = (elanbug) ? toEndOfPageBytes : fragLength;
-    d->dma_source =
-        elan3_main2elan(ctx,
-                        (usePackBuffer) ? packedData : (srcAddr +
-                                                        sequential_offset));
+    d->dma_source = elan3_main2elan(ctx, (usePackBuffer) ? packedData : (srcAddr + sequential_offset));
     d->dma_srcEvent = elanSrcEvent[index];
-    d->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID);        // Quadrics VPIDs
+    d->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID); // Quadrics VPIDs
     d->dma_destCookieProc.cookie_vproc = globalDestID;
 
     elan3_copy32_to_sdram(ctx->sdram, d, elanDMADesc[index]);
@@ -999,20 +926,13 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
         /* initialize the second DMA descriptor */
         d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
 
-        d->dma_dest =
-            (E3_Addr) ((unsigned char *) destAddr + toEndOfPageBytes);
-        d->dma_destEvent = (E3_Addr) 0;
+        d->dma_dest = (E3_Addr)((unsigned char *)destAddr + toEndOfPageBytes);
+        d->dma_destEvent = (E3_Addr)0;
         d->dma_size = fragLength - toEndOfPageBytes;
-        d->dma_source =
-            elan3_main2elan(ctx,
-                            (usePackBuffer) ? (packedData +
-                                               toEndOfPageBytes) : (srcAddr
-                                                                    +
-                                                                    sequential_offset
-                                                                    +
-                                                                    toEndOfPageBytes));
+        d->dma_source = elan3_main2elan(ctx, (usePackBuffer) ? (packedData + toEndOfPageBytes) :
+                                        (srcAddr + sequential_offset + toEndOfPageBytes));
         d->dma_srcEvent = elanSrcEvent[index + 1];
-        d->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID);    // Quadrics VPIDs
+        d->dma_srcCookieProc.cookie_vproc = elan3_local_cookie(ctx, myproc(), globalDestID); // Quadrics VPIDs
         d->dma_destCookieProc.cookie_vproc = globalDestID;
 
         elan3_copy32_to_sdram(ctx->sdram, d, elanDMADesc[index + 1]);
@@ -1025,9 +945,8 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
 
         elan3_waitdmaevent(ctx, elanDMADesc[index + 1], srcEvent[index]);
     }
-    if (usethreads())
+    if ( usethreads() )
         quadricsState.quadricsLock.unlock();
-
 
     return;
 }
@@ -1038,20 +957,20 @@ inline unsigned int quadricsSendFragDesc::packBuffer(void *dest)
     if (tmap_index < 0) {
         if (quadricsDoChecksum) {
             if (usecrc()) {
-                return bcopy_uicrc((srcAddr + sequential_offset), dest,
-                                   fragLength, fragLength);
-            } else {
-                return bcopy_uicsum((srcAddr + sequential_offset), dest,
-                                    fragLength, fragLength);
+                return bcopy_uicrc((srcAddr + sequential_offset), dest, fragLength, fragLength);
             }
-        } else {
+            else {
+                return bcopy_uicsum((srcAddr + sequential_offset), dest, fragLength, fragLength);
+            }
+        }
+        else {
             MEMCOPY_FUNC((srcAddr + sequential_offset), dest, fragLength);
             return 0;
         }
     }
 
     /* non-contiguous data */
-    unsigned char *src_addr, *dest_addr = (unsigned char *) dest;
+    unsigned char *src_addr, *dest_addr = (unsigned char *)dest;
     size_t len_to_copy, len_copied;
     ULMType_t *dtype = parentSendDesc->datatype;
     ULMTypeMapElt_t *tmap = dtype->type_map;
@@ -1064,25 +983,22 @@ inline unsigned int quadricsSendFragDesc::packBuffer(void *dest)
 
 
     // handle first typemap pair
-    src_addr =
-        start_addr + tmap[tm_init].offset - init_cnt * dtype->packed_size -
-        tmap[tm_init].seq_offset + sequential_offset;
-    len_to_copy =
-        tmap[tm_init].size + init_cnt * dtype->packed_size +
-        tmap[tm_init].seq_offset - sequential_offset;
+    src_addr = start_addr
+        + tmap[tm_init].offset
+        - init_cnt * dtype->packed_size - tmap[tm_init].seq_offset + sequential_offset;
+    len_to_copy = tmap[tm_init].size
+        + init_cnt * dtype->packed_size + tmap[tm_init].seq_offset - sequential_offset;
     len_to_copy = (len_to_copy > fragLength) ? fragLength : len_to_copy;
 
     if (quadricsDoChecksum) {
         if (usecrc()) {
-            csum =
-                bcopy_uicrc(src_addr, dest_addr, len_to_copy, len_to_copy,
-                            CRC_INITIAL_REGISTER);
-        } else {
-            csum =
-                bcopy_uicsum(src_addr, dest_addr, len_to_copy, len_to_copy,
-                             &ui1, &ui2);
+            csum = bcopy_uicrc(src_addr, dest_addr, len_to_copy, len_to_copy, CRC_INITIAL_REGISTER);
         }
-    } else {
+        else {
+            csum = bcopy_uicsum(src_addr, dest_addr, len_to_copy, len_to_copy, &ui1, &ui2);
+        }
+    }
+    else {
         MEMCOPY_FUNC(src_addr, dest_addr, len_to_copy);
     }
     len_copied = len_to_copy;
@@ -1091,25 +1007,22 @@ inline unsigned int quadricsSendFragDesc::packBuffer(void *dest)
     for (dtype_cnt = init_cnt; dtype_cnt < tot_cnt; dtype_cnt++) {
         for (ti = tm_init; ti < dtype->num_pairs; ti++) {
             src_addr = start_addr + tmap[ti].offset;
-            dest_addr = (unsigned char *) dest + len_copied;
-            len_to_copy =
-                (fragLength - len_copied >=
-                 tmap[ti].size) ? tmap[ti].size : fragLength - len_copied;
+            dest_addr = (unsigned char *)dest + len_copied;
+            len_to_copy = (fragLength - len_copied >= tmap[ti].size) ?
+                tmap[ti].size : fragLength - len_copied;
             if (len_to_copy == 0) {
                 return csum;
             }
 
             if (quadricsDoChecksum) {
                 if (usecrc()) {
-                    csum =
-                        bcopy_uicrc(src_addr, dest_addr, len_to_copy,
-                                    len_to_copy, csum);
-                } else {
-                    csum +=
-                        bcopy_uicsum(src_addr, dest_addr, len_to_copy,
-                                     len_to_copy, &ui1, &ui2);
+                    csum = bcopy_uicrc(src_addr, dest_addr, len_to_copy, len_to_copy, csum);
                 }
-            } else {
+                else {
+                    csum += bcopy_uicsum(src_addr, dest_addr, len_to_copy, len_to_copy, &ui1, &ui2);
+                }
+            }
+            else {
                 MEMCOPY_FUNC(src_addr, dest_addr, len_to_copy);
             }
             len_copied += len_to_copy;

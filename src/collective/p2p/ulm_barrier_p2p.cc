@@ -46,8 +46,8 @@
  */
 extern "C" int ulm_barrier_p2p(int comm)
 {
-    ULMRequestHandle_t r_req;
-    ULMRequestHandle_t s_req;
+    ULMRequest_t r_req;
+    ULMRequest_t s_req;
     ULMStatus_t status;
     int mask;
     int n;

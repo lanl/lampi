@@ -158,7 +158,7 @@ public:
     bool checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd);
 #endif
 
-    void handlePt2PtMessageAck(double timeNow, BaseSendDesc_t *bsd,
+    void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
                                quadricsSendFragDesc *sfd);
 
     // process the received data as...

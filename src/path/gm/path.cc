@@ -57,7 +57,7 @@ inline bool gmPath::canReach(int globalDestProcessID)
 
 int maxOutstandingGmFrags = 5;
 
-bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
+bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     Group *group;
     gmSendFragDesc *sfd;
@@ -76,7 +76,7 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     *errorCode = ULM_SUCCESS;
 
     group = communicators[message->ctx_m]->remoteGroup;
-    globalDestProc = group->mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
+    globalDestProc = group->mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
 
     // always allocate and try to send the first frag
 
@@ -379,7 +379,7 @@ void gmPath::callback(struct gm_port *port,
                       enum gm_status status)
 {
     gmSendFragDesc *sfd = (gmSendFragDesc *) context;
-    BaseSendDesc_t *bsd = (BaseSendDesc_t *) sfd->parentSendDesc_m;
+    SendDesc_t *bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
     // reclaim send token
     if (port) {

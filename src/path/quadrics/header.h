@@ -135,7 +135,7 @@ struct quadricsMemReq {
     struct quadricsCommon common;
     ulm_int32_t tag_m;			//!< user tag value for this message
     ulm_uint64_t msgLength;		//!< message length in bytes
-    ulm_ptr_t sendMessagePtr;		//!< a pointer to this message's BaseSendDesc_t (valid for sender only)
+    ulm_ptr_t sendMessagePtr;		//!< a pointer to this message's SendDesc_t (valid for sender only)
     ulm_uint64_t memNeededSeqOffset;	//!< sequential offset in bytes of msg. where memory is needed
     ulm_uint64_t memNeededBytes;	//!< number of bytes of memory buffer needed
     ulm_uint32_t senderID;		//!< global process id of the request sender
@@ -163,7 +163,7 @@ struct quadricsMemReqAck {
     ulm_uint32_t destID;		//!< global process id of request ACK receiver
     ulm_uint32_t padding;	
     ulm_uint64_t memNeededSeqOffset;	//!< echoed value of sequential offset of needed memory
-    ulm_ptr_t sendMessagePtr;	        //!< a pointer to this message's BaseSendDesc_t (valid for receiver only)
+    ulm_ptr_t sendMessagePtr;	        //!< a pointer to this message's SendDesc_t (valid for receiver only)
     union {
         ulm_uint32_t wordPtrs[MEMREQ_MAX_WORDPTRS];
         /*

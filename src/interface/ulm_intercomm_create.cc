@@ -49,7 +49,7 @@ extern "C" int ulm_intercomm_create(int localComm, int localLeader,
     int *remoteGroupList = 0, errorCode,interCommContextID=-1;
     int iAmLocalLeader;
     bool inBothGroups;
-    ULMRequestHandle_t recvRequest, sendRequest;
+    ULMRequest_t recvRequest, sendRequest;
     ULMStatus_t sendStatus,recvStatus;
     int localGlobalRank,remoteGlobalRank,generatingComm;
 

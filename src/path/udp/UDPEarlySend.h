@@ -38,7 +38,7 @@
 
 #include "queue/globals.h"	        // needed for local_myproc()
 #include "util/DblLinkList.h"	// needed for DoubleLinkList
-#include "path/common/BaseDesc.h"	// needed for BaseSendDesc_t
+#include "path/common/BaseDesc.h"	// needed for SendDesc_t
 #include "path/udp/state.h"
 #include "path/udp/header.h"
 

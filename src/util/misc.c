@@ -107,7 +107,7 @@ char *uint_to_bit_string(unsigned int num, int pad)
 
     bstr = malloc(sizeof(char) * 8 * sizeof(unsigned int) + 1);
     idx = 1 << (8 * sizeof(unsigned int) - 1);
-    /*  skip leading 0s */
+    //   skip leading 0s
     while (!(idx & num) && idx)
         idx = idx >> 1;
 

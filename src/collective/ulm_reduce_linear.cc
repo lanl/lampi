@@ -81,7 +81,7 @@ extern "C" int ulm_reduce_linear(const void *s_buf,
     };
 
     ULMFunc_t *func;
-    ULMRequestHandle_t req;
+    ULMRequest_t req;
     ULMStatus_t status;
     int nproc;
     int rc;

@@ -36,8 +36,8 @@ int	test_dping(state_t *state)
 	int rep;
 	int tag = 0xDD << 16;
 	double t, t0, t1;
-	ULMRequestHandle_t req_send;
-	ULMRequestHandle_t req_recv;
+	ULMRequest_t req_send;
+	ULMRequest_t req_recv;
 	ULMStatus_t status;
 	char s[256];
 	unsigned char *buf1, *buf2, *bufo, *bufi;

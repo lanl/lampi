@@ -48,7 +48,7 @@ extern "C" int ulm_invalid_comm(int comm)
 }
 
 
-extern "C" int ulm_invalid_request(ULMRequestHandle_t *request)
+extern "C" int ulm_invalid_request(ULMRequest_t *request)
 {
     RequestDesc_t *r = (RequestDesc_t *) (*request);
 
@@ -86,7 +86,7 @@ extern "C" int ulm_invalid_destination(int comm, int rank)
     }
 }
 
-extern "C" int ulm_presistant_request(ULMRequestHandle_t *request)
+extern "C" int ulm_presistant_request(ULMRequest_t *request)
 {
     RequestDesc_t *r = (RequestDesc_t *) (*request);
 

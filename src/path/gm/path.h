@@ -56,10 +56,10 @@ class gmPath : public BasePath_t {
     ~gmPath() {}
 
     bool canReach(int globalDestProcessID);
-    bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode);
+    bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
     bool receive(double timeNow, int *errorCode, recvType recvTypeArg);
 
-    bool init(BaseSendDesc_t *message)
+    bool init(SendDesc_t *message)
         {
             int nfrags;
 

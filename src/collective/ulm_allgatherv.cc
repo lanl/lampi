@@ -291,7 +291,7 @@ int exchangeStripeOfData(Communicator *commPtr, void *SharedBuffer,
 {
     int returnValue = ULM_SUCCESS;
     int myHostRank = commPtr->localGroup->hostIndexInGroup;
-    ULMRequestHandle_t sendRequest, recvRequest;
+    ULMRequest_t sendRequest, recvRequest;
     ULMStatus_t sendStatus, recvStatus;
     size_t lastSendRecv = 0;
     int destHost, destRank, srcHost, srcRank;

@@ -76,22 +76,22 @@ int Communicator::iprobe(int sourceProc, int tag,
                     privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
 
                 for (SMPFragDesc_t *
-                         RecDesc = (SMPFragDesc_t *) privateQueues.
-                         OkToMatchSMPFrags[SrcIndex]->begin();
-                     RecDesc != (SMPFragDesc_t *) privateQueues.
-                         OkToMatchSMPFrags[SrcIndex]->end();
-                     RecDesc = (SMPFragDesc_t *) RecDesc->next) {
+                     rfd = (SMPFragDesc_t *) privateQueues.
+                     OkToMatchSMPFrags[SrcIndex]->begin();
+                     rfd != (SMPFragDesc_t *) privateQueues.
+                     OkToMatchSMPFrags[SrcIndex]->end();
+                     rfd = (SMPFragDesc_t *) rfd->next) {
                     // do not match on a negative tag for a ULM_ANY_TAG probe
-                    if (RecDesc->tag_m < 0) {
+                    if (rfd->tag_m < 0) {
                         continue;
                     }
                     //
                     // Any message will do
                     //
                     *found = 1;
-                    status->proc.source = SrcIndex;
-                    status->tag = RecDesc->tag_m;
-                    status->matchedSize = RecDesc->msgLength_m;
+                    status->peer_m = SrcIndex;
+                    status->tag_m = rfd->tag_m;
+                    status->length_m = rfd->msgLength_m;
 
                     //
                     // And get out of here.
@@ -121,24 +121,24 @@ int Communicator::iprobe(int sourceProc, int tag,
                 privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
 
                 for (BaseRecvFragDesc_t *
-                         RecDesc =
-                         (BaseRecvFragDesc_t *) privateQueues.
-                         OkToMatchRecvFrags[SrcIndex]->begin();
-                     RecDesc !=
-                         (BaseRecvFragDesc_t *) privateQueues.
-                         OkToMatchRecvFrags[SrcIndex]->end();
-                     RecDesc = (BaseRecvFragDesc_t *) RecDesc->next) {
+                     rfd =
+                     (BaseRecvFragDesc_t *) privateQueues.
+                     OkToMatchRecvFrags[SrcIndex]->begin();
+                     rfd !=
+                     (BaseRecvFragDesc_t *) privateQueues.
+                     OkToMatchRecvFrags[SrcIndex]->end();
+                     rfd = (BaseRecvFragDesc_t *) rfd->next) {
                     // do not match on a negative tag for a ULM_ANY_TAG probe
-                    if (RecDesc->tag_m < 0) {
+                    if (rfd->tag_m < 0) {
                         continue;
                     }
                     //
                     // Any message will do
                     //
                     *found = 1;
-                    status->proc.source = SrcIndex;
-                    status->tag = RecDesc->tag_m;
-                    status->matchedSize = RecDesc->msgLength_m;
+                    status->peer_m = SrcIndex;
+                    status->tag_m = rfd->tag_m;
+                    status->length_m = rfd->msgLength_m;
 
                     //
                     // And get out of here.
@@ -181,18 +181,18 @@ int Communicator::iprobe(int sourceProc, int tag,
                     privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
 
                 for (SMPFragDesc_t *
-                         RecDesc = (SMPFragDesc_t *) privateQueues.
-                         OkToMatchSMPFrags[SrcIndex]->begin();
-                     RecDesc != (SMPFragDesc_t *) privateQueues.
-                         OkToMatchSMPFrags[SrcIndex]->end();
-                     RecDesc = (SMPFragDesc_t *) RecDesc->next) {
+                     rfd = (SMPFragDesc_t *) privateQueues.
+                     OkToMatchSMPFrags[SrcIndex]->begin();
+                     rfd != (SMPFragDesc_t *) privateQueues.
+                     OkToMatchSMPFrags[SrcIndex]->end();
+                     rfd = (SMPFragDesc_t *) rfd->next) {
                     // look for matching tag
-                    if (Tag == RecDesc->tag_m) {
+                    if (Tag == rfd->tag_m) {
                         *found = 1;
 
-                        status->proc.source = SrcIndex;
-                        status->tag = RecDesc->tag_m;
-                        status->matchedSize = RecDesc->msgLength_m;
+                        status->peer_m = SrcIndex;
+                        status->tag_m = rfd->tag_m;
+                        status->length_m = rfd->msgLength_m;
 
                         //
                         // And get out of here.
@@ -222,20 +222,20 @@ int Communicator::iprobe(int sourceProc, int tag,
                 privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
 
                 for (BaseRecvFragDesc_t *
-                         RecDesc =
-                         (BaseRecvFragDesc_t *) privateQueues.
-                         OkToMatchRecvFrags[SrcIndex]->begin();
-                     RecDesc !=
-                         (BaseRecvFragDesc_t *) privateQueues.
-                         OkToMatchRecvFrags[SrcIndex]->end();
-                     RecDesc = (BaseRecvFragDesc_t *) RecDesc->next) {
+                     rfd =
+                     (BaseRecvFragDesc_t *) privateQueues.
+                     OkToMatchRecvFrags[SrcIndex]->begin();
+                     rfd !=
+                     (BaseRecvFragDesc_t *) privateQueues.
+                     OkToMatchRecvFrags[SrcIndex]->end();
+                     rfd = (BaseRecvFragDesc_t *) rfd->next) {
                     // look for matching tag
-                    if (Tag == RecDesc->tag_m) {
+                    if (Tag == rfd->tag_m) {
                         *found = 1;
 
-                        status->proc.source = SrcIndex;
-                        status->tag = RecDesc->tag_m;
-                        status->matchedSize = RecDesc->msgLength_m;
+                        status->peer_m = SrcIndex;
+                        status->tag_m = rfd->tag_m;
+                        status->length_m = rfd->msgLength_m;
 
                         //
                         // And get out of here.
@@ -280,13 +280,13 @@ int Communicator::iprobe(int sourceProc, int tag,
                 privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
 
             for (SMPFragDesc_t *
-                     RecDesc = (SMPFragDesc_t *) privateQueues.
-                     OkToMatchSMPFrags[SrcIndex]->begin();
-                 RecDesc != (SMPFragDesc_t *) privateQueues.
-                     OkToMatchSMPFrags[SrcIndex]->end();
-                 RecDesc = (SMPFragDesc_t *) RecDesc->next) {
+                 rfd = (SMPFragDesc_t *) privateQueues.
+                 OkToMatchSMPFrags[SrcIndex]->begin();
+                 rfd != (SMPFragDesc_t *) privateQueues.
+                 OkToMatchSMPFrags[SrcIndex]->end();
+                 rfd = (SMPFragDesc_t *) rfd->next) {
                 // do not match on a negative tag for a ULM_ANY_TAG probe
-                if (RecDesc->tag_m < 0) {
+                if (rfd->tag_m < 0) {
                     continue;
                 }
                 //
@@ -294,9 +294,9 @@ int Communicator::iprobe(int sourceProc, int tag,
                 //
                 *found = 1;
 
-                status->proc.source = SrcIndex;
-                status->tag = RecDesc->tag_m;
-                status->matchedSize = RecDesc->msgLength_m;
+                status->peer_m = SrcIndex;
+                status->tag_m = rfd->tag_m;
+                status->length_m = rfd->msgLength_m;
 
                 //
                 // And get out of here.
@@ -313,15 +313,15 @@ int Communicator::iprobe(int sourceProc, int tag,
             privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
 
             for (BaseRecvFragDesc_t *
-                     RecDesc =
-                     (BaseRecvFragDesc_t *) privateQueues.
-                     OkToMatchRecvFrags[SrcIndex]->begin();
-                 RecDesc !=
-                     (BaseRecvFragDesc_t *) privateQueues.
-                     OkToMatchRecvFrags[SrcIndex]->end();
-                 RecDesc = (BaseRecvFragDesc_t *) RecDesc->next) {
+                 rfd =
+                 (BaseRecvFragDesc_t *) privateQueues.
+                 OkToMatchRecvFrags[SrcIndex]->begin();
+                 rfd !=
+                 (BaseRecvFragDesc_t *) privateQueues.
+                 OkToMatchRecvFrags[SrcIndex]->end();
+                 rfd = (BaseRecvFragDesc_t *) rfd->next) {
                 // do not match on a negative tag for a ULM_ANY_TAG probe
-                if (RecDesc->tag_m < 0) {
+                if (rfd->tag_m < 0) {
                     continue;
                 }
                 //
@@ -329,9 +329,9 @@ int Communicator::iprobe(int sourceProc, int tag,
                 //
                 *found = 1;
 
-                status->proc.source = SrcIndex;
-                status->tag = RecDesc->tag_m;
-                status->matchedSize = RecDesc->msgLength_m;
+                status->peer_m = SrcIndex;
+                status->tag_m = rfd->tag_m;
+                status->length_m = rfd->msgLength_m;
 
                 //
                 // And get out of here.
@@ -366,24 +366,24 @@ int Communicator::iprobe(int sourceProc, int tag,
                 privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
 
             for (SMPFragDesc_t *
-                     RecDesc = (SMPFragDesc_t *) privateQueues.
-                     OkToMatchSMPFrags[SrcIndex]->begin();
-                 RecDesc != (SMPFragDesc_t *) privateQueues.
-                     OkToMatchSMPFrags[SrcIndex]->end();
-                 RecDesc = (SMPFragDesc_t *) RecDesc->next) {
+                 rfd = (SMPFragDesc_t *) privateQueues.
+                 OkToMatchSMPFrags[SrcIndex]->begin();
+                 rfd != (SMPFragDesc_t *) privateQueues.
+                 OkToMatchSMPFrags[SrcIndex]->end();
+                 rfd = (SMPFragDesc_t *) rfd->next) {
                 //
                 // If the tags match, then we have a match, since we're looking
                 // through messages that all match the source.
                 //
-                if (tag == RecDesc->tag_m) {
+                if (tag == rfd->tag_m) {
                     //
                     //
                     // Record that we found one.
                     //
                     *found = 1;
-                    status->proc.source = SrcIndex;
-                    status->tag = RecDesc->tag_m;
-                    status->matchedSize = RecDesc->msgLength_m;
+                    status->peer_m = SrcIndex;
+                    status->tag_m = rfd->tag_m;
+                    status->length_m = rfd->msgLength_m;
 
                     //
                     // And get out of here.
@@ -402,26 +402,26 @@ int Communicator::iprobe(int sourceProc, int tag,
             privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
 
             for (BaseRecvFragDesc_t *
-                     RecDesc =
-                     (BaseRecvFragDesc_t *) privateQueues.
-                     OkToMatchRecvFrags[SrcIndex]->begin();
-                 RecDesc !=
-                     (BaseRecvFragDesc_t *) privateQueues.
-                     OkToMatchRecvFrags[SrcIndex]->end();
-                 RecDesc = (BaseRecvFragDesc_t *) RecDesc->next) {
+                 rfd =
+                 (BaseRecvFragDesc_t *) privateQueues.
+                 OkToMatchRecvFrags[SrcIndex]->begin();
+                 rfd !=
+                 (BaseRecvFragDesc_t *) privateQueues.
+                 OkToMatchRecvFrags[SrcIndex]->end();
+                 rfd = (BaseRecvFragDesc_t *) rfd->next) {
                 //
                 // If the tags match, then we have a match, since we're looking
                 // through messages that all match the source.
                 //
-                if (tag == RecDesc->tag_m) {
+                if (tag == rfd->tag_m) {
                     //
                     //
                     // Record that we found one.
                     //
                     *found = 1;
-                    status->proc.source = SrcIndex;
-                    status->tag = RecDesc->tag_m;
-                    status->matchedSize = RecDesc->msgLength_m;
+                    status->peer_m = SrcIndex;
+                    status->tag_m = rfd->tag_m;
+                    status->length_m = rfd->msgLength_m;
 
                     //
                     // And get out of here.
@@ -438,6 +438,7 @@ int Communicator::iprobe(int sourceProc, int tag,
 #endif                          // SHARED_MEMORY
     }                           // end specific tag and SourceProc
 
-    status->error = errorCode;
+    status->error_m = errorCode;
+
     return errorCode;
 }

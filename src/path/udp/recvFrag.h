@@ -109,7 +109,7 @@ public:
     bool isDuplicateCollectiveFrag();
     bool checkForDuplicateAndNonSpecificAck(udpSendFragDesc *Frag, udp_ack_header &ack);
 #endif
-    void handlePt2PtMessageAck(BaseSendDesc_t *sendDesc,
+    void handlePt2PtMessageAck(SendDesc_t *sendDesc,
                                udpSendFragDesc *Frag, udp_ack_header &ack);
 
     // function to copy data from library space to user space

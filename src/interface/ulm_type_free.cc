@@ -31,19 +31,46 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#include <stdlib.h>
-
 #include "internal/malloc.h"
-#include "internal/mpi.h"
+#include "ulm/ulm.h"
 
-#pragma weak MPI_Type_free = PMPI_Type_free
-int PMPI_Type_free(MPI_Datatype *mtype)
+/*!
+ * Free the resources associated with a type.  This does not do
+ * reference count manipulation, so don't use this unless you
+ * understand what you are doing; use the macros ulm_type_retain and
+ * ulm_type_release instead instead.
+ *
+ * \param type		Communicator ID
+ * \param errorCode	Exit code to pass to exit()
+ * \return		Function never returns
+ */
+extern "C" int ulm_type_free(ULMType_t *type)
 {
-    if (mtype) {
-        ULMType_t *type = *mtype;
-        ulm_type_release(type);
-        *mtype = MPI_DATATYPE_NULL;
+    if (type) {
+        // free the envelope's integer array
+        if ((type->envelope.nints > 0) && (type->envelope.iarray != NULL)) {
+            ulm_free(type->envelope.iarray);
+        }
+        // free the envelope's address array
+        if ((type->envelope.naddrs > 0) && (type->envelope.aarray != NULL)) {
+            ulm_free(type->envelope.aarray);
+        }
+
+        // free the envelope's datatype array after potentially
+        // freeing the referenced datatypes...
+        if ((type->envelope.ndatatypes > 0) && (type->envelope.darray != NULL)) {
+            for (int i = 0; i < type->envelope.ndatatypes; i++) {
+                ULMType_t *t = (ULMType_t *) type->envelope.darray[i];
+                // a little bit of recursion never hurt anyone...I hope...
+                ulm_type_release(t);
+            }
+            ulm_free(type->envelope.darray);
+        }
+        if (type->type_map) {
+            ulm_free(type->type_map);
+        }
+        ulm_free(type);
     }
 
-    return MPI_SUCCESS;
+    return ULM_SUCCESS;
 }

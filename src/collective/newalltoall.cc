@@ -41,7 +41,7 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 {
     int proc;
     int comm_size, rc;
-    ULMRequestHandle_t recvRequest, *sendRequest;
+    ULMRequest_t recvRequest, *sendRequest;
     ULMStatus_t status;
     unsigned char *buf_loc;
     int tag;
@@ -55,7 +55,7 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 	return MPI_ERR_INTERN;
     }
 
-    sendRequest = (ULMRequestHandle_t *)ulm_malloc(sizeof(ULMRequestHandle_t) * comm_size);
+    sendRequest = (ULMRequest_t *)ulm_malloc(sizeof(ULMRequest_t) * comm_size);
     if (!sendRequest) {
 	ulm_exit((-1, "ulm_alltoall: unable to allocate send request "
                   "array memory!\n"));

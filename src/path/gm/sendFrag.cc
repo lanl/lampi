@@ -35,7 +35,7 @@
 
 bool gmSendFragDesc::init(int globalDestProc,
                              int tmapIndex,
-                             BaseSendDesc_t *parentSendDesc,
+                             SendDesc_t *parentSendDesc,
                              size_t seqOffset,
                              size_t length,
                              BasePath_t *failedPath,
@@ -104,7 +104,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         }
 
         header->common.ctlMsgType = MESSAGE_DATA;
-        header->user_tag = parentSendDesc_m->posted_m.UserTag_m;
+        header->user_tag = parentSendDesc_m->posted_m.tag_m;
         header->senderID = myproc();
         header->destID = globalDestProc_m;
         header->dataLength = length_m;
@@ -124,7 +124,7 @@ bool gmSendFragDesc::init(int globalDestProc,
 
     if (tmapIndex_m < 0) {        // contiguous data
 
-        unsigned char *src = (unsigned char *) parentSendDesc_m->AppAddr + seqOffset_m;
+        unsigned char *src = (unsigned char *) parentSendDesc_m->addr_m + seqOffset_m;
 
         if (gmState.doChecksum) {
             if (usecrc()) {
@@ -147,7 +147,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         int tm_init = tmapIndex_m;
         int init_cnt = seqOffset_m / dtype->packed_size;
         int tot_cnt = parentSendDesc_m->posted_m.length_m / dtype->packed_size;
-        unsigned char *start_addr = (unsigned char *) parentSendDesc_m->AppAddr + init_cnt * dtype->extent;
+        unsigned char *start_addr = (unsigned char *) parentSendDesc_m->addr_m + init_cnt * dtype->extent;
         unsigned int csum = 0, ui1 = 0, ui2 = 0;
 
         // handle first typemap pair
