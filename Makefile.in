@@ -150,7 +150,7 @@ endif
 all: $(TARGET)
 
 clean:
-	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT)
+	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT) $(ROMIODIR)/Makefile
 
 distclean: clean
 	$(RM) $(TARGET) Makefile config.h config.log config.status
