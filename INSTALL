@@ -14,7 +14,7 @@ or, to build in a separate build directory
 
   mkdir builddir
   cd builddir
-  $PATH_TO_SRC_DIR/confiugre [OPTIONS]*
+  $PATH_TO_SRC_DIR/configure [OPTIONS]*
   make
   make install
 
