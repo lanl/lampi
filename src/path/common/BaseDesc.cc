@@ -602,15 +602,8 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
          * the process that sent the original message; otherwise,
          * just rely on sender side retransmission
          */
-        // reset WhichQueue flag
-        sfd->WhichQueue = sfd->parentSendDesc_m->path_m->fragSendQueue();
-        // move Frag from FragsToAck list to FragsToSend list
-        if ( whichQueue == sfd->parentSendDesc_m->path_m->toAckQueue() ) {
-            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
-            bsd->FragsToSend.Append((Links_t *)sfd);
-        }
         // move message to incomplete queue
-        if (bsd->NumSent == bsd->numfrags) {
+        if ( (bsd->FragsToAck.size() + (unsigned) bsd->NumSent) >= bsd->numfrags) {
             // sanity check, is frag really in UnackedPostedSends queue
             if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
                 ulm_exit((-1, "Error: :: Send descriptor not "
@@ -621,6 +614,15 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
             UnackedPostedSends.RemoveLink(bsd);
             IncompletePostedSends.Append(bsd);
         }
+
+        // reset WhichQueue flag
+        sfd->WhichQueue = sfd->parentSendDesc_m->path_m->fragSendQueue();
+        // move Frag from FragsToAck list to FragsToSend list
+        if ( whichQueue == sfd->parentSendDesc_m->path_m->toAckQueue() ) {
+            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
+            bsd->FragsToSend.Append((Links_t *)sfd);
+        }
+        
         // reset send desc. NumSent as though this frag has not been sent
         sfd->setSendDidComplete(false);
         (bsd->NumSent)--;

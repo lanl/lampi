@@ -200,7 +200,8 @@ public:
 	    }
 	    else
 		    nAcked = message->NumAcked;
-        if ( (nAcked >= message->numfrags) && (message->NumSent >= message->numfrags) ){
+        if ( (nAcked >= message->numfrags) && ((unsigned)message->NumSent >= message->numfrags) 
+             && (message->NumSent >= 0) ) {
             return true;
         }
         *errorCode = ULM_SUCCESS;
@@ -315,17 +316,25 @@ public:
     
     virtual void freeResources(SendDesc_t *message, BaseSendFragDesc_t *frag)
     {
+        /*
+         This should only be called from the resend() logic for the situation
+         where the msg was delivered, but the ACK was dropped.  So increment
+         the ack counter.
+         */
         message->clearToSend_m = true;
         (message->NumAcked)++;
         
         // This must be done before setting fragSeq_m and parentSendDesc_m to 0
-        frag->freeResources(dclock(), frag->parentSendDesc_m);
-
-        // set fragSeq_m value to 0/null/invalid to detect duplicate ACKs
-        frag->setFragSequence(0);
-        
-        // reset send descriptor pointer
-        frag->parentSendDesc_m = 0;
+        if ( frag->sendDidComplete() )
+        {
+            frag->freeResources(dclock(), frag->parentSendDesc_m);
+            
+            // set fragSeq_m value to 0/null/invalid to detect duplicate ACKs
+            frag->setFragSequence(0);
+            
+            // reset send descriptor pointer
+            frag->parentSendDesc_m = 0;            
+        }
     }
     
     

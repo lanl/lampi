@@ -174,7 +174,7 @@ public:
         return p->src_proc;
     }
     
-    bool ackStatus()
+    int ackStatus()
     {
         quadricsDataAck_t *p = &(envelope.msgDataAck);
         return p->ackStatus;

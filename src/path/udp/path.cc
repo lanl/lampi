@@ -405,7 +405,7 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	message->messageDone = REQUEST_COMPLETE;
     }
 
-    if (message->NumSent == message->numfrags)
+    if ((unsigned)message->NumSent == message->numfrags)
 	*incomplete = false;
 
     return true;

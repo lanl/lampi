@@ -76,9 +76,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p = (gmHeaderDataAck *) &(buf->header.dataAck);
 
     p->thisFragSeq = seq_m;
-
-
-
+        
     if ( OPT_RELIABILITY ) {
 
 	    Communicator *pg = communicators[ctx_m];
@@ -90,6 +88,11 @@ bool gmRecvFragDesc::AckData(double timeNow)
 		    return false;
     }
 
+    // start debug
+    if ( p->ackStatus == ACKSTATUS_DATACORRUPT )
+        ulm_warn(("proc %d: Recvd corrupt data!\n", myproc()));
+    // end debug
+        
     // fill in other fields of header
 
     p->type = MESSAGE_DATA_ACK;
@@ -202,9 +205,9 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
         return;
     }
 #endif
-    // revisit this when reliability is implemented!!!!
     handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
-    sfd->setDidReceiveAck(true);
+    if ( ACKSTATUS_DATAGOOD == p->ackStatus )
+        sfd->setDidReceiveAck(true);
 
     if (usethreads())
         bsd->Lock.unlock();
@@ -213,7 +216,6 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
 }
 
 // Initialize descriptor with data from fragment data header
-
 void gmRecvFragDesc::msgData(double timeNow)
 {
     gmHeaderData *p = &(gmHeader_m->data);
@@ -228,7 +230,8 @@ void gmRecvFragDesc::msgData(double timeNow)
     seq_m = p->frag_seq;
     seqOffset_m = p->dataSeqOffset;
     msgLength_m = p->msgLength;
-    fragIndex_m = seqOffset_m / gmState.bufSize;
+    fragIndex_m = seqOffset_m / gmState.bufSize;    
+                                                                        
     if (0) { // debug
         ulm_warn(("%d received frag from %d (length %ld)\n"
                   "%d\tgmFragBuffer_m %p gmHeader_m %p addr_m %p sizeof(gmHeader) %ld dev_m %d Dest %d\n"

@@ -134,7 +134,7 @@ public:
         return p->src_proc;
     }
     
-    bool ackStatus()
+    int ackStatus()
     {
         gmHeaderDataAck     *p = &(gmHeader_m->dataAck);
         return p->ackStatus;

@@ -161,7 +161,7 @@ public:
     unsigned numfrags;          // number of frags that will be sent
     volatile unsigned NumAcked; //  number of acks received
     volatile unsigned NumFragDescAllocated;     // number of frag descriptors allocated
-    volatile unsigned NumSent;  // the number that have had the 'action' applied
+    volatile int NumSent;       // the number that have had the 'action' applied
     int maxOutstandingFrags;    // maximum outstanding frags - for flow control
     Status_t posted_m;
 
@@ -506,7 +506,7 @@ public:
     
 #endif      /* ENABLE_RELIABILITY */
 
-    virtual bool ackStatus() {return ACKSTATUS_DATAGOOD;}
+    virtual int ackStatus() {return ACKSTATUS_DATAGOOD;}
 
     virtual void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
                                        BaseSendFragDesc_t *sfd);

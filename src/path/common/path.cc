@@ -141,9 +141,18 @@ bool BasePath_t::resend(SendDesc_t *message, int *errorCode)
                 TmpDesc = (BaseSendFragDesc_t *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
                 message->FragsToSend.AppendNoLock(FragDesc);
                 FragDesc->setSendDidComplete(false);
-                (message->NumSent)--;
+                (message->NumSent)--;                    
                 FragDesc = TmpDesc;
                 continue;
+            }
+            else
+            {
+                double timeToResend = FragDesc->timeSent_m + (RETRANS_TIME * max_multiple);
+                if (message->earliestTimeToResend == -1) {
+                    message->earliestTimeToResend = timeToResend;
+                } else if (timeToResend < message->earliestTimeToResend) {
+                    message->earliestTimeToResend = timeToResend;
+                } 
             }
         }
         

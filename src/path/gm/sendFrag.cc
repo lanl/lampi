@@ -262,7 +262,7 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
     // clear fields that will be initialized in init()
     currentSrcAddr_m = NULL;
     initialized_m = false;
-
+    
     // return frag descriptor to free list
     if (usethreads()) {
         gmState.sendFragList.returnElement(this, 0);

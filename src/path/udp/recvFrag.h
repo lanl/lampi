@@ -131,7 +131,7 @@ public:
         return p->src_proc;
     }
     
-    bool ackStatus()
+    int ackStatus()
     {
         udp_ack_header     *p = &(header.ack);
         return p->ackStatus;

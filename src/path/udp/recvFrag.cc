@@ -370,6 +370,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
                   "UDP datagram not sent to me %d, destination %d\n",
                   myproc(), dest_proc));
     }
+    
     //
     // push this frag onto the correct list
     //
@@ -379,7 +380,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
         srcProcID_m = communicators[ctx_m]->
             remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m]; 
 
-	communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this);    
+        communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this);    
     } else {
 	ulm_exit((-1,
                   "UDP datagram with invalid message type %d\n",
@@ -441,18 +442,20 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	 * the process that sent the original message; otherwise,
 	 * just rely on sender side retransmission
 	 */
-	ulm_warn(("Warning: Copy Error upon receipt.  Will retransmit. myproc() %d src_proc %d \n",myproc(),(ulm_int32_t)(Frag->header.src_proc)));
+	ulm_warn(("Warning: Copy Error upon receipt.  Will retransmit. "
+              "myproc() %d src_proc %d pid %d\n",myproc(),(ulm_int32_t)(Frag->header.src_proc),
+              getpid()));
 
 	// save and then reset WhichQueue flag
 	short whichQueue = Frag->WhichQueue;
-	Frag->WhichQueue = UDPFRAGSTOSEND;
 	// move Frag from FragsToAck list to FragsToSend list
 	if (whichQueue == UDPFRAGSTOACK) {
+        Frag->WhichQueue = UDPFRAGSTOSEND;
 	    sendDesc->FragsToAck.RemoveLink((Links_t *) Frag);
 	    sendDesc->FragsToSend.Append((Links_t *) Frag);
 	}
 	// move message to incomplete queue
-	if (sendDesc->NumSent == sendDesc->numfrags) {
+	if ((unsigned)sendDesc->NumSent == sendDesc->numfrags) {
 	    // sanity check, is frag really in UnackedPostedSends queue
 	    if (sendDesc->WhichQueue != UNACKEDISENDQUEUE) {
 		ulm_exit((-1, "Error: :: Send descriptor not in "
