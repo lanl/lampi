@@ -892,8 +892,13 @@ void lampi_init_fork(lampiState_t *s)
     s->iAmDaemon = 0;
     totalLocalProcs += (s->useDaemon) ? 1 : 0;
 
-    if (s->useDaemon)
-        atexit(wait_for_children);
+    if (s->useDaemon) {
+        if (atexit(wait_for_children) < 0) {
+            perror("atexit");
+            s->error = ERROR_LAMPI_INIT_AT_FORK;
+            return;
+        }
+    }
 
     s->local_pids =
         (volatile pid_t *) SharedMemoryPools.

@@ -73,6 +73,8 @@
 #include "internal/state.h"
 #include "queue/globals.h"
 
+static void sigchld_handler(int signo);
+
 /*
  * Structure describing a child process
  */
@@ -118,31 +120,31 @@ void daemon_wait_for_children(void)
     bool keepGoing;
     
     do {
+        sigchld_handler(0);
         keepGoing = false;
         for (p = child_list; p; p = p->next) {
-            if ((p->pid != -1) && (p->exited != 1))
+            if ((p->pid != -1) && (p->exited != 1)) {
                 keepGoing = true;
+            }
         }
     } while (keepGoing && (lampiState.AbnormalExit->flag == 0));
-
-    return;
 }
 
 /*
- * Exit handler (see atexit()) to wait around for children to 
- * exit
+ * Exit handler (see atexit()) to wait around for children to exit
  */
 void wait_for_children(void)
 {
     struct child_process *p;
     bool keepGoing;
-    
+
     if (!lampiState.useDaemon || 
         (lampiState.useDaemon && lampiState.iAmDaemon)) {
         return;
     }
 
     do {
+        sigchld_handler(0);
         keepGoing = false;
         for (p = child_list; p; p = p->next) {
             if ((p->pid != -1) && (p->exited != 1))
@@ -152,8 +154,6 @@ void wait_for_children(void)
          * seen abnormal exit yet...
          */
     } while (keepGoing && (lampiState.AbnormalExit->flag < 2));
-
-    return;
 }
 
 /*
