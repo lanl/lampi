@@ -41,8 +41,17 @@ MODULES_OS	+= os/DARWIN/powerpc
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
 CPPFLAGS	+= -DUDP
+
+#GM support
 ifdef USE_GM
+#
+# the default location is /opt/gm 
+#
+GM_PREFIX	:= /opt/gm
 CPPFLAGS	+= -DGM
+CPPFLAGS	+= -I$(GM_PREFIX)/include
+LDFLAGS_LIBMPI	+= -L$(GM_PREFIX)/lib
+LDLIBS_LIBMPI	+= -lgm
 endif
 
 # LSF support

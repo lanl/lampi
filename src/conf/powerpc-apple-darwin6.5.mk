@@ -50,8 +50,8 @@ ifdef USE_GM
 GM_PREFIX	:= /opt/gm
 CPPFLAGS	+= -DGM
 CPPFLAGS	+= -I$(GM_PREFIX)/include
-LDFLAGS		+= -L $(GM_PREFIX)/lib
-LDLIBS		+= -lgm
+LDFLAGS_LIBMPI	+= -L$(GM_PREFIX)/lib
+LDLIBS_LIBMPI	+= -lgm
 endif
 
 # LSF support
