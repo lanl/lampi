@@ -75,7 +75,8 @@ int SpawnRsh(unsigned int *AuthData,
     char **ExecArgs;
     int NHostsStarted = 0;
 
-    /* compute size of execvp argv[] , and max space needed to store the strings */
+    /* compute size of execvp argv[] , and max space needed to store
+     * the strings */
     MaxSize = 0;
     /* app args */
     LenList = argc;
@@ -100,10 +101,9 @@ int SpawnRsh(unsigned int *AuthData,
         MaxSize = len;
 
     /* csh/tcsh */
-    LenList += (6 * 3);  /* 6 env vars and 3 items per var. */
+    LenList += (6 * 3);         /* 6 env vars and 3 items per var. */
     /* auth data */
-    for (i = 0; i<3; i++)
-    {
+    for (i = 0; i < 3; i++) {
         len = strlen("LAMPI_ADMIN_AUTH0");
         sprintf(TMP, "%u", AuthData[i]);
         len += strlen(TMP);
@@ -200,8 +200,7 @@ int SpawnRsh(unsigned int *AuthData,
             // check to see if any environment variables need to be set
             //  if so adjust paramenters
             for (int eVar = 0; eVar < RunParams.nEnvVarsToSet; eVar++) {
-                size_t envLen =
-                    strlen(RunParams.envVarsToSet[eVar].var_m);
+                size_t envLen = strlen(RunParams.envVarsToSet[eVar].var_m);
                 if (RunParams.envVarsToSet[eVar].setForAllHosts_m) {
                     addEnvVar = true;
                     // add elements for  ' export x=y ; '
@@ -210,8 +209,7 @@ int SpawnRsh(unsigned int *AuthData,
                     size_t tmp = strlen(RunParams.envVarsToSet[eVar].envString_m[0]);
                     if (hostSpecificMaxSize < envLen + tmp + 1)
                         hostSpecificMaxSize = envLen + tmp + 1;
-                } else if (RunParams.envVarsToSet[eVar].
-                           setForThisHost_m[i]) {
+                } else if (RunParams.envVarsToSet[eVar].setForThisHost_m[i]) {
                     addEnvVar = true;
                     // add elements for  ' export x=y ; '
                     hostSpecificLenList += 3;
@@ -225,10 +223,9 @@ int SpawnRsh(unsigned int *AuthData,
 
         // add one byte padding to avoid garbage at end of string
         hostSpecificMaxSize++;
-        ulm_dbg((" hostSpecificLenList %ld hostSpecificMaxSize %ld\n",
-                 hostSpecificLenList, hostSpecificMaxSize));
+        ulm_dbg((" hostSpecificLenList %ld hostSpecificMaxSize %ld\n", hostSpecificLenList, hostSpecificMaxSize));
 
-        ExecArgs = ulm_new( char *, hostSpecificLenList);
+        ExecArgs = ulm_new(char *, hostSpecificLenList);
         for (int ii = 0; ii < (hostSpecificLenList - 1); ii++) {
             ExecArgs[ii] = ulm_new(char, hostSpecificMaxSize);
             bzero(ExecArgs[ii], hostSpecificMaxSize);
@@ -239,7 +236,7 @@ int SpawnRsh(unsigned int *AuthData,
 
         // set offsets into ExecArgs
         int HostEntry = 2;
-		
+
         /* IMPORTANT: Update this value if you add anything
            to ExecArgs below where the indices are explicit,
            e.g. ExecArgs[12] = "foo"
@@ -250,7 +247,7 @@ int SpawnRsh(unsigned int *AuthData,
         int AppEntry = CDEntry + 3;
         int AppArgs = AppEntry + 1;
 
-        if ( RunParams.UseSSH )
+        if (RunParams.UseSSH)
             sprintf(ExecArgs[0], "ssh");
         else
             sprintf(ExecArgs[0], "rsh");
@@ -269,7 +266,7 @@ int SpawnRsh(unsigned int *AuthData,
         sprintf(ExecArgs[12], "export");
         sprintf(ExecArgs[13], "LAMPI_ADMIN_AUTH2=%u", AuthData[2]);
         sprintf(ExecArgs[14], ";");
-		
+
         sprintf(ExecArgs[15], "export");
         sprintf(ExecArgs[16], "LAMPI_ADMIN_PORT=%d", ReceivingSocket);
         sprintf(ExecArgs[17], ";");
@@ -289,18 +286,14 @@ int SpawnRsh(unsigned int *AuthData,
                     // add elements for  ' export x = y ; '
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 1], "export");
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
-                            RunParams.envVarsToSet[eVar].var_m,
-                            RunParams.envVarsToSet[eVar].envString_m[0]);
+                            RunParams.envVarsToSet[eVar].var_m, RunParams.envVarsToSet[eVar].envString_m[0]);
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
                     nAdded += 3;
-                } else if (RunParams.envVarsToSet[eVar].
-                           setForThisHost_m[i]) {
+                } else if (RunParams.envVarsToSet[eVar].setForThisHost_m[i]) {
                     // add elements for  ' export x = y ; '
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 1],
-                            "export");
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 1], "export");
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
-                            RunParams.envVarsToSet[eVar].var_m,
-                            RunParams.envVarsToSet[eVar].envString_m[i]);
+                            RunParams.envVarsToSet[eVar].var_m, RunParams.envVarsToSet[eVar].envString_m[i]);
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
                     nAdded += 3;
                 }
@@ -315,8 +308,7 @@ int SpawnRsh(unsigned int *AuthData,
 
         /* entry CDEntry+4 is app name - will be filled in loop */
         for (int ii = 0; ii < argc; ii++) {
-            sprintf(ExecArgs[AppArgs + ii], "%s",
-                    argv[ii]);
+            sprintf(ExecArgs[AppArgs + ii], "%s", argv[ii]);
         }
 
         /*
@@ -338,22 +330,24 @@ int SpawnRsh(unsigned int *AuthData,
             exit(EXIT_FAILURE);
         } else if (Child == 0) {        /* child process */
             sprintf(ExecArgs[HostEntry], "%s", RunParams.HostList[i]);
-            sprintf(ExecArgs[WorkingDirEntry], "%s",
-                    RunParams.WorkingDirList[i]);
+            sprintf(ExecArgs[WorkingDirEntry], "%s", RunParams.WorkingDirList[i]);
             sprintf(ExecArgs[AppEntry], "%s", RunParams.ExeList[i]);
 
-            for (int j = 0; ExecArgs[j]; j++) {
-                fprintf(stderr, " %s", ExecArgs[j]);
+            if (RunParams.Verbose) {
+                fprintf(stderr, "Commmand line:");
+                for (int j = 0; ExecArgs[j]; j++) {
+                    fprintf(stderr, " %s", ExecArgs[j]);
+                }
+                fprintf(stderr, "\n");
             }
-            fprintf(stderr, "\n");
             execvp(ExecArgs[0], ExecArgs);
             printf(" after execv\n");
 
         } else {                /* parent process */
             rsh_pid[rsh_index++] = Child;
-            if(rsh_index == MAX_CONCURRENT) {
+            if (rsh_index == MAX_CONCURRENT) {
                 // reap children (rsh)
-                for(int index=0; index<rsh_index; index++) {
+                for (int index = 0; index < rsh_index; index++) {
                     int status;
                     waitpid(rsh_pid[index], &status, 0);
                 }
@@ -370,10 +364,10 @@ int SpawnRsh(unsigned int *AuthData,
     }
 
     // reap children (rsh)
-    for(int index=0; index<rsh_index; index++) {
+    for (int index = 0; index < rsh_index; index++) {
         int status;
         waitpid(rsh_pid[index], &status, 0);
     }
-        
+
     return 0;
 }
