@@ -189,13 +189,10 @@ public:
             }
 
             // set string describing the class
-            int strLen = strlen(description) + 1;
-            description_m = (char *) ulm_malloc(strLen);
+            description_m = strdup(description);
             if (!description_m) {
                 ulm_exit((-1, "Error: Out of memory\n"));
             }
-            strncpy(description_m, description, strLen);
-            description_m[strLen - 1] = '\0';
 
             // Initialize number of contexts
             nLists_m = nLists;
