@@ -112,6 +112,7 @@ void lampi_init_prefork_resource_management(lampiState_t *);
 void lampi_init_prefork_resources(lampiState_t *);
 void lampi_init_prefork_stdio(lampiState_t *);
 
+void lampi_init_postfork_communicators(lampiState_t *s);
 void lampi_init_postfork_debugger(lampiState_t *);
 void lampi_init_postfork_globals(lampiState_t *);
 void lampi_init_postfork_paths(lampiState_t *);

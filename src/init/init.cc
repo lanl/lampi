@@ -182,6 +182,10 @@ void lampi_init(void)
     /* post fork path setup */
     lampi_init_postfork_paths(&_ulm);
 
+    /* this must follow lampi_init_postfork_paths as it initializes the collective function pointers
+        which depend on the devices available. */
+    lampi_init_postfork_communicators(&_ulm);
+    
     /* barrier until all procs - local and remote - have started up */
     lampi_init_wait_for_start_message(&_ulm);
 
@@ -564,7 +568,6 @@ void lampi_init_prefork_resources(lampiState_t *s)
 
 void lampi_init_postfork_resources(lampiState_t *s)
 {
-    ulm_comm_info_t communicatorData;   /* should this be global? !!!! */
 
     /* if daemon - return */
     if (s->iAmDaemon) {
@@ -732,7 +735,29 @@ void lampi_init_postfork_resources(lampiState_t *s)
 
     // set number of instances in use
     nCommunicatorInstancesInUse = 0;
+}
 
+
+void lampi_init_allforked_resources(lampiState_t *s)
+{
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_allforked_resources");
+    }
+
+    lampi_init_allforked_rms(s);
+}
+
+
+void lampi_init_postfork_communicators(lampiState_t *s)
+{
+    ulm_comm_info_t communicatorData;   /* should this be global? !!!! */
+
+    if ( s->iAmDaemon )
+        return;
+    
     //! initialize array to hold active group objects
     communicators = ulm_new(Communicator *, communicatorsArrayLen);
     if (!communicators) {
@@ -765,12 +790,6 @@ void lampi_init_postfork_resources(lampiState_t *s)
     //   the context ID caching
     //
     assert((ULM_COMM_WORLD + 1) == ULM_COMM_SELF);
-    /*
-       if( (ULM_COMM_WORLD+1) != ULM_COMM_SELF ) {
-       ulm_exit((-1," Internal Error ::\n"
-       " ULM_COMM_WORLD %d ULM_COMM_SELF %d\n"));
-       }
-     */
 
     //
     // setup ULM_COMM_SELF
@@ -824,51 +843,35 @@ void lampi_init_postfork_resources(lampiState_t *s)
 
     // setup communicator object
     int cacheList[Communicator::MAX_COMM_CACHE_SIZE];
-    // fill in the cache list
-    //for (int cm = 1; cm <= Communicator::MAX_COMM_CACHE_SIZE; cm++) {
-    //    cacheList[cm - 1] = ULM_COMM_SELF + cm;
-    //}
+
     // set value of greatest context id in use
     //
     s->contextIDCtl->nextID =
-        ULM_COMM_SELF + 1 + myproc() * CTXIDBLOCKSIZE;
+    ULM_COMM_SELF + 1 + myproc() * CTXIDBLOCKSIZE;
     s->contextIDCtl->outOfBounds =
-        (s->contextIDCtl->nextID + CTXIDBLOCKSIZE);
+    (s->contextIDCtl->nextID + CTXIDBLOCKSIZE);
     s->contextIDCtl->cycleSize = CTXIDBLOCKSIZE * nprocs();
     s->contextIDCtl->idLock.init();
-
+    
     errorCode = ulm_communicator_alloc(ULM_COMM_WORLD, threadUsage,
-                                       groupIndex, groupIndex, 1,
-                                       Communicator::MAX_COMM_CACHE_SIZE,
-                                       cacheList,
-                                       Communicator::INTRA_COMMUNICATOR, 0,
-                                       1, 1);
+                                    groupIndex, groupIndex, 1,
+                                    Communicator::MAX_COMM_CACHE_SIZE,
+                                    cacheList,
+                                    Communicator::INTRA_COMMUNICATOR, 0,
+                                    1, 1);
     if (errorCode != ULM_SUCCESS) {
         ulm_exit((-1, "Error: setting up ULM_COMM_WORLD\n"));
     }
     // finish setting up ULM_COMM_SELF - ULM_COMM_SELF is setup in process private memory.
     errorCode = ulm_communicator_alloc(ULM_COMM_SELF, threadUsage,
-                                       commSelfGroup, commSelfGroup, 0,
-                                       Communicator::MAX_COMM_CACHE_SIZE,
-                                       cacheList,
-                                       Communicator::INTRA_COMMUNICATOR, 0,
-                                       0, 0);
+                                    commSelfGroup, commSelfGroup, 0,
+                                    Communicator::MAX_COMM_CACHE_SIZE,
+                                    cacheList,
+                                    Communicator::INTRA_COMMUNICATOR, 0,
+                                    0, 0);
     if (errorCode != ULM_SUCCESS) {
         ulm_exit((-1, "Error: setting up ULM_COMM_SELF\n"));
     }
-}
-
-
-void lampi_init_allforked_resources(lampiState_t *s)
-{
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_allforked_resources");
-    }
-
-    lampi_init_allforked_rms(s);
 }
 
 
