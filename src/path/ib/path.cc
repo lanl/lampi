@@ -72,7 +72,7 @@ inline void ibPath::checkSendCQs(void)
     VAPI_wc_desc_t wc_desc;
     ibSendFragDesc *sd;
     int i;
-    bool locked = false;
+    bool locked_here = false;
 
     for (i = 0; i < ib_state.num_active_hcas; i++) {
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
@@ -96,9 +96,10 @@ inline void ibPath::checkSendCQs(void)
             }
             cq_empty_cnt = 0;
 
-            if (usethreads() && !locked) {
+            if (usethreads() && !ib_state.locked) {
                 ib_state.lock.lock();
-                locked = true;
+                ib_state.locked = true;
+                locked_here = true;
             }
 
             // increment CQ tokens
@@ -121,7 +122,8 @@ inline void ibPath::checkSendCQs(void)
         } while (1);
     }
 
-    if (locked) {
+    if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 }
@@ -200,6 +202,7 @@ int endIndex, int *errorCode, bool skipCheck)
     ProcessPrivateMemDblLinkList *slist, *alist;
     int i;
     unsigned int mask;
+    bool locked_here = false;
 
     if (!skipCheck) {
         if ((p->ctlMsgsToSendFlag == 0) || ((p->ctlMsgsToSendFlag & ( ((1 << (endIndex + 1)) - 1) &
@@ -220,8 +223,10 @@ int endIndex, int *errorCode, bool skipCheck)
         slist = &(p->ctlMsgsToSend[i]);
         alist = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads()) {
+        if (usethreads() && !ib_state.locked) {
             ib_state.lock.lock();
+            ib_state.locked = true;
+            locked_here = true;
         }
 
         for (sfd = (ibSendFragDesc *)slist->begin();
@@ -255,7 +260,8 @@ int endIndex, int *errorCode, bool skipCheck)
                     // or simply return ULM_ERR_BAD_PATH to force path rebinding
                     // which is the default for now...
                     *errorCode = ULM_ERR_BAD_PATH;
-                    if (usethreads()) {
+                    if (locked_here) {
+                        ib_state.locked = false;
                         ib_state.lock.unlock();
                     }
                     return false;
@@ -273,7 +279,8 @@ int endIndex, int *errorCode, bool skipCheck)
         else
             p->ctlMsgsToAckFlag |= mask;
 
-        if (usethreads()) {
+        if (locked_here) {
+            ib_state.locked = false;
             ib_state.lock.unlock();
         }
     }
@@ -308,6 +315,7 @@ int endIndex, int *errorCode, bool skipCheck)
     ProcessPrivateMemDblLinkList *list;
     int i;
     unsigned int mask;
+    bool locked_here = false;
 
     if (!skipCheck) {
         if ((p->ctlMsgsToAckFlag == 0) || ((p->ctlMsgsToAckFlag & ( ((1 << (endIndex + 1)) - 1) &
@@ -327,8 +335,10 @@ int endIndex, int *errorCode, bool skipCheck)
 
         list = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads()) {
+        if (usethreads() && !ib_state.locked) {
             ib_state.lock.lock(); 
+            ib_state.locked = true;
+            locked_here = true;
         }
 
         for (sfd = (ibSendFragDesc *)list->begin();
@@ -348,7 +358,8 @@ int endIndex, int *errorCode, bool skipCheck)
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
                 *errorCode = ULM_ERR_BAD_PATH;
-                if (usethreads()) {
+                if (locked_here) {
+                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 return false;
@@ -360,7 +371,8 @@ int endIndex, int *errorCode, bool skipCheck)
         else
             p->ctlMsgsToAckFlag |= mask;
 
-        if (usethreads()) {
+        if (locked_here) {
+            ib_state.locked = false;
             ib_state.lock.unlock();
         }
     }
@@ -373,6 +385,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     int returnValue = ULM_SUCCESS;
     double timeNow = -1;
     int i, hca_index, port_index;
+    bool locked_here = false;
 
     *errorCode = ULM_SUCCESS;
     *incomplete = true;
@@ -384,8 +397,10 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         sendDone(message, timeNow, errorCode);
     }
 
-    if (usethreads()) {
+    if (usethreads() && !ib_state.locked) {
         ib_state.lock.lock();
+        ib_state.locked = true;
+        locked_here = true;
     }
 
     /* create and init frags with all the necessary resources */
@@ -440,7 +455,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         if (returnValue != ULM_SUCCESS) {
             // should currently be impossible with just UD QP service since
             // all of the descriptors should already exist and be available
-            if (usethreads()) {
+            if (locked_here) {
+                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
             *errorCode = returnValue;
@@ -505,7 +521,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // rebind this frag to another HCA if possible
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
-                if (usethreads()) {
+                if (locked_here) {
+                    ib_state.locked = false;
                     ib_state.lock.unlock();
                 }
                 *errorCode = ULM_ERR_BAD_PATH;
@@ -514,7 +531,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         }
     } // end send fragment for loop
 
-    if (usethreads()) {
+    if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 
@@ -597,7 +615,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
     int msg_type;
     unsigned int computed_chksum, recvd_chksum;
     void *addr;
-    bool locked = false;
+    bool locked_here = false;
 
     *errorCode = ULM_SUCCESS;
 
@@ -622,8 +640,10 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             }
             cq_empty_cnt = 0;
 
-            if (usethreads() && !locked) {
+            if (usethreads() && !ib_state.locked) {
                 ib_state.lock.lock();
+                ib_state.locked = true;
+                locked_here = true;
             }
 
             // increment CQ tokens
@@ -741,7 +761,8 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
         } while (1);
     }
 
-    if (locked) {
+    if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 
@@ -845,9 +866,12 @@ void ibPath::finalize(void)
 {
     VAPI_ret_t vapi_result;
     int i;
+    bool locked_here = false;
 
-    if (usethreads()) {
+    if (usethreads() && !ib_state.locked) {
         ib_state.lock.lock();
+        ib_state.locked = true;
+        locked_here = true;
     }
 
     for (i = 0; i < ib_state.num_active_hcas; i++) {
@@ -923,7 +947,8 @@ void ibPath::finalize(void)
         h->usable = false;
     }
 
-    if (usethreads()) {
+    if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 }

@@ -92,8 +92,12 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         // return descriptor to fragment list, adjust tokens, etc.
         void free(bool needToLock = true)
         {
-            if (needToLock && usethreads()) {
+            bool locked_here = false;
+
+            if (needToLock && usethreads() && !ib_state.locked) {
                 ib_state.lock.lock();
+                ib_state.locked = true;
+                locked_here = true;
             }
 
             // reclaim tokens if we haven't already done so...
@@ -110,7 +114,8 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
             ib_state.hca[hca_index_m].send_frag_list.returnElementNoLock(this, 0);
             (ib_state.hca[hca_index_m].send_frag_avail)++;
 
-            if (needToLock && usethreads()) {
+            if (locked_here) {
+                ib_state.locked = false;
                 ib_state.lock.unlock();
             }
         }

@@ -47,6 +47,7 @@ bool ibRecvFragDesc::AckData(double timeNow)
     int returnValue = ULM_SUCCESS;
     int i, hca_index, port_index, errorCode;
     ProcessPrivateMemDblLinkList *list;
+    bool locked_here = false;
 
     /* only send an ACK if ib_state.ack is false, if
      * the message is a synchronous send, and this is the
@@ -70,8 +71,10 @@ bool ibRecvFragDesc::AckData(double timeNow)
         timeNow = dclock();
     }
 
-    if (usethreads()) {
+    if (usethreads() && !ib_state.locked) {
         ib_state.lock.lock();
+        ib_state.locked = true;
+        locked_here = true;
     }
 
     // find HCA to get send fragment descriptor...use round-robin processing 
@@ -102,7 +105,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
 
     if ((hca_index < 0) || (port_index < 0)) {
         int dummyCode;
-        if (usethreads()) {
+        if (locked_here) {
+            ib_state.locked = false;
             ib_state.lock.unlock();
         }
         path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
@@ -114,7 +118,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
         int dummyCode;
         (ib_state.hca[hca_index].ud.sq_tokens)++;
         (ib_state.hca[hca_index].send_cq_tokens)++;
-        if (usethreads()) {
+        if (locked_here) {
+            ib_state.locked = false;
             ib_state.lock.unlock();
         }
         path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
@@ -213,7 +218,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
     list->AppendNoLock((Links_t *)sfd);
     ib_state.hca[hca_index].ctlMsgsToSendFlag |= (1 << MESSAGE_DATA_ACK);
 
-    if (usethreads()) {
+    if (locked_here) {
+        ib_state.locked = false;
         ib_state.lock.unlock();
     }
 
@@ -291,6 +297,7 @@ bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
 void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
 {
     VAPI_ret_t vapi_result;
+    bool locked_here = false;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
 
     // repost the descriptor 
@@ -303,14 +310,16 @@ void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
     }
 
     // decrement tokens...don't need to check values...
-    if (usethreads()) {
+    if (usethreads() && !ib_state.locked) {
         ib_state.lock.lock();
+        ib_state.locked = true;
+        locked_here = true;
     }
 
     (h->recv_cq_tokens)--;
     (h->ud.rq_tokens)--;
 
-    if (usethreads()) {
+    if (locked_here) {
         ib_state.lock.unlock();
     }
 }
@@ -423,6 +432,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
 {
     short whichQueue = sfd->WhichQueue;
     ibDataAck_t *p = (ibDataAck_t *)addr_m;
+    bool locked_here = false;
     int errorCode;
 
     if (p->ackStatus == ACKSTATUS_DATAGOOD) {
@@ -465,8 +475,10 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
             // we need to wait for local completion notification
             // before we free this descriptor...
             // put on ctlMsgsToAck list for later cleaning by push()
-            if (usethreads()) {
+            if (usethreads() && !ib_state.locked) {
                 ib_state.lock.lock();
+                ib_state.locked = true;
+                locked_here = true;
             }
 
             ProcessPrivateMemDblLinkList *list =
@@ -474,7 +486,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
             list->AppendNoLock((Links_t *)sfd);
             ib_state.hca[sfd->hca_index_m].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
 
-            if (usethreads()) {
+            if (locked_here) {
                 ib_state.lock.unlock();
             }
         }
