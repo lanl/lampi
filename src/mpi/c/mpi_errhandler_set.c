@@ -49,10 +49,10 @@ int PMPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler handler)
     ATOMIC_LOCK(handler_old->lock);
     handler_old->refcount--;
     if (handler_old->freed && handler_old->refcount == 0) {
-	ATOMIC_UNLOCK(&(handler_old->lock));
+	ATOMIC_UNLOCK(handler_old->lock);
 	_mpi_ptr_table_free(_mpi.errhandler_table, index_old);
     } else {
-        ATOMIC_UNLOCK(&(handler_old->lock));
+        ATOMIC_UNLOCK(handler_old->lock);
     }
 
     ATOMIC_LOCK(handler_new->lock);
