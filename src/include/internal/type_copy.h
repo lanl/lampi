@@ -203,6 +203,10 @@ void type_dump(ULMType_t * type)
             "\tpacked_size = %ld\n"
             "\tnum_pairs = %d\n"
             "\tlayout = %d\n"
+            "\tisbasic = %d\n"
+            "\tnum_primitives = %d\n"
+            "\tsecond_primitive_offset = %d\n"
+            "\tlayout = %d\n"
             "\top_index = %d\n"
             "\tfhandle = %d\n"
             "\ttype_map =",
@@ -210,7 +214,13 @@ void type_dump(ULMType_t * type)
             (long) type->lower_bound,
             (long) type->extent,
             (long) type->packed_size,
-            type->num_pairs, type->layout, type->op_index, type->fhandle);
+            type->num_pairs,
+            type->layout,
+            type->isbasic,
+            type->num_primitives,
+            type->second_primitive_offset,
+            type->op_index,
+            type->fhandle);
     for (i = 0; i < type->num_pairs; i++) {
         fprintf(stderr,
                 " (%ld, %ld, %ld)",
