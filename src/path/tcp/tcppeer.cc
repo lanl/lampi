@@ -600,6 +600,8 @@ void TCPPeer::exceptEventHandler(int sd)
 
 void TCPPeer::sendComplete(TCPSendFrag* sendFrag)
 {
+    sendFrag->setSendDidComplete(true);
+    
     // completed sending this frag, check for additional fragments to send
     for(size_t i=0; i<tcpSockets.size(); i++) {
         TCPSocket& tcpSocket = tcpSockets[i];

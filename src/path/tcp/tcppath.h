@@ -78,6 +78,23 @@ public:
     virtual bool needsPush();
     virtual void finalize();
 
+    bool retransmitP(SendDesc_t *message) {return false;}
+    bool resend(SendDesc_t *message, int *errorCode)
+    {
+        *errorCode = ULM_SUCCESS;
+        return false;
+    }
+
+    int fragSendQueue() {
+        // return the queue identifier for the fragsToSend queue, e.g. GMFRAGSTOSEND
+        return TCPFRAGSTOSEND;
+    }
+    
+    int toAckQueue() {
+        // return the queue identifier for the fragsToAck queue, e.g. GMFRAGSTOACK
+        return TCPFRAGSTOACK;
+    }
+    
     // accessor methods
     inline int  getHandle() { return tcpPathHandle; }
     inline long getHost() { return thisHost; }

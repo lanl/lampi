@@ -41,7 +41,7 @@ public:
     TCPRecvFrag() {}
     TCPRecvFrag(int) {}
 
-    static int init();
+    static int initialize();
     inline static TCPRecvFrag* getElement(int& retval) { 
         return TCPRecvFrags.getElement(getMemPoolIndex(), retval); 
     }

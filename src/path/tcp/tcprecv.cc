@@ -40,7 +40,7 @@ FreeListPrivate_t<TCPRecvFrag> TCPRecvFrag::TCPRecvFrags;
 //  One-time initialization at startup of the recv descriptor pool.
 //
 
-int TCPRecvFrag::init()
+int TCPRecvFrag::initialize()
 {
     int nFreeLists = local_nprocs();
 
