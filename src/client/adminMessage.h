@@ -219,6 +219,7 @@ class adminMessage {
         VERBOSE,                /* verbose start-up messages */
         WARN,                   /* enable warning messages */
         ISATTY,                 /* is mpirun a tty? */
+        CONNECTTIMEOUT,         /* connection timeout */
         HEARTBEATPERIOD,        /* interval between heartbeats */
         MAXCOMMUNICATORS,       /* limit on number of communicators */
         IRECVOUTOFRESRCABORT,   /* if set, return error when out of irecv headers - don't abort */

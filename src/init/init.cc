@@ -1032,7 +1032,7 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
-    if (!s->client->clientConnect(s->local_size, s->hostid)) {
+    if (!s->client->clientConnect(s->local_size, s->hostid, MIN_CONNECT_ALARMTIME)) {
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }

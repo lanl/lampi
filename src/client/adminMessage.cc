@@ -229,7 +229,7 @@ bool adminMessage::clientInitialize(int *authData, char *hostname, int port)
 
 bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
 {
-    int sockbuf = 1, tag = INITMSG, connect_retry;
+    int sockbuf = 1, tag = INITMSG;
     int ok, recvAuthData[3];
     struct sockaddr_in server;
     ulm_iovec_t iovecs[5];
@@ -286,7 +286,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
         alarm(timeout);
     }
     // attempt to connect
-    for (connect_retry = 0; connect_retry < MAX_RETRY; connect_retry++) {
+    while(1) {
         if (connect(socketToServer_m, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
             if ((ETIMEDOUT == errno) || (ECONNREFUSED == errno)) {
                 usleep(10);
@@ -887,59 +887,6 @@ int adminMessage::setupCollectives(int myLocalRank, int myHostRank,
 }
 
 
-void *server_connect_accept(void *arg)
-{
-    adminMessage *server = (adminMessage *) arg;
-    sigset_t signals;
-#ifdef __linux__
-    socklen_t addrlen;
-#else
-    int addrlen;
-#endif
-    struct sockaddr_in addr;
-    fd_set fds;
-    struct timeval t;
-
-    t.tv_sec = 0;
-    t.tv_usec = 10000;
-
-    /* disable SIGALRM for this thread */
-    (void) sigemptyset(&signals);
-    (void) sigaddset(&signals, SIGALRM);
-    pthread_sigmask(SIG_BLOCK, &signals, (sigset_t *) NULL);
-
-    /* enable deferred cancel mode for this thread */
-    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, (int *) NULL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *) NULL);
-
-    while (1) {
-        FD_ZERO(&fds);
-        FD_SET(server->serverSocket_m, &fds);
-        if (select(server->serverSocket_m + 1, &fds, (fd_set *) NULL, (fd_set *) NULL, &t) <= 0) {
-            pthread_testcancel();
-            continue;
-        }
-
-        addrlen = sizeof(addr);
-        int sockfd = accept(server->serverSocket_m, (struct sockaddr *) &addr, &addrlen);
-        if (sockfd < 0) {
-            continue;
-        }
-
-        if (sockfd >= adminMessage::MAXSOCKETS) {
-            ulm_err(("server_connect_accept(%p) client socket fd, %d, greater than "
-                     "allowed MAXSOCKETS, %d\n", server, sockfd, adminMessage::MAXSOCKETS));
-            close(sockfd);
-            pthread_exit((void *) 0);
-        }
-
-        server->socketsToProcess_m[sockfd] = true;
-        pthread_testcancel();
-    }
-    return NULL;
-}
-
-
 /* (server) initialize socket and wait for all connections from clients
  * timeout (in): time in seconds to wait for all connections from clients
  * returns: true if successful, false if unsuccessful (requiring program exit)
@@ -1018,20 +965,15 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
         socketsToProcess_m[cnt] = false;
     }
 
-    // spawn thread to do accept processing only
-    if (pthread_create(&sca_thread, (pthread_attr_t *) NULL, server_connect_accept, (void *) this)
-        != 0) {
-        ulm_err(("Error: can't create serverConnect() accept thread!\n"));
-        if (timeout > 0) {
-            alarm(0);
-            sigaction(SIGALRM, &oldSignals, (struct sigaction *) NULL);
-        }
-        return false;
-    }
-
     while (np != totalNProcesses_m) {
         int sockfd = -1;
-        int offset = (largestClientSocket_m >= 0) ? largestClientSocket_m : 0;
+        struct sockaddr_in addr;
+#ifdef __linux__
+        socklen_t addrlen;
+#else
+        int addrlen;
+#endif
+        fd_set fds;
 
         if (cancelConnect_m) {
             if (timeout > 0) {
@@ -1043,16 +985,25 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
             return false;
         }
 
-        for (cnt = 0; cnt < MAXSOCKETS; cnt++) {
-            if (socketsToProcess_m[(offset + cnt) % MAXSOCKETS]) {
-                sockfd = (offset + cnt) % MAXSOCKETS;
-                socketsToProcess_m[sockfd] = false;
-                break;
-            }
+        FD_ZERO(&fds);
+        FD_SET(serverSocket_m, &fds);
+        if (select(serverSocket_m + 1, &fds, (fd_set *) NULL, (fd_set *) NULL, NULL) < 0) {
+            return false;;
         }
+
+        addrlen = sizeof(addr);
+        sockfd = accept(serverSocket_m, (struct sockaddr *) &addr, &addrlen);
         if (sockfd < 0) {
             continue;
         }
+
+        if (sockfd >= adminMessage::MAXSOCKETS) {
+            ulm_err(("adminMessage::serverConnect: client socket fd, %d, greater than "
+                     "allowed MAXSOCKETS, %d\n", sockfd, adminMessage::MAXSOCKETS));
+            close(sockfd);
+            pthread_exit((void *) 0);
+        }
+
         // now do the authorization handshake...receive info
         iovecs[0].iov_base = &tag;
         iovecs[0].iov_len = (ssize_t) sizeof(int);

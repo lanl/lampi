@@ -50,7 +50,6 @@ void FixRunParams(int nhosts)
     pid_t *tmpPIDs;
     adminMessage *server;
     admin_host_info_t *groupHostData;
-    bool useDottedIP;
 
     server = RunParams.server;
     // free and reallocate memory for HostList if needed
@@ -62,13 +61,10 @@ void FixRunParams(int nhosts)
     }
     // get the new HostList info from the server adminMessage object
 
-    // Totalview has trouble if given a dotted IP address as the host name when
-    // using Bulk Launch to launch the tvdsvr process on the remote hosts.
-    useDottedIP = (RunParams.dbg.Spawned) ? false : true;
     for (int i = 0; i < nhosts; i++) {
         if (!server->
             peerName(i, RunParams.HostList[i],
-                     ULM_MAX_HOSTNAME_LEN, useDottedIP)) {
+                     ULM_MAX_HOSTNAME_LEN, true)) {
             ulm_err(("server could not get remote IP hostname/address for hostrank %d\n", i));
             Abort();
         }
