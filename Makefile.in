@@ -173,8 +173,7 @@ install: all
 	$(INSTALL) -m 664 $(srcdir)/man/lampi.man1 $(prefix)/share/man/man1/lampi.1 ; \
 	$(INSTALL) -m 664 $(srcdir)/man/mpirun.man1 $(prefix)/share/man/man1/mpirun.1 ; \
 	$(INSTALL) -m 664 $(srcdir)/RELEASE_NOTES $(prefix)/share/lampi ; \
-	$(INSTALL) -m 664 $(srcdir)/man/lampi.html $(prefix)/share/lampi ; \
-	$(INSTALL) -m 664 $(srcdir)/man/mpirun.html $(prefix)/share/lampi ; \
+	$(INSTALL) -m 664 $(srcdir)/man/lampi_man.html $(prefix)/share/lampi ; \
 	$(INSTALL) -m 664 $(srcdir)/etc/lampi.conf $(sysconfdir)/lampi.conf ; \
 	(cd $(prefix) ; test -d man || $(LN_S) share/man .) ; \
 	(for f in $(srcdir)/src/include/*.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
