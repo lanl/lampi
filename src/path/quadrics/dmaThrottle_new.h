@@ -254,7 +254,6 @@ public:
      * not reclaimed; it can be ignored altogether if reclaim is false.
      */
     volatile E3_Event_Blk *getEventBlk(int rail, volatile E3_Event_Blk ** location = 0) {
-	int index;
 	volatile E3_Event_Blk *result = 0;
 	eventBlkSlot_t *slot;
 	if (usethreads() || sharedMemory)
@@ -332,7 +331,6 @@ public:
      * the same caveats apply to eventBlkLoc as getEventBlk's location...
      */
     void freeEventBlk(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk ** eventBlkLoc = 0) {
-	int index;
 	eventBlkSlot_t *slot = allocp[rail].head;
 	eventBlkSlot_t *prev = 0;
 	if (!eventBlk)
@@ -390,7 +388,6 @@ public:
      * eventBlkLoc is only necessary if reclaim is true...
      */
     bool eventBlkReady(int rail, volatile E3_Event_Blk * eventBlk, volatile E3_Event_Blk **eventBlkLoc = 0) {
-        int index;
         eventBlkSlot_t *slot = allocp[rail].head;
         bool result = false;
         if (reclaim) {
