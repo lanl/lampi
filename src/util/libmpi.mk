@@ -15,5 +15,6 @@ SRC_LIBMPI += \
 	src/util/CommandArg.cc \
 	src/util/HashNode.cc \
 	src/util/HashTable.cc \
-	src/util/RCObject.cc
+	src/util/RCObject.cc \
+	src/util/Reactor.cc \
 

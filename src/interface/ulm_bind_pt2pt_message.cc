@@ -134,8 +134,17 @@ extern "C" int ulm_bind_pt2pt_message(ULMRequest_t *request, int ctx,int destina
         }
         pathArray[useGM]->bind(SendDesc, &globalDestID, 1, &errorCode);
     }
-    // use UDP connectivity as option #3
-    else if (pathList[globalDestID].useUDP_m >= 0) {
+    // use TCP connectivity as option #3
+    else if (pathList[globalDestID].useTCP_m >= 0) {
+        int useTCP = pathList[globalDestID].useTCP_m;
+        /* if not available, get from free list */
+        SendDesc = _ulm_SendDescriptors.getElement(0, errorCode);
+        if (!SendDesc) {
+            return errorCode;
+        }
+        pathArray[useTCP]->bind(SendDesc, &globalDestID, 1, &errorCode);
+    // use UDP connectivity as option #4
+    } else if (pathList[globalDestID].useUDP_m >= 0) {
         int useUDP = pathList[globalDestID].useUDP_m;
         /* if not available, get from free list */
         SendDesc = _ulm_SendDescriptors.getElement(0, errorCode);

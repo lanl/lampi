@@ -34,10 +34,15 @@ class Foo : public Bar, public HashKey
 class HashKey
 {
 	public:
-	virtual long int hashValue() = 0;
-	
+        virtual ~HashKey() {}
+	virtual long  hashValue() = 0;
 	virtual HashKey *copy() = 0;
-	virtual bool isEqual(HashKey *key) = 0;
+        virtual const void* keyValue() = 0;
+        virtual size_t keyLength() = 0;
+	virtual bool isEqual(HashKey *key) { 
+            return (key->keyLength() == keyLength()) && 
+            (memcmp(key->keyValue(), keyValue(), keyLength()) == 0); 
+        }
 };
 
 
@@ -49,11 +54,10 @@ class HashKeyInteger : public HashKey
 	public:
 	HashKeyInteger(long int kval) : kval_m(kval) {}
 	
-	long int hashValue() {return kval_m;}
-	HashKey *copy() {return new HashKeyInteger(kval_m);}
-	bool isEqual(HashKey *key) {return (((HashKeyInteger*)key)->keyValue() == kval_m);}
-	
-	long int keyValue() {return kval_m;}
+	virtual long int hashValue() {return kval_m;}
+	virtual HashKey *copy() { return new HashKeyInteger(kval_m);}
+	virtual const void* keyValue() { return &kval_m; }
+        virtual size_t keyLength() { return sizeof(kval_m); }
 };
 
 
@@ -72,15 +76,10 @@ class HashKeyString : public HashKey
 	}
 	
 	virtual ~HashKeyString() {if ( kval_m ) free(kval_m);}
-	
-	long int hashValue();
-	HashKey *copy() {return new HashKeyString(kval_m);}
-	bool isEqual(HashKey *key) 
-	{
-		return ( 0 ==  strcmp(((HashKeyString*)key)->keyValue(), kval_m) );
-	}
-	
-	inline const char *keyValue() {return kval_m;}
+	virtual long int hashValue();
+	virtual HashKey *copy() { return new HashKeyString(kval_m); }
+	virtual const void* keyValue() { return kval_m; }
+        virtual size_t keyLength() { return (kval_m != 0) ? strlen(kval_m) : 0; }
 };
 
 
@@ -124,20 +123,21 @@ class HashValueString : public HashValue
  *
  */
  
-class HashNode
+class HashNode 
 {
 	private:
 	HashKey			*key_m;
 	HashValue		*val_m;
-	HashNode		*next_m;
+        HashNode                *next_m;
 	
 	public:
 	HashNode(HashKey *key, HashValue *val);
-	
 	~HashNode();
 	
+	void deleteKeyAndValue();
+	void setKeyAndValue(HashKey *key, HashValue *val);
+
 	inline  HashKey *key() {return key_m;}
-	
 	inline  HashValue *value() {return val_m;}
 	inline  void setValue(HashValue *val) {delete val_m; val_m = val->copy();}
 	

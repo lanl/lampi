@@ -98,7 +98,6 @@ ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
 static adminMessage *server = NULL;
 
 
-
 bool getClientPidsMsg(pid_t ** hostarray, int *errorCode)
 {
     bool returnValue = true;
@@ -224,6 +223,7 @@ bool broadcastUDPAddresses(int *errorCode)
 {
     bool returnValue = true;
     int udphosts = 0;
+    int tcphosts = 0;
 
     // we don't do any of this if there is only one host...
     if (RunParameters.NHosts == 1)
@@ -235,14 +235,24 @@ bool broadcastUDPAddresses(int *errorCode)
                 udphosts++;
                 break;
             }
+            if (RunParameters.ListPathTypes[i][j] == PATH_TCP) {
+                tcphosts++;
+                break;
+            }
         }
     }
 
-    if (udphosts == 0) {
+    // both TCP and UDP now require that the host addresses be broadcast
+    if (udphosts == 0 && tcphosts == 0) {
         return returnValue;
-    } else if (udphosts != RunParameters.NHosts) {
+    } else if (udphosts != 0 && udphosts != RunParameters.NHosts) {
         ulm_err(("Error: broadcastUDPAddresses %d hosts out of %d using UDP!\n",
                  udphosts, RunParameters.NHosts));
+        returnValue = false;
+        return returnValue;
+    } else if (tcphosts != 0 && tcphosts != RunParameters.NHosts) {
+        ulm_err(("Error: broadcastUDPAddresses %d hosts out of %d using TCP!\n",
+                 tcphosts, RunParameters.NHosts));
         returnValue = false;
         return returnValue;
     }
@@ -302,6 +312,40 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
         }
     }
 
+    return returnValue;
+}
+
+
+bool exchangeTCPPorts(int *errorCode,adminMessage *s)
+{
+    bool returnValue = true;
+    int tcphosts = 0, rc;
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters.NHosts == 1)
+        return returnValue;
+
+#ifdef ENABLE_CT
+    return returnValue;
+#endif
+
+    for (int i = 0; i < RunParameters.NHosts; i++) {
+        for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
+            if (RunParameters.ListPathTypes[i][j] == PATH_TCP) {
+                tcphosts++;
+                break;
+            }
+        }
+    }
+    if( tcphosts != 0 ) {
+        rc = s->allgather((void*)NULL,(void *)NULL, sizeof(unsigned short));
+        if (rc != ULM_SUCCESS) {
+            ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n",
+                     rc));
+            returnValue = false;
+            *errorCode = rc;
+        }
+    }
     return returnValue;
 }
 
@@ -700,6 +744,12 @@ int main(int argc, char **argv)
     /* UDP port information exchange - postfork */
     if (!exchangeUDPPorts(&ErrorReturn, server)) {
         ulm_err(("Error: While exchangind UDP ports (%d)\n", ErrorReturn));
+        Abort();
+    }
+
+    /* TCP port information exchange - postfork */
+    if (!exchangeTCPPorts(&ErrorReturn, server)) {
+        ulm_err(("Error: While exchangind TCP ports (%d)\n", ErrorReturn));
         Abort();
     }
 

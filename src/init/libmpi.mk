@@ -15,6 +15,10 @@ ifneq (,$(findstring ENABLE_UDP, $(CPPFLAGS)))
 SRC_LIBMPI += src/init/init_udp.cc
 endif
 
+ifneq (,$(findstring ENABLE_TCP, $(CPPFLAGS)))
+SRC_LIBMPI += src/init/init_tcp.cc
+endif
+
 ifneq (,$(findstring ENABLE_QSNET, $(CPPFLAGS)))
 SRC_LIBMPI += src/init/init_quadrics.cc src/init/init_rms.cc
 endif

@@ -1245,6 +1245,9 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                     case PATH_UDP:
                         s->udp = 1;
                         break;
+                    case PATH_TCP:
+                        s->tcp = 1;
+                        break;
                     case PATH_GM:
                         s->gm = 1;
                         break;
@@ -1592,6 +1595,9 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
                     case PATH_UDP:
                         s->udp = 1;
                         break;
+                    case PATH_TCP:
+                        s->tcp = 1;
+                        break;
                     case PATH_GM:
                         s->gm = 1;
                         break;
@@ -1719,9 +1725,9 @@ void lampi_init_prefork_paths(lampiState_t *s)
      *   in mpirun
      */
     lampi_init_prefork_udp(s);
+    lampi_init_prefork_tcp(s);
     lampi_init_prefork_quadrics(s);
     lampi_init_prefork_gm(s);
-
 }
 
 
@@ -1753,6 +1759,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
 
     lampi_init_postfork_shared_memory(s);       /* must be first */
     lampi_init_postfork_udp(s);
+    lampi_init_postfork_tcp(s);
     lampi_init_postfork_quadrics(s);
     lampi_init_postfork_gm(s);
     lampi_init_postfork_ib(s);
@@ -1771,6 +1778,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
 
     for( int proc=0 ; proc < s->global_size ; proc++ ) {
 	    pathList[proc].useSharedMemory_m=-1;
+	    pathList[proc].useTCP_m=-1;
 	    pathList[proc].useUDP_m=-1;
 	    pathList[proc].useQuadrics_m=-1;
 	    pathList[proc].useGM_m=-1;
@@ -1785,6 +1793,11 @@ void lampi_init_postfork_paths(lampiState_t *s)
 					    && (pathList[proc].useSharedMemory_m < 0))
 			    {
 				    pathList[proc].useSharedMemory_m = i;
+			    }
+			    else if ((ptype == TCPPATH)
+					    && (pathList[proc].useTCP_m < 0))
+			    {
+				    pathList[proc].useTCP_m = i;
 			    }
 			    else if ((ptype == UDPPATH)
 					    && (pathList[proc].useUDP_m < 0))
@@ -2114,6 +2127,7 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->quadrics = false;
     s->gm = 0;
     s->udp = 0;
+    s->tcp = 0;
     s->ib = 0;
 
 #ifdef ENABLE_CT

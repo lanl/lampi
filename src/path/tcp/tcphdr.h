@@ -28,36 +28,34 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _PATH_GLOBALS
-#define _PATH_GLOBALS
+#ifndef _TCP_HEADER_H_
+#define _TCP_HEADER_H_
 
+#include "internal/types.h"
 #include "path/common/BaseDesc.h"
+#include "path/udp/header.h"
 
-/* structure that holds the array index for available paths */
-typedef struct availablePaths{
-	/* shared memory */
-	int useSharedMemory_m;
-	/* tcp */
-	int useTCP_m;
-	/* udp */
-	int useUDP_m;
-	/* quadrics */
-	int useQuadrics_m;
-	/* gm */
-	int useGM_m;
-    /* ib - infiniband */
-    int useIB_m;
-}availablePaths_t;
 
-#ifdef ULM_INSTANTIATE_GLOBALS
-BasePath_t *pathArray[MAX_PATHS];
-availablePaths_t *pathList;
+//----------------------------------------------------------------------------
+// TCP message header
+//----------------------------------------------------------------------------
 
-#else /* ULM_INSTANTIATE_GLOBALS */
+#define TCP_MSGTYPE_MSG 0
+#define TCP_MSGTYPE_ACK 1
 
-extern BasePath_t *pathArray[MAX_PATHS];
-extern availablePaths_t *pathList;
 
-#endif /* ULM_INSTANTIATE_GLOBALS */
+struct tcp_msg_header
+{
+    ulm_uint32_t type;		 //!< type of message
+    ulm_int32_t  ctxAndMsgType;   //!< used for context of global ProcID ids
+    ulm_int32_t  src_proc;	 //!< global ProcID of sending process;
+    ulm_int32_t  dst_proc;	 //!< global ProcID of receiving process
+    ulm_uint64_t length;	 //!< length of data in this frag frag
+    ulm_uint64_t msg_length;	 //!< length of data in entire message
+    ulm_ptr_t    msg_desc;       //!< point to message descriptor
+    ulm_int32_t  tag_m;		 //!< tag user gave in send
+    ulm_uint32_t fragIndex_m;    //!< frag index
+    ulm_uint64_t isendSeq_m;	 //!< sequence number of isend (source proc)
+};
 
-#endif
+#endif 

@@ -55,6 +55,7 @@ struct NetWorkDevs {
 } _ulm_NetworkDevsSupported[] = {
     { "gm", PATH_GM}, 
     { "udp", PATH_UDP}, 
+    { "tcp", PATH_TCP}, 
     { "quadrics", PATH_QUADRICS},
     { "sharedmemory", PATH_SHAREDMEM},
     { "ib", PATH_IB}
@@ -65,6 +66,10 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 	/* create default defive type count */
     int cnt = 0;
 #ifdef ENABLE_UDP
+    cnt++;
+#endif
+
+#ifdef ENABLE_TCP
     cnt++;
 #endif
 
@@ -95,6 +100,9 @@ void GetNetworkDevListNoInput(const char *InfoStream)
         /* fill in list */
 #ifdef ENABLE_UDP
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_UDP;
+#endif
+#ifdef ENABLE_TCP
+        RunParameters.ListPathTypes[i][DevCnt++] = PATH_TCP;
 #endif
 #ifdef  ENABLE_QSNET
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_QUADRICS;

@@ -240,6 +240,9 @@ public:
     ssize_t CopyToApp(void *FrgDesc, bool *recvDone = 0);
     ssize_t CopyToAppLock(void *FrgDesc, bool *recvDone = 0);
 
+    void DeliveredToApp(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone = 0);
+    void DeliveredToAppLock(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone = 0);
+
 #ifdef ENABLE_SHARED_MEMORY
     // SMP copy to app buffers
     int SMPCopyToApp(unsigned long sequentialOffset, unsigned long fragLen,

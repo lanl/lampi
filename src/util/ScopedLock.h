@@ -31,56 +31,21 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _HASH_TABLE_H_
-#define _HASH_TABLE_H_
+#ifndef _ScopedLock_
+#define _ScopedLock_
 
-#include "internal/MPIIncludes.h"
-#include "util/HashNode.h"
+#include "util/Lock.h"
+#include "internal/state.h"
 
 
-typedef void    (*free_value_fn)(void *);
-
-class HashTable
-{
-protected:
-
-    void            *buckets_m;
-    long int        cnt_m;
-    long int        mask_m;
-    long int        sz_m;
-    free_value_fn   freeFunc_m;
-    HashNode       *freeList_m;
-    long int        freeCnt_m;
-
-    HashNode* getHashNode(HashKey* key, HashValue* val);
-
+class ScopedLock {
 public:
-    HashTable(int numBuckets = 64);
-    virtual ~HashTable();
-        
-    void setValueForKey(void *value, HashKey *key);
-    void setValueForKey(void *value, int key);
-    void setValueForKey(void *value, const char *key);
-    void setValueForKey(const char *value, const char *key);
-    void setValueForKey(HashValue *value, HashKey *key);
+    ScopedLock(Locks& lock) : lock_m(lock) { if(usethreads()) lock_m.lock(); }
+    ~ScopedLock() { if(usethreads()) lock_m.unlock(); }
 
-    void *valueForKey(const char *key);
-    void *valueForKey(int key);
-    void *valueForKey(HashKey *key);
-
-    HashValue **allValues();
-    /*
-     POST:	Returns an array of all hash table values.  User is
-     responsible for freeing array.
-     */
-    
-    void removeValueForKey(HashKey *key);
-    void removeValueForKey(int key);
-    void removeValueForKey(const char* key);
-        
-    void setFreeFunction(free_value_fn fn) {freeFunc_m = fn;}
-    
-    long int count() {return cnt_m;}
+private:
+    Locks& lock_m;
 };
 
-#endif
+
+#endif /* !_LOCKS */

@@ -39,6 +39,7 @@
 
 enum pathType {
     UDPPATH,
+    TCPPATH,
     QUADRICSPATH,
     GMPATH,
     SHAREDMEM,
@@ -220,10 +221,13 @@ public:
     }
 
     // called at ulm_finalize to see if there is any traffic that still needs to be pushed out
-    virtual bool needsPush(void) {
+    virtual bool needsPush(void) { 
         return false;
     }
 
+    // do any cleanup required before exiting
+    virtual void finalize(void) { }
+    
     // activate this path
     virtual void activate() { pathActive = true; }
 

@@ -42,9 +42,23 @@ HashNode::HashNode(HashKey *key, HashValue *val)
 	next_m = NULL;
 }
 
+
+void HashNode::deleteKeyAndValue()
+{
+    delete key_m; key_m = 0;
+    delete val_m; val_m = 0;
+}
+
+void HashNode::setKeyAndValue(HashKey *key, HashValue *val)
+{
+    deleteKeyAndValue();
+    key_m = key->copy();
+    val_m = val->copy();
+}
+
 HashNode::~HashNode()
 {
-	delete key_m;
-	delete val_m;
+    delete key_m;
+    delete val_m;
 }
 

@@ -53,7 +53,7 @@ void lampi_init_prefork_udp(lampiState_t *s)
         return;
     }
 
-    if (s->udp) {
+    if (s->udp || s->tcp) {
         int bufsize = nhosts() * ULM_MAX_HOSTNAME_LEN;
         char *names = ulm_new(char, bufsize);
         int tag, errorCode;

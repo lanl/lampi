@@ -71,6 +71,8 @@ enum {
     ERROR_LAMPI_INIT_ALLFORKED_PATHS,
     ERROR_LAMPI_INIT_PREFORK_UDP,
     ERROR_LAMPI_INIT_POSTFORK_UDP,
+    ERROR_LAMPI_INIT_PREFORK_TCP,
+    ERROR_LAMPI_INIT_POSTFORK_TCP,
     ERROR_LAMPI_INIT_PREFORK_RMS,
     ERROR_LAMPI_INIT_POSTFORK_RMS,
     ERROR_LAMPI_INIT_POSTFORK_GM,
@@ -196,6 +198,14 @@ void lampi_init_postfork_udp(lampiState_t *);
 #else
 extern lampi_init_func_t lampi_init_prefork_udp;
 extern lampi_init_func_t lampi_init_postfork_udp;
+#endif
+
+#ifdef ENABLE_TCP
+void lampi_init_prefork_tcp(lampiState_t *);
+void lampi_init_postfork_tcp(lampiState_t *);
+#else
+extern lampi_init_func_t lampi_init_prefork_tcp;
+extern lampi_init_func_t lampi_init_postfork_tcp;
 #endif
 
 #ifdef ENABLE_INFINIBAND

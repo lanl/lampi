@@ -174,7 +174,6 @@ void SendDesc_t::shallowCopyTo(RequestDesc_t *request)
 ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
 {
     bool dataNotCorrupted = false;
-    Communicator *Comm;
     ULMType_t *datatype;
     unsigned int checkSum;
     ssize_t bytesIntoBitBucket;
@@ -224,10 +223,16 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
             return (-1);
         }
     }
+    DeliveredToApp(lengthToCopy, bytesIntoBitBucket, recvDone);
+    return lengthToCopy;
+}
 
+
+void RecvDesc_t::DeliveredToApp(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone)
+{
     // update byte count
-    DataReceived += lengthToCopy;
-    DataInBitBucket += bytesIntoBitBucket;
+    DataReceived += bytesCopied;
+    DataInBitBucket += bytesDiscarded;
 
     // check to see if receive is complete, and if so mark the request object
     //   as such
@@ -240,7 +245,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         wmb();
 
         // remove recv desc from list
-        Comm = communicators[ctx_m];
+        Communicator *Comm = communicators[ctx_m];
         if (WhichQueue == MATCHEDIRECV) {
             Comm->privateQueues.MatchedRecv[reslts_m.peer_m]
                 ->RemoveLink(this);
@@ -251,8 +256,6 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         if (freeCalled)
             requestFree();
     }
-
-    return lengthToCopy;
 }
 
 
@@ -262,7 +265,6 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
 ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 {
     bool dataNotCorrupted = false;
-    Communicator *Comm;
     ULMType_t *datatype;
     unsigned int checkSum;
     ssize_t bytesIntoBitBucket;
@@ -312,16 +314,22 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
             return (-1);
         }
     }
+    DeliveredToAppLock(lengthToCopy, bytesIntoBitBucket, recvDone);
+    return lengthToCopy;
+}
 
+
+void RecvDesc_t::DeliveredToAppLock(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone)
+{
     // update byte count
     if (usethreads()) {
         Lock.lock();
-        DataReceived += lengthToCopy;
-        DataInBitBucket += bytesIntoBitBucket;
+        DataReceived += bytesCopied;
+        DataInBitBucket += bytesDiscarded;
         Lock.unlock();
     } else {
-        DataReceived += lengthToCopy;
-        DataInBitBucket += bytesIntoBitBucket;
+        DataReceived += bytesCopied;
+        DataInBitBucket += bytesDiscarded;
     }
 
     // check to see if receive is complete, and if so mark the request
@@ -337,7 +345,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         wmb();
 
         // remove receive descriptor from list
-        Comm = communicators[ctx_m];
+        Communicator *Comm = communicators[ctx_m];
         Comm->privateQueues.MatchedRecv[reslts_m.peer_m]->RemoveLink(this);
 
         // if ulm_request_free() has already been called, then we
@@ -349,9 +357,8 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         if (usethreads())
             Lock.unlock();
     }
-
-    return lengthToCopy;
 }
+
 
 #ifdef ENABLE_SHARED_MEMORY
 

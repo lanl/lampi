@@ -497,6 +497,7 @@ public:
 
     // process frags arriving "off the wire"
     int handleReceivedFrag(BaseRecvFragDesc_t *recvFrag, double timeNow = -1.0);
+    RecvDesc_t* matchReceivedFrag(BaseRecvFragDesc_t *recvFrag, double timeNow = -1.0);
 
     //
     // message Queues

@@ -108,6 +108,11 @@ extern "C" void ulm_finalize(void)
 
     } while (stickAround);
 
+    // path specific cleanup
+    for (int i = 0; i < pathCount; i++) {
+        pathArray[i]->finalize();
+    }
+
     if (0) { // ulm_cleanup() nees some debugging
         ulm_cleanup();
     }
