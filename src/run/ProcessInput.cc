@@ -99,11 +99,13 @@ int MPIrunProcessInput(int argc, char **argv,
 #else
     RunParameters->UseRMS = 0;
 #endif
-    
-    lampi_environ_find_string("LSB_MCPU_HOSTS", &val);
-    if ( strlen(val) ) {
-        RunParameters->UseLSF = 1;
-        GetLSFResource();
+
+    if (!RunParameters->UseRMS) {
+        lampi_environ_find_string("LSB_MCPU_HOSTS", &val);
+        if ( strlen(val) ) {
+            RunParameters->UseLSF = 1;
+            GetLSFResource();
+        }
     }
 
     RunParameters->Networks.SharedMemSetup.recvFragResources_m.

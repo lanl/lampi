@@ -366,7 +366,6 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
     for (i = 0; i < RunParameters->NHosts; i++) {
         nprocs += RunParameters->ProcessCount[i];
     }
-    memset(buf, 0, 512);
     sprintf(buf, "%d", nprocs);
     exec_args[PROCS - skip_arg_count] =
         (char *) ulm_malloc(sizeof(buf) + 4);
