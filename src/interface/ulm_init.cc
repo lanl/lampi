@@ -28,22 +28,20 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include <stdio.h>
 
 #define ULM_GLOBAL_DEFINE
 
+#include "client/ULMClient.h"
+#include "init/init.h"
 #include "internal/log.h"
 #include "internal/profiler.h"
-#include "init/init.h"
 #include "ulm/ulm.h"
-#include "client/ULMClient.h"
 
 #define ULM_INSTANTIATE_GLOBALS
 #include "queue/globals.h"
-#include "internal/cLock.h"
 #undef ULM_INSTANTIATE_GLOBALS
+
 /*!
  * User initialization function.
  */

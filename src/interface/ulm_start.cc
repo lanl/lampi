@@ -110,8 +110,7 @@ extern "C" int ulm_start(ULMRequest_t *request)
                     ULMBufferRange_t *newAlloc = NULL;
                     ULMType_t *dtype;
 
-                    if (usethreads())
-                        lock(&(lampiState.bsendData->Lock));
+                    ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
                     // grab a new alloc block for new descriptor using
                     // same info as current descriptor
@@ -123,17 +122,15 @@ extern "C" int ulm_start(ULMRequest_t *request)
                     if (newAlloc == NULL) {
                         // not enough buffer space - check progress,
                         // clean prev. alloc. and try again
-                        if (lampiState.usethreads)
-                            unlock(&(lampiState.bsendData->Lock));
+                        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
                         ulm_make_progress();
-                        if (lampiState.usethreads)
-                            lock(&(lampiState.bsendData->Lock));
+                        ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
                         ulm_bsend_clean_alloc(0);
                         newAlloc = ulm_bsend_alloc(size, 1);
 
                         if (newAlloc == NULL) {
                             // unlock buffer pool
-                            unlock(&(lampiState.bsendData->Lock));
+                            ATOMIC_UNLOCK(lampiState.bsendData->lock);
                             rc = ULM_ERR_BUFFER;
                             return rc;
                         }
@@ -150,8 +147,7 @@ extern "C" int ulm_start(ULMRequest_t *request)
                     SendDesc->bsendOffset = newAlloc->offset;
                     newAlloc->request = SendDesc;
 
-                    if (usethreads())
-                        unlock(&(lampiState.bsendData->Lock));
+                    ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
                 }
 
                 *request = SendDesc;

@@ -40,8 +40,7 @@ int PMPI_Buffer_detach(void *buffer, int *size)
     int wantToDetach = 1;
 
     /* lock control structure */
-    if (lampiState.usethreads)
-        lock(&(lampiState.bsendData->Lock));
+    ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
     /* check to make sure pool is in use */
     if (!(lampiState.bsendData->poolInUse)) {
@@ -54,8 +53,7 @@ int PMPI_Buffer_detach(void *buffer, int *size)
 	rc = MPI_ERR_BUFFER;
 
 	/* unlock control structure */
-        if (lampiState.usethreads)
-	    unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
@@ -63,16 +61,14 @@ int PMPI_Buffer_detach(void *buffer, int *size)
 
     /* spin until bytes in use is 0  - this is a blocking call */
     while (lampiState.bsendData->bytesInUse > 0) {
-        if (lampiState.usethreads)
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
         rc = ulm_make_progress();
         if (rc != ULM_SUCCESS) {
             rc = _mpi_error(rc);
             _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
             return rc;
         }
-        if (lampiState.usethreads)
-            lock(&(lampiState.bsendData->Lock));
+        ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
         ulm_bsend_clean_alloc(wantToDetach);
     }
 
@@ -94,16 +90,14 @@ int PMPI_Buffer_detach(void *buffer, int *size)
 
     /* all allocations should be gone; otherwise there is a problem */
     if (lampiState.bsendData->allocations != NULL) {
-        if (lampiState.usethreads) 
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
         rc = MPI_ERR_INTERN;
         _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
         return rc;
     }
 
     /* unlock control structure */
-    if (lampiState.usethreads) 
-        unlock(&(lampiState.bsendData->Lock));
+    ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
     return rc;
 }

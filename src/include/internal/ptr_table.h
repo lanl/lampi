@@ -31,13 +31,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #ifndef _ULM_INTERNAL_PTR_TABLE_T
-#define  _ULM_INTERNAL_PTR_TABLE_T
+#define _ULM_INTERNAL_PTR_TABLE_T
 
-#include "internal/cLock.h"
 #include "internal/linkage.h"
+#include "os/atomic.h"
 
 CDECL_BEGIN
 
@@ -50,7 +48,7 @@ typedef struct ptr_table_t ptr_table_t;
  * dynamic pointer table (used for MPI requests, dataytypes and ops)
  */
 struct ptr_table_t {
-    lockStructure_t lock;
+    lockStructure_t lock[1];
     int lowest_free;
     int number_free;
     int size;

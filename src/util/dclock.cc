@@ -104,7 +104,7 @@ dclock_hardware_t hw_dclock_overhead()
 
 #else
 
-double time0;
+static double time0;
 
 void init_dclock()
 {

@@ -56,7 +56,7 @@ ptr_table_t *_mpif_create_op_table(void)
 	return NULL;
     }
     memset(table, 0, sizeof(ptr_table_t));
-    cLockInit(&(table->lock));
+    ATOMIC_LOCK_INIT(table->lock);
 
     /*
      * initialization

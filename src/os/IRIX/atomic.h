@@ -66,7 +66,6 @@ void spinunlock(lockStructure_t *ctlData_m)
 
 void spinlock(lockStructure_t *);
 int spintrylock(lockStructure_t *);
-void unlock(lockStructure_t *);
 int fetchNadd(volatile int *addr, int inc);
 int fetchNset(volatile int *addr, int val);
 unsigned long long fetchNaddLong(bigAtomicUnsignedInt *addr, int inc);

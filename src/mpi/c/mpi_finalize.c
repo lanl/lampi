@@ -32,12 +32,24 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "internal/mpi.h"
+#include "internal/mpif.h"
 
 #pragma weak MPI_Finalize = PMPI_Finalize
 int PMPI_Finalize(void)
 {
+    int rc;
+
+    if (_mpi.fortran_layer_enabled) {
+        rc = _mpif_finalize();
+        if (rc != MPI_SUCCESS) {
+            return rc;
+        }
+    }
+    rc = _mpi_finalize();
+    if (rc != MPI_SUCCESS) {
+        return rc;
+    }
     ulm_finalize();
-    _mpi_finalize();
 
     return MPI_SUCCESS;
 }

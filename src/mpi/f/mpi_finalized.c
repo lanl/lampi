@@ -46,49 +46,49 @@
 
 void mpi_finalized_f(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 #else
 
 void PMPI_FINALIZED(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void pmpi_finalized(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void pmpi_finalized_(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void pmpi_finalized__(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void MPI_FINALIZED(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void mpi_finalized(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void mpi_finalized_(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 void mpi_finalized__(MPI_Fint *flag, MPI_Fint *rc)
 {
-    *rc = MPI_Finalized(flag);
+    mpi_finalized_f(flag, rc);
 }
 
 #endif

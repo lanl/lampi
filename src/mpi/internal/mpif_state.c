@@ -52,10 +52,10 @@ int _mpif_init(void)
      */
     if (!called) {
         called = 1;
-        cLockInit(&(_mpif.lock));
+        ATOMIC_LOCK_INIT(_mpif.lock);
     }
 
-    _mpi_lock(&(_mpif.lock));
+    ATOMIC_LOCK(_mpif.lock);
 
     if (_mpif.initialized == 0) {
 
@@ -81,7 +81,7 @@ int _mpif_init(void)
         }
     }
 
-    _mpi_unlock(&(_mpif.lock));
+    ATOMIC_UNLOCK(_mpif.lock);
 
     return 0;
 }
@@ -93,44 +93,55 @@ int _mpif_init(void)
  */
 int _mpif_finalize(void)
 {
-    _mpi_lock(&(_mpif.lock));
-    if (_mpif.finalized == 0) {
+    int i;
+    int rc;
 
-        int i;
+    rc = ulm_barrier(ULM_COMM_WORLD);
+    if (rc != ULM_SUCCESS) {
+        return _mpi_error(rc);
+    }
+
+    ATOMIC_LOCK(_mpif.lock);
+    if (_mpif.finalized == 0) {
 
         _mpif.finalized = 1;
 
+        /* empty the fortran-layer tables */
+        
         for (i = 0; i < _mpif.op_table->size; i++) {
             if (_mpif.op_table->addr[i]) {
-                ulm_free(_mpif.op_table->addr[i]);
+                MPI_Op_free((MPI_Op *) _mpif.op_table->addr[i]);
             }
         }
+
+        for (i = 0; i < _mpif.request_table->size; i++) {
+            if (_mpif.request_table->addr[i]) {
+                MPI_Request_free((MPI_Request *) _mpif.request_table->addr[i]);
+            }
+        }
+
+        for (i = 0; i < _mpif.type_table->size; i++) {
+            if (_mpif.type_table->addr[i]) {
+                MPI_Type_free((MPI_Datatype *) &(_mpif.type_table->addr[i]));
+            }
+        }
+
+        /* free the fortran-layer tables */
+
         if (_mpif.op_table->addr) {
             ulm_free(_mpif.op_table->addr);
         }
         ulm_free(_mpif.op_table);
-
-        for (i = 0; i < _mpif.request_table->size; i++) {
-            if (_mpif.request_table->addr[i]) {
-                ulm_free(_mpif.request_table->addr[i]);
-            }
-        }
         if (_mpif.request_table->addr) {
             ulm_free(_mpif.request_table->addr);
         }
         ulm_free(_mpif.request_table);
-
-        for (i = 0; i < _mpif.type_table->size; i++) {
-            if (_mpif.type_table->addr[i]) {
-                ulm_free(_mpif.type_table->addr[i]);
-            }
-        }
         if (_mpif.type_table->addr) {
             ulm_free(_mpif.type_table->addr);
         }
         ulm_free(_mpif.type_table);
     }
-    _mpi_unlock(&(_mpif.lock));
+    ATOMIC_UNLOCK(_mpif.lock);
 
-    return 0;
+    return MPI_SUCCESS;
 }

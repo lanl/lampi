@@ -35,12 +35,25 @@
 
 #include "internal/malloc.h"
 #include "internal/mpi.h"
+#include "internal/mpif.h"
 
 #pragma weak MPI_Type_free = PMPI_Type_free
 int PMPI_Type_free(MPI_Datatype *mtype)
 {
-    if (mtype) {
-        ULMType_t *type = *mtype;
+    if (mtype && *mtype != MPI_DATATYPE_NULL) {
+        ULMType_t *type;
+
+        type = *mtype;
+        if (type && !type->isbasic && _mpi.fortran_layer_enabled) {
+            /*
+             * always free the fortran handle even if we aren't really
+             * freeing the datatype yet
+             */
+            if (type->fhandle != -1) {
+                _mpi_ptr_table_free(_mpif.type_table, type->fhandle);
+                type->fhandle = -1;
+            }
+        }
         ulm_type_release(type);
         *mtype = MPI_DATATYPE_NULL;
     }

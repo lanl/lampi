@@ -90,6 +90,7 @@ ptr_table_t *_mpi_create_errhandler_table(void)
 	return NULL;
     }
     memset(table, 0, sizeof(ptr_table_t));
+    ATOMIC_LOCK_INIT(table->lock);
 
     /*
      * add default error handlers to the table
@@ -111,7 +112,7 @@ ptr_table_t *_mpi_create_errhandler_table(void)
     errhandler->func = (MPI_Handler_function *) _mpi_errors_are_fatal;
     errhandler->freed = 0;
     errhandler->isbasic = 1;
-    cLockInit(&(errhandler->lock));
+    ATOMIC_LOCK_INIT(errhandler->lock);
     errhandler->refcount = 1;
     if (_mpi_ptr_table_add(table, errhandler) < 0) {
 	ulm_free(table);
@@ -130,7 +131,7 @@ ptr_table_t *_mpi_create_errhandler_table(void)
     errhandler->func = (MPI_Handler_function *) _mpi_errors_return;
     errhandler->freed = 0;
     errhandler->isbasic = 1;
-    cLockInit(&(errhandler->lock));
+    ATOMIC_LOCK_INIT(errhandler->lock);
     errhandler->refcount = 1;
     if (_mpi_ptr_table_add(table, errhandler) < 0) {
 	ulm_free(table);
@@ -162,9 +163,9 @@ void _mpi_errhandler(MPI_Comm comm, int rc, char *file, int line)
 
     if (index < _mpi.errhandler_table->size) {
 	handler = (errhandler_t *) _mpi.errhandler_table->addr[index];
-	_mpi_lock(&(handler->lock));
+	ATOMIC_LOCK(handler->lock);
 	handler->func(&comm, &rc, file, &line);
-	_mpi_unlock(&(handler->lock));
+	ATOMIC_UNLOCK(handler->lock);
     } else {
 	ulm_err(("Error: MPI error handler not found: returning\n"));
     }

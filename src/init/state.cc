@@ -36,7 +36,7 @@
 #include "internal/linkage.h"
 
 CDECL_BEGIN
-lampiState_t lampiState;
+lampiState_t _ulm;
 CDECL_END
 
 

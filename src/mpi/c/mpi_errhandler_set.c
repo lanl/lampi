@@ -46,18 +46,18 @@ int PMPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler handler)
     handler_old = _mpi_ptr_table_lookup(_mpi.errhandler_table, index_old);
     handler_new = _mpi_ptr_table_lookup(_mpi.errhandler_table, index_new);
 
-    _mpi_lock(&(handler_old->lock));
+    ATOMIC_LOCK(handler_old->lock);
     handler_old->refcount--;
     if (handler_old->freed && handler_old->refcount == 0) {
-	_mpi_unlock(&(handler_old->lock));
+	ATOMIC_UNLOCK(&(handler_old->lock));
 	_mpi_ptr_table_free(_mpi.errhandler_table, index_old);
     } else {
-        _mpi_unlock(&(handler_old->lock));
+        ATOMIC_UNLOCK(&(handler_old->lock));
     }
 
-    _mpi_lock(&(handler_new->lock));
+    ATOMIC_LOCK(handler_new->lock);
     handler_new->refcount++;
-    _mpi_unlock(&(handler_new->lock));
+    ATOMIC_UNLOCK(handler_new->lock);
 
     ulm_set_errhandler_index(comm, index_new);
 

@@ -1,3 +1,36 @@
+/*
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ */
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
 #include "ulm/ulm.h"
 #include "queue/ReliabilityInfo.h"
 #include "queue/globals.h"
@@ -6,7 +39,7 @@
 #include "path/common/pathContainer.h"
 #include "mem/MemoryPool.h"
 
-void ulm_cleanup()
+void ulm_cleanup(void)
 {
     int i, j;
 
@@ -51,24 +84,26 @@ void ulm_cleanup()
         lampiState.pathContainer = 0;
     }
 
-    // clean up the software barrier structures
-    if (swBarrier.nElementsInPool && swBarrier.pool) {
-        for (i = 0; i < swBarrier.nPools; i++) {
-            for (j = 0; j < swBarrier.nElementsInPool[i]; j++) {
-                if (swBarrier.pool[i][j].barrierData) {
-                    ulm_free(swBarrier.pool[i][j].barrierData);
-                    swBarrier.pool[i][j].barrierData = 0;
+    if (0) {  // this appears to cause trouble...
+        // clean up the software barrier structures
+        if (swBarrier.nElementsInPool && swBarrier.pool) {
+            for (i = 0; i < swBarrier.nPools; i++) {
+                for (j = 0; j < swBarrier.nElementsInPool[i]; j++) {
+                    if (swBarrier.pool[i][j].barrierData) {
+                        ulm_free(swBarrier.pool[i][j].barrierData);
+                        swBarrier.pool[i][j].barrierData = 0;
+                    }
                 }
             }
-        }
-        ulm_free(swBarrier.nElementsInPool);
-        swBarrier.nElementsInPool = 0;
+            ulm_free(swBarrier.nElementsInPool);
+            swBarrier.nElementsInPool = 0;
 
-        ulm_free(swBarrier.pool);
-        swBarrier.pool = 0;
+            ulm_free(swBarrier.pool);
+            swBarrier.pool = 0;
+        }
     }
 
-    // clean up lampiState struct
+    // clean up _ulm struct
     if (lampiState.map_global_rank_to_host) {
         ulm_delete(lampiState.map_global_rank_to_host);
         lampiState.map_global_rank_to_host = 0;

@@ -37,17 +37,6 @@ void mpi_type_free_f(MPI_Fint *f_type, MPI_Fint *rc)
     c_type = MPI_Type_f2c(*f_type);
     *rc = MPI_Type_free(&c_type);
     if (*rc == MPI_SUCCESS) {
-        /*
-         * if the datatype is not MPI_DATATYPE_NULL, then free it, and
-         * reset the handle
-         */
-        if (!c_type && (*f_type != -1)) {
-            _mpi_ptr_table_free(_mpif.type_table, *f_type);
-        }
-        /*
-         * reset the handle even if we didn't really free the datatype -
-         * like if it is a basic datatype....
-         */
         *f_type = -1;
     }
 }

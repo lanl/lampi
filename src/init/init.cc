@@ -56,7 +56,6 @@
 #include "init/environ.h"
 #include "init/fork_many.h"
 #include "init/init.h"
-#include "internal/cLock.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/new.h"
@@ -113,85 +112,85 @@ void lampi_init(void)
 
     initialized = 1;
 
-    /* initialize lampiState */
-    lampi_init_prefork_initialize_state_information(&lampiState);
+    /* initialize _ulm */
+    lampi_init_prefork_initialize_state_information(&_ulm);
 
     /*
      * Initialize process
      */
-    lampi_init_prefork_process_resources(&lampiState);
+    lampi_init_prefork_process_resources(&_ulm);
 
     /* read library environment variables */
-    lampi_init_prefork_environment(&lampiState);
+    lampi_init_prefork_environment(&_ulm);
 
     /* initialization of global variables */
-    lampi_init_prefork_globals(&lampiState);
+    lampi_init_prefork_globals(&_ulm);
 
     /*
      * startup specific information that needs to be set before
      * connecting back to mpirun
      */
-    lampi_init_prefork_resource_management(&lampiState);
+    lampi_init_prefork_resource_management(&_ulm);
 
     /*
      * connect back to mpirun
      */
     ulm_dbg( ("host %s: daemon %d: connecting to mpirun...\n", _ulm_host(), getpid()) );
-    lampi_init_prefork_connect_to_mpirun(&lampiState);
+    lampi_init_prefork_connect_to_mpirun(&_ulm);
 
     /*
      * receive initial input parameters
      */
     ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
-    lampi_init_prefork_receive_setup_params(&lampiState);
+    lampi_init_prefork_receive_setup_params(&_ulm);
 
     if (lampiState.hostid == 0) {
         ulm_notice(("*** LA-MPI: Copyright 2001-2003, "
                     "ACL, Los Alamos National Laboratory ***\n"));
     }
 
-    lampi_init_prefork_debugger(&lampiState);
+    lampi_init_prefork_debugger(&_ulm);
 
-    lampi_init_prefork_resources(&lampiState);
+    lampi_init_prefork_resources(&_ulm);
 
     /*
      * path initialization that needs to happen before the child
      * processes are created
      */
-    lampi_init_prefork_paths(&lampiState);
+    lampi_init_prefork_paths(&_ulm);
 
     /* if library is to handle stdio, prefork data is set up */
-    lampi_init_prefork_stdio(&lampiState);
+    lampi_init_prefork_stdio(&_ulm);
 
     /* fork the rest of the la-mpi processes */
-    lampi_init_fork(&lampiState);
+    lampi_init_fork(&_ulm);
     /*
      * all la-mpi procs have been created at this stage
      */
 
-    lampi_init_postfork_debugger(&lampiState);
+    lampi_init_postfork_debugger(&_ulm);
 
     /* if library is to handle stdio, postfork data is set up */
-    lampi_init_postfork_stdio(&lampiState);
+    lampi_init_postfork_stdio(&_ulm);
 
 
-    lampi_init_postfork_resource_management(&lampiState);
-    lampi_init_postfork_globals(&lampiState);
-    lampi_init_postfork_resources(&lampiState);
-    //lampi_init_debug(&lampiState);
+    lampi_init_postfork_resource_management(&_ulm);
+    lampi_init_postfork_globals(&_ulm);
+    lampi_init_postfork_resources(&_ulm);
+    //lampi_init_debug(&_ulm);
 
     /* post fork path setup */
-    lampi_init_postfork_paths(&lampiState);
+    lampi_init_postfork_paths(&_ulm);
 
     /* barrier until all procs - local and remote - have started up */
-    lampi_init_wait_for_start_message(&lampiState);
+    lampi_init_wait_for_start_message(&_ulm);
 
-    lampi_init_check_for_error(&lampiState);
+    lampi_init_check_for_error(&_ulm);
     
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )
     {
-        lampi_daemon_loop(&lampiState);
+        lampi_daemon_loop(&_ulm);
     }
 }
 
@@ -1339,7 +1338,7 @@ void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
         s->AbnormalExit = (abnormalExitInfo *)
             SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
         memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
-        cLockInit(&(s->AbnormalExit->lockData));
+        ATOMIC_LOCK_INIT(s->AbnormalExit->lock);
     }
     // allocate cpus - need to have this setup for memory locality
     //   initialization.
@@ -1645,7 +1644,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
         s->AbnormalExit = (abnormalExitInfo *)
             SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
         memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
-        cLockInit(&(s->AbnormalExit->lockData));
+        ATOMIC_LOCK_INIT(s->AbnormalExit->lock);
     }
     // allocate cpus - need to have this setup for memory locality
     //   initialization.
@@ -2115,14 +2114,4 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
         return;
     }
     memset(s->contextIDCtl, 0, sizeof(contextIDCtl_t));
-}
-
-extern "C" int setthreadusage(int use)
-{
-	if( use )
-		lampiState.usethreads=1;
-	else
-		lampiState.usethreads=0;
-
-	return ULM_SUCCESS;
 }

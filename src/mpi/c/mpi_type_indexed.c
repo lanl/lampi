@@ -90,7 +90,7 @@ int PMPI_Type_indexed(int count, int *blocklength_array, int *disp_array,
         t = mtype_old;
         fetchNadd(&(t->ref_count), 1);
 
-        if (_MPI_FORTRAN) {
+        if (_mpi.fortran_layer_enabled) {
             newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
         }
 
@@ -161,7 +161,7 @@ int PMPI_Type_indexed(int count, int *blocklength_array, int *disp_array,
     t = mtype_old;
     fetchNadd(&(t->ref_count), 1);
 
-    if (_MPI_FORTRAN) {
+    if (_mpi.fortran_layer_enabled) {
         newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
     }
 

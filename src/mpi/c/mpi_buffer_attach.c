@@ -38,8 +38,7 @@ int PMPI_Buffer_attach(void *buffer, int bufferLength)
     int rc = MPI_SUCCESS;
 
     /* lock control structure */
-    if (lampiState.usethreads)
-        lock(&(lampiState.bsendData->Lock));
+    ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
     /* check to make sure pool is available */
     if (lampiState.bsendData->poolInUse) {
@@ -52,8 +51,7 @@ int PMPI_Buffer_attach(void *buffer, int bufferLength)
 	rc = MPI_ERR_BUFFER;
 
 	/* unlock control structure */
-        if (lampiState.usethreads)
-	    unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
@@ -66,8 +64,7 @@ int PMPI_Buffer_attach(void *buffer, int bufferLength)
 	rc = MPI_ERR_BUFFER;
 
 	/* unlock control structure */
-        if (lampiState.usethreads)
-	    unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
@@ -90,8 +87,7 @@ int PMPI_Buffer_attach(void *buffer, int bufferLength)
     lampiState.bsendData->allocations = NULL;
 
     /* unlock control structure */
-    if (lampiState.usethreads)
-        unlock(&(lampiState.bsendData->Lock));
+    ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
     return rc;
 }

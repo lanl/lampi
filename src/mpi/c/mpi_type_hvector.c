@@ -43,7 +43,7 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
     int rc;
 
     if (mtype_new == NULL) {
-        ulm_err(("Error: MPI_Type_vector: Invalid newtype pointer\n"));
+        ulm_err(("Error: MPI_Type_hvector: Invalid newtype pointer\n"));
         rc = MPI_ERR_INTERN;
         _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
         return rc;
@@ -93,7 +93,7 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
         t = mtype_old;
         fetchNadd(&(t->ref_count), 1);
 
-        if (_MPI_FORTRAN) {
+        if (_mpi.fortran_layer_enabled) {
             newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
         }
 
@@ -103,7 +103,7 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
     /* Allocate newtype */
     newtype = ulm_malloc(sizeof(ULMType_t));
     if (newtype == NULL) {
-        ulm_err(("Error: MPI_Type_vector: Out of memory\n"));
+        ulm_err(("Error: MPI_Type_hvector: Out of memory\n"));
         rc = MPI_ERR_INTERN;
         _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
         return rc;
@@ -145,7 +145,7 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
                                                        sizeof
                                                        (ULMTypeMapElt_t));
     if (newtype->type_map == NULL) {
-        ulm_err(("Error: MPI_Type_vector: Out of memory\n"));
+        ulm_err(("Error: MPI_Type_hvector: Out of memory\n"));
         rc = MPI_ERR_INTERN;
         _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
         return rc;
@@ -213,7 +213,7 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
 
     *mtype_new = newtype;
 
-    if (_MPI_FORTRAN) {
+    if (_mpi.fortran_layer_enabled) {
         newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
     }
 

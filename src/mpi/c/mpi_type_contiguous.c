@@ -88,7 +88,7 @@ int PMPI_Type_contiguous(int count, MPI_Datatype olddatatype,
         t = olddatatype;
         fetchNadd(&(t->ref_count), 1);
 
-        if (_MPI_FORTRAN) {
+        if (_mpi.fortran_layer_enabled) {
             newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
         }
 
@@ -127,10 +127,6 @@ int PMPI_Type_contiguous(int count, MPI_Datatype olddatatype,
 
     t = olddatatype;
     fetchNadd(&(t->ref_count), 1);
-
-    if (_MPI_FORTRAN) {
-        newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
-    }
 
     return rc;
 }

@@ -1,5 +1,4 @@
 SRC_LIBMPI += \
-	src/mpi/internal/lockFns.c \
 	src/mpi/internal/mpi_attribute.c \
 	src/mpi/internal/mpi_collective.c \
 	src/mpi/internal/mpi_errhandler.c \

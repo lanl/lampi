@@ -36,6 +36,7 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+
 #include "internal/types.h"
 #include "os/atomic.h"
 
@@ -54,17 +55,17 @@ class pathContainer_t;
  */
 
 typedef struct {
-        lockStructure_t lockData;   /* lock since this info will be in shared memory */
-        volatile int flag;          /* has a child exited abnormally? */
-        pid_t pid;                  /* pid of child */
-        int signal;                 /* signal propagated from child */
-        int status;                 /* exit status of child */
+    lockStructure_t lock[1];    /* lock since this will be in shared memory */
+    volatile int flag;          /* has a child exited abnormally? */
+    pid_t pid;                  /* pid of child */
+    int signal;                 /* signal propagated from child */
+    int status;                 /* exit status of child */
 } abnormalExitInfo;
 
 typedef struct {
 
-    int *map_global_proc_to_on_host_proc_id;
-                                    /* global rank to local (on-host) rank map */
+    int *map_global_proc_to_on_host_proc_id; /* global rank to local (on-host) rank map */
+    
     int *map_global_rank_to_host;   /* global rank to host index map */
     int *map_host_to_local_size;    /* number of procs on a given host */
     int debug_location;
@@ -101,6 +102,7 @@ typedef struct {
     /*
      * memory locality parameters
      */
+
     int memLocalityIndex;
     int enforceAffinity;
 
@@ -129,7 +131,6 @@ typedef struct {
     int *LenIOPreFix;               /* length of string to prepend */
     PrefixName_t *IOPreFix;         /* string to prepend to output */
 
-
     /*
      * daemon stdio
      */
@@ -143,13 +144,11 @@ typedef struct {
 
     abnormalExitInfo *AbnormalExit;
 
-
     /* 
      * MPI support
      */
 
     struct bsendData_t *bsendData;         /* for MPI buffered sends */
-
 
     /*
      * Synchronization flags (in shared memory)

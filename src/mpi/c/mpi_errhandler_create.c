@@ -58,7 +58,7 @@ int PMPI_Errhandler_create(MPI_Handler_function *func,
     errhandler->func = func;
     errhandler->freed = 0;
     errhandler->isbasic = 0;
-    cLockInit(&(errhandler->lock));
+    ATOMIC_LOCK_INIT(errhandler->lock);
     errhandler->refcount = 0;
 
     *handler =

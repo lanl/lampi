@@ -106,8 +106,7 @@ extern "C" int ulm_request_free(ULMRequest_t *request)
     if (RequestDesc->requestType == REQUEST_TYPE_SEND) {
         if (SendDesc->sendType == ULM_SEND_BUFFERED) {
             ULMBufferRange_t *allocation;
-            if (usethreads())
-                lock(&(lampiState.bsendData->Lock));
+            ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
             allocation = ulm_bsend_find_alloc((ssize_t) (-1), *request);
             if (allocation != NULL) {
                 if (allocation->refCount == -1)
@@ -116,8 +115,7 @@ extern "C" int ulm_request_free(ULMRequest_t *request)
                 if (allocation->refCount == 0)
                     ulm_bsend_clean_alloc(0);
             }
-            if (usethreads())
-                unlock(&(lampiState.bsendData->Lock));
+            ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
         }
     }
 

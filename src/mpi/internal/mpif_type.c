@@ -85,14 +85,14 @@ MPI_Datatype MPI_2INTEGER = &(type[I_2INTEGER]);
  * fhandle member with the value of the handle
  */
 static void add_fortran_datatype(ptr_table_t * table, MPI_Datatype type,
-                                 int error)
+                                 int *error)
 {
-    if (error == 0) {
+    if (*error == 0) {
         ULMType_t *t = type;
 
         t->fhandle = _mpi_ptr_table_add(table, type);
         if (t->fhandle < 0) {
-            error = 1;
+            *error = 1;
         }
     }
 }
@@ -120,7 +120,7 @@ ptr_table_t *_mpif_create_type_table(void)
     memset(table, 0, sizeof(ptr_table_t));
     memset(type, 0, NUMBER_OF_FORTRAN_TYPES * sizeof(ULMType_t));
     memset(pair, 0, NUMBER_OF_FORTRAN_TYPES * sizeof(ULMTypeMapElt_t));
-    cLockInit(&(table->lock));
+    ATOMIC_LOCK_INIT(table->lock);
 
     /*
      * specific initialization
@@ -202,26 +202,26 @@ ptr_table_t *_mpif_create_type_table(void)
      */
 
     error = 0;
-    add_fortran_datatype(table, MPI_INTEGER, error);
-    add_fortran_datatype(table, MPI_REAL, error);
-    add_fortran_datatype(table, MPI_DOUBLE_PRECISION, error);
-    add_fortran_datatype(table, MPI_COMPLEX, error);
-    add_fortran_datatype(table, MPI_DOUBLE_COMPLEX, error);
-    add_fortran_datatype(table, MPI_LOGICAL, error);
-    add_fortran_datatype(table, MPI_CHARACTER, error);
-    add_fortran_datatype(table, MPI_BYTE, error);
-    add_fortran_datatype(table, MPI_PACKED, error);
-    add_fortran_datatype(table, MPI_2REAL, error);
-    add_fortran_datatype(table, MPI_2DOUBLE_PRECISION, error);
-    add_fortran_datatype(table, MPI_2INTEGER, error);
-    add_fortran_datatype(table, MPI_INTEGER1, error);
-    add_fortran_datatype(table, MPI_INTEGER2, error);
-    add_fortran_datatype(table, MPI_INTEGER4, error);
-    add_fortran_datatype(table, MPI_REAL2, error);
-    add_fortran_datatype(table, MPI_REAL4, error);
-    add_fortran_datatype(table, MPI_REAL8, error);
-    add_fortran_datatype(table, MPI_LB, error);
-    add_fortran_datatype(table, MPI_UB, error);
+    add_fortran_datatype(table, MPI_INTEGER, &error);
+    add_fortran_datatype(table, MPI_REAL, &error);
+    add_fortran_datatype(table, MPI_DOUBLE_PRECISION, &error);
+    add_fortran_datatype(table, MPI_COMPLEX, &error);
+    add_fortran_datatype(table, MPI_DOUBLE_COMPLEX, &error);
+    add_fortran_datatype(table, MPI_LOGICAL, &error);
+    add_fortran_datatype(table, MPI_CHARACTER, &error);
+    add_fortran_datatype(table, MPI_BYTE, &error);
+    add_fortran_datatype(table, MPI_PACKED, &error);
+    add_fortran_datatype(table, MPI_2REAL, &error);
+    add_fortran_datatype(table, MPI_2DOUBLE_PRECISION, &error);
+    add_fortran_datatype(table, MPI_2INTEGER, &error);
+    add_fortran_datatype(table, MPI_INTEGER1, &error);
+    add_fortran_datatype(table, MPI_INTEGER2, &error);
+    add_fortran_datatype(table, MPI_INTEGER4, &error);
+    add_fortran_datatype(table, MPI_REAL2, &error);
+    add_fortran_datatype(table, MPI_REAL4, &error);
+    add_fortran_datatype(table, MPI_REAL8, &error);
+    add_fortran_datatype(table, MPI_LB, &error);
+    add_fortran_datatype(table, MPI_UB, &error);
     if (error) {
         ulm_free(table);
         return NULL;
