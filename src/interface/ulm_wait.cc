@@ -95,6 +95,7 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
         if (!(tmpRequest->persistent)) {
             ulm_request_free(request);
         } else {
+            tmpRequest->persistFreeCalled = true;
             tmpRequest->status = ULM_STATUS_INACTIVE;
         }
         return ULM_SUCCESS;
@@ -174,6 +175,7 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
         tmpRequest->status = ULM_STATUS_COMPLETE;
         ulm_request_free(request);
     } else {
+        tmpRequest->persistFreeCalled = true;
         tmpRequest->status = ULM_STATUS_INACTIVE;
     }
 

@@ -62,8 +62,9 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
          *	 its resources.
 		 */
 		int reuseDesc = 0;
-		if( ( (SendDescriptor->numfrags <= SendDescriptor->NumAcked) && 
-				(SendDescriptor->messageDone == REQUEST_COMPLETE) ) ||
+		if( ( (SendDescriptor->numfrags <= SendDescriptor->NumAcked) &&
+            (SendDescriptor->messageDone == REQUEST_COMPLETE) &&
+            (ONNOLIST == SendDescriptor->WhichQueue) ) ||
             (ULM_STATUS_INITED == SendDescriptor->status) ){
 			reuseDesc = 1;
 		}
@@ -78,6 +79,8 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
 
 			/* fill in new descriptor information */
             tmpSendDesc->shallowCopyTo((RequestDesc_t *)SendDescriptor);
+
+            SendDescriptor->WhichQueue = REQUESTINUSE;
             SendDescriptor->status = ULM_STATUS_INITED;
 
 			/* reset the old descriptor */
