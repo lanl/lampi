@@ -96,6 +96,8 @@ void Usage(FILE *stream)
             "-s MPIRUNHOST     A comma-delimited list of preferred IP interface name\n"
             "                  fragments (whole, suffix, or prefix) or addresses for TCP/IP\n"
             "                  administrative and UDP/IP data traffic.\n"
+            "-ssh              Use ssh rather than the default rsh if no other start-up\n"
+            "                  mechanism is available.\n"
             "-t                Tag standard output/error with source information.\n"
             "-threads          Enable thread safety.\n"
             "-qf FLAGSLIST     A comma-delimited list of keywords for operation on\n"
