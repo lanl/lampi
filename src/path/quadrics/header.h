@@ -86,8 +86,6 @@ struct quadricsDataHdr {
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
-#define DATAACK_PADDING 16
-
 // note: sizeof(BaseAck) is not obvious because it may include
 // a vtable even though there are no virtual functions
 struct quadricsDataAck : public BaseAck_t {
