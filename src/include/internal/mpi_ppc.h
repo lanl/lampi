@@ -312,6 +312,12 @@
 #undef PMPI_Wtime
 #define PMPI_Wtime MPI_Wtime
 
+/* Thread APIs */
+#undef PMPI_Init_thread
+#define PMPI_Init_thread MPI_Init_thread
+#undef PMPI_Query_thread
+#define PMPI_Query_thread MPI_Query_thread
+
 /* commented out because these could be macros themselves, as in MPICH 
 #undef PMPI_Type_c2f
 #define PMPI_Type_c2f MPI_Type_c2f
