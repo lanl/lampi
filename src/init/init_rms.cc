@@ -95,8 +95,16 @@ void lampi_init_prefork_rms(lampiState_t *s)
     elan_nodeId = position.pos_nodeid;
     elanctrl_close(handle);
 
-    int host_rank = atoi(getenv("RMS_RANK"));
-    s->local_size = elan_nlocal(host_rank, &cap);
+    /* 
+     * elan_nlocal appears to require an offset from the lowest assigned
+     * node id. As an example, assume rms allocates nodes 7 & 25, then
+     * the capability structure would indicate cap_lownode=7 and 
+     * cap_highnode=25. The value passed to elan_nlocal in this
+     * case would an offset from lownode or 0 for node 7 and 18
+     * for node 25. This was deduced by trial and error...more than
+     * likely this may not work in all cases...
+    */
+    s->local_size = elan_nlocal(elan_nodeId - cap.cap_lownode, &cap);
 
 #elif QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
     ELAN3_DEVINFO devinfo;
