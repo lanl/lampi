@@ -31,55 +31,19 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef IB_RECVFRAG_H
-#define IB_RECVFRAG_H
+#include "path/ib/sendFrag.h"
 
-#include "path/common/BaseDesc.h"
-#undef PAGESIZE
-#include "path/ib/path.h"
-#include "path/ib/state.h"
-#include "path/ib/header.h"
+inline bool ibSendFragDesc::init(void)
+{
+    return true;
+}
 
-class ibRecvFragDesc : public BaseRecvFragDesc_t {
-    public:
+inline bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
+{
+    return true;
+}
 
-        enum qp_type {
-            UD_QP,
-            OTHER_QP
-        };
-
-        bool DataOK_m;
-        int hca_index_m;
-        unsigned long ib_bytes_recvd_m;
-        qp_type qp_type_m;
-        VAPI_rr_desc_t rr_desc_m;
-        VAPI_sg_lst_entry_t sg_m[1];
-        ibData2KMsg_t *msg_m;
-        ibPath *path;
-
-
-        ibRecvFragDesc() { DataOK_m = false; }
-        ibRecvFragDesc(int poolIndex): BaseRecvFragDesc_t(poolIndex) { DataOK_m = false; }
-
-        void msgData(double timeNow);
-        void msgDataAck(double timeNow);
-
-        bool AckData(double timeNow);
-        unsigned int CopyFunction(void *fragAddr, void *appAddr, ssize_t length);
-        unsigned long nonContigCopyFunction(void *appAddr, void *fragAddr, ssize_t length,
-            ssize_t cksumlength, unsigned int *cksum, unsigned int *partialInt, 
-            unsigned int *partialLength, bool firstCall, bool lastCall);
-        bool CheckData(unsigned int checkSum, ssize_t length);
-
-        void MarkDataOK(bool okay) {
-            DataOK_m = okay;
-        }
-
-        unsigned long dataOffset(void) {
-            return (unsigned long)(msg_m->header.dataSeqOffset);
-        }
-
-        void ReturnDescToPool(int LocalRank);
-};
-
-#endif
+inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
+{
+    return true;
+}

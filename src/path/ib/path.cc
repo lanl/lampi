@@ -31,6 +31,8 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <vapi_common.h>
+#undef PAGESIZE
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/state.h"
@@ -39,6 +41,7 @@
 #include "path/ib/recvFrag.h"
 #include "path/ib/header.h"
 #include "client/ULMClient.h"
+#include "queue/globals.h"
 
 bool ibPath::canReach(int globalDestProcessID)
 {
@@ -60,6 +63,7 @@ void ibPath::checkSendCQs(void)
 {
     VAPI_ret_t vapi_result;
     VAPI_wc_desc_t wc_desc;
+    ibSendFragDesc *sd;
     int i;
     bool locked = false;
 
@@ -94,8 +98,8 @@ void ibPath::checkSendCQs(void)
             }
 
             // find send frag descriptor and mark desc. as locally acked
-            sd = (ibSendFragDesc *)wc_desc.id;
-            sd->state_m |= ibSendFragDesc::LOCALACKED; 
+            sd = (ibSendFragDesc *)((unsigned long)wc_desc.id);
+            sd->state_m = (ibSendFragDesc::state)(sd->state_m | ibSendFragDesc::LOCALACKED); 
             
             // increment UD QP tokens
             (h->ud.sq_tokens)++;
@@ -114,7 +118,7 @@ bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
     checkSendCQs();
 
     if (ib_state.ack) {
-        if ((message->posted_m.length == message->pathInfo.ib.allocated_offset_m) && 
+        if ((message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) && 
             (message->NumAcked >= message->numfrags)) {
             return true;
         }
@@ -139,19 +143,12 @@ bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
                     // remove frag from FragsToAck list
                     afd = sfd;
                     sfd = (ibSendFragDesc *)message->FragsToAck.RemoveLinkNoLock((Links_t *)afd);
-                    afd->WhichQueue = IBFRAGFREELIST;
-                    // return frag descriptor to free list
-                    // the header holds the global proc id
-                    if (usethreads()) {
-                        ib_state.hca[afd->hca_index_m].send_frag_list.returnElement(afd, 0);
-                    } else {
-                        ib_state.hca[afd->hca_index_m].send_frag_list.returnElementNoLock(afd, 0);
-                    }
+                    afd->free(true);
                 }
             }
         }
 
-        if ((message->posted_m.length == message->pathInfo.ib.allocated_offset_m) && 
+        if ((message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) && 
             (message->NumAcked >= message->numfrags)) {
             return true;
         }
@@ -219,7 +216,7 @@ int endIndex, int *errorCode, bool skipCheck)
 
             bool OKToSend = true;
 
-            if ((sfd->flags & IB_INIT_COMPLETE) == 0) {
+            if ((sfd->state_m & ibSendFragDesc::INITCOMPLETE) == 0) {
                 // we've already saved the frag desc.'s parameters,
                 // call init() with default parameters
                 OKToSend = sfd->init();
@@ -227,10 +224,10 @@ int endIndex, int *errorCode, bool skipCheck)
 
             if (OKToSend) {
                 /* post send request */
-                if (sfd->enqueue(timeNow, errorCode)) {
+                if (sfd->post(timeNow, errorCode)) {
 #ifdef ENABLE_RELIABILITY
-                    sfd->timeSent = timeNow;
-                    (sfd->numTransmits)++;
+                    sfd->timeSent_m = timeNow;
+                    (sfd->numTransmits_m)++;
 #endif
                     // switch control message to ack list and remove from send list
                     afd = sfd;
@@ -243,7 +240,7 @@ int endIndex, int *errorCode, bool skipCheck)
                     // rebind this frag to another HCA if possible
                     // or simply return ULM_ERR_BAD_PATH to force path rebinding
                     // which is the default for now...
-                    *errorCode == ULM_ERR_BAD_PATH;
+                    *errorCode = ULM_ERR_BAD_PATH;
                     if (usethreads()) {
                         ib_state.lock.unlock();
                     }
@@ -327,19 +324,16 @@ int endIndex, int *errorCode, bool skipCheck)
             if (sfd->done(timeNow, errorCode)) {
                 // remove from ack list and free...
                 afd = sfd;
-                // free resources associated with the frag send desc.
-                afd->freeRscs();
-                afd->WhichQueue = IBFRAGFREELIST;
                 sfd = (ibSendFragDesc *)list->RemoveLinkNoLock(afd);
-                ibSendFragDescs.returnElementNoLock(afd, afd->hca_index);
-                }
+                // free resources associated with the frag send desc.
+                afd->free(true);
             }
             else if (*errorCode == ULM_ERR_BAD_SUBPATH) {
                 // mark this HCA as bad, if it not already, and
                 // rebind this frag to another HCA if possible
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
-                *errorCode == ULM_ERR_BAD_PATH;
+                *errorCode = ULM_ERR_BAD_PATH;
                 if (usethreads()) {
                     ib_state.lock.unlock();
                 }
@@ -359,20 +353,12 @@ int endIndex, int *errorCode, bool skipCheck)
     return true;
 }
 
-bool ibPath::sendMemoryRequest(SendDesc_t *message, int gldestProc, size_t offset,
-                                     size_t memNeeded, int *errorCode)
-{
-    bool result = true;
-    return result;
-}
-
 bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     ibSendFragDesc *sfd = 0, *afd;
     int returnValue = ULM_SUCCESS;
-    int tmap_index;
     double timeNow = -1;
-    int rc, i, hca_index, port_index;
+    int i, hca_index, port_index;
 
     *errorCode = ULM_SUCCESS;
     *incomplete = true;
@@ -413,7 +399,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             j = i + ib_state.next_send_hca;
             j = (j >= ib_state.num_active_hcas) ? j - ib_state.num_active_hcas : j; 
             hca = ib_state.active_hcas[j];
-            if ((ib_state.hca[hca].sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1)) {
+            if ((ib_state.hca[hca].ud.sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1)) {
                 k = ib_state.next_send_port;
                 k = (k >= ib_state.hca[hca].num_active_ports) ? k - ib_state.hca[hca].num_active_ports : k;
                 // set port and hca index values...
@@ -424,7 +410,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                     ((j + 1) % ib_state.num_active_hcas) : j;
                 ib_state.next_send_port = (j == ib_state.next_send_hca) ? k : 0;
                 // decrement tokens...
-                (ib_state.hca[hca_index].sq_tokens)--;
+                (ib_state.hca[hca_index].ud.sq_tokens)--;
                 (ib_state.hca[hca_index].send_cq_tokens)--;
                 break; 
             }
@@ -454,7 +440,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         message->FragsToSend.AppendNoLock(sfd);
         (message->NumFragDescAllocated)++;
         (message->numfrags)++;
-    } while (message->pathInfo.ib.allocated_offset_m < message->posted_m.length_m);
+
+    } while (message->pathInfo.ib.allocated_offset_m < (ssize_t)message->posted_m.length_m);
 
     /* send list -- finish initialization, post request, and move to frag ack list if successful */
 
@@ -466,7 +453,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
          sfd = (ibSendFragDesc *) sfd->next) {
         bool OKToSend = true;
 
-        if ((sfd->flags & ibSendFragDesc::IBINITCOMPLETE) == 0) {
+        if ((sfd->state_m & ibSendFragDesc::INITCOMPLETE) == 0) {
             // we've already saved the frag desc.'s parameters,
             // call init() with default parameters
             OKToSend = sfd->init();
@@ -476,13 +463,13 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             /* post IB request */
             if (sfd->post(timeNow, errorCode)) {
 #ifdef ENABLE_RELIABILITY
-                sfd->timeSent = timeNow;
-                (sfd->numTransmits)++;
+                sfd->timeSent_m = timeNow;
+                (sfd->numTransmits_m)++;
                 unsigned long long max_multiple =
-                    (sfd->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-                    (1 << sfd->numTransmits) :
+                    (sfd->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+                    (1 << sfd->numTransmits_m) :
                     (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-                double timeToResend = sfd->timeSent + (RETRANS_TIME * max_multiple);
+                double timeToResend = sfd->timeSent_m + (RETRANS_TIME * max_multiple);
                 if (message->earliestTimeToResend == -1) {
                     message->earliestTimeToResend = timeToResend;
                 } else if (timeToResend < message->earliestTimeToResend) {
@@ -493,7 +480,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // switch frag to ack list and remove from send list
                 afd = sfd;
                 afd->WhichQueue = IBFRAGSTOACK;
-                sfd = (quadricsSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
+                sfd = (ibSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
                 message->FragsToAck.AppendNoLock(afd);
                 (message->NumSent)++;
             }
@@ -502,7 +489,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // rebind this frag to another HCA if possible
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
-                *errorCode == ULM_ERR_BAD_PATH;
+                *errorCode = ULM_ERR_BAD_PATH;
                 if (usethreads()) {
                     ib_state.lock.unlock();
                 }
@@ -524,13 +511,13 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // with UD QP buffering we can free right away...later...
                 // only zero length messages can free the user data buffer now
                 send_done_now =
-                    (message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
+                    (message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
                     (message->NumSent == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             } else {
                 // same remark as above...will be changing
                 send_done_now =
-                    (message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
+                    (message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
                     (message->NumSent == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             }
@@ -546,7 +533,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         }
     }
 
-    if ((message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
+    if ((message->posted_m.length_m == (size_t)message->pathInfo.ib.allocated_offset_m) &&
         (message->NumSent == message->numfrags)) {
         *incomplete = false;
     }
@@ -579,16 +566,12 @@ bool ibPath::needsPush(void)
     return result;
 }
 
-#ifndef offsetof
-#define offsetof(T,F)   ((int)&(((T *)0)->F))
-#endif
-
 bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 {
     VAPI_ret_t vapi_result;
     VAPI_wc_desc_t wc_desc;
     ibRecvFragDesc *rd;
-    int returnValue, msg_type;
+    int msg_type;
     unsigned int computed_chksum, recvd_chksum;
     void *addr;
     bool locked = false;
@@ -625,13 +608,13 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 
             // find pointer to receive fragment descriptor...
             // for UD QP service, it's in the id of the wc structure returned
-            rd = (ibRecvFragDesc *)wc_desc.id;
+            rd = (ibRecvFragDesc *)((unsigned long)wc_desc.id);
 
             // increment receive UD QP tokens
             (h->ud.rq_tokens)++;
 
             // find receive buffer address
-            addr = (ibCtlHdr_t *)rd->sg_m[0].addr;
+            addr = (void *)((unsigned long)rd->sg_m[0].addr);
 
             // calculate msg_type from first 32-bit integer
             msg_type = (int)*((ulm_uint32_t *)addr);
@@ -643,11 +626,11 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 switch(msg_type) {
                     case MESSAGE_DATA:
                         cksum_len = sizeof(ibDataHdr_t) - sizeof(ulm_uint32_t);
-                        recvd_chksum = ((ibDataHdr_t *)addr->checksum);
+                        recvd_chksum = (((ibDataHdr_t *)addr)->checksum);
                         break;
                     case MESSAGE_DATA_ACK:
                         cksum_len = sizeof(ibDataAck_t) - sizeof(ulm_uint32_t);
-                        recvd_chksum = ((ibDataAck_t *)addr->checksum);
+                        recvd_chksum = (((ibDataAck_t *)addr)->checksum);
                         break;
                     default:
                         ulm_warn(("ibPath::receive bad message type %d\n",msg_type));
@@ -666,11 +649,13 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             // now process the received data
             if (!ib_state.checksum || (computed_chksum == recvd_chksum)) {
                 // checksum OK (or irrelevant), process ibRecvFragDesc...
-                rd->DataOK = false;
+                rd->DataOK_m = false;
                 rd->path = this;
+                rd->ib_bytes_recvd_m = wc_desc.byte_len;
 
                 switch (msg_type) {
                     case MESSAGE_DATA:
+                        rd->msg_m = (ibData2KMsg_t *)addr;
                         rd->msgData(timeNow);
                         break;
                     case MESSAGE_DATA_ACK:
@@ -737,7 +722,6 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
     ibSendFragDesc *FragDesc = 0;
     ibSendFragDesc *TmpDesc = 0;
     double curTime = 0;
-    int hca_index;
 
     *errorCode = ULM_SUCCESS;
 
@@ -758,43 +742,43 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	unsigned long long received_seq_no, delivered_seq_no;
 
 	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].received_largest_inorder_seq;
+		[FragDesc->globalDestID_m].received_largest_inorder_seq;
 	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].delivered_largest_inorder_seq;
+		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
 
 	bool free_send_resources = false;
 
 	// move frag if timed out and not sitting at the
 	// receiver
-	if (delivered_seq_no >= FragDesc->frag_seq) {
+	if (delivered_seq_no >= FragDesc->frag_seq_m) {
 	    // an ACK must have been dropped somewhere along the way...or
 	    // it hasn't been processed yet...
 	    FragDesc->WhichQueue = IBFRAGFREELIST;
 	    TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-	    // set frag_seq value to 0/null/invalid to detect duplicate ACKs
-	    FragDesc->frag_seq = 0;
+	    // set frag_seq_m value to 0/null/invalid to detect duplicate ACKs
+	    FragDesc->frag_seq_m = 0;
 	    // reset send descriptor pointer
-	    FragDesc->parentSendDesc = 0;
+	    FragDesc->parentSendDesc_m = 0;
 	    // free all of the other resources after we unlock the frag
 	    free_send_resources = true;
-	} else if (received_seq_no < FragDesc->frag_seq) {
-	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    if ((curTime - FragDesc->timeSent) >= (RETRANS_TIME * max_multiple)) {
+	} else if (received_seq_no < FragDesc->frag_seq_m) {
+	    unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+		(1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
+	    if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
 		// resend this frag...
 		returnValue = true;
 		FragDesc->WhichQueue = IBFRAGSTOSEND;
 		TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
 		message->FragsToSend.AppendNoLock(FragDesc);
-                (message->NumSent)--;
-                FragDesc=TmpDesc;
+        (message->NumSent)--;
+        FragDesc=TmpDesc;
 		continue;
 	    }
 	} else {
 	    // simply recalculate the next time to look at this send descriptor for retransmission
-	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
+	    unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+		(1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
+	    double timeToResend = FragDesc->timeSent_m + (RETRANS_TIME * max_multiple);
 	    if (message->earliestTimeToResend == -1) {
                 message->earliestTimeToResend = timeToResend;
             } else if (timeToResend < message->earliestTimeToResend) {
@@ -805,21 +789,10 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	if (free_send_resources) {
 	    message->clearToSend_m=true;
 	    (message->NumAcked)++;
+	    // return frag descriptor to free list, adjust tokens, etc.
+        FragDesc->free(true);
+    }
 
-	    // free send resources
-	    FragDesc->freeRscs();
-        FragDesc->WhichQueue = IBFRAGFREELIST;
-
-	    // return frag descriptor to free list
-            //   the header holds the global proc id
-	    if (usethreads()) {
-            ib_state.lock.lock();
-	    }
-		ib_state.hca[FragDesc->hca_index_m].send_frag_list.returnElementNoLock(FragDesc, 0);
-	    if (usethreads()) {
-            ib_state.lock.unlock();
-	    }
-        }
 	// reset FragDesc to previous value, if appropriate, to iterate over list correctly...
 	if (TmpDesc) {
 	    FragDesc = TmpDesc;

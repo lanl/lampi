@@ -39,6 +39,8 @@
 #include <vapi.h>
 #include "mem/FreeLists.h"
 #include "util/Lock.h"
+#undef PAGESIZE
+#include "path/ib/header.h"
 
 #define LAMPI_MAX_IB_HCA_PORTS  2
 #define LAMPI_MAX_IB_HCAS       2
@@ -105,8 +107,8 @@ typedef struct {
     FreeListPrivate_t <ibSendFragDesc> send_frag_list;
     unsigned int ctlMsgsToSendFlag;
     unsigned int ctlMsgsToAckFlag;
-    ProcessPrivateMemDblLinkList ctlMsgsToSend[1];
-    ProcessPrivateMemDblLinkList ctlMsgsToAck[1];
+    ProcessPrivateMemDblLinkList ctlMsgsToSend[NUMBER_CTLMSGTYPES];
+    ProcessPrivateMemDblLinkList ctlMsgsToAck[NUMBER_CTLMSGTYPES];
 } ib_hca_state_t;
 
 typedef struct {

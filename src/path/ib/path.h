@@ -37,6 +37,7 @@
 #include "ulm/ulm.h"
 #include "util/dclock.h"
 #include "path/common/path.h"
+#undef PAGESIZE
 #include "path/ib/state.h"
 
 #ifdef ENABLE_RELIABILITY
@@ -98,13 +99,13 @@ class ibPath : public BasePath_t {
         bool resend(SendDesc_t *message, int *errorCode);
 #endif
 
-        bool sendCtlMsgs(int rail, double timeNow, int startIndex, int endIndex,
+        bool sendCtlMsgs(int hca, double timeNow, int startIndex, int endIndex,
             int *errorCode, bool skipCheck = false);
 
         // all HCAs version
         bool sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
 
-        bool cleanCtlMsgs(int rail, double timeNow, int startIndex, int endIndex,
+        bool cleanCtlMsgs(int hca, double timeNow, int startIndex, int endIndex,
             int *errorCode, bool skipCheck = false);
 
         // all HCAs version

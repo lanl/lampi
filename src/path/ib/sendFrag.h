@@ -35,6 +35,7 @@
 #define IB_SENDFRAG_H
 
 #include "path/common/BaseDesc.h"
+#undef PAGESIZE
 #include "path/ib/state.h"
 
 class ibSendFragDesc : public BaseSendFragDesc_t {
@@ -60,9 +61,56 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         qp_type qp_type_m;
         VAPI_sr_desc_t sr_desc_m;
         VAPI_sg_lst_entry_t sg_m[1];
+        double timeSent_m;
+        int numTransmits_m;
+        int globalDestID_m;
+        unsigned long long frag_seq_m;
+        SendDesc_t *parentSendDesc_m;
 
 
         ibSendFragDesc(int poolIndex) { state_m = UNINITIALIZED; }
+
+        bool init(SendDesc_t *message, int hca, int port);
+        bool init(enum ibCtlMsgTypes type);
+        bool init(void);
+        bool post(double timeNow, int *errorCode);
+
+        bool done(double timeNow, int *errorCode)
+        {
+            *errorCode = ULM_SUCCESS;
+#ifdef ENABLE_RELIABILITY
+            // put timeout logic in here...
+            return ((state_m & LOCALACKED) != 0);
+#else
+            return ((state_m & LOCALACKED) != 0);
+#endif
+        }
+
+        // return descriptor to fragment list, adjust tokens, etc.
+        void free(bool needToLock = true)
+        {
+            if (needToLock && usethreads()) {
+                ib_state.lock.lock();
+            }
+
+            // reclaim tokens if we haven't already done so...
+            if ((state_m & LOCALACKED) == 0) {
+                (ib_state.hca[hca_index_m].send_cq_tokens)++;
+                (ib_state.hca[hca_index_m].ud.sq_tokens)++;
+            }
+
+            // clear all state except potentially whether IB resources 
+            // are associated with this descriptor
+            state_m = (state)(state_m & IBRESOURCES);
+
+            WhichQueue = IBFRAGFREELIST;
+            ib_state.hca[hca_index_m].send_frag_list.returnElementNoLock(this, 0);
+
+            if (needToLock && usethreads()) {
+                ib_state.lock.unlock();
+            }
+        }
+
 };
 
 #endif
