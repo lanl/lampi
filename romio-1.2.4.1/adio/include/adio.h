@@ -250,7 +250,6 @@ typedef struct {
 
 /* file systems */
 #define ADIO_NFS                 150
-#define ADIO_CFS                 160   /* HP/Compaq PFS */
 #define ADIO_PIOFS               151   /* IBM */
 #define ADIO_UFS                 152   /* Unix file system */
 #define ADIO_PFS                 153   /* Intel */
@@ -260,6 +259,7 @@ typedef struct {
 #define ADIO_PVFS                157   /* PVFS for Linux Clusters from Clemson Univ. */
 #define ADIO_NTFS                158   /* NTFS for Windows NT */
 #define ADIO_TESTFS              159   /* fake file system for testing */
+#define ADIO_CFS                 160   /* HP/Compaq PFS */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR

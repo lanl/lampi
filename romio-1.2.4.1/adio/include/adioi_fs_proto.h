@@ -134,9 +134,6 @@ void ADIOI_CFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 ADIO_Offset ADIOI_CFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                        int whence, int *error_code);
 void ADIOI_CFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
-void ADIOI_CFS_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
-			 int *error_code);
-void ADIOI_CFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 #endif
 
 #ifdef PFS

@@ -67,7 +67,12 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     } while (err && (errno == EINTR));
 
     if (err && (errno != EBADF)) {
-	FPRINTF(stderr, "File locking failed in ADIOI_Set_lock. If the file system is NFS, you need to use NFS version 3 and mount the directory with the 'noac' option (no attribute caching).\n");
+	FPRINTF(stderr, 
+"MPI-IO File locking failed.  \n\
+On HP/Compaq CFS file systems, file locking is not supported\n\
+and applications should avoid using MPI-IO in atomic mode.\n\
+On NFS file systems, you need to use NFS version 3 and mount the \n\
+directory with the 'noac' option (no attribute caching).\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

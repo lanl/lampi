@@ -113,6 +113,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 # else
 	    if (!strncmp(vfsbuf.f_basetype, "xfs", 3)) *fstype = ADIO_XFS;
 	    else if (!strncmp(vfsbuf.f_basetype, "piofs", 4)) *fstype = ADIO_PIOFS;
+	    else if (!strncmp(vfsbuf.f_basetype, "addon", 5)) *fstype = ADIO_CFS;
 	    else *fstype = ADIO_UFS;
 # endif
 	}
@@ -322,6 +323,21 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
 
     /* verify that we support this file system type and set ops pointer */
+    if (file_system == ADIO_CFS) {
+#ifndef CFS
+# ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the CFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+# else
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_CFS,
+				    myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
+# endif
+#else
+	*ops = &ADIO_CFS_operations;
+#endif
+    }
     if (file_system == ADIO_PFS) {
 #ifndef PFS
 # ifdef PRINT_ERR_MSG
@@ -474,5 +490,10 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     *error_code = MPI_SUCCESS;
     *fstype = file_system;
+
+    /*
+    FPRINTF(stderr, "ADIO_ResolveFileType: using fstype=%i\n",file_system);
+    FPRINTF(stderr, "NFS=%i UFS=%i  CFS=%i \n",ADIO_NFS,ADIO_UFS,ADIO_CFS);
+    */
     return;
 }
