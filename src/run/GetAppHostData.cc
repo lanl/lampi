@@ -38,6 +38,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#ifdef ENABLE_BPROC
+#include <sys/utsname.h>  // needed for uname
+#endif
 /* debug */
 extern int h_errno;
 /* end debug */
@@ -81,14 +84,37 @@ void GetAppHostCount(const char *InfoStream)
 }
 
 
+
+
 /*
  * get the primary name of this host from gethostname, if none is specified
  */
 void GetMpirunHostnameNoInput(const char *InfoStream)
 {
 #ifdef ENABLE_BPROC
+  /* gives a hostname of "n-1", which fails later */
     int node = bproc_currnode();
     sprintf(RunParameters.mpirunName, "n%d", node);
+
+
+    // try to construct a dotted IP of the mpirun node:
+    while (1) {
+      struct hostent *hptr;
+      struct utsname myname;
+      if (uname(&myname)<0) break;
+      if ( (hptr=gethostbyname(myname.nodename))==NULL) break;
+      if (hptr->h_addrtype!=AF_INET) break;
+
+      // multiple ip addresses:  h_addr_list[*].  Lets just take first one:
+      if (NULL==hptr->h_addr_list[0]) break;
+      in_addr *tin = (in_addr *) hptr->h_addr_list[0];
+
+      // convert to dotted ip string:
+      char *tmp = inet_ntoa( *tin );
+      strncpy(RunParameters.mpirunName,tmp,ULM_MAX_HOSTNAME_LEN);
+      break;
+    }
+
 #else
     HostName_t tmp;
     struct hostent *localHostInfo;

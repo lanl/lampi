@@ -440,8 +440,8 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
         return false;
     }
     setsockopt(socketToServer_m, IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
-
     serverHost = gethostbyname(hostname_m);
+
 #ifdef ENABLE_BPROC
     if (serverHost == (struct hostent *)NULL) {
         /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
@@ -464,10 +464,12 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     server.sin_port = htons((unsigned short)port_m);
     server.sin_family = AF_INET;
 
+
     // stagger our connection establishment back to mpirun
     if (hostrank > 0) {
         usleep((hostrank % 1000) * 1000);
     }
+
 
     if (timeout > 0) {
         if (sigaction(SIGALRM, &newSignals, &oldSignals) < 0) {
@@ -657,8 +659,8 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
 void adminMessage::sortNodeLabels(int *labels2Rank)
 {
     // reorder node labeling so that the node label is the same as the hostrank
-    char	*ptr;
-    int		i, j, rank;
+    char        *ptr;
+    int         i, j, rank;
     
     for ( i = 0; i < nhosts_m; i++ )
     {
@@ -1737,7 +1739,7 @@ void *server_connect_accept(void *arg)
 bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
                                  int numHosts, int timeout) 
 {
-    int np = 0, tag, hostrank, nprocesses, recvAuthData[3], ok;
+    int np = 0, nh=0, use_random_mapping=0, tag, hostrank, nprocesses, recvAuthData[3], ok;
     int oldLCS = largestClientSocket_m,cnt;
     ulm_iovec_t iovecs[5];
     int size, *hostsAssigned = 0;
@@ -1864,8 +1866,20 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
 
 #ifdef ENABLE_BPROC
         /* BPROC node id from remote bproc_currnode() call must be translated */
+        int hostrank_orig=hostrank;
         hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
-        if (hostrank == numHosts) {
+        
+        
+        // first time, specify if we are using a random host mapping, or actual (default):
+        if (nh==0 && hostrank==numHosts) use_random_mapping=1;
+        
+        if (use_random_mapping)
+            ulm_err(("Using random host mapping: nh=%d client sent nodeid=%d\n",nh,hostrank_orig));  
+
+        // in random host map mode, if any host returns valid hostrank, fail:
+        // in actual host map mode, if any host returns invalid hostrank, fail:
+        if ((hostrank==numHosts && use_random_mapping==0) 
+          ||  (hostrank!=numHosts && use_random_mapping==1)) {
             ulm_err(("Error: adminMessage::serverConnect nodeIDToHostRank failed (sockfd = %d)!\n", sockfd));
             if (timeout > 0) {
                 alarm(0);
@@ -1873,6 +1887,10 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             }
             pthread_cancel(sca_thread);
             return false;
+        }
+
+        if (use_random_mapping==1) {
+          hostrank=nh;  
         }
 #else
         // set hostrank
@@ -1952,6 +1970,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
         // store the information about this socket
         if (ok == 1) {
             np += nprocesses;
+            ++nh;
             ranks_m[sockfd] = hostrank;
             clientSocketActive_m[sockfd] = true;
             oldLCS = largestClientSocket_m;

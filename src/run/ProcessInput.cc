@@ -86,8 +86,8 @@ int MPIrunProcessInput(int argc, char **argv,
     /* find an available scheduler, and make sure only one is enabled */
 
     if (RunParameters->UseBproc) {
-        int val;
-        if (lampi_environ_find_integer("NODES", &val) == LAMPI_ENV_ERR_NOT_FOUND) {
+        char *val;
+        if (lampi_environ_find_string("NODES", &val) == LAMPI_ENV_ERR_NOT_FOUND) {
             /* disable Bproc */
             RunParameters->UseBproc = 0;
         } else {
