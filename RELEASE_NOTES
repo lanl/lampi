@@ -439,3 +439,9 @@ Version 1.5.9
 - Job termination after error or MPI_Abort is now slightly less
   aggressive in order to give more opportunity for standard output and
   standard error to be recovered.
+
+Version 1.5.10
+
+- Improved standard I/O collection on abnormal termination.
+
+- Fixed issue in fortran version of MPI_Wait().
