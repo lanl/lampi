@@ -55,9 +55,7 @@ int PMPI_Op_free(MPI_Op *mop)
         if (op) {
             if (op->isbasic) {
                 /* we don't free basic ops ever... */
-                rc = MPI_ERR_OP;
-                _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
-                return rc;
+                rc = MPI_SUCCESS;
             } else {
                 if (_mpi_ptr_table_add(table, op->func) < 0 ||
                         _mpi_ptr_table_add(table, op) < 0) {
