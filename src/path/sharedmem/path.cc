@@ -297,7 +297,7 @@ bool sharedmemPath::send(SendDesc_t *message, bool *incomplete,
                   message->pathInfo.sharedmem.sharedData->NumAcked) >=
                  (unsigned) maxOutstandingSMPFrags)) {
                 message->pathInfo.sharedmem.sharedData->clearToSend_m = false;
-            } else if (!(waitOnAck && message->NumAcked == 0)) {
+            } else if (!(waitOnAck && message->pathInfo.sharedmem.sharedData->NumAcked == 0)) {
                 message->pathInfo.sharedmem.sharedData->clearToSend_m = true;
             }
             // Request To Send/Clear To Send

@@ -73,8 +73,7 @@ int PMPI_Issend(void *buf, int count, MPI_Datatype type, int dest,
      * performance of the non-blocking send
      */
     rc = ulm_isend(buf, count, datatype, dest, tag, comm, &req,
-                   ULM_SEND_STANDARD);
-                    /* ULM_SEND_SYNCHRONOUS); */
+                    ULM_SEND_SYNCHRONOUS);
 
     *request = (MPI_Request) req;
 
