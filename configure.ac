@@ -168,6 +168,7 @@ i?86-pc-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -259,6 +260,7 @@ ia64-unknown-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -295,6 +297,7 @@ x86_64-unknown-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -348,6 +351,7 @@ alpha*-dec*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_rms=${enable_rms:-yes}
         enable_qsnet=${enable_qsnet:-yes}
         enable_reliability=${enable_reliability:-yes}
@@ -397,6 +401,7 @@ powerpc-apple-darwin*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -445,6 +450,7 @@ mips-sgi-irix*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_lsf=${enable_lsf:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
@@ -525,6 +531,14 @@ echo "feature UDP... ${enable_udp:-no}"
 if test "$enable_udp" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_UDP"
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/udp"
+fi
+
+AC_ARG_ENABLE(tcp,
+              AC_HELP_STRING([--enable-tcp], [enable TCP path]))
+echo "feature TCP... ${enable_tcp:-no}"
+if test "$enable_tcp" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_TCP"
+   MODULES_LIBMPI="$MODULES_LIBMPI src/path/tcp"
 fi
 
 AC_ARG_ENABLE(qsnet,

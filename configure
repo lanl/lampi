@@ -852,6 +852,7 @@ Optional Features:
   --enable-rms            use RMS
   --enable-bproc          use BPROC
   --enable-udp            enable UDP path
+  --enable-tcp            enable TCP path
   --enable-qsnet          enable QSNET path
   --enable-gm             enable Myrinet GM path
   --enable-ib             enable InfiniBand path
@@ -2696,7 +2697,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2699:" \
+echo "$as_me:2700:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9559,6 +9560,7 @@ i?86-pc-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -9650,6 +9652,7 @@ ia64-unknown-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -9686,6 +9689,7 @@ x86_64-unknown-linux*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -9739,6 +9743,7 @@ alpha*-dec*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_rms=${enable_rms:-yes}
         enable_qsnet=${enable_qsnet:-yes}
         enable_reliability=${enable_reliability:-yes}
@@ -9788,6 +9793,7 @@ powerpc-apple-darwin*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
 
@@ -9836,6 +9842,7 @@ mips-sgi-irix*)
         # default features for this host
         enable_shared_memory=${enable_shared_memory:-yes}
         enable_udp=${enable_udp:-yes}
+        enable_tcp=${enable_tcp:-yes}
         enable_lsf=${enable_lsf:-yes}
         enable_reliability=${enable_reliability:-yes}
         enable_check_api_args=${enable_check_api_args:-yes}
@@ -9943,6 +9950,17 @@ echo "feature UDP... ${enable_udp:-no}"
 if test "$enable_udp" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_UDP"
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/udp"
+fi
+
+# Check whether --enable-tcp or --disable-tcp was given.
+if test "${enable_tcp+set}" = set; then
+  enableval="$enable_tcp"
+
+fi;
+echo "feature TCP... ${enable_tcp:-no}"
+if test "$enable_tcp" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_TCP"
+   MODULES_LIBMPI="$MODULES_LIBMPI src/path/tcp"
 fi
 
 # Check whether --enable-qsnet or --disable-qsnet was given.
