@@ -48,7 +48,7 @@
 %define	compiler	%{nil}
 %endif
 
-%define version 1.5.4
+%define version 1.5.5-rc2
 %define name lampi
 %define release 1
 

@@ -6,7 +6,7 @@
  */
 
 #include "ad_panfs.h"
-#include <pan_fs_client_cw_mode.h>
+#include "pan_fs_client_cw_mode.h"
 
 void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 {

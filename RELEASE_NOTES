@@ -370,3 +370,12 @@ Version 1.5.4
 
 - Null objects (MPI_DATATYPE_NULL, MPI_OP_NULL, MPI_NULL_REQUEST)
   redefined to be real memory locations.
+
+Version 1.5.5
+
+- Updated ROMIO PANFS support.
+
+- Added MPIR_Status_set_bytes for correct MPI-IO statuses.
+
+- Ensure that SA_RESTART flag is set so that ROMIO operations do not
+  get interrupted by unexpected signals.

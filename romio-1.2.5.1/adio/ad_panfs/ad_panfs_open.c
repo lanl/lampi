@@ -7,7 +7,7 @@
 
 #include "ad_panfs.h"
 #include <string.h>
-#include <pan_fs_client_cw_mode.h>
+#include "pan_fs_client_cw_mode.h"
 #define TEMP_BUFFER_SIZE 64
 
 void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
