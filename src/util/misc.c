@@ -138,3 +138,24 @@ char *uint_to_bit_string(unsigned int num, int pad)
 
     return bstr;
 }
+
+
+void set_sa_restart(void) {
+    /*
+     *  set all signals to SA_RESTART.  Otherwise, handled or unhandled signals
+     *  will cause wait(), read() & write() to return a -1 and errno==EINTR.
+     */
+    struct sigaction action;
+    int signal=0;
+    do {
+        ++signal;
+        if (0>sigaction(signal,NULL,&action)) break;   // invalid signal
+        if (0==(SA_RESTART & action.sa_flags) ){       // set SA_RESTART
+            action.sa_flags |= SA_RESTART;
+            sigaction(signal,&action,NULL);
+        }
+        //fprintf(stderr,"sig=%i SA_RESTART = %i \n",signal,action.sa_flags & SA_RESTART);
+        //fflush(stderr);
+    } while (signal<1024);
+}
+
