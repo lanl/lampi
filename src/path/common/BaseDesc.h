@@ -163,7 +163,6 @@ public:
     volatile unsigned NumAcked; //  number of acks received
     volatile unsigned NumFragDescAllocated;     // number of frag descriptors allocated
     volatile int NumSent;       // the number that have had the 'action' applied
-    int maxOutstandingFrags;    // maximum outstanding frags - for flow control
     Status_t posted_m;
 
 #if ENABLE_RELIABILITY
