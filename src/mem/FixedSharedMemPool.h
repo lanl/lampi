@@ -71,32 +71,37 @@ typedef struct MemorySegment {
 class FixedSharedMemPool {
 public:
     // default constructor
-    FixedSharedMemPool() { poolOkToUse_m=false ; nMemorySegments_m=NULL;
-    nMemorySegmentsInArray_m=NULL;
-    memSegments_m=NULL; minAllocationSize_m=-1;
-    applyMemoryAffinity=false; }
+    FixedSharedMemPool()
+        {
+            poolOkToUse_m = false;
+            nMemorySegments_m = NULL;
+            nMemorySegmentsInArray_m = NULL;
+            memSegments_m = NULL;
+            minAllocationSize_m = -1;
+            applyMemoryAffinity = false;
+        }
 
     // destructor
-    ~FixedSharedMemPool() 
-    {
-        int i;
-        
-        if (memSegments_m) {
-            for (i = 0; i < nPools_m; i++) {
-                ulm_free(memSegments_m[i]);
+    ~FixedSharedMemPool()
+        {
+            int i;
+
+            if (memSegments_m) {
+                for (i = 0; i < nPools_m; i++) {
+                    ulm_free(memSegments_m[i]);
+                }
+                ulm_free(memSegments_m);
+                memSegments_m = 0;
             }
-            ulm_free(memSegments_m);
-            memSegments_m = 0;
+            if (nMemorySegments_m) {
+                ulm_free(nMemorySegments_m);
+                nMemorySegments_m = 0;
+            }
+            if (nMemorySegmentsInArray_m) {
+                ulm_free(nMemorySegmentsInArray_m);
+                nMemorySegmentsInArray_m = 0;
+            }
         }
-        if (nMemorySegments_m) {
-            ulm_free(nMemorySegments_m);
-            nMemorySegments_m = 0;
-        }
-        if (nMemorySegmentsInArray_m) {
-            ulm_free(nMemorySegmentsInArray_m);
-            nMemorySegmentsInArray_m = 0;
-        }
-    }
 
     // number of pools
     int nPools_m;
@@ -131,7 +136,7 @@ public:
               int nPools, int nArrayElementsToAdd, bool applyMemAffinity);
 
     // get a shared memory segment
-    void *getMemorySegment(ssize_t length, ssize_t alingment, int Pool=0);
+    void *getMemorySegment(size_t length, size_t align, int Pool = 0);
 };
 
 #endif /* !_FIXEDSHAREDMEMPOOL */

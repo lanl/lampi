@@ -54,7 +54,7 @@ static void initRecvFragmentDescriptors(void)
     bool UDPRecvFragsDescRetryForResources   = false;
     bool UDPRecvFragsDescAbortWhenNoResource = true;
 
-    bool enforceMemoryPolicy = true;
+    bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
 	ulm_exit((-1, "Unable to allocate space for memAffinityPool\n"));
@@ -76,7 +76,7 @@ static void initRecvFragmentDescriptors(void)
                                " UDP recv frag descriptors ",
                                UDPRecvFragsDescRetryForResources,
                                memAffinityPool,
-                               enforceMemoryPolicy,
+                               enforceAffinity,
                                ShareMemDescPool,
                                UDPRecvFragsDescAbortWhenNoResource);
     // clean up
@@ -109,7 +109,7 @@ static void initSendFragmentDescriptors(void)
     bool UDPSendFragsDescRetryForResources   = false;
     bool UDPSendFragsDescAbortWhenNoResource = true;
 
-    bool enforceMemoryPolicy = true;
+    bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
 	ulm_exit((-1, "Unable to allocate space for memAffinityPool\n"));
@@ -132,7 +132,7 @@ static void initSendFragmentDescriptors(void)
                                " UDP send frag descriptors ",
                                UDPSendFragsDescRetryForResources,
                                memAffinityPool,
-                               enforceMemoryPolicy,
+                               enforceAffinity,
                                NULL,
                                UDPSendFragsDescAbortWhenNoResource);
 

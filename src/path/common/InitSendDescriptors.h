@@ -36,7 +36,7 @@
 #include "mem/FreeLists.h"
 #include "path/common/BaseDesc.h"
 
-extern FreeLists<DoubleLinkList, BaseSendDesc_t, int, MMAP_SHARED_PROT,
+extern FreeLists<DoubleLinkList, BaseSendDesc_t, MMAP_SHARED_PROT,
                  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> _ulm_SendDescriptors;
 extern ssize_t _ulm_nSendDescPages;
 extern ssize_t _ulm_maxPgsIn1SendDescList;

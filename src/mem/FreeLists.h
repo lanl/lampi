@@ -55,8 +55,8 @@
 #include "mem/MemorySegments.h"
 #include "ulm/ulm.h"
 
-#ifdef SN0
-#include "os/IRIX/OsSpecificFreeListInc.h"
+#if defined(NUMA) && defined(__mips)
+#include "os/IRIX/SN0/acquire.h"
 #endif
 
 /* Externs */
@@ -72,9 +72,6 @@ extern FixedSharedMemPool PerProcSharedMemoryPools;
  * ElementType - Type of the descriptors stored in the 
  * FreeLists::freeLists_m array.
  *
- * MemoryAffinity - Class describing the memory affinity of 
- * each linked list of descriptors.
- *
  * MemProt - Type of memory protection to use on the memory 
  * managed by the FreeLists object.
  *
@@ -84,7 +81,7 @@ extern FixedSharedMemPool PerProcSharedMemoryPools;
  * the FreeLists is shared memory.
  */
 
-template < class ContainerType, class ElementType, class MemoryAffinity,
+template < class ContainerType, class ElementType,
            int MemProt, int MemFlags, int SharedMemFlag >
 class FreeLists {
 public:
@@ -111,9 +108,9 @@ public:
     // d'tor
     ~FreeLists()
         {
-            if (memoryPolicy_m) {
-                delete[]memoryPolicy_m;
-                memoryPolicy_m = 0;
+            if (affinity_m) {
+                delete[]affinity_m;
+                affinity_m = 0;
             }
 
             if (memoryPool_m) {
@@ -184,7 +181,7 @@ public:
              ssize_t ElementSize, long minPagesPerList,
              long maxPagesPerList, long mxConsecReqFailures,
              char *lstlistDescription, int retryForMoreResources,
-             MemoryAffinity * memPolicy, bool enforceMemAffinity,
+             affinity_t *affinity, bool enforceMemAffinity,
              MemoryPool < MemProt, MemFlags,
              SharedMemFlag > *inputPool, bool Abort =
              true, int threshToGrowList = 0, bool freeMemPool
@@ -349,14 +346,14 @@ public:
             retryForMoreResources_m = retryForMoreResources;
             enforceMemAffinity_m = enforceMemAffinity;
             if (enforceMemAffinity_m) {
-                memoryPolicy_m = new MemoryAffinity[nLists_m];
-                if (!memoryPolicy_m) {
+                affinity_m = new affinity_t[nLists_m];
+                if (!affinity_m) {
                     ulm_exit((-1,
-                              "Unable to allocate memoryPolicy_m array.\n"));
+                              "Unable to allocate affinity_m array.\n"));
                 }
                 // copy policies in
                 for (int pool = 0; pool < nLists_m; pool++) {
-                    memoryPolicy_m[pool] = memPolicy[pool];
+                    affinity_m[pool] = affinity[pool];
                 }
             }
             // initialize locks for memory pool and individual list and link locks
@@ -517,11 +514,11 @@ public:
                 return errorCode;
             }                       // end !basePtr
 
-            // attach memory policy
+            // attach memory affinity
             if (enforceMemAffinity_m) {
-                errorCode = applyMemoryAffinity(&(memoryPolicy_m[poolIndex]),
-                                                basePtr, lenAdded);
-                if (errorCode != ULM_SUCCESS) {
+                if (!setAffinity(basePtr, lenAdded,
+                                  affinity_m[poolIndex])) {
+                    errorCode = ULM_ERROR;
 #ifdef _DEBUGQUEUES
                     fprintf(stderr,
                             "Unable to set memory policy :: poolIndex %d\n",
@@ -681,7 +678,7 @@ private:
     // indicates if memory affinity is to be enforced
     bool enforceMemAffinity_m;
     // array of memory policies - one per pool
-    MemoryAffinity *memoryPolicy_m;
+    affinity_t *affinity_m;
     // at or above this value more elements are added to the list, 
     // if the list is empty
     int thresholdToGrowList;
@@ -698,11 +695,7 @@ private:
     // number of chunks actually added to freelist
     int *chunksReturned;
 
-#ifdef SN0
-#include "os/IRIX/FreeLists.h"
-#else
-#include "os/common/FreeLists.h"
-#endif
+#include "os/numa.h"
 
     // request an element from a specified element pool
     inline volatile Links_t *RequestElement(int ListIndex = 0)

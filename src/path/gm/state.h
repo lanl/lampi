@@ -68,7 +68,7 @@ public:
     char macAddress[LENMACADDR];
     remoteDevInfo_t *remoteDevList;
     MemoryPool <MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> memPool;
-    FreeLists <DoubleLinkList, gmFragBuffer, int,
+    FreeLists <DoubleLinkList, gmFragBuffer,
                MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> bufList; 
     bool devOK;
 
@@ -131,7 +131,6 @@ public:
     FreeLists <
         DoubleLinkList,
         gmSendFragDesc,
-        int,
         MMAP_PRIVATE_PROT,
         MMAP_PRIVATE_FLAGS,
         MMAP_SHARED_FLAGS > sendFragList;
@@ -140,7 +139,6 @@ public:
     FreeLists <
         DoubleLinkList,
         gmRecvFragDesc,
-        int,
         MMAP_PRIVATE_PROT,
         MMAP_PRIVATE_FLAGS,
         MMAP_SHARED_FLAGS > recvFragList;

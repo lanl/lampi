@@ -65,7 +65,7 @@
 #include "path/common/BaseDesc.h"
 #include "path/common/InitSendDescriptors.h"
 #include "path/common/pathContainer.h"
-#include "os/MemoryPolicy.h"
+#include "os/numa.h"
 #include "ulm/ulm.h"
 
 #ifdef SHARED_MEMORY
@@ -74,26 +74,23 @@
 #include "path/sharedmem/SMPSendDesc.h"
 #endif /* SHARED_MEMORY */
 
-#ifdef __mips
+#if defined(NUMA) && defined(__mips)
+#include "os/IRIX/SN0/acquire.h"
 bool useRsrcAffinity = true;
 bool useDfltAffinity = true;
 bool affinMandatory = true;
-#include "os/IRIX/acquire.h"
 int nCpPNode = 2;
-#endif
-
+#endif /* NUMA and __mips */
 
 /*
  * File scope variables
  */
 
 static int initialized = 0;
-
 static int dupSTDERRfd;
 static int dupSTDOUTfd;
 static int *StderrPipes;
 static int *StdoutPipes;
-
 
 
 /*
@@ -644,7 +641,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
                            maxIRecvDescRetries,
                            " IReceive descriptors ",
                            retryForMoreResources, &memAffinityPool,
-                           enforceMemoryPolicy(), inputPool,
+                           enforceAffinity(), inputPool,
                            irecvDescDescAbortWhenNoResource);
     if (retVal) {
         ulm_exit((-1, "FreeListsT::Init Unable to initialize IReceive "
@@ -671,7 +668,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
         (nFreeLists, nPagesPerList, poolChunkSize, pageSize, eleSize,
          minPagesPerList, maxPagesPerList, maxIRecvDescRetries,
          " RequestDesc_t pool ",
-         retryForMoreResources, &memAffinityPool, enforceMemoryPolicy(),
+         retryForMoreResources, &memAffinityPool, enforceAffinity(),
          inputPoolULMR, irecvDescDescAbortWhenNoResource);
     if (retVal) {
         ulm_exit((-1, "FreeLists::Init Unable to initialize RequestDesc_t "
@@ -697,7 +694,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
         (nFreeLists, nPagesPerList, poolChunkSize, pageSize, eleSize,
          minPagesPerList, maxPagesPerList, maxIRecvDescRetries,
          " Pointer Dbl Link List ",
-         retryForMoreResources, &memAffinityPool, enforceMemoryPolicy(),
+         retryForMoreResources, &memAffinityPool, enforceAffinity(),
          inputPoolPtrL, pointerPoolAbortWhenNoResource);
     if (retVal) {
         ulm_exit((-1, "FreeLists::Init Unable to initialize Dbl Link "
@@ -1133,7 +1130,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      (adminMessage::packType) sizeof(int),
                                      1);
             break;
-#ifdef __mips
+#ifdef NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
             {
@@ -1171,7 +1168,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
             break;
 
         case adminMessage::USERESOURCEAFFINITY:
-            /* specify if resource affinit is to be used */
+            /* specify if resource affinity is to be used */
             s->client->unpackMessage(&tmpInt,
                                      (adminMessage::packType) sizeof(int),
                                      1);
@@ -1219,7 +1216,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                 affinMandatory = false;
             }
             break;
-#endif
+#endif /* NUMA */
 
 
         case adminMessage::MAXCOMMUNICATORS:
@@ -1493,7 +1490,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&(s->output_prefix),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-#ifdef __mips
+#ifdef NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
             {
@@ -1528,7 +1525,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             break;
 
         case adminMessage::USERESOURCEAFFINITY:
-            /* specify if resource affinit is to be used */
+            /* specify if resource affinity is to be used */
             s->client->unpack(&tmpInt,
                               (adminMessage::packType) sizeof(int), 1);
             if ((tmpInt < 0) || (tmpInt > 1)) {
@@ -1573,8 +1570,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
                 affinMandatory = false;
             }
             break;
-#endif
-
+#endif /* NUMA */
 
         case adminMessage::MAXCOMMUNICATORS:
             /* specify upper limit on communicators */

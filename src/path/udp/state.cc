@@ -44,17 +44,17 @@ int udp_sockfd_long_g = 0;
 // recv frag descriptors
 //
 
-FreeLists<DoubleLinkList, udpRecvFragDesc, int, MMAP_SHARED_PROT,
-          MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> UDPRecvFragDescs;
+FreeLists < DoubleLinkList, udpRecvFragDesc, MMAP_SHARED_PROT,
+            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UDPRecvFragDescs;
 
 // pool for send frag descriptors
 
-FreeLists<DoubleLinkList, udpSendFragDesc, int, MMAP_PRIVATE_PROT,
-	  MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> udpSendFragDescs;
+FreeLists < DoubleLinkList, udpSendFragDesc, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > udpSendFragDescs;
 
-FreeLists <DoubleLinkList,UDPEarlySend_large,int,MMAP_PRIVATE_PROT,
-                  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_large;
-FreeLists <DoubleLinkList,UDPEarlySend_med,int,MMAP_PRIVATE_PROT,
-                  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_med;
-FreeLists <DoubleLinkList,UDPEarlySend_small,int,MMAP_PRIVATE_PROT,
-                  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_small;
+FreeLists < DoubleLinkList, UDPEarlySend_large, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_large;
+FreeLists < DoubleLinkList, UDPEarlySend_med, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_med;
+FreeLists < DoubleLinkList, UDPEarlySend_small, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_small;

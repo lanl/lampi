@@ -87,7 +87,6 @@ void ClientWaitForSetUpToComplete(volatile int *HostDoneWithSetup,
                                   int IAmDaemon, int ServerSocketFD);
 void setupMemoryPools();
 int setupCore();
-bool setMemPolicy(void *memory, size_t length, int poolIndex);
 int setupPerProcSharedMemPools(int nPools);
 
 #endif                          /* _ULMCLIENT */

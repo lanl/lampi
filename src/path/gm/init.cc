@@ -87,7 +87,7 @@ static void initFragFreelists(void)
     long maxPagesPerList;
     long mxConsecReqFailures;
     int retryForMoreResources;
-    int *memPolicy;
+    int *affinity;
     bool enforceMemAffinity;
     bool Abort;
     int threshToGrowList;
@@ -97,12 +97,12 @@ static void initFragFreelists(void)
 
     // allocate and initialize memory affinity index
 
-    memPolicy = (int *) ulm_malloc(sizeof(int) * local_nprocs());
-    if (!memPolicy) {
+    affinity = (int *) ulm_malloc(sizeof(int) * local_nprocs());
+    if (!affinity) {
         ulm_exit((-1, "Error: gmRecvDescs: Out of memory\n"));
     }
     for (i = 0; i < local_nprocs(); i++) {
-        memPolicy[i] = i;
+        affinity[i] = i;
     }
     
     for (i = 0; i < gmState.nDevsAllocated; i++) {
@@ -184,7 +184,7 @@ void gmSetup(lampiState_t *s)
     ssize_t PoolChunkSize, ElementSize;
     size_t PageSize;
     char *lstlistDescription;
-    int *memPolicy;
+    int *affinity;
     bool enforceMemAffinity, Abort, freeMemPool;
     MemoryPool <MMAP_PRIVATE_PROT, MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> *inputPool;
 
@@ -466,7 +466,7 @@ void gmSetup(lampiState_t *s)
 	                                                  mxConsecReqFailures = 1000,
 	                                                  lstlistDescription = "GM buffer list",
 	                                                  retryForMoreResources = 1,
-	                                                  memPolicy = 0,
+	                                                  affinity = 0,
 	                                                  enforceMemAffinity = false,
 	                                                  inputPool = &(gmState.localDevList[i].memPool),
                                                       Abort = true,

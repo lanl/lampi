@@ -106,9 +106,9 @@ inline int getMemPoolIndex()
     return lampiState.memLocalityIndex;
 }
 
-inline bool enforceMemoryPolicy()
+inline bool enforceAffinity()
 {
-    return (bool) lampiState.enforceMemoryPolicy;
+    return (bool) lampiState.enforceAffinity;
 }
 
 #endif /* __cplusplus */

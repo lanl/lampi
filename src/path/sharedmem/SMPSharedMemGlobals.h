@@ -99,11 +99,11 @@ extern bool SMPCollFragDescAbortWhenNoResource;
 
 //! SMP send descriptor list
 
-extern FreeLists<DoubleLinkList, SMPSendDesc_t, int, MMAP_SHARED_PROT, 
+extern FreeLists<DoubleLinkList, SMPSendDesc_t, MMAP_SHARED_PROT, 
                  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> SMPSendDescs;
 
 //! SMP frag descriptor list
-extern FreeLists<DoubleLinkList, SMPSecondFragDesc_t, int, MMAP_SHARED_PROT, 
+extern FreeLists<DoubleLinkList, SMPSecondFragDesc_t, MMAP_SHARED_PROT, 
                  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> SMPFragPool;
 
 //! frag queue

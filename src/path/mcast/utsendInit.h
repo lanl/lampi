@@ -35,7 +35,7 @@
 
 #include "include/internal/mmap_params.h"
 
-extern FreeLists<DoubleLinkList, UtsendDesc_t, int, MMAP_SHARED_PROT,
+extern FreeLists<DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
                  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> UtsendDescriptors;
 
 extern SharedMemDblLinkList**  UnackedUtsendDescriptors;

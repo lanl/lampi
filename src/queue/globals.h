@@ -74,16 +74,16 @@ ProcessPrivateMemDblLinkList UnackedPostedSends;
 ProcessPrivateMemDblLinkList UnprocessedAcks;
 
 // pool of contiguous Ireceive descriptors
-FreeLists < DoubleLinkList, RecvDesc_t, int, MMAP_PRIVATE_PROT,
-    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > IrecvDescPool;
+FreeLists < DoubleLinkList, RecvDesc_t, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > IrecvDescPool;
 ssize_t maxPgsIn1IRecvDescDescList = -1;
 ssize_t minPgsIn1IRecvDescDescList = -1;
 long maxIRecvDescRetries = 1000;
 bool irecvDescDescAbortWhenNoResource = true;
 
 // pool of RequestDesc_ts
-FreeLists < DoubleLinkList, RequestDesc_t, int, MMAP_PRIVATE_PROT,
-    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > ulmRequestDescPool;
+FreeLists < DoubleLinkList, RequestDesc_t, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > ulmRequestDescPool;
 
 // list of request objects that are potentially still being used
 ProcessPrivateMemDblLinkList _ulm_incompleteRequests;
@@ -130,8 +130,8 @@ groupPool grpPool;
 int nIncreaseGroupArray;
 
 
-FreeLists < DoubleLinkList, ptrLink_t, int, MMAP_PRIVATE_PROT,
-    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > pointerPool;
+FreeLists < DoubleLinkList, ptrLink_t, MMAP_PRIVATE_PROT,
+            MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > pointerPool;
 ssize_t npointerPoolPages = -1;
 ssize_t maxPgsIn1pointerPool = -1;
 ssize_t minPgsIn1pointerPool = -1;
@@ -169,11 +169,11 @@ extern ProcessPrivateMemDblLinkList UnackedPostedSends;
 extern ProcessPrivateMemDblLinkList UnprocessedAcks;
 
 // pool of Utsend descriptors
-extern FreeLists < DoubleLinkList, UtsendDesc_t, int, MMAP_SHARED_PROT,
+extern FreeLists < DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
                    MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UtsendDescriptors;
 
 // pool of IReceive descriptors
-extern FreeLists < DoubleLinkList, RecvDesc_t, int, MMAP_PRIVATE_PROT,
+extern FreeLists < DoubleLinkList, RecvDesc_t, MMAP_PRIVATE_PROT,
                    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > IrecvDescPool;
 extern ssize_t maxPgsIn1IRecvDescDescList;
 extern ssize_t minPgsIn1IRecvDescDescList;
@@ -181,7 +181,7 @@ extern long maxIRecvDescRetries;
 extern bool irecvDescDescAbortWhenNoResource;
 
 // pool of RequestDesc_ts
-extern FreeLists < DoubleLinkList, RequestDesc_t, int, MMAP_PRIVATE_PROT,
+extern FreeLists < DoubleLinkList, RequestDesc_t, MMAP_PRIVATE_PROT,
                    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > ulmRequestDescPool;
 
 // list of request objects that are potentially still being used
@@ -227,7 +227,7 @@ extern groupPool grpPool;
 extern int nIncreaseGroupArray;
 
 // double link list of pointers pool
-extern FreeLists < DoubleLinkList, ptrLink_t, int, MMAP_PRIVATE_PROT,
+extern FreeLists < DoubleLinkList, ptrLink_t, MMAP_PRIVATE_PROT,
                    MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > pointerPool;
 extern ssize_t npointerPoolPages;
 extern ssize_t maxPgsIn1pointerPool;
@@ -266,8 +266,9 @@ extern ssize_t largePoolBytesPerProcess;
 
 
 ////////////////////////////////////////////////////////////////////////
-// SGI specific resources
-#ifdef __mips
+// SGI NUMA specific resources
+
+#if defined(NUMA) && defined(__mips)
 #include "os/IRIX/acquire.h"
 extern acquire *ULMai;
 extern request *ULMreq;
@@ -275,9 +276,7 @@ extern int nCpPNode;
 extern bool useRsrcAffinity;
 extern bool useDfltAffinity;
 extern bool affinMandatory;
-#endif                          /* __mips */
-
-
+#endif /* NUMA and __mips*/
 
 
 ////////////////////////////////////////////////////////////////////////

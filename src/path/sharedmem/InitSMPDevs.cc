@@ -44,6 +44,7 @@
 #include "internal/system.h"
 #include "internal/types.h"
 #include "mem/FreeLists.h"
+#include "os/numa.h"
 
 #ifdef SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
@@ -259,30 +260,30 @@ void InitSMPSharedMemDevices(int NumLocalProcs)
 }
 
 // pool for isend headers
-FreeLists < DoubleLinkList, SMPSendDesc_t, int, MMAP_SHARED_PROT,
-    MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPSendDescs;
+FreeLists < DoubleLinkList, SMPSendDesc_t, MMAP_SHARED_PROT,
+            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPSendDescs;
 
 // pool for SMP frag descriptors
-FreeLists < DoubleLinkList, SMPSecondFragDesc_t, int, MMAP_SHARED_PROT,
-    MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPFragPool;
+FreeLists < DoubleLinkList, SMPSecondFragDesc_t, MMAP_SHARED_PROT,
+            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > SMPFragPool;
 
-//! first frags for which the payload buffers are not yet ready
+// first frags for which the payload buffers are not yet ready
 ProcessPrivateMemDblLinkList firstFrags;
 
-//! frag list for on-host messages
-//! fifo matching queue
+// frag list for on-host messages
+// fifo matching queue
 cbQueue < SMPFragDesc_t *, MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS >
     ***SharedMemIncomingFrags;
 SharedMemDblLinkList **SMPSendsToPost;
 SharedMemDblLinkList **SMPMatchedFrags;
 SharedMemDblLinkList **SMPincomingFrags;
-//!  list of on host posted sends that have not yet completed sending
-//!  all frags
-//!    sorted based on source process
+//  list of on host posted sends that have not yet completed sending
+//  all frags
+//    sorted based on source process
 ProcessPrivateMemDblLinkList IncompletePostedSMPSends;
 
-//!  list of posted sends that have not yet been fully acked
-//!    sorted based on source process
+//  list of posted sends that have not yet been fully acked
+//    sorted based on source process
 ProcessPrivateMemDblLinkList UnackedPostedSMPSends;
 
 void InitSMPSharedMemDescriptors(int NumLocalProcs)
@@ -331,7 +332,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
                           pageSize, eleSize, minPagesPerList,
                           maxPagesPerList, maxSMPISendDescRetries,
                           " SMP isend descriptors ", retryForMoreResources,
-                          memAffinityPool, enforceMemoryPolicy(),
+                          memAffinityPool, enforceAffinity(),
                           largeShareMemDescPool,
                           SMPISendDescAbortWhenNoResource,
                           threshToGrowList);
@@ -366,7 +367,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
                          pageSize, eleSize, minPagesPerList,
                          maxPagesPerList, maxSMPISendDescRetries,
                          " SMP frag descriptors ", retryForMoreResources,
-                         memAffinityPool, enforceMemoryPolicy(),
+                         memAffinityPool, enforceAffinity(),
                          largeShareMemDescPool,
                          SMPRecvDescAbortWhenNoResource, threshToGrowList);
 
@@ -379,11 +380,10 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
 }
 
 
-//! routine to set up shared memory queues
+// routine to set up shared memory queues
 
 void SetUpSharedMemoryQueues(int nLocalProcs)
 {
-    bool errorCode;
     int LocProc;
     size_t sizeofcbQueue;
     int srcProc;
@@ -409,11 +409,9 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
             ulm_exit((-1, "Error: Out of memory\n"));
         }
 
-        if (enforceMemoryPolicy()) {
-            errorCode =
-                setMemPolicy((void *) SMPincomingFrags[LocProc],
-                             getpagesize(), LocProc);
-            if (!errorCode) {
+        if (enforceAffinity()) {
+            if (!setAffinity((void *) SMPincomingFrags[LocProc],
+                             getpagesize(), LocProc)) {
                 ulm_exit((-1, "Error: Can't Set memory policy\n"));
             }
         }

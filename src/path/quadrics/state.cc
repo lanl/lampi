@@ -55,13 +55,13 @@ int quadricsDoChecksum = 1;
 int quadricsDoAck = 1;
 quadricsQueueInfo_t *quadricsQueue = 0;
 
-FreeLists<DoubleLinkList, quadricsSendFragDesc, int, MMAP_PRIVATE_PROT,
+FreeLists<DoubleLinkList, quadricsSendFragDesc, MMAP_PRIVATE_PROT,
           MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS> quadricsSendFragDescs;
 long maxQuadricsSendFragsDescRetries		 = 1000;
 bool quadricsSendFragDescsDescRetryForResources   = false;
 bool quadricsSendFragDescsDescAbortWhenNoResource = true;
 
-FreeLists<DoubleLinkList, quadricsRecvFragDesc, int, MMAP_SHARED_PROT,
+FreeLists<DoubleLinkList, quadricsRecvFragDesc, MMAP_SHARED_PROT,
           MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> quadricsRecvFragDescs;
 long maxQuadricsRecvFragsDescRetries		 = 1000;
 bool quadricsRecvFragsDescRetryForResources   = false;

@@ -28,13 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "ulm/ulm.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
-#include "os/MemoryPolicy.h"
+#include "os/numa.h"
 
-//! allocate payload buffer
+// allocate payload buffer
 void *allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
                          unsigned long length, int *errorCode,
                          int memPoolIndex)
@@ -67,9 +65,8 @@ void *allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
                 }
             } else {
                 //  memory locality
-                *errorCode =
-                    setMemoryPolicy(tmpPtr, lenData, memPoolIndex);
-                if (*errorCode != ULM_SUCCESS) {
+                if (!setAffinity(tmpPtr, lenData, memPoolIndex)) {
+                    *errorCode = ULM_ERROR;
                     dev->lock_m.unlock();
                     return payloadBuffer;
                 }
@@ -81,6 +78,5 @@ void *allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
         }                       // end lock region
     }                           // end  payloadBuffer == ((void *)-1L)
 
-    //! return
     return payloadBuffer;
 }

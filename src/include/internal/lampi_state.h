@@ -90,7 +90,7 @@ typedef struct {
      * memory locality parameters
      */
     int memLocalityIndex;
-    int enforceMemoryPolicy;
+    int enforceAffinity;
 
     /*
      * daemon / child relations

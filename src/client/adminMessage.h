@@ -116,79 +116,78 @@ typedef struct {
 } admin_host_info_t;
 
 typedef struct {
-	enum {
-		/* marker indicating start of shared memory input parameters */
-		START_SHARED_MEM_INPUT=1,
-		/* marker indicating end of shared memory input parameters */
-		END_SHARED_MEM_INPUT,
+    enum {
+        /* marker indicating start of shared memory input parameters */
+        START_SHARED_MEM_INPUT=1,
+        /* marker indicating end of shared memory input parameters */
+        END_SHARED_MEM_INPUT,
 
-		/* marker indicating the start of GM input data */
-		START_GM_INPUT,  
-		/* marker indicating the end of GM input data */
-		END_GM_INPUT,
-		/* marker indicating the start of Quadrics input data */
-		START_QUADRICS_INPUT,
-		/* marker indicating the end of Quadrics input data */
-		END_QUADRICS_INPUT,
-		/* end marker */
-		COUNT
-	};
-
+        /* marker indicating the start of GM input data */
+        START_GM_INPUT,  
+        /* marker indicating the end of GM input data */
+        END_GM_INPUT,
+        /* marker indicating the start of Quadrics input data */
+        START_QUADRICS_INPUT,
+        /* marker indicating the end of Quadrics input data */
+        END_QUADRICS_INPUT,
+        /* end marker */
+        COUNT
+    };
 } dev_type_params;
 
 typedef struct {
-	enum {
-		/* number of bytes per process for the shared memory descriptor
-		 * pool */
-		SMDESCPOOLBYTESPERPROC=dev_type_params::COUNT+1,
-		/* shared memory per proc page limit */
-		SMPSMPAGESPERPROC,
-		/* flag indicating to return error status when out of SMP
-		 * message fragment headers, rather than abort */
-		SMPFRAGOUTOFRESRCABORT,
-	       	/* flag indicating how many consective times to try and get
-		 * more SMP message fragment headers before deciding none are
-		 * available. */
-		SMPFRAGRESOURCERETRY,
-		/* minimum number of pages for SMP message fragment headers
-		 * per context */
-		SMPFRAGMINPAGESPERCTX,
-	       	/* maximum number of pages for SMP message fragment headers
-		 * per context */
-		SMPFRAGMAXPAGESPERCTX,
-		/* upper limiton total number of pages for SMP message fragment
-		 * headers */
-		SMPFRAGMAXTOTPAGES,
-	       	/* flag indicating to return error status when out of SMP
-		 * isend message headers, rather than abort */
-		SMPISENDOUTOFRESRCABORT,
-	       	/* flag indicating how many consective times to try and get 
-		 * more SMP isend message headers before deciding none are
-		 * available. */
-		SMPISENDRESOURCERETRY,
-		/* minimum number of pages for SMP message isend descriptors
-		 * per context */
-		SMPISENDMINPAGESPERCTX,
-	       	/* maximum number of pages for SMP message isend descriptors
-		 * headers per context */
-		SMPISENDMAXPAGESPERCTX,
-	       	/* upper limiton total number of pages for SMP message isend
-		 * descriptors */
-		SMPISENDMAXTOTPAGES,
-	       	/* flag indicating to return error status when out of SMP
-		 * data buffers, rather than abort */
-		SMPDATAPAGESOUTOFRESRCABORT,
-		/* flag indicating how many consective times to try and get
-		 * more SMP data buffers before deciding none are available. */
-		SMPDATAPAGESRESOURCERETRY,
-	       	/* minimum number of pages for SMP data buffers per context */
-		SMPDATAPAGESMINPAGESPERCTX,
-	       	/* maximum number of pages for SMP data buffers headers per
-		 * context */
-		SMPDATAPAGESMAXPAGESPERCTX,
-	       	/* upper limiton total number of pages for SMP data buffers */
-		SMPDATAPAGESMAXTOTPAGES
-	};
+    enum {
+        /* number of bytes per process for the shared memory descriptor
+         * pool */
+        SMDESCPOOLBYTESPERPROC=dev_type_params::COUNT+1,
+        /* shared memory per proc page limit */
+        SMPSMPAGESPERPROC,
+        /* flag indicating to return error status when out of SMP
+         * message fragment headers, rather than abort */
+        SMPFRAGOUTOFRESRCABORT,
+        /* flag indicating how many consective times to try and get
+         * more SMP message fragment headers before deciding none are
+         * available. */
+        SMPFRAGRESOURCERETRY,
+        /* minimum number of pages for SMP message fragment headers
+         * per context */
+        SMPFRAGMINPAGESPERCTX,
+        /* maximum number of pages for SMP message fragment headers
+         * per context */
+        SMPFRAGMAXPAGESPERCTX,
+        /* upper limiton total number of pages for SMP message fragment
+         * headers */
+        SMPFRAGMAXTOTPAGES,
+        /* flag indicating to return error status when out of SMP
+         * isend message headers, rather than abort */
+        SMPISENDOUTOFRESRCABORT,
+        /* flag indicating how many consective times to try and get 
+         * more SMP isend message headers before deciding none are
+         * available. */
+        SMPISENDRESOURCERETRY,
+        /* minimum number of pages for SMP message isend descriptors
+         * per context */
+        SMPISENDMINPAGESPERCTX,
+        /* maximum number of pages for SMP message isend descriptors
+         * headers per context */
+        SMPISENDMAXPAGESPERCTX,
+        /* upper limiton total number of pages for SMP message isend
+         * descriptors */
+        SMPISENDMAXTOTPAGES,
+        /* flag indicating to return error status when out of SMP
+         * data buffers, rather than abort */
+        SMPDATAPAGESOUTOFRESRCABORT,
+        /* flag indicating how many consective times to try and get
+         * more SMP data buffers before deciding none are available. */
+        SMPDATAPAGESRESOURCERETRY,
+        /* minimum number of pages for SMP data buffers per context */
+        SMPDATAPAGESMINPAGESPERCTX,
+        /* maximum number of pages for SMP data buffers headers per
+         * context */
+        SMPDATAPAGESMAXPAGESPERCTX,
+        /* upper limiton total number of pages for SMP data buffers */
+        SMPDATAPAGESMAXTOTPAGES
+    };
 } shared_mem_intput_params;
 
 
@@ -198,7 +197,6 @@ class adminMessage : public CTDelegate {
 class adminMessage {
 #endif
 public:
-
     // message and data tag values
     enum {
         INITMSG,	/* 3 integers of authData, 1 integer of global host rank, 1 integer of number of local processes */
@@ -218,26 +216,21 @@ public:
 	CHANNELID,		/* CTChannel ID of mpirun. */
 	CHECKARGS,      /* function arguments need to be checked */
 	OUTPUT_PREFIX,  /* controling if prefix will be added to std i/o */
-#ifdef __mips
+	MAXCOMMUNICATORS, /* limit on number of communicators */
+	IRECVOUTOFRESRCABORT,  /* if set, return error when out of irecv headers - don't abort */
+	IRECVRESOURCERETRY,    /* how many times to retry before deciding no more irecv headers are available */
+	IRCEVMINPAGESPERCTX,   /* minimun number of pages for irecv descriptors - per context*/
+	IRECVMAXPAGESPERCTX,   /* maximum number of pages for irecv descriptors - per context*/
+	IRECVMAXTOTPAGES,      /* maximum total number of pages for  irecv descriptors */
+	NPATHTYPES,             /* number of network device types */
+        GMMAXDEVS,      /* maximum number of opened Myrinet/GM devices */
+#ifdef NUMA
 	CPULIST,        /* list of cpus for resource affinity */
 	NCPUSPERNODE,   /* number of cpus per node */
 	USERESOURCEAFFINITY, /* user resource affinity */
 	DEFAULTRESOURCEAFFINITY, /* default resource affinity */
 	MANDATORYRESOURCEAFFINITY, /* mandatory resource affinity */
-#endif /* __mips */
-	MAXCOMMUNICATORS, /* limit on number of communicators */
-	IRECVOUTOFRESRCABORT,  /* if set, return error when out of
-				  irecv headers - don't abort */
-	IRECVRESOURCERETRY,    /* how many times to retry before deciding
-				  no more irecv headers are available */
-	IRCEVMINPAGESPERCTX,   /* minimun number of pages for irecv
-				  descriptors - per context*/
-	IRECVMAXPAGESPERCTX,   /* maximum number of pages for irecv
-				  descriptors - per context*/
-	IRECVMAXTOTPAGES,      /* maximum total number of pages for  irecv
-				  descriptors */
-	NPATHTYPES,             /* number of network device types */
-    GMMAXDEVS,      /* maximum number of opened Myrinet/GM devices */
+#endif /* NUMA */
         NUMMSGTYPES	/* must be last */
     };
 

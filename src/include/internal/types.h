@@ -85,6 +85,14 @@ typedef struct {
 		writev((fd), (const struct iovec *)(iov), (iovc))
 
 
+/*
+ * Memory affinity is almost certainly and int everywhere, but let's
+ * make it a typedef in case we need to make it OS dependenent
+ * sometime...
+ */
+
+typedef int affinity_t;
+
 /**********************************************************************/
 
 /*

@@ -50,7 +50,7 @@
 // pool for collective frags - resides in process shared memory.  All
 // structures are initialized before the fork() and are not modified
 // there after.
-FreeLists<DoubleLinkList, LocalCollFragDesc, int, MMAP_SHARED_PROT,
+FreeLists<DoubleLinkList, LocalCollFragDesc, MMAP_SHARED_PROT,
 	  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> LocalCollFragDescriptors;
 
 /* Initialize the Out of Order SMP shared memory descriptors */
@@ -79,7 +79,7 @@ void InitCollSharedMemDescriptors(int NumLocalProcs)
                                       "Collective frag descriptors ",
                                       retryForMoreResources,
                                       memAffinityPool,
-                                      enforceMemoryPolicy(),
+                                      enforceAffinity(),
                                       ShareMemDescPool,
                                       SMPCollFragDescAbortWhenNoResource);
     if (retVal) {

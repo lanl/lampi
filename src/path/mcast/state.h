@@ -36,7 +36,7 @@
 
 // pool for collective frags - resides in process shared memory.  All structures
 // are initialized before the fork() and are not modified there after.
-extern FreeLists<DoubleLinkList, LocalCollFragDesc, int, MMAP_SHARED_PROT,
+extern FreeLists<DoubleLinkList, LocalCollFragDesc, MMAP_SHARED_PROT,
                  MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS> LocalCollFragDescriptors;
 
 extern ssize_t nSMPCollFragDescPages;

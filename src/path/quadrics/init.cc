@@ -56,7 +56,7 @@ void quadricsInitRecvDescs() {
     int nFreeLists = local_nprocs();
 
     bool useInputPool = true;
-    bool enforceMemoryPolicy = true;
+    bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
 	ulm_exit((-1, "quadricsInitRecvDescs: Unable to allocate space "
@@ -73,7 +73,7 @@ void quadricsInitRecvDescs() {
 	  minPagesPerList, maxPagesPerList, maxQuadricsRecvFragsDescRetries,
 	  " Quadrics recv frag descriptors ",
 	  quadricsRecvFragsDescRetryForResources,
-	  memAffinityPool, enforceMemoryPolicy,
+	  memAffinityPool, enforceAffinity,
 	  ShareMemDescPool, quadricsRecvFragsDescAbortWhenNoResource
 	    );
 
@@ -85,7 +85,7 @@ void quadricsInitRecvDescs() {
     return;
 }
 
-// don't enforceMemoryPolicy since Quadrics support
+// don't enforceAffinity since Quadrics support
 // is for platforms on which memory locality support
 // is limited to nonexistent...more important to use
 // each list to separate descriptors on a per rail
@@ -102,14 +102,14 @@ void quadricsInitSendFragDescs() {
     int nFreeLists = quadricsNRails;
 
     bool useInputPool = false;
-    bool enforceMemoryPolicy = false;
+    bool enforceAffinity = false;
 
     int retVal = quadricsSendFragDescs.Init
 	( nFreeLists, nPagesPerList, poolChunkSize, pageSize, elementSize,
 	  minPagesPerList, maxPagesPerList, maxQuadricsSendFragsDescRetries,
 	  " Quadrics send frag descriptors ",
 	  quadricsSendFragDescsDescRetryForResources,
-	  0, enforceMemoryPolicy,
+	  0, enforceAffinity,
 	  0, quadricsSendFragDescsDescAbortWhenNoResource);
 
     if ( retVal ) {

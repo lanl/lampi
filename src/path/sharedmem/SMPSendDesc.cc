@@ -37,7 +37,7 @@
 #include "internal/buffer.h"
 #include "internal/log.h"
 #include "internal/system.h"
-#include "os/MemoryPolicy.h"
+#include "os/numa.h"
 #include "os/atomic.h"
 #include "ulm/ulm.h"
 

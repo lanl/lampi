@@ -51,8 +51,8 @@
 
 // extern'd in the sharedmem/SMPSharedMemGlobals.h
 // i'll run this by code czar  Rasmussen later
-FreeLists < DoubleLinkList, UtsendDesc_t, int, MMAP_SHARED_PROT,
-    MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UtsendDescriptors;
+FreeLists < DoubleLinkList, UtsendDesc_t, MMAP_SHARED_PROT,
+            MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UtsendDescriptors;
 
 SharedMemDblLinkList **UnackedUtsendDescriptors;
 
@@ -71,7 +71,7 @@ void InitUtsendMemDevices(int NumLocalProcs)
     ssize_t poolChunkSize = SMPPAGESIZE;
     int nFreeLists = NumLocalProcs;
     long maxUtsendRetries = 100;
-    bool enforceMemoryPolicy = false;
+    bool enforceAffinity = false;
     bool irecvDescDescAbortWhenNoResource = true;
     int retryForMoreResources = 1;
     int memAffinityPool = getMemPoolIndex();
@@ -81,7 +81,7 @@ void InitUtsendMemDevices(int NumLocalProcs)
                            pageSize, eleSize, minPagesPerList,
                            maxPagesPerList, maxUtsendRetries,
                            " Utsend descriptors ", retryForMoreResources,
-                           &memAffinityPool, enforceMemoryPolicy,
+                           &memAffinityPool, enforceAffinity,
                            ShareMemDescPool, irecvDescDescAbortWhenNoResource);
 
 /*	allocate the SharedMemLinkedList

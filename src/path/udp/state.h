@@ -69,27 +69,21 @@ class UDPEarlySend_small;
 // Pools of free frag descriptors.  These lists have global scope.
 //
 
-extern FreeLists<DoubleLinkList, udpRecvFragDesc, int,
-		 MMAP_SHARED_PROT,
-                 MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS>	UDPRecvFragDescs;
-extern FreeLists<DoubleLinkList, udpSendFragDesc, int,
-		 MMAP_PRIVATE_PROT,
-                 MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS>	udpSendFragDescs;
+extern FreeLists < DoubleLinkList, udpRecvFragDesc, MMAP_SHARED_PROT,
+                   MMAP_SHARED_FLAGS, MMAP_SHARED_FLAGS > UDPRecvFragDescs;
+extern FreeLists < DoubleLinkList, udpSendFragDesc, MMAP_PRIVATE_PROT,
+                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > udpSendFragDescs;
 
 
 // Freelist for use in the early udp send completion 
-extern FreeLists <DoubleLinkList,UDPEarlySend_large,int,
-		  MMAP_PRIVATE_PROT,
-		  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_large; 
+extern FreeLists < DoubleLinkList, UDPEarlySend_large, MMAP_PRIVATE_PROT,
+                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_large;
 
-extern FreeLists <DoubleLinkList,UDPEarlySend_med,int,
-                  MMAP_PRIVATE_PROT,
-                  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_med;
+extern FreeLists < DoubleLinkList, UDPEarlySend_med, MMAP_PRIVATE_PROT,
+                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_med;
 
-extern FreeLists <DoubleLinkList,UDPEarlySend_small,int,
-                  MMAP_PRIVATE_PROT,
-                  MMAP_PRIVATE_FLAGS,MMAP_SHARED_FLAGS> UDPEarlySendData_small;
-
+extern FreeLists < DoubleLinkList, UDPEarlySend_small, MMAP_PRIVATE_PROT,
+                   MMAP_PRIVATE_FLAGS, MMAP_SHARED_FLAGS > UDPEarlySendData_small;
 //
 // Maximum frag and payload sizes of a ULM_UDP message.  This size is not
 // necessarily set by the UDP_MAX_DATA constant.  For instance, it may be
