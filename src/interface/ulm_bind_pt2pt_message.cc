@@ -52,15 +52,14 @@
  * \param message   send message descriptor
  * \return          ULM return code
  */
-extern "C" int ulm_bind_pt2pt_message(void *req, void **SendDesc)
+extern "C" int ulm_bind_pt2pt_message(void **SendDesc,int ctx,int destination)
 {
-	RequestDesc_t *request=(RequestDesc_t *) req;
 	BaseSendDesc_t **SendDescriptor=(BaseSendDesc_t **)SendDesc;
 	int errorCode = ULM_SUCCESS;
 	int globalDestID;
 
-    globalDestID = communicators[request->ctx_m]->remoteGroup
-        ->mapGroupProcIDToGlobalProcID[request->posted_m.proc.destination_m];
+    globalDestID = communicators[ctx]->remoteGroup
+	    ->mapGroupProcIDToGlobalProcID[destination];
 
     // use local shared memory first, if at all possible
     if (pathList[globalDestID].useSharedMemory_m >= 0) {

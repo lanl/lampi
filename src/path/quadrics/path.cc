@@ -388,21 +388,8 @@ bool quadricsPath::sendMemoryRequest(BaseSendDesc_t *message, int gldestProc, si
         }
         
         // initialize quadricsSendFragDesc
-        sfd->init(
-            message,
-            ctx,
-            MEMORY_REQUEST,
-            rail,
-            gldestProc,
-            -1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            false,
-            hdr
-	    );
+        sfd->init( message, ctx, MEMORY_REQUEST, rail, gldestProc, -1,
+            0, 0, 0, 0, 0, false, hdr);
 
         // put it on the appropriate ctlMsgsToSend list
         list = &(quadricsQueue[rail].ctlMsgsToSend[MEMORY_REQUEST]);
@@ -458,9 +445,9 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
     *incomplete = true;
 
     /* destination memory? */
-   if ( (nDescToAllocate && (message->PostedLength > CTLHDR_DATABYTES))) {
+   if ( (nDescToAllocate && (message->posted_m.length_m > CTLHDR_DATABYTES))) {
         gldestProc = communicators[message->ctx_m]->remoteGroup->
-            mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+            mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
 
         for (int i = 0; i < NUMBER_BUFTYPES; i++) {
             bufCounts[i] = 0;
@@ -476,7 +463,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         largeBufType = PRIVATE_LARGE_BUFFERS;
         smallBufType = PRIVATE_SMALL_BUFFERS;
         offset = quadricsBufSizes[largeBufType] * message->NumFragDescAllocated;
-        leftToSend = message->PostedLength - offset;
+        leftToSend = message->posted_m.length_m - offset;
         if (leftToSend <= quadricsBufSizes[smallBufType]) {
             if (bufCounts[largeBufType] && !bufCounts[smallBufType]) {
                 largeBufs = (leftToSend <= CTLHDR_DATABYTES) ? 0 : 1;
@@ -568,9 +555,9 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         } else if ((offset == 0) || (leftToSend && (leftToSend <= CTLHDR_DATABYTES))) {
             if (offset == 0) {
                 gldestProc = communicators[message->ctx_m]->remoteGroup->
-                    mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+                    mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
             }
-            leftToSend = fragLength = message->PostedLength - offset;
+            leftToSend = fragLength = message->posted_m.length_m - offset;
             dest = 0;
             destBufType = 0;
         }
@@ -710,7 +697,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
     }
 
     /* is everything done? */
-    if (!message->sendDone) {
+    if (!message->messageDone) {
 
         // check to see if send is done
 
@@ -721,7 +708,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
             if (SEND_COMPLETION_WAIT_FOR_ACK) {
                 // only zero length messages can free the user data buffer now
                 send_done_now =
-                    (message->PostedLength == 0) &&
+                    (message->posted_m.length_m == 0) &&
                     (message->NumSent == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             } else {
@@ -729,7 +716,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
                 // user data buffer now as long as control header
                 // initialization has been completed
                 send_done_now =
-                    (message->PostedLength <= CTLHDR_DATABYTES) &&
+                    (message->posted_m.length_m <= CTLHDR_DATABYTES) &&
                     (message->NumFragDescAllocated == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
                 if (send_done_now) {
@@ -750,8 +737,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         }
 
         if (send_done_now) {
-            message->sendDone = 1;
-    	    message->requestDesc->messageDone = true;
+    	    message->messageDone = REQUEST_COMPLETE;
         }
     }
 

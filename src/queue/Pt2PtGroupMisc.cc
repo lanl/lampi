@@ -363,9 +363,6 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // !!!!! threaded-lock
     privateQueues.PostedWildRecv.Lock.init();
 
-    // Posted utrecv queue
-    privateQueues.PostedUtrecvs.Lock.init();
-
     //
     // List of posted Specific ireceives - list resides in process private memory
     //
@@ -731,22 +728,26 @@ void CheckForAckedMessages(double timeNow)
         // process only if lock is available, else try again later
         if (LockReturn == 1) {  // we've acquired the lock
             // sanity check
-            assert(SendDesc->WhichQueue == UNACKEDISENDQUEUE);
             if (SendDesc->path_m
-                && SendDesc->path_m->sendDone(SendDesc, timeNow,
-                                              &errorCode)) {
-                if (!SendDesc->sendDone) {
-                    SendDesc->requestDesc->messageDone = true;
-                    SendDesc->sendDone = 1;
-                }
-                BaseSendDesc_t *TmpDesc = (BaseSendDesc_t *)
-                    UnackedPostedSends.RemoveLinkNoLock(SendDesc);
-                if (usethreads())
-                    SendDesc->Lock.unlock();
-                SendDesc->path_m->ReturnDesc(SendDesc);
-                SendDesc = TmpDesc;
+                && SendDesc->path_m->sendDone(SendDesc, timeNow, &errorCode) ) {
+		    /* for synchronus sends, mark send as complete - overkill
+		     *   for the rest of the send types - if we don't mark
+		     *   send done here, wait or test will never complete */
+		    if( !SendDesc->messageDone )
+			    SendDesc->messageDone=REQUEST_COMPLETE;
+		
+		    if( SendDesc->freeCalled ) {
+			    /* a call to free the mpi object has been made,
+			     *   so ok to free this descriptor */
+		    	    BaseSendDesc_t *TmpDesc = (BaseSendDesc_t *)
+		    		    UnackedPostedSends.RemoveLinkNoLock(SendDesc);
+		    	    if (usethreads())
+		    		    SendDesc->Lock.unlock();
+		    	    SendDesc->path_m->ReturnDesc(SendDesc);
+		    	    SendDesc = TmpDesc;
+		    }
             } else {
-                // unlock
+                // unlock - nothing to do
                 if (usethreads())
                     SendDesc->Lock.unlock();
             }

@@ -117,23 +117,13 @@ int ulm_make_progress(void);
  * \param message       Send message descriptor
  * \return              ULM return code
  */
-int ulm_bind_pt2pt_message(void *request,
-		void **SendDescriptor);
+int ulm_bind_pt2pt_message( void **SendDescriptor, int ctx, int destination);
 
 /*!
- * bind a multicast send message descriptor to a path object
- *
- * \param multicastMessage     Multicast send message descriptor
- * \param hostMessage          Per-host send message descriptor
- * \return                     ULM return code
- */
-int ulm_bind_multicast_message(void *multicastMessage, void *hostMessage);
-
-/*!
- * set the functions to bind point-to-point and multicast messages to
- * path objects; which are by default ulm_bind_pt2pt_message and
- * ulm_bind_multicast_message; these functions are not inherited by
- * communicators derived from others
+ * set the functions to bind point-to-point messages to
+ * path objects; which is by default ulm_bind_pt2pt_message ; 
+ * these functions are not inherited by communicators derived 
+ * from others
  *
  * \param comm                  Communicator ID
  * \param pt2ptFunction         Pointer to point-to-point message path
@@ -141,12 +131,12 @@ int ulm_bind_multicast_message(void *multicastMessage, void *hostMessage);
  * \return                      ULM return code
  */
 int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction) 
-		(void *, void **) );
+		(void **, int, int) );
 
 /*!
  * get the functions that bind point-to-point and multicast messages
- * to path objects for a given communicator, which are by default
- * ulm_bind_pt2pt_message and ulm_bind_multicast_message
+ * to path objects for a given communicator, which is by default
+ * ulm_bind_pt2pt_message
  *
  * \param comm                  Communicator ID
  * \param pt2ptFunction         Pointer to pointer of point-to-point
@@ -154,7 +144,7 @@ int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction)
  * \return                      ULM return code
  */
 int ulm_get_path_selection_functions(int comm, int (**pt2ptFunction) 
-		(void *, void **) );
+		(void **, int, int) );
 
 /*!
  * Get communicator specific topology pointer
@@ -952,16 +942,6 @@ void ulm_bsend_info_set(ULMRequestHandle_t request, void *originalBuffer,
 void ulm_bsend_info_get(ULMRequestHandle_t request, void **originalBuffer,
 		  size_t *bufferSize, int *count, ULMType_t ** datatype,
 			int *comm);
-
-/*
- * set request pointerToData to point at this new buffer
- */
-void ulm_bsend_ptr_set(ULMRequestHandle_t request, void *newBuffer);
-
-/*
- * returns 1 if request is a ULM_SEND_BUFFERED send request and 0 if not
- */
-int ulm_bsend_is_bsend(ULMRequestHandle_t request);
 
 /*
  * returns the status of the request object

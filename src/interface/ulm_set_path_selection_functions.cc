@@ -40,14 +40,14 @@
 
 /*!
  * set the functions to bind point-to-point and multicast messages to path objects;
- * which are by default ulm_bind_pt2pt_message and ulm_bind_multicast_message
+ * which is by default ulm_bind_pt2pt_message 
  *
  * \param comm  Communicator ID
  * \param pt2ptFunction  pointer to point-to-point message path selection function
  * \param multicastFunction  pointer to multicast message path selection function
  * \return ULM return code
  */
-extern "C" int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction)(void *, void **) )
+extern "C" int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction)(void **, int, int) )
 {
     int errorCode = ULM_SUCCESS;
     Communicator *commPtr = communicators[comm];

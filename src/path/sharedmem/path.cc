@@ -57,11 +57,11 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
 {
     // For all the pages in the send request  - need a minimum of 1 page
     unsigned int FragCount;
-    if (message->PostedLength <= SMPFirstFragPayload) {
+    if (message->posted_m.length_m <= SMPFirstFragPayload) {
         FragCount = 1;
     } else {
         FragCount =
-            ((message->PostedLength - SMPFirstFragPayload) + SMPSecondFragPayload - 1) /
+            ((message->posted_m.length_m - SMPFirstFragPayload) + SMPSecondFragPayload - 1) /
             SMPSecondFragPayload + 1;
     }
 
@@ -75,24 +75,18 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
     message->NumSent = 0;
     message->pathInfo.sharedmem.sharedData->matchedRecv = 0;
     message->pathInfo.sharedmem.sharedData->NumAcked = 0;
-    message->sendDone = (message->sendType == ULM_SEND_BUFFERED) ? 1 : 0;
+    message->messageDone = (message->sendType == ULM_SEND_BUFFERED) ? 
+	    REQUEST_COMPLETE : REQUEST_INCOMPLETE;
 
     // get communicator pointer
     Communicator *commPtr = (Communicator *) communicators[message->ctx_m];
 
     // recv process's queue
     int SortedRecvFragsIndex =
-        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID
+	[message->posted_m.proc.destination_m];
     SortedRecvFragsIndex = global_to_local_proc(SortedRecvFragsIndex);
 
-    // we're sending to ourselves and we're the only shared memory process so we need
-    // to set the boolean latch to true so that we can pick up the message
-    // in ulm_make_progress
-    extern bool _ulm_checkSMPInMakeProgress;
-    if (!_ulm_checkSMPInMakeProgress
-        && (SortedRecvFragsIndex == lampiState.local_rank)) {
-        _ulm_checkSMPInMakeProgress = true;
-    }
     // process as much as possible of the first frag
 
     // get first fragement descriptor - when a send is initialized,
@@ -109,19 +103,19 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
     message->pathInfo.sharedmem.firstFrag->srcProcID_m = myRank;
 
     // set destination process
-    message->pathInfo.sharedmem.firstFrag->dstProcID_m = message->dstProcID_m;
+    message->pathInfo.sharedmem.firstFrag->dstProcID_m = message->posted_m.proc.destination_m;
 
     // set user tag and communicator and related fields
-    message->pathInfo.sharedmem.firstFrag->tag_m = message->tag_m;
+    message->pathInfo.sharedmem.firstFrag->tag_m = message->posted_m.UserTag_m;
     message->pathInfo.sharedmem.firstFrag->ctx_m = message->ctx_m;
 
     // set message length
-    message->pathInfo.sharedmem.firstFrag->msgLength_m = message->PostedLength;
+    message->pathInfo.sharedmem.firstFrag->msgLength_m = message->posted_m.length_m;
 
     //
     // special case - 0 byte message
     //
-    if (message->PostedLength == 0) {
+    if (message->posted_m.length_m == 0) {
         // set frag length
         message->pathInfo.sharedmem.firstFrag->length_m = 0;
         message->NumSent = 1;
@@ -172,16 +166,16 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
 
         // check to see if send is done (buffered already "done";
         // synchronous sends are not done until the first frag is acked)
-        if (!(message->sendDone) && message->sendType != ULM_SEND_SYNCHRONOUS) {
-            message->requestDesc->messageDone = true;
-            message->sendDone = 1;
+        if ((message->messageDone==REQUEST_INCOMPLETE) && 
+			message->sendType != ULM_SEND_SYNCHRONOUS) {
+            message->messageDone = REQUEST_COMPLETE;
         }
         // return
         return true;
 
     }
     // fill in frag size
-    size_t LeftToSend = message->PostedLength;
+    size_t LeftToSend = message->posted_m.length_m;
     if (LeftToSend > SMPFirstFragPayload) {
         message->pathInfo.sharedmem.firstFrag->length_m = SMPFirstFragPayload;
     } else {
@@ -259,11 +253,10 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
     // check to see if send is done (buffered sends are already
     // "done, and synchronous send are done when the first frag
     // is acknowledged)
-    if (!(message->sendDone) &&
+    if ((message->messageDone==REQUEST_INCOMPLETE) &&
         (message->NumSent == message->numfrags) && 
 	(message->sendType != ULM_SEND_SYNCHRONOUS)) {
-        message->requestDesc->messageDone = true;
-        message->sendDone = 1;
+        message->messageDone = REQUEST_COMPLETE;
     }
 
     return true;
@@ -285,7 +278,7 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
 
     // recv process's queue
     int SortedRecvFragsIndex =
-        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
     SortedRecvFragsIndex = global_to_local_proc(SortedRecvFragsIndex);
 
 #ifdef USE_DEST_MEM
@@ -310,7 +303,7 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
         for (int ndesc = 0; ndesc < NumDescToAllocate; ndesc++) {
 
             int waitOnAck =
-                (message->requestDesc->sendType == ULM_SEND_SYNCHRONOUS);
+                (message->sendType == ULM_SEND_SYNCHRONOUS);
 
             // slow down the send
             if ((maxOutstandingSMPFrags != -1) &&
@@ -362,10 +355,10 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
             FragDesc->SendingHeader_m.SMP = message;
 
             // set message length
-            FragDesc->msgLength_m = message->PostedLength;
+            FragDesc->msgLength_m = message->posted_m.length_m;
 
             // fill in frag size
-            size_t LeftToSend = (message->PostedLength - SMPFirstFragPayload) -
+            size_t LeftToSend = (message->posted_m.length_m - SMPFirstFragPayload) -
                 SMPSecondFragPayload * (message->NumFragDescAllocated - 1);
             if (LeftToSend > (size_t) SMPSecondFragPayload) {
                 FragDesc->length_m = SMPSecondFragPayload;
@@ -445,11 +438,10 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
     // check to see if send is done (buffered sends are already "done";
     // and synchronous sends are done when the first frag is
     // acked (and everything else has been sent...)
-    if (!(message->sendDone) &&
+    if ((message->messageDone==REQUEST_INCOMPLETE) &&
         (message->NumSent == message->numfrags) &&
-        (message->requestDesc->sendType != ULM_SEND_SYNCHRONOUS)) {
-        message->requestDesc->messageDone = true;
-        message->sendDone = 1;
+        (message->sendType != ULM_SEND_SYNCHRONOUS)) {
+        message->messageDone = REQUEST_COMPLETE;
     }
     // return
     return true;
@@ -587,17 +579,12 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
             return false;
         }
         if (receiver->DataReceived + receiver->DataInBitBucket >=
-            receiver->ReceivedMessageLength) {
-            // fill in request object
-            receiver->reslts_m.proc.source_m =receiver->srcProcID_m;
-            receiver->reslts_m.length_m = receiver->ReceivedMessageLength;
-            receiver->reslts_m.lengthProcessed_m = receiver->DataReceived;
-            receiver->reslts_m.UserTag_m = receiver->tag_m;
+            receiver->reslts_m.length_m) {
             //mark recv request as complete
-            receiver->messageDone = true;
+            receiver->messageDone = REQUEST_COMPLETE;
             wmb();
             Comm = communicators[receiver->ctx_m];
-            Comm->privateQueues.MatchedRecv[receiver->srcProcID_m]->
+            Comm->privateQueues.MatchedRecv[receiver->reslts_m.proc.source_m]->
                 RemoveLink(receiver);
             // if ulm_request_free() has already been called, then
             // we free the recv/request obj. here...
@@ -656,25 +643,15 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 			*errorCode=retVal;
                         return false;
                     }
-                    if (matchedRecv->DataReceived +
-                        matchedRecv->DataInBitBucket >=
-                        matchedRecv->ReceivedMessageLength) {
-                        // fill in request object
-                        matchedRecv->reslts_m.proc.
-                            source_m = matchedRecv->srcProcID_m;
-                        matchedRecv->reslts_m.length_m =
-                            matchedRecv->ReceivedMessageLength;
-                        matchedRecv->reslts_m.
-                            lengthProcessed_m = matchedRecv->DataReceived;
-                        matchedRecv->reslts_m.UserTag_m =
-                            matchedRecv->tag_m;
+                    if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
+                        matchedRecv->reslts_m.length_m) {
                         //mark recv request as complete
-                        matchedRecv->messageDone = true;
+                        matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
-                                                        srcProcID_m]->
-                            RemoveLink(matchedRecv);
+				reslts_m.proc.source_m]->RemoveLink
+				(matchedRecv);
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here
                         if (matchedRecv->freeCalled)
@@ -722,25 +699,15 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 			    *errorCode=retVal;
 			    return false;
                     }
-                    if (matchedRecv->DataReceived +
-                        matchedRecv->DataInBitBucket >=
-                        matchedRecv->ReceivedMessageLength) {
-                        // fill in request object
-                        matchedRecv->reslts_m.proc.
-                            source_m = matchedRecv->srcProcID_m;
-                        matchedRecv->reslts_m.length_m =
-                            matchedRecv->ReceivedMessageLength;
-                        matchedRecv->reslts_m.
-                            lengthProcessed_m = matchedRecv->DataReceived;
-                        matchedRecv->reslts_m.UserTag_m =
-                            matchedRecv->tag_m;
+                    if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
+                        matchedRecv->reslts_m.length_m) {
                         //mark recv request as complete
-                        matchedRecv->messageDone = true;
+                        matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
-                                                        srcProcID_m]->
-                            RemoveLink(matchedRecv);
+				reslts_m.proc.source_m]->RemoveLink
+				(matchedRecv);
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here...
                         if (matchedRecv->freeCalled)
@@ -923,16 +890,14 @@ void sharedmemPath::ReturnDesc(BaseSendDesc_t *message, int poolIndex=-1)
     // if this was a bsend (or aborted bsend), then decrement the reference
     // count for the appropriate buffer allocation
     if (message->sendType == ULM_SEND_BUFFERED) {
-        if (message->PostedLength > 0) {
+        if (message->posted_m.length_m > 0) {
             ulm_bsend_decrement_refcount(
-			    (ULMRequestHandle_t) message->requestDesc,
+			    (ULMRequestHandle_t) message,
 			    message->bsendOffset);
         }
     }
     // mark descriptor as beeing in the free list
     message->WhichQueue = SENDDESCFREELIST;
-    // return descriptor to pool -- always freed by allocating process!
-//    _ulm_SendDescriptors.returnElement(message, 0);
     //  put descriptor is cache
     sendDescCache.Append(message);
 }
@@ -948,23 +913,12 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
     	int recvDone = 0;
     	Communicator *Comm;
 
-	matchedRecv->ReceivedMessageLength=incomingFrag->msgLength_m;
+	matchedRecv->reslts_m.length_m=incomingFrag->msgLength_m;
 #ifdef _DEBUGQUEUES
 	matchedRecv->isendSeq_m = incomingFrag->isendSeq_m;
 #endif                          // _DEBUGQUEUE
-	matchedRecv->srcProcID_m = incomingFrag->srcProcID_m;
-	matchedRecv->tag_m = incomingFrag->tag_m;
-
-	// figure out exactly how much data will be received
-	unsigned long amountToRecv = incomingFrag->msgLength_m;
-	if (amountToRecv > matchedRecv->PostedLength)
-		amountToRecv = matchedRecv->PostedLength;
-
-    	matchedRecv->actualAmountToRecv_m = amountToRecv;
-
-	// in the wild irecv, set the source process to the
-	//  one from where data was actually received
-	matchedRecv->srcProcID_m = incomingFrag->srcProcID_m;
+	matchedRecv->reslts_m.proc.source_m = incomingFrag->srcProcID_m;
+	matchedRecv->reslts_m.UserTag_m = incomingFrag->tag_m;
 
 	sharedMemData_t *matchedSender = incomingFrag->SendingHeader_m.SMP;
 
@@ -997,15 +951,7 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 		}
 	} else {
 		/* zero byte message */
-		// fill in request object
-    		matchedRecv->reslts_m.proc.source_m = sourceRank;
-		matchedRecv->reslts_m.length_m =
-			matchedRecv->ReceivedMessageLength;
-	    	matchedRecv->reslts_m.lengthProcessed_m =
-			matchedRecv->DataReceived;
-	    	matchedRecv->reslts_m.UserTag_m = 
-			matchedRecv->tag_m;
-    		matchedRecv->messageDone = true;
+    		matchedRecv->messageDone = REQUEST_COMPLETE;
     		matchedSender->NumAcked = 1;
             if (matchedRecv->freeCalled)
                 matchedRecv->requestFree();
@@ -1056,22 +1002,12 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 		frag = tmpFrag;
     	}
 
-	if (matchedRecv->DataReceived +
-			matchedRecv->DataInBitBucket >=
-			matchedRecv->ReceivedMessageLength) {
-		// fill in request object
-		matchedRecv->reslts_m.proc.
-	    		source_m = matchedRecv->srcProcID_m;
-		matchedRecv->reslts_m.length_m =
-	    		matchedRecv->ReceivedMessageLength;
-		matchedRecv->reslts_m.lengthProcessed_m = 
-			matchedRecv->DataReceived;
-		matchedRecv->reslts_m.UserTag_m =
-	    		matchedRecv->tag_m;
+	if (matchedRecv->DataReceived + matchedRecv->DataInBitBucket >=
+			matchedRecv->reslts_m.length_m) {
 		//mark recv request as complete
-		matchedRecv->messageDone = true;
-        if (matchedRecv->freeCalled) 
-            matchedRecv->requestFree();
+		matchedRecv->messageDone = REQUEST_COMPLETE;
+		if (matchedRecv->freeCalled) 
+			matchedRecv->requestFree();
 		wmb();
     	} else {
 		//  add this descriptor to the matched ireceive list
@@ -1105,8 +1041,7 @@ bool sharedmemPath::push(double timeNow, int *errorCode)
     
     // lock list to make sure reads are atomic
     SMPSendsToPost[local_myproc()]->Lock.lock();
-    for (SMPFragDesc_t *
-             fragDesc =
+    for (SMPFragDesc_t * fragDesc =
              (SMPFragDesc_t *) SMPSendsToPost[local_myproc()]->begin();
          fragDesc !=
              (SMPFragDesc_t *) SMPSendsToPost[local_myproc()]->end();

@@ -56,7 +56,7 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
         return ULM_ERR_REQUEST;
     }
     // set message completion to incomplete
-    tmpRequest->messageDone = MESSAGE_INCOMPLETE;
+    tmpRequest->messageDone = REQUEST_INCOMPLETE;
 
     // get pointer to send descriptor base class
     RecvDesc_t *RecvDescriptor=(RecvDesc_t *)tmpRequest;
@@ -76,31 +76,20 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
     RecvDescriptor->WhichQueue = ONNOLIST;
 
     // fill in descriptor
-    RecvDescriptor->PostedLength = tmpRequest->posted_m.length_m;
-    RecvDescriptor->ReceivedMessageLength = 0;
+    RecvDescriptor->reslts_m.length_m = 0;
     RecvDescriptor->DataReceived = 0;
     RecvDescriptor->DataInBitBucket = 0;
-    RecvDescriptor->srcProcID_m = tmpRequest->posted_m.proc.source_m;
-    RecvDescriptor->tag_m = tmpRequest->posted_m.UserTag_m;
     RecvDescriptor->ctx_m = contextID;
-    RecvDescriptor->AppAddr = tmpRequest->pointerToData;
-    RecvDescriptor->requestDesc = tmpRequest;
     RecvDescriptor->irecvSeq_m = seq;
-
-    // fill in request
-    tmpRequest->requestDesc = (void *) RecvDescriptor;
 
     // change status
     tmpRequest->status = ULM_STATUS_INCOMPLETE;
-
-    // fill in sequence number
-    tmpRequest->sequenceNumber_m = seq;
 
     //
     // There are different algorithms if we were told a specific proc to
     // receive from or a wild processor to receive from.
     //
-    if (tmpRequest->posted_m.proc.source_m == ULM_ANY_PROC) {
+    if (RecvDescriptor->posted_m.proc.source_m == ULM_ANY_PROC) {
         // lock to make sure that frag list and post receive lists
         // remain consistent, and frags don't get lost.
         //  (*** Need to see if there is a better way to do this for
@@ -124,7 +113,7 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
 
         // lock for thread safety
         if (usethreads()){
-            srcProc=RecvDescriptor->srcProcID_m;
+            srcProc=RecvDescriptor->posted_m.proc.source_m;
             recvLock[srcProc].lock();
         }
 

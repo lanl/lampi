@@ -46,11 +46,10 @@ bool gmRecvFragDesc::AckData(double timeNow)
     if (!gmState.doAck) {
         switch (msgType_m) {
         case MSGTYPE_PT2PT_SYNC:
-        case MSGTYPE_COLL_SYNC:
-            if (seqOffset_m != 0) {
-                return true;
-            }
-            break;
+		if (seqOffset_m != 0) {
+			return true;
+		}
+    		break;
         default:
             return true;
             break;
@@ -143,61 +142,6 @@ bool gmRecvFragDesc::AckData(double timeNow)
             // unlock sequence tracking lists
             if (usethreads())
                 reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-        } else if ((msgType_m == MSGTYPE_COLL)
-                   || (msgType_m == MSGTYPE_COLL_SYNC)) {
-            int source_box = global_proc_to_host(srcProcID_m);
-            // grab lock for sequence tracking lists
-            reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-
-            // do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-            bool recorded;
-            bool send_specific_ack =
-                reliabilityInfo->coll_deliveredDataSeqs[source_box].
-                recordIfNotRecorded(seq_m, &recorded);
-
-            // record this frag as successfully delivered or not even received, as appropriate...
-            if (!(isDuplicate_m)) {
-                if (DataOK) {
-                    if (!recorded) {
-                        reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(collective) "
-                                  "unable to record deliv'd sequence number\n"));
-                    }
-                } else {
-                    if (!(reliabilityInfo->coll_receivedDataSeqs[source_box].erase(seq_m))) {
-                        reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(collective) "
-                                  "unable to erase rcv'd sequence number\n"));
-                    }
-                    if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-                        reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(collective) "
-                                  "unable to erase deliv'd sequence number\n"));
-                    }
-                }
-            } else if (!send_specific_ack) {
-                // if the frag is a duplicate but has not been delivered to the user process,
-                // then set the field to 0 so the other side doesn't interpret
-                // these fields (it will only use the received_fragseq and delivered_fragseq fields
-                p->thisFragSeq = 0;
-                p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
-                if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-                    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                    ulm_exit((-1,
-                              "gmRecvFragDesc::AckData(collective) unable to erase duplicate deliv'd sequence number\n"));
-                }
-            }
-
-            p->receivedFragSeq = reliabilityInfo->
-                coll_receivedDataSeqs[source_box].largestInOrder();
-            p->deliveredFragSeq = reliabilityInfo->
-                coll_deliveredDataSeqs[source_box].largestInOrder();
-
-            // unlock sequence tracking lists
-            reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
         } else {
             // unknown communication type
             ulm_exit((-1,

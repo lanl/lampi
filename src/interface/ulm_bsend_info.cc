@@ -39,50 +39,33 @@
 #include "internal/options.h"
 #include "internal/state.h"
 #include "ulm/ulm.h"
+#include "path/common/BaseDesc.h"
 
 extern "C" void ulm_bsend_info_set(ULMRequestHandle_t request, void *originalBuffer,
 				   size_t bufferSize, int count, ULMType_t *datatype)
 {
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) request;
+	BaseSendDesc_t *sendDesc= (BaseSendDesc_t *)request;
 
     if ((datatype != NULL) && (datatype->layout == CONTIGUOUS) && (datatype->num_pairs != 0)) {
-        tmpRequest->appBufferPointer = (void *)((char *)originalBuffer + datatype->type_map[0].offset);
+        sendDesc->appBufferPointer = (void *)((char *)originalBuffer + datatype->type_map[0].offset);
     }
     else {
-        tmpRequest->appBufferPointer = originalBuffer;
+        sendDesc->appBufferPointer = originalBuffer;
     }
-    tmpRequest->bsendBufferSize = bufferSize;
-    tmpRequest->bsendDtypeCount = count;
-    tmpRequest->bsendDtypeType = datatype;
+    sendDesc->bsendBufferSize = bufferSize;
+    sendDesc->bsendDtypeCount = count;
 }
 
 extern "C" void ulm_bsend_info_get(ULMRequestHandle_t request, void **originalBuffer,
 				   size_t *bufferSize, int *count,
 				   ULMType_t **datatype, int *comm)
 {
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) request;
+	BaseSendDesc_t *sendDesc= (BaseSendDesc_t *)request;
 
-    *originalBuffer = tmpRequest->appBufferPointer;
-    *bufferSize = tmpRequest->bsendBufferSize;
-    *count = tmpRequest->bsendDtypeCount;
-    *datatype = tmpRequest->bsendDtypeType;
-    *comm = tmpRequest->ctx_m;
-}
-extern "C" void ulm_bsend_ptr_set(ULMRequestHandle_t request, void *newBuffer)
-{
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) request;
-
-    tmpRequest->pointerToData = newBuffer;
-}
-
-extern "C" int ulm_bsend_is_bsend(ULMRequestHandle_t request)
-{
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) request;
-
-    if ((tmpRequest->requestType == REQUEST_TYPE_SEND) && (tmpRequest->sendType == ULM_SEND_BUFFERED)) {
-	return 1;
-    }
-    return 0;
+    *originalBuffer = sendDesc->appBufferPointer;
+    *bufferSize = sendDesc->bsendBufferSize;
+    *count = sendDesc->bsendDtypeCount;
+    *comm = sendDesc->ctx_m;
 }
 
 extern "C" ULMBufferRange_t *ulm_bsend_alloc(ssize_t size, int freeAtZero)

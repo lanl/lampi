@@ -86,9 +86,7 @@ enum PathType_t {
 
 /* message types */
 enum MsgType_t {
-    MSGTYPE_COLL = 0,      // standard multicast send
-    MSGTYPE_PT2PT,         // standard point-to-point send
-    MSGTYPE_COLL_SYNC,     // synchronous multicast send
+    MSGTYPE_PT2PT=0,         // standard point-to-point send
     MSGTYPE_PT2PT_SYNC,    // synchronous point-to-point send
     MSGTYPE_END
 };

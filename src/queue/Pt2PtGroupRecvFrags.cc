@@ -206,7 +206,8 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	 *   this communicator
 	 */
 	if( recvDone ){
-		MatchedPostedRecvHeader->messageDone = true;
+		MatchedPostedRecvHeader->messageDone = 
+			REQUEST_COMPLETE;
 	}
     } else if (fragSendSeqID < nextSeqIDToProcess) {
 
@@ -256,7 +257,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 		ProcessMatchedData(MatchedPostedRecvHeader,
 		 		DataHeader, timeNow, &recvDone);
 		if( recvDone ){
-		    	MatchedPostedRecvHeader->messageDone = true;
+		    	MatchedPostedRecvHeader->messageDone = REQUEST_COMPLETE;
 		}
 	}
     } else {

@@ -52,11 +52,11 @@
 // Initial attempt to send data.  This is the when the send descriptor is
 //  first put in the libraries internal messaging queues.
 //
-int Communicator::isend_start(ULMRequestHandle_t *request)
+int Communicator::isend_start(BaseSendDesc_t **SendDesc)
 {
+    BaseSendDesc_t *SendDescriptor = *SendDesc;
     // create pointer to ULM request object
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
-    BaseSendDesc_t *SendDescriptor ;
+    RequestDesc_t *tmpRequest = (RequestDesc_t *) SendDescriptor;
     int errorCode = ULM_SUCCESS;
 
     // make sure that he request object is in the inactive state
@@ -69,83 +69,60 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
     /* for buffered send copy data from user space into
      *   the "buffer"
      */
-    if ((tmpRequest->sendType == ULM_SEND_BUFFERED) && 
-        (tmpRequest->persistent)) {
+    if ((SendDescriptor->sendType == ULM_SEND_BUFFERED) && 
+        (SendDescriptor->persistent)) {
         int offset = 0;
-        errorCode = PMPI_Pack(tmpRequest->appBufferPointer,
-                       tmpRequest->bsendDtypeCount, 
-		       (MPI_Datatype)tmpRequest->bsendDtypeType,
-                       tmpRequest->pointerToData,
-                       tmpRequest->bsendBufferSize, &offset, contextID);
+        errorCode = PMPI_Pack(SendDescriptor->appBufferPointer,
+                       SendDescriptor->bsendDtypeCount, 
+		       (MPI_Datatype)SendDescriptor->datatype,
+                       SendDescriptor->AppAddr,SendDescriptor->bsendBufferSize,
+		       &offset, contextID);
         if (errorCode != MPI_SUCCESS) {
             return errorCode;
         }
     }
     // set sent completion to false
-    tmpRequest->messageDone = false;
-
-    // bind send descriptor to a given path....this can fail...
-    errorCode = (*pt2ptPathSelectionFunction) (tmpRequest, (void **) 
-		    (&SendDescriptor) );
-    if (errorCode != ULM_SUCCESS) {
-        SendDescriptor->path_m->ReturnDesc(SendDescriptor);
-        return errorCode;
-    }
+    tmpRequest->messageDone = REQUEST_INCOMPLETE;
 
     // set the clear to send flag - depending on send mode
-    if (tmpRequest->sendType != ULM_SEND_SYNCHRONOUS) {
+    if (SendDescriptor->sendType != ULM_SEND_SYNCHRONOUS) {
         SendDescriptor->clearToSend_m = true;
     } else {
         SendDescriptor->clearToSend_m = false;
     }
 
-    // set the pointer to the request object and the send type
-    // needed for ReturnDesc() to do the right thing for bsends...
-    SendDescriptor->requestDesc = tmpRequest;
-    SendDescriptor->sendType = tmpRequest->sendType;
-
     // for buffered send, send is already complete, since the data resides
     // in the buffered region by this stage; also we need to find our buffer
     // allocation and increment the reference count for this send descriptor
-    if (tmpRequest->sendType == ULM_SEND_BUFFERED) {
-        SendDescriptor->bsendOffset = (ssize_t)((long)tmpRequest->pointerToData - (long)lampiState.bsendData->buffer);
-        SendDescriptor->PostedLength = tmpRequest->posted_m.length_m;
-        if ((SendDescriptor->PostedLength > 0) && !ulm_bsend_increment_refcount(*request, 
+    if (SendDescriptor->sendType == ULM_SEND_BUFFERED) {
+        SendDescriptor->bsendOffset = (ssize_t)((long)SendDescriptor->AppAddr - (long)lampiState.bsendData->buffer);
+	ULMRequestHandle_t request = (ULMRequestHandle_t *) (SendDescriptor);
+        if ((SendDescriptor->posted_m.length_m > 0) && !ulm_bsend_increment_refcount(request, 
                 SendDescriptor->bsendOffset)) {
             SendDescriptor->path_m->ReturnDesc(SendDescriptor);
             return ULM_ERR_FATAL;
         }
-        tmpRequest->messageDone = true;
+        tmpRequest->messageDone = REQUEST_COMPLETE;
     }
 
     // set the destination process ID, communicator ID, user tag, and length of the message
     // and other fields not specific to a given path...
-    SendDescriptor->dstProcID_m =
-        tmpRequest->posted_m.proc.destination_m;
-    SendDescriptor->tag_m = tmpRequest->posted_m.UserTag_m;
-    SendDescriptor->PostedLength = tmpRequest->posted_m.length_m;
-    SendDescriptor->ctx_m = tmpRequest->ctx_m;
-    SendDescriptor->datatype = tmpRequest->datatype;
     SendDescriptor->NumAcked = 0;
     SendDescriptor->NumSent = 0;
     SendDescriptor->NumFragDescAllocated = 0;
-    SendDescriptor->numFragsCopiedIntoLibBufs_m = 0;
-    SendDescriptor->sendDone =
-        (SendDescriptor->sendType == ULM_SEND_BUFFERED) ? 1 : 0;
+    SendDescriptor->messageDone =
+        (SendDescriptor->sendType == ULM_SEND_BUFFERED) ? 
+	REQUEST_COMPLETE : REQUEST_INCOMPLETE;
 #ifdef ENABLE_RELIABILITY
     SendDescriptor->earliestTimeToResend = -1.0;
 #endif
+    SendDescriptor->freeCalled = 0;
 
-    if (SendDescriptor->PostedLength)
-        SendDescriptor->AppAddr = tmpRequest->pointerToData;
-    else
+    if (!(SendDescriptor->posted_m.length_m))
         SendDescriptor->AppAddr = 0;
 
     // path-specific initialization of descriptor for fields like numfrags...
     SendDescriptor->path_m->init(SendDescriptor);
-
-    // fill in request
-    tmpRequest->requestDesc = (void *) SendDescriptor;
 
     // change status
     tmpRequest->status = ULM_STATUS_INCOMPLETE;
@@ -159,14 +136,13 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
     unsigned long seq;
     if(SendDescriptor->path_m->pathType_m != SHAREDMEM) {
 	    if (usethreads())
-		    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+		    next_isendSeqsLock[SendDescriptor->posted_m.proc.destination_m].
 			    lock();
-	    seq = next_isendSeqs[tmpRequest->posted_m.proc.destination_m]++;
+	    seq = next_isendSeqs[SendDescriptor->posted_m.proc.destination_m]++;
 	    if (usethreads())
-		    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+		    next_isendSeqsLock[SendDescriptor->posted_m.proc.destination_m].
 			    unlock();
 	    // set sequence number
-	    tmpRequest->sequenceNumber_m = seq;
 	    SendDescriptor->isendSeq_m = seq;
     }
 

@@ -33,6 +33,7 @@
 #include "path/common/pathContainer.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/path.h"
+#include "path/sharedmem/SMPfns.h"
 
 
 void lampi_init_prefork_shared_memory(lampiState_t *s)
@@ -45,7 +46,7 @@ void lampi_init_prefork_shared_memory(lampiState_t *s)
     }
 
     if (OPT_SHARED_MEMORY) {
-        InitSMPSharedMemDevices(s->local_size);
+        InitSMPSharedMemDescriptors(s->local_size);
     }
 }
 
@@ -181,29 +182,6 @@ void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *s)
                                      (adminMessage::
                                       packType) sizeof(ssize_t), 1);
             break;
-        case shared_mem_intput_params::SMPDATAPAGESOUTOFRESRCABORT:
-            SMPSharedMemPagesStackAbortWhenNoResource = false;
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESRESOURCERETRY:
-            s->client->unpackMessage(&maxSMPSharedMemPagesStackRetries,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMINPAGESPERCTX:
-            s->client->unpackMessage(&minPgsIn1SMPSharedMemPagesStack,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMAXPAGESPERCTX:
-            s->client->unpackMessage(&maxPgsIn1SMPSharedMemPagesStack,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMAXTOTPAGES:
-            s->client->unpackMessage(&nSMPSharedMemPages,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
         default:
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY;
             return;
@@ -301,25 +279,6 @@ void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *s)
             break;
         case shared_mem_intput_params::SMPISENDMAXTOTPAGES:
             s->client->unpack(&nSMPISendDescPages,
-                              (adminMessage::packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESOUTOFRESRCABORT:
-            SMPSharedMemPagesStackAbortWhenNoResource = false;
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESRESOURCERETRY:
-            s->client->unpack(&maxSMPSharedMemPagesStackRetries,
-                              (adminMessage::packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMINPAGESPERCTX:
-            s->client->unpack(&minPgsIn1SMPSharedMemPagesStack,
-                              (adminMessage::packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMAXPAGESPERCTX:
-            s->client->unpack(&maxPgsIn1SMPSharedMemPagesStack,
-                              (adminMessage::packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPDATAPAGESMAXTOTPAGES:
-            s->client->unpack(&nSMPSharedMemPages,
                               (adminMessage::packType) sizeof(ssize_t), 1);
             break;
         default:

@@ -62,9 +62,9 @@ void BasePath_t::ReturnDesc(BaseSendDesc_t *message, int poolIndex)
     // if this was a bsend (or aborted bsend), then decrement the reference
     // count for the appropriate buffer allocation
     if (message->sendType == ULM_SEND_BUFFERED) {
-        if (message->PostedLength > 0) {
+        if (message->posted_m.length_m > 0) {
             ulm_bsend_decrement_refcount(
-			    (ULMRequestHandle_t) message->requestDesc,
+			    (ULMRequestHandle_t) message,
 			    message->bsendOffset);
         }
     }

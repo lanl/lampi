@@ -104,11 +104,11 @@ bool gmSendFragDesc::init(int globalDestProc,
         }
 
         header->common.ctlMsgType = MESSAGE_DATA;
-        header->user_tag = parentSendDesc_m->tag_m;
+        header->user_tag = parentSendDesc_m->posted_m.UserTag_m;
         header->senderID = myproc();
         header->destID = globalDestProc_m;
         header->dataLength = length_m;
-        header->msgLength = parentSendDesc_m->PostedLength;
+        header->msgLength = parentSendDesc_m->posted_m.length_m;
         header->frag_seq = 0;  // fix later for reliability!!!!
         header->isendSeq_m = parentSendDesc_m->isendSeq_m;
         header->sendFragDescPtr.ptr = (void *) this;
@@ -146,7 +146,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         int dtype_cnt, ti;
         int tm_init = tmapIndex_m;
         int init_cnt = seqOffset_m / dtype->packed_size;
-        int tot_cnt = parentSendDesc_m->PostedLength / dtype->packed_size;
+        int tot_cnt = parentSendDesc_m->posted_m.length_m / dtype->packed_size;
         unsigned char *start_addr = (unsigned char *) parentSendDesc_m->AppAddr + init_cnt * dtype->extent;
         unsigned int csum = 0, ui1 = 0, ui2 = 0;
 

@@ -64,7 +64,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     commPtr = communicators[comm];
 
     // set done flag to false
-    recvDesc.messageDone = false;
+    recvDesc.messageDone = REQUEST_INCOMPLETE;
 
     // set ulm_free_request() called flag to false
     recvDesc.freeCalled = false;
@@ -77,10 +77,10 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
 
     // set receive address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        recvDesc.pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
+        recvDesc.AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
     }
     else {
-        recvDesc.pointerToData = buf;
+        recvDesc.AppAddr = buf;
     }
 
     // set destination process (need to check for completion)
@@ -111,7 +111,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
 
     // wait  - no need to call progress engine here, since irecv_start
     //   just called it
-    while (!(recvDesc.messageDone)) {
+    while ((recvDesc.messageDone == REQUEST_INCOMPLETE)) {
         errorCode = ulm_make_progress();
         if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)
             || (errorCode == ULM_ERR_FATAL)
@@ -133,7 +133,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     } else {
         status->error = ULM_SUCCESS;
     }
-    status->matchedSize = recvDesc.reslts_m.lengthProcessed_m;
+    status->matchedSize = recvDesc.DataReceived;
     status->persistent = false;
 
     // fill in remainder of status object

@@ -58,7 +58,6 @@ extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
                               ULMRequestHandle_t *request, int persistent)
 {
     int errorCode;
-    RequestDesc_t *ulmRequest;
     RecvDesc_t *RecvDescriptor;
 
     if (usethreads()) {
@@ -70,62 +69,61 @@ extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
         if (errorCode != ULM_SUCCESS)
             return errorCode;
     }
-    ulmRequest=(RequestDesc_t *)RecvDescriptor;
 
     // set done flag to false
-    ulmRequest->messageDone = false;
+    RecvDescriptor->messageDone = REQUEST_INCOMPLETE;
 
     // set ulm_free_request() called flag to false
-    ulmRequest->freeCalled = false;
+    RecvDescriptor->freeCalled = false;
 
-    ulmRequest->WhichQueue = REQUESTINUSE;
+    RecvDescriptor->WhichQueue = REQUESTINUSE;
 
     // set value of pointer
-    *request = (ULMRequestHandle_t) ulmRequest;
+    *request = (ULMRequestHandle_t) RecvDescriptor;
 
     // set message type in ReturnHandle
-    ulmRequest->requestType = REQUEST_TYPE_RECV;
+    RecvDescriptor->requestType = REQUEST_TYPE_RECV;
 
     // set data type
-    ulmRequest->datatype = dtype;
+    RecvDescriptor->datatype = dtype;
 
     // set receive address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        ulmRequest->pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
+        RecvDescriptor->AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
     }
     else {
-        ulmRequest->pointerToData = buf;
+        RecvDescriptor->AppAddr = buf;
     }
 
     // set destination process (need to check for completion)
-    ulmRequest->posted_m.proc.source_m = sourceProc;
+    RecvDescriptor->posted_m.proc.source_m = sourceProc;
 
     // set communicator
-    ulmRequest->ctx_m = comm;
+    RecvDescriptor->ctx_m = comm;
 
     // set tag
-    ulmRequest->posted_m.UserTag_m = tag;
+    RecvDescriptor->posted_m.UserTag_m = tag;
 
     // set posted length
     //
     if (dtype == NULL) {
-        ulmRequest->posted_m.length_m = size;
+        RecvDescriptor->posted_m.length_m = size;
     } else {
-        ulmRequest->posted_m.length_m = dtype->packed_size * size;
+        RecvDescriptor->posted_m.length_m = dtype->packed_size * size;
     }
 
     // set request state to inactive
-    ulmRequest->status = ULM_STATUS_INITED;
+    RecvDescriptor->status = ULM_STATUS_INITED;
 
     // set the persistence flag
     if (persistent) {
-        ulmRequest->persistent = true;
+        RecvDescriptor->persistent = true;
         // increment requestRefCount
         communicators[comm]->refCounLock.lock();
         (communicators[comm]->requestRefCount)++;
         communicators[comm]->refCounLock.unlock();
     } else {
-        ulmRequest->persistent = false;
+        RecvDescriptor->persistent = false;
     }
 
     return ULM_SUCCESS;

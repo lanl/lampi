@@ -64,7 +64,7 @@ class gmPath : public BasePath_t {
             int nfrags;
 
             // initialize numfrags
-            nfrags = (message->PostedLength + gmState.bufSize - 1) / gmState.bufSize;
+            nfrags = (message->posted_m.length_m + gmState.bufSize - 1) / gmState.bufSize;
             if (nfrags == 0) {
                 nfrags = 1;
             }

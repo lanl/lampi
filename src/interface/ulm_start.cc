@@ -52,8 +52,48 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
     Communicator *commPtr = communicators[comm];
 
     if (tmpRequest->requestType == REQUEST_TYPE_SEND) {
-        // send
-        errorCode = commPtr->isend_start(request);
+        /* send */
+	    BaseSendDesc_t *SendDescriptor = (BaseSendDesc_t *) tmpRequest;
+	/* for persistant send, may need to reset request */
+	if ( tmpRequest->persistent ) {
+		/* check to see if the SendDescriptor can be reused,
+		 *   or if we need to allocate a new one
+		 */
+		int reuseDesc=0;
+		if( (SendDescriptor->numfrags <= SendDescriptor->NumAcked) && 
+				SendDescriptor->messageDone == REQUEST_COMPLETE
+				) {
+			reuseDesc=1;
+		}
+		if( !reuseDesc ) {
+			/* allocate new descriptor */
+			int dest=SendDescriptor->posted_m.proc.destination_m;
+			BaseSendDesc_t *tmpSendDesc = SendDescriptor;
+			errorCode= communicators[comm]->
+				pt2ptPathSelectionFunction((void **) 
+						(&SendDescriptor),comm,dest);
+			if (errorCode != ULM_SUCCESS) {
+				return errorCode;
+		    	}
+
+			/* fill in new descriptor information */
+			*SendDescriptor=*tmpSendDesc;
+
+			/* reset the old descriptor */
+			tmpSendDesc->persistent=false;
+
+			/* wait/test can't be called on the descriptor
+			 *   any more, since we change the handle that
+			 *   is returned to the app
+			 */
+			tmpSendDesc->messageDone=REQUEST_RELEASED;
+
+			/* reset local parameters */
+			*request=&SendDescriptor;
+			tmpRequest = (RequestDesc_t *) (*request);
+		}
+	}
+        errorCode = commPtr->isend_start(&SendDescriptor);
         if (errorCode != ULM_SUCCESS) {
             return errorCode;
         }

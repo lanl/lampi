@@ -79,12 +79,6 @@ ssize_t minPgsIn1IRecvDescDescList = -1;
 long maxIRecvDescRetries = 1000;
 bool irecvDescDescAbortWhenNoResource = true;
 
-// pool of RequestDesc_ts
-FreeListPrivate_t <RequestDesc_t> ulmRequestDescPool;
-
-// list of request objects that are potentially still being used
-ProcessPrivateMemDblLinkList _ulm_incompleteRequests;
-
 // communictor management
 //
 
@@ -171,12 +165,6 @@ extern ssize_t maxPgsIn1IRecvDescDescList;
 extern ssize_t minPgsIn1IRecvDescDescList;
 extern long maxIRecvDescRetries;
 extern bool irecvDescDescAbortWhenNoResource;
-
-// pool of RequestDesc_ts
-extern FreeListPrivate_t <RequestDesc_t> ulmRequestDescPool;
-
-// list of request objects that are potentially still being used
-extern ProcessPrivateMemDblLinkList _ulm_incompleteRequests;
 
 // uppper limit on number of communicators
 extern int maxCommunicatorInstances;

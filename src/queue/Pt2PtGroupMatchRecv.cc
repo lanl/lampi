@@ -103,7 +103,7 @@ void Communicator::checkFragListsForWildMatch(RecvDesc_t * IRDesc)
 void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
 {
     // check to see if there are any frags to match
-    int SourceProc = IRDesc->srcProcID_m;
+    int SourceProc = IRDesc->posted_m.proc.source_m;
 
 #ifdef ENABLE_SHARED_MEMORY
     if ((privateQueues.OkToMatchRecvFrags[SourceProc]->size() == 0) &&
@@ -153,7 +153,7 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
     bool FragFound = false, recvDone;
     unsigned long SendingSequenceNumber = 0;
     long SendingProc = 0;
-    int tag = IRDesc->tag_m;
+    int tag = IRDesc->posted_m.UserTag_m;
     RequestDesc_t *requestDesc = (RequestDesc_t *) IRDesc;
     // loop over list of frags - upper level manages thread safety
 
@@ -185,15 +185,10 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
             FragFound = true;
             SendingSequenceNumber = RecDesc->isendSeq_m;
             IRDesc->isendSeq_m = SendingSequenceNumber;
-            IRDesc->ReceivedMessageLength = RecDesc->msgLength_m;
-            // figure out exactly how much data will be received
-            unsigned long amountToRecv = RecDesc->msgLength_m;
-            if (amountToRecv > IRDesc->PostedLength)
-                amountToRecv = IRDesc->PostedLength;
-            IRDesc->actualAmountToRecv_m = amountToRecv;
+            IRDesc->reslts_m.length_m = RecDesc->msgLength_m;
             /* reset tag variable to matched value for further list processing */
-            IRDesc->tag_m = tag = RecDesc->tag_m;
-            IRDesc->srcProcID_m = SendingProc;
+            IRDesc->reslts_m.UserTag_m = tag = RecDesc->tag_m;
+            IRDesc->reslts_m.proc.source_m = SendingProc;
 
             //
             // Copy the data to user space and record the amount moved.
@@ -229,14 +224,14 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
 
             // CopyToApp() may have freed IRDesc, so we use requestDesc
             // to check the status of this message...
-            if (requestDesc->messageDone) {
+            if (requestDesc->messageDone==REQUEST_COMPLETE) {
                 break;
             } else {
                 //
                 // Record this irecv in the list of matched irecvs.
                 //
                 IRDesc->WhichQueue = MATCHEDIRECV;
-                privateQueues.MatchedRecv[IRDesc->srcProcID_m]->
+                privateQueues.MatchedRecv[IRDesc->reslts_m.proc.source_m]->
                     Append(IRDesc);
             }
 
@@ -255,7 +250,7 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
             recvDone = false;
             IRDesc->CopyToAppLock(RecDesc, &recvDone);
             if (recvDone)
-                requestDesc->messageDone = true;
+                requestDesc->messageDone = REQUEST_COMPLETE;
 
             //  ReturnDescToPool sets the WhichQueue correctly - this is just to
             //    make sure that the frag is not processed as privateQueues.OkToMatchRecvFrags.
@@ -280,7 +275,7 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
 
             // CopyToApp() may have freed IRDesc, so we use requestDesc
             // to check the status of this message...
-            if (requestDesc->messageDone) {
+            if (requestDesc->messageDone==REQUEST_COMPLETE) {
                 break;
             }
         }
@@ -312,7 +307,7 @@ bool Communicator::matchAgainstSMPFramentList(RecvDesc_t * receiver,
     if (privateQueues.OkToMatchSMPFrags[sourceProcess]->size() == 0) {
         return FragFound;
     }
-    int tag = receiver->tag_m;
+    int tag = receiver->posted_m.UserTag_m;
     // loop over list of frags - upper level manages thread safety
 
     if (usethreads()) {

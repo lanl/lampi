@@ -47,8 +47,7 @@ bool udpPath::packData(BaseSendDesc_t *message, udpSendFragDesc *frag)
     ULMTypeMapElt_t *tmap = dtype->type_map;
     int tm_init = frag->tmap_index;
     int init_cnt = frag->seqOffset_m / dtype->packed_size;
-    //int tot_cnt = frag->header.messageLength / dtype->packed_size;
-    int tot_cnt = message->PostedLength / dtype->packed_size;
+    int tot_cnt = message->posted_m.length_m / dtype->packed_size;
     unsigned char *start_addr = ((unsigned char *) message->AppAddr)
 	+ init_cnt * dtype->extent;
     int dtype_cnt, ti;
@@ -123,7 +122,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     offset 		= 0;
     returnValue 	= ULM_SUCCESS; 
     gldestProc 		= communicators[message->ctx_m]->remoteGroup->
-        mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+        mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
 
     // always allocate and try to send the first frag
     if (message->NumFragDescAllocated == 0)
@@ -180,7 +179,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	sendFragDesc->msgType_m = MSGTYPE_PT2PT;
 
 	if (message->NumFragDescAllocated == 0) {
-	    leftToSend = message->PostedLength;
+	    leftToSend = message->posted_m.length_m;
 	    offset = 0;
 	    if (leftToSend < maxShortPayloadSize_g) {
 		payloadSize = leftToSend;
@@ -191,7 +190,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	    shortMsg = true;
 	} else {
 	    offset = maxShortPayloadSize_g + maxPayloadSize_g * (message->NumFragDescAllocated - 1);
-	    leftToSend = message->PostedLength - offset;
+	    leftToSend = message->posted_m.length_m - offset;
 	    payloadSize = (leftToSend < maxPayloadSize_g) ? leftToSend : maxPayloadSize_g;
 	    shortMsg = (payloadSize <= maxShortPayloadSize_g);
 	}
@@ -310,11 +309,11 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 
 	header.type 		= UDP_MESSAGETYPE_MESSAGE;
 	header.length 		= payloadSize;
-	header.messageLength 	= message->PostedLength;
+	header.messageLength 	= message->posted_m.length_m;
 	header.udpio.ptr 	= sendFragDesc;
 	header.src_proc 	= communicators[message->ctx_m]->localGroup->mapGroupProcIDToGlobalProcID[myRank];
 	header.dest_proc 	= gldestProc;
-	header.tag_m 	= message->tag_m;
+	header.tag_m 	= message->posted_m.UserTag_m;
 	header.ctxAndMsgType =
 	    GENERATE_CTX_AND_MSGTYPE(message->ctx_m, sendFragDesc->msgType_m);
 	header.fragIndex_m = message->NumFragDescAllocated;
@@ -402,13 +401,12 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     }	// end loop over frags to send
 
     if (
-	(!message->sendDone) &&
+	(message->messageDone==REQUEST_INCOMPLETE) &&
 	(message->sendType != ULM_SEND_SYNCHRONOUS) && 
 	(message->pathInfo.udp.numFragsCopied == (int)message->numfrags)
         )
     {
-	message->sendDone = 1;
-	message->requestDesc->messageDone = true;
+	message->messageDone = REQUEST_COMPLETE;
     }
 
     if (message->NumSent == message->numfrags)

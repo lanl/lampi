@@ -103,8 +103,8 @@ public:
     virtual bool init(BaseSendDesc_t *message) {
         message->numfrags = 1;
        	message->pathInfo.udp.numFragsCopied = 0; 
-	if (message->PostedLength > maxShortPayloadSize_g) {
-            size_t remaining = message->PostedLength - maxShortPayloadSize_g;
+	if (message->posted_m.length_m > maxShortPayloadSize_g) {
+            size_t remaining = message->posted_m.length_m-maxShortPayloadSize_g;
             message->numfrags += (remaining + maxPayloadSize_g - 1) / maxPayloadSize_g;
         }
         return true;

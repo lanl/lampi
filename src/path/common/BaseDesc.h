@@ -80,29 +80,27 @@ public:
     Locks Lock;                     // lock
     DoubleLinkList FragsToAck;      // double link list of frags that need to be acked
     DoubleLinkList FragsToSend;     // double link list of frags that need to be sent
-    RequestDesc_t *requestDesc;     // pointer to associated request object
-    ULMType_t *datatype;            // datatype for message (null means raw bytes)
     bool clearToSend_m;             // flag for flow control, frags are only sent when true
-    int ctx_m;                      // context ID tag
-    int maxOutstandingFrags;        // maximum outstanding frags - for flow control
-    int numFragsCopiedIntoLibBufs_m;        // number of frags that have been copied into library buffers
-    int sendDone;                   // is send done ?
-    int sendType;                   // send type
-    int tag_m;                      // user specified tag
-    ssize_t bsendOffset;            // bsend buffer allocation offset
-    int dstProcID_m;                // destination process ProcID
-    unsigned long PostedLength;     // length of the data
     unsigned long isendSeq_m;        // library specified tag
-    unsigned numfrags;              // number of frags that will be sent
     void *AppAddr;                  // pointer to the base of the data
+    unsigned numfrags;              // number of frags that will be sent
     volatile unsigned NumAcked;     //  number of acks received
     volatile unsigned NumFragDescAllocated; // number of frag descriptors allocated
     volatile unsigned NumSent;      // the number that have had the 'action' applied
+    int maxOutstandingFrags;        // maximum outstanding frags - for flow control
+    msgRequest posted_m;
 
 #ifdef ENABLE_RELIABILITY
     double earliestTimeToResend;
 #endif
 
+    int sendType;               // send type - normal, buffered, synchronous, or ready
+    ssize_t bsendOffset;            // bsend buffer allocation offset
+    void *appBufferPointer;	// set to point to the original buffer (which
+                                // can be different from AppAddr -- MPI_Bsend)
+    size_t bsendBufferSize;	// the size of the buffer needed to pack the bsend data
+
+    int bsendDtypeCount;	// datatype element count of original bsend data
 
     // Methods
 
@@ -153,30 +151,15 @@ public:
     
     // Data members
 
-    volatile unsigned long DataReceived;    // Amount of data received
-    volatile unsigned long DataInBitBucket; // Amount of data ignored if PostedLength < ReceivedMessageLength
-    unsigned long PostedLength;             // length of the data -posted on receive side
-    unsigned long ReceivedMessageLength;    // total received message length
-    unsigned long actualAmountToRecv_m;     // actual amount to receive (min of send and recv)
-    int srcProcID_m;                        // sending process ProcID
-    int tag_m;                              // user specified tag
     unsigned long long isendSeq_m;          // library specified isend tag
     unsigned long long irecvSeq_m;          // library specified irecv tag
-    int messageType;                        // communication type ID (point-to-point, collective, etc.)
-    int ctx_m;                              // context ID
     void *AppAddr;                          // pointer to the base of the data
-    Locks Lock;                             // lock
+    msgRequest posted_m;
+    msgRequest reslts_m;
+    volatile unsigned long DataReceived;    // Amount of data received
+    volatile unsigned long DataInBitBucket; // Amount of data ignored if PostedLength < ReceivedMessageLength
 
-#ifdef DEBUG_DESCRIPTORS
-    double t0;
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    double t6;
-    double t7;
-#endif
+    Locks Lock;                             // lock
 
     // Methods
 
@@ -192,15 +175,6 @@ public:
 
     // called by copy to app routine
     void requestFree(void);
-
-    // set request object and return descriptor to pool
-    void setRequestReturnDesc()
-        {
-            reslts_m.UserTag_m = tag_m;
-            reslts_m.length_m = ReceivedMessageLength;
-            reslts_m.lengthProcessed_m = DataReceived;
-            messageDone = MESSAGE_COMPLETE;
-        }
 
     // default constructor
     RecvDesc_t()

@@ -2974,7 +2974,7 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
     dotted = inet_ntoa(addr.sin_addr);
     len = strlen(dotted);
     bzero(dst, bytes);
-    if (len <= (size_t)(bytes - 1)) {
+    if (len <= (ssize_t)(bytes - 1)) {
         strcpy(dst, dotted);
     }
     else

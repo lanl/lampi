@@ -31,12 +31,7 @@
 #include <stdio.h>
 
 #include "queue/globals.h"
-#include "client/ULMClient.h"
-#include "internal/log.h"
-#include "internal/options.h"
-#include "internal/profiler.h"
-#include "internal/state.h"
-#include "ulm/ulm.h"
+#include "path/common/path.h"
 
 /*!
  * non blocking send
@@ -55,59 +50,61 @@
 extern "C" int ulm_send(void *buf, size_t size, ULMType_t *dtype,
                         int dest, int tag, int comm, int sendMode)
 {
-    RequestDesc_t ulmRequest;
     int returnCode;
+    BaseSendDesc_t *SendDescriptor ;
 
-    //ulmRequest.WhichQueue = REQUESTINUSE;
+    /* bind send descriptor to a given path....this can fail... */
+    returnCode= communicators[comm]->pt2ptPathSelectionFunction
+	    ((void **) (&SendDescriptor),comm,dest );
+    if (returnCode != ULM_SUCCESS) {
+	    return returnCode;
+    }
 
     // set messageDone
     // this flag is used by test/wait to
     // when the request is done..
 
-    ulmRequest.messageDone = false;
+    SendDescriptor->messageDone = REQUEST_INCOMPLETE;
 
     // set message type in ReturnHandle
-    ulmRequest.requestType = REQUEST_TYPE_SEND;
+    SendDescriptor->requestType = REQUEST_TYPE_SEND;
 
     // set pointer to datatype
-    ulmRequest.datatype = dtype;
+    SendDescriptor->datatype = dtype;
 
     // set buf type, posted size
     if (dtype == NULL) {
-	ulmRequest.posted_m.length_m = size;
+	SendDescriptor->posted_m.length_m = size;
     } else {
-	ulmRequest.posted_m.length_m = dtype->packed_size * size;
+	SendDescriptor->posted_m.length_m = dtype->packed_size * size;
     }
 
     // set send address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        ulmRequest.pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
-    }
-    else {
-        ulmRequest.pointerToData = buf;
+        SendDescriptor->AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
+    } else {
+        SendDescriptor->AppAddr = buf;
     }
 
     // set destination process (need to check for completion)
-    ulmRequest.posted_m.proc.destination_m = dest;
+    SendDescriptor->posted_m.proc.destination_m = dest;
 
     // set user_tag
-    ulmRequest.posted_m.UserTag_m = tag;
+    SendDescriptor->posted_m.UserTag_m = tag;
 
     // set communicator
-    ulmRequest.ctx_m = comm;
+    SendDescriptor->ctx_m = comm;
 
     // set request state to inactive
-    ulmRequest.status = ULM_STATUS_INITED;
+    SendDescriptor->status = ULM_STATUS_INITED;
 
     // set the send mode
-    ulmRequest.sendType = sendMode;
+    SendDescriptor->sendType = sendMode;
 
     // set the persistence flag
-    //ulmRequest.persistent = false;
 
     // start send
-    ULMRequestHandle_t request=&ulmRequest;
-    returnCode = communicators[comm]->isend_start(&request);
+    returnCode = communicators[comm]->isend_start(&SendDescriptor);
     if (returnCode != ULM_SUCCESS) {
 	return returnCode;
     }
@@ -118,7 +115,7 @@ extern "C" int ulm_send(void *buf, size_t size, ULMType_t *dtype,
         || (returnCode == ULM_ERROR)) {
         return returnCode;
     }
-    while (!(ulmRequest.messageDone)) {
+    while ((SendDescriptor->messageDone == REQUEST_INCOMPLETE)) {
         returnCode = ulm_make_progress();
         if ((returnCode == ULM_ERR_OUT_OF_RESOURCE)
             || (returnCode == ULM_ERR_FATAL)
@@ -126,6 +123,9 @@ extern "C" int ulm_send(void *buf, size_t size, ULMType_t *dtype,
             return returnCode;
         }
     }
+
+    /* mark the request free as called */
+    SendDescriptor->freeCalled=true;
 
     return ULM_SUCCESS;
 }

@@ -50,15 +50,12 @@
 #include "path/sharedmem/SMPfns.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 
-bool _ulm_checkSMPInMakeProgress = true;
 #endif // SHARED_MEMORY
 
 
 #ifdef ENABLE_RELIABILITY
 #include "util/DblLinkList.h"
 #endif
-
-static int incompleteReqObjCount = 0;
 
 /*
  * variables for debug timing
@@ -88,41 +85,12 @@ extern "C" int ulm_make_progress(void)
     int i;
 
     enum {
-        USE_MULTICAST_COMMUNICATIONS = 0,
         DEBUG_TIMES = 0
     };
 
     if (DEBUG_TIMES) {
         t[1] = dclock();
         ptCnt++;
-    }
-
-    if (incompleteReqObjCount++ == 100) {
-        incompleteReqObjCount = 0;
-        // check unsafe request object freelist
-        if (_ulm_incompleteRequests.size() > 0) {
-                DoubleLinkList *list = &(_ulm_incompleteRequests);
-                RequestDesc_t *req = 0, *tmpreq = 0;
-                if (usethreads())
-                    list->Lock.lock();
-                for (req = (RequestDesc_t *)list->begin(); 
-                    req != (RequestDesc_t *)list->end();
-                    req = tmpreq) {
-                    tmpreq = (RequestDesc_t *)req->next;
-                    if (req->messageDone) {
-                        // safe to move to allocation freelist
-                        list->RemoveLinkNoLock(req);
-				        /* send requests only */
-				        if (usethreads()) {
-					        ulmRequestDescPool.returnElement(req);
-				        } else {
-		   			        ulmRequestDescPool.returnElementNoLock(req);
-				        }
-                    }
-                }
-                if (usethreads())
-                    list->Lock.unlock();
-        }
     }
 
     // check for completed sends

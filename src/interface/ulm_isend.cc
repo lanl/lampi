@@ -31,11 +31,6 @@
 #include <stdio.h>
 
 #include "queue/globals.h"
-#include "internal/log.h"
-#include "internal/options.h"
-#include "internal/profiler.h"
-#include "internal/state.h"
-#include "ulm/ulm.h"
 
 /*!
  * non blocking send
@@ -56,81 +51,76 @@ extern "C" int ulm_isend(void *buf, size_t size, ULMType_t *dtype,
                          int dest, int tag, int comm, ULMRequestHandle_t *request,
                          int sendMode)
 {
-    RequestDesc_t *ulmRequest;
+    BaseSendDesc_t *SendDescriptor ;
     int returnCode;
-    int listIndex = 0;
     int errorCode;
 
-    if (usethreads()) {
-        ulmRequest = ulmRequestDescPool.getElement(listIndex, errorCode);
-    } else {
-        ulmRequest =
-            ulmRequestDescPool.getElementNoLock(listIndex, errorCode);
-    }
+    /* bind send descriptor to a given path....this can fail... */
+    errorCode= communicators[comm]->pt2ptPathSelectionFunction
+	    ((void **) (&SendDescriptor),comm,dest );
     if (errorCode != ULM_SUCCESS) {
         return errorCode;
     }
 
-    assert(ulmRequest->WhichQueue == REQUESTFREELIST);
-
-    ulmRequest->WhichQueue = REQUESTINUSE;
+    SendDescriptor->WhichQueue = REQUESTINUSE;
 
     // set value of pointer
-    *request = (ULMRequestHandle_t) ulmRequest;
+    *request = (ULMRequestHandle_t) SendDescriptor;
 
     // set messageDone
     // this flag is used by test/wait to
     // when the request is done..
 
-    ulmRequest->messageDone = false;
+    SendDescriptor->messageDone = REQUEST_INCOMPLETE;
 
     // set message type in ReturnHandle
-    ulmRequest->requestType = REQUEST_TYPE_SEND;
+    SendDescriptor->requestType = REQUEST_TYPE_SEND;
 
     // set pointer to datatype
-    ulmRequest->datatype = dtype;
+    SendDescriptor->datatype = dtype;
 
     // set buf type, posted size
     if (dtype == NULL) {
-        ulmRequest->posted_m.length_m = size;
+        SendDescriptor->posted_m.length_m = size;
     } else {
-        ulmRequest->posted_m.length_m = dtype->packed_size * size;
+        SendDescriptor->posted_m.length_m = dtype->packed_size * size;
     }
 
     // set send address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        ulmRequest->pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
+        SendDescriptor->AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
     }
     else {
-        ulmRequest->pointerToData = buf;
+        SendDescriptor->AppAddr = buf;
     }
 
     // set destination process (need to check for completion)
-    ulmRequest->posted_m.proc.destination_m = dest;
+    SendDescriptor->posted_m.proc.destination_m = dest;
 
     // set tag_m
-    ulmRequest->posted_m.UserTag_m = tag;
+    SendDescriptor->posted_m.UserTag_m = tag;
 
     // set communicator
-    ulmRequest->ctx_m = comm;
+    SendDescriptor->ctx_m = comm;
 
     // set request state to inactive
-    ulmRequest->status = ULM_STATUS_INITED;
+    SendDescriptor->status = ULM_STATUS_INITED;
 
     // set the send mode
-    ulmRequest->sendType = sendMode;
+    SendDescriptor->sendType = sendMode;
 
     // set the persistence flag
-    ulmRequest->persistent = false;
+    SendDescriptor->persistent = false;
 
     // start send
-    returnCode = communicators[comm]->isend_start(request);
+    returnCode = communicators[comm]->isend_start(&SendDescriptor);
     if (returnCode != ULM_SUCCESS) {
         ulm_request_free((ULMRequestHandle_t *) (request));
         return returnCode;
     }
-    // update request object
-    ulmRequest->status = ULM_STATUS_INCOMPLETE;
+    // update request object - invalid ; needs to happen in isend_start,
+    //   since ulmRequest may actually change in isend_start
+    SendDescriptor->status = ULM_STATUS_INCOMPLETE;
 
     return ULM_SUCCESS;
 }

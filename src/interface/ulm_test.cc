@@ -51,6 +51,9 @@ extern "C" int ulm_test(ULMRequestHandle_t *request, int *completed,
                         ULMStatus_t *status)
 {
     RequestDesc_t *tmpRequest;
+    BaseSendDesc_t *SendDescriptor;
+    RecvDesc_t *RecvDescriptor;
+
     int ReturnValue = ULM_SUCCESS;
 
     // initialize completion status to incomplete
@@ -117,20 +120,21 @@ extern "C" int ulm_test(ULMRequestHandle_t *request, int *completed,
     switch (tmpRequest->requestType) {
 
     case REQUEST_TYPE_RECV:
-        if (!(tmpRequest->messageDone)) {
+	    RecvDescriptor = (RecvDesc_t *) (*request);
+        if (RecvDescriptor->messageDone == REQUEST_INCOMPLETE ) {
             return ULM_SUCCESS;
         }
         // fill in status object
-        status->tag = tmpRequest->reslts_m.UserTag_m;
-        status->proc.source = tmpRequest->reslts_m.proc.source_m;
-        status->matchedSize = tmpRequest->reslts_m.lengthProcessed_m;
-        status->persistent = tmpRequest->persistent;
+        status->tag = RecvDescriptor->reslts_m.UserTag_m;
+        status->proc.source = RecvDescriptor->reslts_m.proc.source_m;
+        status->matchedSize = RecvDescriptor->DataReceived;
+        status->persistent = RecvDescriptor->persistent;
         status->state = ULM_STATUS_COMPLETE;
         *completed = 1;
         // test for completion
-        if (tmpRequest->posted_m.length_m != tmpRequest->reslts_m.length_m) {
-            if (tmpRequest->posted_m.length_m >
-                tmpRequest->reslts_m.length_m) {
+        if (RecvDescriptor->posted_m.length_m != RecvDescriptor->reslts_m.length_m) {
+            if (RecvDescriptor->posted_m.length_m >
+                RecvDescriptor->reslts_m.length_m) {
                 status->error = ULM_ERR_RECV_LESS_THAN_POSTED;
                 ReturnValue = ULM_ERR_RECV_LESS_THAN_POSTED;
             } else {
@@ -145,16 +149,17 @@ extern "C" int ulm_test(ULMRequestHandle_t *request, int *completed,
         break;
 
     case REQUEST_TYPE_SEND:
-        if (!(tmpRequest->messageDone)) {
+	SendDescriptor = (BaseSendDesc_t *) (*request);
+        if (SendDescriptor->messageDone == REQUEST_INCOMPLETE ) {
             return ULM_SUCCESS;
         }
         // fill in status object
-        status->tag = tmpRequest->posted_m.UserTag_m;
-        status->proc.destination = tmpRequest->posted_m.proc.destination_m;
+        status->tag = SendDescriptor->posted_m.UserTag_m;
+        status->proc.destination = SendDescriptor->posted_m.proc.destination_m;
         status->state = ULM_STATUS_COMPLETE;
         status->error = ULM_SUCCESS;
-        status->matchedSize = tmpRequest->posted_m.length_m;
-	status->persistent = tmpRequest->persistent;
+        status->matchedSize = SendDescriptor->posted_m.length_m;
+	status->persistent = SendDescriptor->persistent;
 	*completed = 1;
 
         break;

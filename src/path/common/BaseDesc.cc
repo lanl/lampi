@@ -176,7 +176,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     ssize_t lengthToCopy = FragDesc->length_m;
 
     // make sure we don't overflow app buffer
-    ssize_t AppBufferLen = PostedLength - Offset;
+    ssize_t AppBufferLen = posted_m.length_m - Offset;
 
     datatype = this->datatype;
 
@@ -215,15 +215,10 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
 
     // check to see if receive is complete, and if so mark the request object
     //   as such
-    if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
-        // fill in request object
-        reslts_m.proc.source_m = srcProcID_m;
-        reslts_m.length_m = ReceivedMessageLength;
-        reslts_m.lengthProcessed_m = DataReceived;
-        reslts_m.UserTag_m = tag_m;
+    if ((DataReceived + DataInBitBucket) >= reslts_m.length_m) {
 
         // mark recv as complete
-        messageDone = true;
+        messageDone = REQUEST_COMPLETE;
         if (recvDone)
             *recvDone = true;
         wmb();
@@ -231,9 +226,8 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         // remove recv desc from list
         Comm = communicators[ctx_m];
         if (WhichQueue == MATCHEDIRECV) {
-            Comm->privateQueues.MatchedRecv[srcProcID_m]->RemoveLink(this);
-        } else if (WhichQueue == POSTEDUTRECVS) {
-            Comm->privateQueues.PostedUtrecvs.RemoveLinkNoLock(this);
+            Comm->privateQueues.MatchedRecv[reslts_m.proc.source_m]
+		    ->RemoveLink(this);
         }
 
         // if ulm_request_free has already been called, then 
@@ -270,7 +264,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     ssize_t lengthToCopy = FragDesc->length_m;
 
     // make sure we don't overflow app buffer
-    ssize_t AppBufferLen = PostedLength - Offset;
+    ssize_t AppBufferLen = posted_m.length_m - Offset;
 
     //Contiguous Data
     datatype = this->datatype;
@@ -316,12 +310,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 
     // check to see if receive is complete, and if so mark the request
     // object as such
-    if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
-        // fill in request object
-        reslts_m.proc.source_m = srcProcID_m;
-        reslts_m.length_m = ReceivedMessageLength;
-        reslts_m.lengthProcessed_m = DataReceived;
-        reslts_m.UserTag_m = tag_m;
+    if ((DataReceived + DataInBitBucket) >= reslts_m.length_m) {
         // mark recv as complete - the request descriptor will be marked
 	// later on.  This is to avoid a race condition with another thread
 	// waiting to complete a recv, completing, and try to free the
@@ -333,7 +322,8 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 
         // remove receive descriptor from list
         Comm = communicators[ctx_m];
-        Comm->privateQueues.MatchedRecv[srcProcID_m]->RemoveLink(this);
+        Comm->privateQueues.MatchedRecv[reslts_m.proc.source_m]->
+		RemoveLink(this);
 
         // if ulm_request_free() has already been called, then we
         // free the recv/request object here...
@@ -369,7 +359,7 @@ int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
         // compute frag offset
         length = fragLen;
         // make sure we don't overflow buffer
-        AppBufferLen = PostedLength - sequentialOffset;
+        AppBufferLen = posted_m.length_m - sequentialOffset;
         // if AppBufferLen is negative or zero, then there is nothing to
         // copy, so get out of here as soon as possible...
         if (AppBufferLen <= 0) {

@@ -50,6 +50,8 @@
 extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
 {
     int errorCode = ULM_SUCCESS;
+    BaseSendDesc_t *SendDescriptor;
+    RecvDesc_t *RecvDescriptor;
 
     /*
      * if request is NULL, follow MPI conventions and return success
@@ -110,7 +112,8 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
     switch (tmpRequest->requestType) {
 
     case REQUEST_TYPE_RECV:
-        while (!(tmpRequest->messageDone)) {
+        RecvDescriptor = (RecvDesc_t *) (*request);
+        while ((RecvDescriptor->messageDone == REQUEST_INCOMPLETE)) {
             errorCode = ulm_make_progress();
             if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)
                 || (errorCode == ULM_ERR_FATAL)
@@ -120,11 +123,11 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
         }
 
         // fill in status object
-        status->tag = tmpRequest->reslts_m.UserTag_m;
-        status->proc.source = tmpRequest->reslts_m.proc.source_m;
-        if (tmpRequest->posted_m.length_m != tmpRequest->reslts_m.length_m) {
-            if (tmpRequest->posted_m.length_m >
-                tmpRequest->reslts_m.length_m) {
+        status->tag = RecvDescriptor->reslts_m.UserTag_m;
+        status->proc.source = RecvDescriptor->reslts_m.proc.source_m;
+        if (RecvDescriptor->posted_m.length_m != RecvDescriptor->reslts_m.length_m) {
+            if (RecvDescriptor->posted_m.length_m >
+                RecvDescriptor->reslts_m.length_m) {
                 status->error = ULM_ERR_RECV_LESS_THAN_POSTED;
             } else {
                 status->error = ULM_ERR_RECV_MORE_THAN_POSTED;  // truncation error
@@ -133,12 +136,13 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
         } else {
             status->error = ULM_SUCCESS;
         }
-        status->matchedSize = tmpRequest->reslts_m.lengthProcessed_m;
-        status->persistent = tmpRequest->persistent;
+        status->matchedSize = RecvDescriptor->DataReceived;
+        status->persistent = RecvDescriptor->persistent;
         break;
 
     case REQUEST_TYPE_SEND:
-	while (!(tmpRequest->messageDone)) {
+        SendDescriptor = (BaseSendDesc_t *) (*request);
+	while ((SendDescriptor->messageDone==REQUEST_INCOMPLETE)) {
 	    errorCode = ulm_make_progress();
 	    if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)
 		|| (errorCode == ULM_ERR_FATAL)
@@ -148,11 +152,11 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
 	}
 
 	// fill in status object - same as request
-	status->tag = tmpRequest->posted_m.UserTag_m;
-	status->proc.destination = tmpRequest->posted_m.proc.destination_m;
+	status->tag = SendDescriptor->posted_m.UserTag_m;
+	status->proc.destination = SendDescriptor->posted_m.proc.destination_m;
 	status->error = ULM_SUCCESS;
-	status->matchedSize = tmpRequest->posted_m.length_m;
-	status->persistent = tmpRequest->persistent;
+	status->matchedSize = SendDescriptor->posted_m.length_m;
+	status->persistent = SendDescriptor->persistent;
 
         break;
 

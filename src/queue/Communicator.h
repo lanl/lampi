@@ -139,8 +139,6 @@ struct procPrivateQs_t {
     ProcessPrivateMemDblLinkList **OkToMatchSMPFrags;
 #endif                          // SHARED_MEMORY
 
-    // Queue of posted utrecvs that have not matched any frags
-    ProcessPrivateMemDblLinkList PostedUtrecvs;
 };
 
 
@@ -392,10 +390,8 @@ public:
     ULM_64BIT_INT *next_isendSeqs;
     Locks *next_isendSeqsLock;
 
-    // function pointer to bind multicast messages to a path object
-    int (*multicastPathSelectionFunction) (void *, void *);
     // function pointer to bind point-to-point messages to a path object
-    int (*pt2ptPathSelectionFunction) (void *, void **);
+    int (*pt2ptPathSelectionFunction) (void **, int, int);
 
     // constructor
     Communicator() {}
@@ -470,7 +466,7 @@ public:
 
     // method to start the send using the request object created
     // by the init method
-    int isend_start(ULMRequestHandle_t *request);
+    int isend_start(BaseSendDesc_t **SendDesc);
 
     // check to see if there is any data to be received
     int iprobe(int sourceProc, int tag, int *found, ULMStatus_t *status);

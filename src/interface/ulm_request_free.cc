@@ -38,6 +38,7 @@
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "ulm/ulm.h"
+#include "path/common/path.h"
 
 /*
  * Free opaque ULMRequestHandle_t
@@ -49,6 +50,7 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
 {
     bool incomplete;
     RecvDesc_t *recvDesc;
+    BaseSendDesc_t *sendDesc;
 
     if (OPT_CHECK_API_ARGS) {
         // if request is NULL - return error
@@ -68,7 +70,7 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
     }
 
     incomplete = ((tmpRequest->status == ULM_STATUS_INCOMPLETE) &&
-                  (!tmpRequest->messageDone));
+                  (tmpRequest->messageDone==REQUEST_INCOMPLETE));
 
     if ((tmpRequest->requestType == REQUEST_TYPE_RECV) && incomplete) {
         // lock receive descriptor to doublecheck incomplete and prevent a thread 
@@ -103,8 +105,9 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
     }
     // all buffered send requests must have their allocations
     // freed
-    if ((tmpRequest->requestType == REQUEST_TYPE_SEND) &&
-        (tmpRequest->sendType == ULM_SEND_BUFFERED)) {
+    if (tmpRequest->requestType == REQUEST_TYPE_SEND) {
+	    sendDesc=(BaseSendDesc_t *)tmpRequest;
+        if (sendDesc->sendType == ULM_SEND_BUFFERED) {
         ULMBufferRange_t *allocation;
         if (usethreads())
             lock(&(lampiState.bsendData->Lock));
@@ -119,26 +122,26 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
         if (usethreads())
             unlock(&(lampiState.bsendData->Lock));
     }
+    }
 
     // reset which list
-    tmpRequest->WhichQueue = REQUESTFREELIST;
     tmpRequest->status = ULM_STATUS_INVALID;
 
-    /* send */
     if( tmpRequest->requestType == REQUEST_TYPE_SEND) {
-	    if (incomplete) {
-	    	    if (usethreads())
-			    _ulm_incompleteRequests.Append(tmpRequest);
-	    	    else
-			    _ulm_incompleteRequests.AppendNoLock(tmpRequest);
-	    } else {
-		    // return request to free list
-	    	    if (usethreads()) {
-			    ulmRequestDescPool.returnElement(tmpRequest);
-	    	    } else {
-			    ulmRequestDescPool.returnElementNoLock(tmpRequest);
-	    	    }
-	    }
+	    /* 
+	     * send - only mark this as complete, the progress
+	     *   engine actually free's this object
+	     */
+
+	    /* check to see if send is complete - e.g. if all data
+	     *   has been acked - request free is being called, 
+	     *   so no need to check on this
+	     */
+	    BaseSendDesc_t *SendDesc=(BaseSendDesc_t *)tmpRequest;
+
+	    /* note the the mpi request object has been freed */
+	    SendDesc->freeCalled=1;
+
     } else {
     /* recv */
 		recvDesc=(RecvDesc_t *)tmpRequest;

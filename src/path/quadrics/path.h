@@ -49,6 +49,7 @@
 
 class quadricsPath : public BasePath_t {
 public:
+
     quadricsPath() {
         pathType_m = QUADRICSPATH;
     }
@@ -92,7 +93,7 @@ public:
 
         // initialize numfrags
         lbufType = PRIVATE_LARGE_BUFFERS;
-        npkts = (message->PostedLength + quadricsBufSizes[lbufType] - 1)/ quadricsBufSizes[lbufType];
+        npkts = (message->posted_m.length_m + quadricsBufSizes[lbufType] - 1)/ quadricsBufSizes[lbufType];
         if (npkts == 0)
             npkts = 1;
         message->numfrags = npkts;
@@ -136,26 +137,6 @@ public:
             }
 
             if (message->NumAcked >= message->numfrags) {
-                /* something like the following should exist for utsend/utrecv
-                if (message->multicastMessage) {
-                    UtsendDesc_t *msd = message->multicastMessage;
-                    msd->Lock.lock();
-                    // increment the multicast send descriptor sub-message completed count
-                    (msd->messageDoneCount)++;
-                    if (message->WhichQueue == INCOMPLETEISENDQUEUE) {
-                        msd->incompletePt2PtMessages.RemoveLinkNoLock(message);
-                    } else if (message->WhichQueue == UNACKEDISENDQUEUE) {
-                        msd->unackedPt2PtMessages.RemoveLinkNoLock(message);
-                    } else {
-                        ulm_exit((-1, "quadricsPath::sendDone base"
-                          "send desc. on %d queue.\n",
-                          message->WhichQueue));
-                    }
-                    // return the descriptor to the sending process' pool
-                    message->ReturnDesc(getMemPoolIndex());
-                    msd->Lock.unlock();
-                }
-                */
                 return true;
             }
             else {

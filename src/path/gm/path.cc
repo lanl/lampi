@@ -76,7 +76,7 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     *errorCode = ULM_SUCCESS;
 
     group = communicators[message->ctx_m]->remoteGroup;
-    globalDestProc = group->mapGroupProcIDToGlobalProcID[message->dstProcID_m];
+    globalDestProc = group->mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
 
     // always allocate and try to send the first frag
 
@@ -87,7 +87,7 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     // allocate and initialize fragment descriptors
 
     offset = gmState.bufSize * message->NumFragDescAllocated;
-    leftToSend = message->PostedLength - offset;
+    leftToSend = message->posted_m.length_m - offset;
     nDescsToAllocate = message->numfrags - message->NumFragDescAllocated;
 
     while (nDescsToAllocate--) {
@@ -232,13 +232,12 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
         }
     }
 
-    if (!message->sendDone) {
+    if (message->messageDone == REQUEST_INCOMPLETE) {
 
         if (message->NumSent == message->numfrags &&
             message->sendType != ULM_SEND_SYNCHRONOUS) {
 
-            message->sendDone = 1;
-            message->requestDesc->messageDone = true;
+            message->messageDone = REQUEST_COMPLETE;
         }
     }
 

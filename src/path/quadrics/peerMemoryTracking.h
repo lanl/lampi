@@ -44,8 +44,6 @@
 enum bufTrackingTypes {
     PRIVATE_SMALL_BUFFERS,
     PRIVATE_LARGE_BUFFERS,
-    SHARED_SMALL_BUFFERS,
-    SHARED_LARGE_BUFFERS,
     NUMBER_BUFTYPES	/* must be last */
 };
 

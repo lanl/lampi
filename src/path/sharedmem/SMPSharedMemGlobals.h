@@ -44,23 +44,9 @@
 
 #define IO_SOURCEALLOCATED   1         // library memory allocated for send size
 
-// initialize the shared memory devices
-void InitSMPSharedMemDevices(int NumLocalProcs);
-
 // get payload buffer from SMPSharedMem_logical_dev_t
 void * allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
                           unsigned long length, int *errorCode, int memPoolIndex);
-
-// number of shared memory "devices"
-extern int NSMPDevs;
-
-// array of shared memory "devices"
-extern SMPSharedMem_logical_dev_t *SMPSharedMemDevs;
-extern ssize_t nSMPSharedMemPages;
-extern ssize_t maxPgsIn1SMPSharedMemPagesStack;
-extern ssize_t minPgsIn1SMPSharedMemPagesStack;
-extern long maxSMPSharedMemPagesStackRetries;
-extern bool SMPSharedMemPagesStackAbortWhenNoResource;
 
 // upper limit on number of pages per forked proc used for on-SMP
 //   messaging
@@ -84,22 +70,11 @@ extern ssize_t minPgsIn1SMPRecvDescList;
 extern long maxSMPRecvDescRetries;
 extern bool SMPRecvDescAbortWhenNoResource;
 
-// pool for recv frags - resides in process shared memory.  All structures
-// are initialized before the fork() and are not modified there after.
-extern ssize_t nSMPCollFragDescPages;
-extern ssize_t maxPgsIn1SMPCollFragDescList;
-extern ssize_t minPgsIn1SMPCollFragDescList;
-extern long maxSMPCollFragDescRetries;
-extern bool SMPCollFragDescAbortWhenNoResource;
-
 //! SMP send descriptor list
 extern FreeListShared_t <sharedMemData_t> SMPSendDescs;
 
 //! SMP frag descriptor list
 extern FreeListShared_t <SMPSecondFragDesc_t> SMPFragPool;
-
-//! frag queue
-extern SharedMemDblLinkList **SMPincomingFrags;
 
 //! first frags for which the payload buffers are not yet ready
 extern ProcessPrivateMemDblLinkList firstFrags;

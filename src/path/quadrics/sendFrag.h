@@ -688,10 +688,10 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
 			    MSGTYPE_PT2PT);
         }
-        p->tag_m = parentSendDesc->tag_m;
+        p->tag_m = parentSendDesc->posted_m.UserTag_m;
         p->senderID = myproc();
         p->destID = globalDestID;
-        p->msgLength = parentSendDesc->PostedLength;
+        p->msgLength = parentSendDesc->posted_m.length_m;
         p->frag_seq = frag_seq;
         p->isendSeq_m = parentSendDesc->isendSeq_m;
         p->sendFragDescPtr.ptr = this;
@@ -718,9 +718,9 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     case MEMORY_REQUEST:
     {
         quadricsMemReq_t *p = &(fragEnvelope->memRequest);
-        p->msgLength = parentSendDesc->PostedLength;
+        p->msgLength = parentSendDesc->posted_m.length_m;
         p->sendMessagePtr.ptr = parentSendDesc;
-        p->tag_m = parentSendDesc->tag_m;
+        p->tag_m = parentSendDesc->posted_m.UserTag_m;
         p->senderID = myproc();
         p->destID = globalDestID;
         p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
@@ -883,7 +883,7 @@ inline unsigned int quadricsSendFragDesc::packBuffer(void *dest)
     int dtype_cnt, ti;
     int tm_init = tmap_index;
     int init_cnt = sequential_offset / dtype->packed_size;
-    int tot_cnt = parentSendDesc->PostedLength / dtype->packed_size;
+    int tot_cnt = parentSendDesc->posted_m.length_m / dtype->packed_size;
     unsigned char *start_addr = srcAddr + init_cnt * dtype->extent;
     unsigned int csum = 0, ui1 = 0, ui2 = 0;
 

@@ -46,7 +46,7 @@
 #include "client/ULMClient.h"
 #include "queue/globals.h"	// for getMemPoolIndex()
 #include "util/MemFunctions.h"
-#include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
+//#include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
 #include "path/udp/path.h"
 
 #ifdef ENABLE_RELIABILITY
@@ -383,7 +383,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
 
     // make sure destination process is on this host
     int dest_proc = dstProcID_m;
-    int localRankDestProc = global_to_local_proc(dest_proc);
     if (dest_proc != myproc()) {
 	ulm_exit((-1,
                   "UDP datagram not sent to me %d, destination %d\n",
@@ -392,73 +391,14 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     //
     // push this frag onto the correct list
     //
-    if (msgType_m == MSGTYPE_COLL) {	// collective
-	if (!dataReadFromSocket) {
-	    // get shared memory for payload and read it into the memory
-	    SMPSharedMem_logical_dev_t *dev;
-	    int errorCode;
-	    struct sockaddr_in cli_addr;
-	    struct msghdr msgHdr;
-	    struct iovec iov[2];
-
-	    smpPoolIndex = getMemPoolIndex();
-	    dev = &SMPSharedMemDevs[smpPoolIndex];
-	    addr_m = allocPayloadBuffer(dev, length_m, &errorCode, smpPoolIndex);
-
-	    bzero((char *) &msgHdr, sizeof(msgHdr));
-	    msgHdr.msg_name = (caddr_t) & cli_addr;
-	    msgHdr.msg_namelen = sizeof(cli_addr);
-	    msgHdr.msg_iov = iov;
-	    msgHdr.msg_iovlen = (addr_m == (void *) -1L) ? 1 : 2;
-
-	    iov[0].iov_base = (char *) &header;
-	    iov[0].iov_len = sizeof(udp_header);;
-	    iov[1].iov_base = (char *) addr_m;
-	    iov[1].iov_len = length_m;
-
-	    recvmsg(sockfd, &msgHdr, 0);
-	    dataReadFromSocket = true;
-	    // reset global flag so pullFrags() can find next
-	    // long message...
-	    if (!shortMsg) {
-		UDPGlobals::checkLongMessageSocket = true;
-	    }
-
-	    if (addr_m == (void *) -1L) {
-		addr_m = 0;
-		if ((errorCode == ULM_ERR_OUT_OF_RESOURCE) || (errorCode == ULM_ERR_FATAL)) {
-		    ulm_exit((-1,
-                              "udpRecvFragDesc::processMessage error - "
-                              "unable to get %d bytes for multicast frag "
-                              "from pool %d\n",
-                              length_m, smpPoolIndex));
-		}
-		ReturnDescToPool(getMemPoolIndex());
-		return;
-	    }
-	}
-#ifdef ENABLE_RELIABILITY
-	if (isDuplicateCollectiveFrag()) {
-	    if (!shortMsg) {
-		SMPSharedMem_logical_dev_t *dev = &SMPSharedMemDevs[smpPoolIndex];
-		dev->MemoryBuckets.ULMFree(addr_m);
-		addr_m = 0;
-	    }
-	    ReturnDescToPool(getMemPoolIndex());
-	    return;
-	}
-#endif
-	WhichQueue = GROUPRECVFRAGS;
-	_ulm_CommunicatorRecvFrags[localRankDestProc]->AppendAsWriter((Links_t *) this);
-    } else if (msgType_m == MSGTYPE_PT2PT) {	// pt2pt
+    if (msgType_m == MSGTYPE_PT2PT) {	// pt2pt
         dstProcID_m = communicators[ctx_m]->
             localGroup->mapGlobalProcIDToGroupProcID[dstProcID_m];
         srcProcID_m = communicators[ctx_m]->
             remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m]; 
 
 	communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this);    
-	
- } else {
+    } else {
 	ulm_exit((-1,
                   "UDP datagram with invalid message type %d\n",
                   msgType_m));
@@ -533,9 +473,6 @@ bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag,
     if (msgType_m == MSGTYPE_PT2PT) {
 	sptr = &(reliabilityInfo->sender_ackinfo[global_to_local_proc(ack.dest_proc)]);
 	tptr = &(sptr->process_array[ack.src_proc]);
-    } else if (msgType_m == MSGTYPE_COLL) {
-	sptr = reliabilityInfo->coll_sender_ackinfo;
-	tptr = &(sptr->process_array[global_proc_to_host(ack.src_proc)]);
     } else {
 	ulm_err(("udpRecvFragDesc::check...Ack received ack of unknown communication type %d\n", msgType_m));
 	return true;
@@ -852,14 +789,8 @@ bool udpRecvFragDesc::AckData(double timeNow)
 
     // release any shared memory buffers that were allocated
     if (addr_m && (addr_m != (void *) data)) {
-	if (msgType_m == MSGTYPE_COLL) {
-	    SMPSharedMem_logical_dev_t *dev = &SMPSharedMemDevs[smpPoolIndex];
-	    dev->MemoryBuckets.ULMFree(addr_m);
-	}
-	else {
 	    free(addr_m);
-	}
-	addr_m = 0;
+	    addr_m = 0;
     }
 
     bzero((char *) &msgHdr, sizeof(msgHdr));
@@ -981,52 +912,6 @@ bool udpRecvFragDesc::AckData(double timeNow)
 
 	// unlock sequence tracking lists
 	reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else if (msgType_m == MSGTYPE_COLL) {
-	int source_box = global_proc_to_host(srcProcID_m);
-	// grab lock for sequence tracking lists
-	reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-
-	// do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-	bool recorded;
-	bool send_specific_ack = reliabilityInfo->coll_deliveredDataSeqs[source_box].recordIfNotRecorded(seq_m, &recorded);
-
-	// if the frag is a duplicate but has not been delivered to the user process,
-	// then set the field to 0 so the other side doesn't interpret
-	// these fields (it will only use the received_fragseq and delivered_fragseq fields
-	if (isDuplicate_m && !send_specific_ack) {
-	    ack.single_fragseq = 0;
-	    if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-		reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-		ulm_exit((-1, "udpRecvFragDesc::AckData(collective) unable to "
-                          "erase duplicate deliv'd sequence number\n"));
-	    }
-	}
-	// record this frag as successfully delivered or not even received, as appropriate...
-	if (!(isDuplicate_m)) {
-	    if (!copyError) {
-		if (!recorded) {
-		    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(collective) unable "
-                              "to record deliv'd sequence number\n"));
-		}
-	    } else {
-		if (!(reliabilityInfo->coll_receivedDataSeqs[source_box].erase(seq_m))) {
-		    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(collective) unable "
-                              "to erase rcv'd sequence number\n"));
-		}
-		if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-		    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(collective) unable "
-                              "to erase deliv'd sequence number\n"));
-		}
-	    }
-	}
-	ack.received_fragseq = reliabilityInfo->coll_receivedDataSeqs[source_box].largestInOrder();
-	ack.delivered_fragseq = reliabilityInfo->coll_deliveredDataSeqs[source_box].largestInOrder();
-
-	// unlock sequence tracking lists
-	reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
     } else {
 	// unknown communication type
 	ulm_exit((-1, "udpRecvFragDesc::AckData() unknown communication "
@@ -1076,14 +961,8 @@ bool udpRecvFragDesc::AckData(double timeNow)
 void udpRecvFragDesc::ReturnDescToPool(int onHostProcID)
 {
     if (addr_m && (addr_m != (void *) data)) {
-	if (msgType_m == MSGTYPE_COLL) {
-	    SMPSharedMem_logical_dev_t *dev = &SMPSharedMemDevs[smpPoolIndex];
-	    dev->MemoryBuckets.ULMFree(addr_m);
-	}
-	else {
 	    free(addr_m);
-	}
-	addr_m = 0;
+	    addr_m = 0;
     }
 
     // this may be a duplicate on the long message socket, so

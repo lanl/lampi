@@ -85,7 +85,7 @@ extern "C" int ulm_testall(ULMRequestHandle_t *requestArray, int numRequests,
             continue;
         }
 
-        if (tmpRequest->messageDone) {
+        if (tmpRequest->messageDone == REQUEST_COMPLETE ) {
             numComplete++;
             requestArray++;
         }

@@ -48,7 +48,7 @@ bool Communicator::areQueuesEmpty()
     DoubleLinkList *list;
 
     // check this communicator's request reference count and its queues...
-    empty = ((requestRefCount + privateQueues.PostedUtrecvs.size() + privateQueues.PostedWildRecv.size()) == 0);
+    empty = ((requestRefCount + privateQueues.PostedWildRecv.size()) == 0);
     for (i = 0; i < remoteGroup->groupSize; i++) {
         empty = empty && (privateQueues.PostedSpecificRecv[i]->size() == 0);
         empty = empty && (privateQueues.MatchedRecv[i]->size() == 0);

@@ -37,15 +37,17 @@
 #include "internal/constants.h"
 #include "ulm/ulm.h"
 
-#define MESSAGE_INCOMPLETE false
-#define MESSAGE_COMPLETE   true
+enum requestState {
+	REQUEST_INCOMPLETE=0, 
+	REQUEST_COMPLETE, 
+	REQUEST_RELEASED 
+};
 
 //
 // structure to define a request - either send or receive
 //
 typedef struct {
     size_t length_m;		// length of request
-    size_t lengthProcessed_m;	// length actually processed
     union {
 	int source_m;		// on a recv this is the source process
 	int destination_m;	// on send this is the destination process
@@ -58,48 +60,16 @@ typedef struct {
 //
 struct RequestDesc_t : public Links_t {
 
-    // Locks Lock;		// object lock
-
-    unsigned long long sequenceNumber_m;
-    // sequence number (assigned on initiating side)
-
-    void *pointerToData;	// pointer to buffer being sent/recvd;
-                                // may be contiguous or not as
-                                // determined by the datatype
-
-    void *requestDesc;		// message descriptor structure; used
-                                // only to communicate between
-                                // send/recv_init and send/recv_start
-
     ULMType_t *datatype;	// datatype (NULL => contiguous)
 
-    void *devContext;		// device specific context
-    void *devBuffer;		// device specific system buffer
-
-    void *appBufferPointer;	// set to point to the original buffer (which
-                                // can be different from pointerToData -- MPI_Bsend)
-    ULMType_t *bsendDtypeType;	// datatype of original bsend data
-    size_t bsendBufferSize;	// the size of the buffer needed to pack the bsend data
-
-    int datatypeCount;		// datatype element count
-    int bsendDtypeCount;	// datatype element count of original bsend data
     int ctx_m;		// communicator ID
     int messageType;		// message type - point-to-point or collective
     int requestType;		// request type - send or receive
-    int sendType;		// send type - normal, buffered, synchronous, or ready
     int status;			// indicates request status
 
     bool persistent;		// persistence flag
     bool freeCalled;        // true when ulm_request_free is called before recv. request complete
-    volatile bool messageDone;	// message completion flag
-
-    msgRequest posted_m;	// set by send/recv_init - never modified afterwards
-    msgRequest reslts_m;	// values set as for each satisfied request
-    /* debug */
-    double t0;
-    double t1;
-    double t2;
-    /* end debug */
+    volatile int messageDone;	// message completion flag
 
     // default constructor
     RequestDesc_t() {}

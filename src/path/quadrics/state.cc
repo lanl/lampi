@@ -43,9 +43,7 @@ peerMemoryTracker **quadricsPeerMemory;
  */
 int quadricsBufSizes[NUMBER_BUFTYPES] = {
     2048,
-    65536,
-    2048,
-    65536 
+    65536
 };
 
 int maxOutstandingQuadricsFrags = 20;

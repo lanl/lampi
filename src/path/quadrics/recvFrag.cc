@@ -60,7 +60,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
         }
         switch (msgType_m) {
         case MSGTYPE_PT2PT_SYNC:
-        case MSGTYPE_COLL_SYNC:
             if (seqOffset_m != 0) {
                 return true;
             }
@@ -162,56 +161,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
         // unlock sequence tracking lists
         if (usethreads())
             reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else if ((msgType_m == MSGTYPE_COLL) || (msgType_m == MSGTYPE_COLL_SYNC)) {
-        int source_box = global_proc_to_host(srcProcID_m);
-        // grab lock for sequence tracking lists
-        reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-
-        // do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-        bool recorded;
-        bool send_specific_ack = reliabilityInfo->coll_deliveredDataSeqs[source_box].
-            recordIfNotRecorded(seq_m, &recorded);
-
-        // record this frag as successfully delivered or not even received, as appropriate...
-        if (!(isDuplicate_m)) {
-            if (DataOK) {
-                if (!recorded) {
-                    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(collective) "
-                              "unable to record deliv'd sequence number\n"));
-                }
-            } else {
-                if (!(reliabilityInfo->coll_receivedDataSeqs[source_box].erase(seq_m))) {
-                    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(collective) "
-                              "unable to erase rcv'd sequence number\n"));
-                }
-                if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-                    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(collective) "
-                              "unable to erase deliv'd sequence number\n"));
-                }
-            }
-        }
-        else if (!send_specific_ack) {
-            // if the frag is a duplicate but has not been delivered to the user process,
-            // then set the field to 0 so the other side doesn't interpret
-            // these fields (it will only use the received_fragseq and delivered_fragseq fields
-            p->thisFragSeq = 0;
-            p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
-            if (!(reliabilityInfo->coll_deliveredDataSeqs[source_box].erase(seq_m))) {
-                reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-                ulm_exit((-1, "quadricsRecvFragDesc::AckData(collective) unable to erase duplicate deliv'd sequence number\n"));
-            }
-        }
-
-        p->receivedFragSeq = reliabilityInfo->
-            coll_receivedDataSeqs[source_box].largestInOrder();
-        p->deliveredFragSeq = reliabilityInfo->
-            coll_deliveredDataSeqs[source_box].largestInOrder();
-
-        // unlock sequence tracking lists
-        reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
     } else {
         // unknown communication type
         ulm_exit((-1, "quadricsRecvFragDesc::AckData() unknown communication "
@@ -328,9 +277,6 @@ bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDe
     if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
         sptr = &(reliabilityInfo->sender_ackinfo[local_myproc()]);
         tptr = &(sptr->process_array[p->senderID]);
-    } else if ((msgType_m == MSGTYPE_COLL) || (msgType_m == MSGTYPE_COLL_SYNC)) {
-        sptr = reliabilityInfo->coll_sender_ackinfo;
-        tptr = &(sptr->process_array[global_proc_to_host(p->senderID)]);
     } else {
         ulm_err(("quadricsRecvFragDesc::check...Ack received ack of unknown "
                  "message type %d\n", msgType_m));
@@ -484,9 +430,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     isendSeq_m = p->isendSeq_m;
     seq_m = p->frag_seq;
     seqOffset_m = dataOffset();
-    fragIndex_m = seqOffset_m /
-        quadricsBufSizes[(msgType_m == MSGTYPE_COLL) ?
-                         SHARED_LARGE_BUFFERS : PRIVATE_LARGE_BUFFERS];
+    fragIndex_m = seqOffset_m / quadricsBufSizes[PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
 
 #ifdef ENABLE_RELIABILITY
@@ -500,19 +444,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
                   rail, srcProcID_m, myproc(), dstProcID_m));
     }
 
-    if ((msgType_m == MSGTYPE_COLL) || (msgType_m == MSGTYPE_COLL_SYNC)) {
-        // multicast message...
-#ifdef ENABLE_RELIABILITY
-        if (isDuplicateCollectiveFrag()) {
-            ReturnDescToPool(getMemPoolIndex());
-            return;
-        }
-#endif
-        WhichQueue = GROUPRECVFRAGS;
-        _ulm_CommunicatorRecvFrags[global_to_local_proc(dstProcID_m)]->
-            AppendAsWriter((Links_t *)this);
-    }
-    else if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
+    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
         // point to point message ...
         // call Communicator::handleReceivedFrag directly
 
@@ -592,13 +524,6 @@ void quadricsRecvFragDesc::memRel()
             elan3_free(ctx, elan3_elan2main(ctx, (E3_Addr)(p->memBufPtrs.wordPtrs[i])));
         }
         break;
-    case SHARED_SMALL_BUFFERS:
-    case SHARED_LARGE_BUFFERS:
-        for (int i = 0; i < p->memBufCount; i++) {
-            SMPSharedMemDevs[getMemPoolIndex()].MemoryBuckets.
-                ULMFree(elan3_elan2main(ctx, (E3_Addr)(p->memBufPtrs.wordPtrs[i])));
-        }
-        break;
     default:
         ulm_exit((-1, "quadricsRecvFragDesc::memRel: bad memory "
                   "type %d!\n", p->memType));
@@ -668,19 +593,6 @@ void quadricsRecvFragDesc::memReq(double timeNow)
             naddrsNeeded = (neededBytes + quadricsBufSizes[bufType] - 1)/
                 quadricsBufSizes[bufType];
         }
-        break;
-    case MSGTYPE_COLL:
-    case MSGTYPE_COLL_SYNC:
-        if (neededBytes <= quadricsBufSizes[SHARED_SMALL_BUFFERS]) {
-            bufType = SHARED_SMALL_BUFFERS;
-            naddrsNeeded = 1;
-        }
-        else {
-            bufType = SHARED_LARGE_BUFFERS;
-            naddrsNeeded = (neededBytes + quadricsBufSizes[bufType] - 1)/
-                quadricsBufSizes[bufType];
-        }
-        dev = &(SMPSharedMemDevs[getMemPoolIndex()]);
         break;
     }
 

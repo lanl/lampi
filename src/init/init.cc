@@ -651,31 +651,6 @@ void lampi_init_postfork_resources(lampiState_t *s)
         ulm_exit((-1, "FreeListsT::Init Unable to initialize IReceive "
                   "descriptor pool\n"));
     }
-    // Allocate memory for RequestDesc_t's - this will live in process
-    //  private memory.
-    //
-    minPagesPerList = 4;
-    nPagesPerList = 4;
-    maxPagesPerList = -1;
-    pageSize = SMPPAGESIZE;
-    eleSize = sizeof(RequestDesc_t);
-    poolChunkSize = SMPPAGESIZE;
-    nFreeLists = 2;
-    /* !!! threaded lock */
-    retryForMoreResources = 1;
-    memAffinityPool = getMemPoolIndex();
-    MemoryPoolPrivate_t *inputPoolULMR = NULL;
-
-    retVal = ulmRequestDescPool.Init
-        (nFreeLists, nPagesPerList, poolChunkSize, pageSize, eleSize,
-         minPagesPerList, maxPagesPerList, maxIRecvDescRetries,
-         " RequestDesc_t pool ",
-         retryForMoreResources, &memAffinityPool, enforceAffinity(),
-         inputPoolULMR, irecvDescDescAbortWhenNoResource);
-    if (retVal) {
-        ulm_exit((-1, "FreeLists::Init Unable to initialize RequestDesc_t "
-                  "pool\n"));
-    }
     // Allocate memory for double link list of pointers
     //
     minPagesPerList = 1;
