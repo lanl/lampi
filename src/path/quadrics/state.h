@@ -96,9 +96,10 @@ extern int quadricsDoAck;
 extern quadricsQueueInfo_t *quadricsQueue;
 #ifdef USE_ELAN_COLL
 extern quadricsGlobInfo_t  *quadrics_Glob_Mem_Info ;
+extern Locks                  broadcasters_locks;
 extern Broadcaster         ** quadrics_broadcasters;
 extern int                    broadcasters_array_len ;
-extern int                    next_broadcaster_id ;
+extern char                   busy_broadcasters[MAX_BROADCASTERS];
 #endif
 extern FreeListPrivate_t <quadricsSendFragDesc> quadricsSendFragDescs;
 extern long maxQuadricsSendFragsDescRetries;

@@ -33,9 +33,7 @@
 #define QUADRICS_COLL_H
 
 #include <elan3/elan3.h>
-#include "path/common/BaseDesc.h"
 
-/*#ifdef 1*/
 #ifdef YUW_DBG             /* If debug is enabled. --Weikuan */
 
 #ifndef YUW_DBG_LEVEL
@@ -61,12 +59,10 @@ while (0)
 #else                     /* If debug is not needed */
 #define START_MARK  
 #define END_MARK  
-#define YUW_MARK 
+#define YUW_MARK
 #endif                    /* End of ! YUW_DBG */
 
 #ifdef USE_ELAN_COLL              /* Start of USE_ELAN_COLL. --Weikuan */
-
-/*#define YUW_MAX(a,b)                (((a)>(b))?(a):(b))*/
 
 /* Define a type for virtual memory address in the main memory */
 typedef void     * maddr_vm_t ;
@@ -90,8 +86,9 @@ typedef unsigned int    ELAN_ADDR;
 #define ALLOC_ALIGN                      (64)
                                          
 #define QUADRICS_GLOB_BUFF_POOLS         (8)
-#define SYNC_BRANCH_RATIO                (4)
+#define SYNC_BRANCH_RATIO                (2)
 #define MAX_NO_RAILS                     (2)
+#define MAX_BROADCASTERS                 (64)
 
 /* Number of memory buffer pools quadrics is supporting */
 #define BCAST_INLINE_SIZE_SMALL          (16)
@@ -105,11 +102,11 @@ typedef unsigned int    ELAN_ADDR;
 #define BCAST_RAIL_TIMEOUT               (16)
 
 /* Number of entries for the colletive descriptor queue */
-#define QUADRICS_NUM_COLL_ENTRIES        (16 )
-#define	BCAST_CHANNEL_LENGTH             (128 * 1024)
+#define QUADRICS_NUM_COLL_ENTRIES        (16)
+#define	BCAST_CHANNEL_LENGTH             (128 * 1024 + 128)
 #define E3_DMA_SDRAM_CUTOFF              (128)
-#define CONTROL_MAIN                     (4096 )
-#define QUADRICS_GLOB_MEM_MAIN_POOL_SIZE (2 * 1024 * 1024)
+#define CONTROL_MAIN                     (4096)
+#define QUADRICS_GLOB_MEM_MAIN_POOL_SIZE (2*1024*1024 + 128*16)
 
 /* This defines the maximal non-blocking collective in progress */
 #define QUADRICS_GLOB_MEM_ELAN_POOL_SIZE (64 * 4 * 32) 
@@ -202,8 +199,8 @@ ulm_coll_env_t;
                                                                            \
   /* 16 bytes */                                                           \
   int                  key;                                                \
-  int                  mesg_length;    /* The length of contiguous data*/  \
-  int                  frag_length;    /* The length of the frag       */  \
+  int                  mesg_length;   /* The length of contiguous data*/   \
+  int                  frag_length;   /* The length of the frag       */   \
   int                  data_length    /* The length of the dma        */   \
 
 
@@ -274,14 +271,13 @@ typedef struct quadrics_channel
 
 #ifdef ENABLE_RELIABILITY
     /* Retransmission Stuff */
-    double             time_started;
+    double             time_started;   
     double             time_resend;   
     int                repeats;        /* Number of repeats */
 #endif
 
     /* memory locations */
     maddr_vm_t         appl_addr; 
-    /*maddr_vm_t         recv_buff;*/
     maddr_vm_t         mcast_buff;
     maddr_vm_t         offset;          /* where the real data starts  */
 }
@@ -379,35 +375,17 @@ coll_sync_t;
 
 typedef struct bcast_ctrl
 {
-  /* dma structures for setting bcast */
-  E3_DMA_MAIN         *data_dma;   /* used for the first fragment */
-  E3_DMA_MAIN         *data_dma0;  /* used for the second fragment */
-                       
-  /* allow at most one outstanding bcast,
-   * It should not be a big problem, since bcast's are serialized anyway.
-   * Big size messages can be broken into small ones for better pipelining.
-   */ 
-  sdramaddr_t          data_dma_elan;
-  sdramaddr_t          data_dma0_elan;
-
   /* sets of notification structures */
   E3_Event_Blk        *src_blk_main; 
   sdramaddr_t          src_blk_elan;
-  sdramaddr_t          src_event; 
-  sdramaddr_t          wait_event; 
                        
   E3_Event_Blk        *recv_blk_main[QUADRICS_NUM_COLL_ENTRIES]; 
   sdramaddr_t          glob_event[QUADRICS_NUM_COLL_ENTRIES]; /* 16*8 */
-
-  /* An array of control blk structure, for communication,
-   * message envelope will precede the data  */
-  /*maddr_vm_t           glob_blk[QUADRICS_NUM_COLL_ENTRIES];    */
 }
 bcast_ctrl_t;
 
 typedef struct segment {
     struct segment *next;            /* link between segments            */
-    void           *coll;            /* pointer to the control structure */
     int             bcastVp;         /* The bcast vp                     */
     int             ctx;             /* The context from ELAN_LOCATION   */
 
@@ -423,6 +401,14 @@ typedef struct segment {
 class Broadcaster
 {
 public:
+    int                id;             /* The id of this bcaster */
+    int                inuse;          /* Is it in use? */
+
+    maddr_vm_t         base;           /* The base of the global memory */
+    maddr_vm_t         top;            /* The top of the global memory */
+    int                page_size;      /* The page size used by ELAN3 */
+
+/* Dynamic ones:*/                           
     int                comm_index;     /* hook to the communicator */
     int                queue_index;    /* seqno for the next index to queue */
     int                ack_index;      /* seqno for the next index to ack */
@@ -430,12 +416,6 @@ public:
     int                desc_avail;     /* Number of available channels    */
     int                total_channels; /* Number of channels    */
     int                faulted;        /* a fault occured before next sync?*/
-                                       
-/*private:*/                           
-    maddr_vm_t         base;           /* The base of the global memory */
-    maddr_vm_t         top;            /* The top of the global memory */
-                                       
-    int                page_size;      /* The page size used by ELAN3 */
                                        
     int                groupSize;      /* The size of the group */
     int                groupRoot;      /* The root of the group */
@@ -445,7 +425,7 @@ public:
     int                host_index;     /* The host index in group */
 
     int                master_vp;      /* The manager process */
-    int                parent_vp;      /* The parent process */
+    int                parent_vp;      /* The parenet process */
     int                num_branches;   /* The number of branches */
     int                local_master_vp;   /* The local_master vp */
     int                self_vp;        /* The self vp */
@@ -453,6 +433,8 @@ public:
     int                branchIndex;    /* The branch Index to the parent*/
     int                branchRatio;    /* the branchRation of the tree */
     bcast_segment_t   *segment;        /* The list of segments  */
+
+/* Static Ones */
 
     /* Sync and ctrl structure for maximally 16 outstanding bcast */
     coll_sync_t       *sync;           /* The synchronization structures */
@@ -477,20 +459,27 @@ public:
     void               segment_create();
     void               init_segment_dma(bcast_segment_t *temp);
     int 	       create_syncup_tree();
-    int                init_coll_events();
+    int                reset_coll_events();
+    int                init_coll_events(int, int, int);
     int                hardware_coll_init();
+
+    /* The reset function, not really free the broadcaster, 
+     * but reset it for any other communicator */
+    int                broadcaster_free( );
                        
     /* The messaging functions */
-    void               bcast_send (quadrics_channel_t * channel);
-    void               bcast_recv (quadrics_channel_t * channel);
+    int                bcast_send (quadrics_channel_t * channel);
+    int                bcast_recv (quadrics_channel_t * channel);
 
     /* The progress engine */
     int                make_progress_bcast();
 
     /* The synchronization functions */
     void               update_channels(int next_toack);
-    int 	       sync_parent();
-    int 	       sync_leaves();
+    int                check_channels();
+    int 	       sync_parent(int errorcode);
+    int 	       sync_leaves(int errorcode);
+    int 	       resync_bcast();
 };
 
 #endif                             /* End of USE_ELAN_COLL   */

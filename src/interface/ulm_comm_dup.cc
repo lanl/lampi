@@ -304,6 +304,12 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
         if (returnValue != ULM_SUCCESS) {
             return returnValue;
         }
+#ifdef USE_ELAN_COLL
+	/* Not all processes have a new communicator generated */
+	if ( *outputContextID != MPI_COMM_NULL && tmpreturnValue == ULM_SUCCESS)
+	  ulm_alloc_bcaster(*outputContextID, 
+	      communicators[inputContextID]->useThreads);
+#endif
     } else {
         /* barrier the local group */
         returnValue =

@@ -228,6 +228,12 @@ BarrierTag:
 	return returnValue;
     }
 
+#ifdef USE_ELAN_COLL
+    /* Not all processes have a new communicator generated */
+    if ( *newComm != MPI_COMM_NULL && tmpreturnValue == ULM_SUCCESS)
+      ulm_alloc_bcaster(*newComm, communicators[comm]->useThreads);
+#endif
+
     // free temp resources
     if( allPairs) {
 	ulm_free(allPairs);

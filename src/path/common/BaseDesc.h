@@ -460,7 +460,7 @@ struct bcast_request_t : public Links_t {
 
     // Locks Lock;             // object lock
 
-    unsigned long long sequenceNumber_m;
+    int seqno;
     double time_started;
     /*sequence number, globally synchronized*/
 

@@ -49,14 +49,31 @@ extern "C" void ulm_finalize(void)
     int rc;
 
 #ifdef USE_ELAN_COLL
-    /*
-        * To complete all the broadcast traffic,
-     * Code put here for the time being as a makeshfit.
+    Broadcaster * bcaster;
+    int bcaster_id = 0; 
+
+    /* To free all the sub communicator traffic,
+     * Deadlock can occur if the ordering of different broadcasters
+     * are not consistent.
+     *
+     * However, a correct MPI program should always free its additional
+     * communicators before it reaches MPI_Finalize.
      */
-    Broadcaster * bcaster = communicators[ULM_COMM_WORLD]->bcaster;
+
+    /* To complete all the broadcast traffic */
+    bcaster = communicators[ULM_COMM_WORLD]->bcaster;
     if ( bcaster && communicators[ULM_COMM_WORLD]->hw_bcast_enabled)
-        while ( bcaster->desc_avail < bcaster->total_channels )
-            bcaster->make_progress_bcast();
+      while ( bcaster->desc_avail < bcaster->total_channels 
+	  && rc == ULM_SUCCESS)
+	rc = bcaster->make_progress_bcast();
+
+    /* In case of error, use point-to-point */
+    if (rc != ULM_SUCCESS)
+    {
+      bcast_request_t * last = communicators[ULM_COMM_WORLD]->bcast_queue.last;
+      communicators[ULM_COMM_WORLD]->fail_over(last);
+    }
+
 #endif
 
     rc = ulm_barrier(ULM_COMM_WORLD);
@@ -92,4 +109,7 @@ extern "C" void ulm_finalize(void)
     if (0) { // ulm_cleanup() nees some debugging
         ulm_cleanup();
     }
+#ifdef USE_ELAN_COLL
+    rc = ulm_barrier(ULM_COMM_WORLD); /* Barrier can help */
+#endif
 }

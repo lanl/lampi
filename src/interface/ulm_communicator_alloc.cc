@@ -36,6 +36,101 @@
 #include "internal/state.h"
 #include "ulm/ulm.h"
 
+#ifdef USE_ELAN_COLL
+#include "path/quadrics/path.h"
+#include "path/quadrics/state.h"
+#endif
+
+#ifdef USE_ELAN_COLL
+extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
+{
+  int                 errorcode = ULM_SUCCESS;
+  int                 bcaster_id;
+  char                busy_bcasters[MAX_BROADCASTERS];
+
+  START_MARK;
+
+  if (communicators[new_comm]->localGroup->numberOfHostsInGroup <=1)
+    return errorcode;
+
+  if (useThreads)
+    broadcasters_locks.lock();
+
+  ulm_barrier(new_comm);
+
+  /* leave ULM_COMM_WORLD and ULM_COMM_SELF after postfork_path */
+  if ( new_comm == ULM_COMM_SELF || new_comm == ULM_COMM_WORLD )
+    goto barrier_and_exit;
+
+  ulm_allreduce(busy_broadcasters, busy_bcasters, MAX_BROADCASTERS, 
+      (ULMType_t *) MPI_CHAR, (ULMOp_t *) MPI_BOR, new_comm );
+
+  /* To get the first free broacasters */
+  for (bcaster_id = 0; bcaster_id < MAX_BROADCASTERS; bcaster_id ++)
+  {
+    if ( busy_bcasters[bcaster_id] == 0) break;
+  }
+
+  /* make sure only the processes in the new communicator 
+   * are allocated with the broadcaster */
+  if ( new_comm != MPI_COMM_NULL )
+  {
+    Broadcaster        *bcaster;
+    Communicator       *cp ; 
+
+    /* Make sure the available communicator is still within range,
+     * otherwise, output a prompt message and quit */
+    if ( bcaster_id >= broadcasters_array_len )
+    {
+      /* Prompt message to change the environmental variable */
+      ulm_exit((-1, "Broadcasters not enough : requesting %d "
+	    "out of %d. Please change the environmental variable" 
+	    "LAMPI_NUM_BCASTERS, Maximum 64.\n", 
+	    bcaster_id, broadcasters_array_len));
+    }
+
+    /* Assign the first available broadcaster to the communicator*/
+    bcaster = quadrics_broadcasters[bcaster_id];
+    cp      = communicators[new_comm];
+
+    assert(bcaster_id == bcaster->id && bcaster_id != 0 
+        && bcaster->inuse == 0);
+
+    /* Link back to the communicator */
+    bcaster->comm_index = cp->contextID;
+    
+    /* Enable the hardware multicast */
+    errorcode = bcaster->hardware_coll_init();
+
+    if ( errorcode == ULM_SUCCESS)
+    {
+      cp->hw_bcast_enabled = QSNET_COLL ;
+      cp->bcaster          = bcaster;
+      busy_broadcasters[bcaster_id] = 1;
+      bcaster->inuse = 1;
+    }
+    else
+    {
+      /* Do a free for safety reasons */
+      bcaster->broadcaster_free();
+
+      cp->bcast_queue.handle = 0;
+      cp->hw_bcast_enabled = 0;
+      cp->bcaster          = 0;
+    }
+  }
+
+barrier_and_exit:
+  /* Synchronize all processes within the old communicator */
+  ulm_barrier(new_comm);
+
+  if (useThreads)
+    broadcasters_locks.unlock();
+
+  END_MARK;
+  return errorcode;
+}
+#endif
 
 /*
  * This routine is used to set up a group of prcesses identified

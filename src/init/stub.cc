@@ -60,6 +60,9 @@ lampi_init_func_t lampi_init_prefork_receive_setup_msg_quadrics = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics = noop;
 lampi_init_func_t lampi_init_postfork_quadrics = noop;
 lampi_init_func_t lampi_init_allforked_quadrics = noop;
+#ifdef USE_ELAN_COLL
+lampi_init_func_t lampi_init_postfork_coll_setup = noop;
+#endif
 #endif
 
 #ifndef ENABLE_SHARED_MEMORY

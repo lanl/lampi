@@ -163,11 +163,17 @@ void lampi_init_prefork_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *);
 void lampi_init_postfork_quadrics(lampiState_t *);
+#ifdef USE_ELAN_COLL
+void lampi_init_postfork_coll_setup(lampiState_t *s);
+#endif
 #else
 extern lampi_init_func_t lampi_init_prefork_quadrics;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_quadrics;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics;
 extern lampi_init_func_t lampi_init_postfork_quadrics;
+#ifdef USE_ELAN_COLL
+extern lampi_init_postfork_coll_setup(lampiState_t *s);
+#endif
 #endif
 
 #ifdef ENABLE_SHARED_MEMORY

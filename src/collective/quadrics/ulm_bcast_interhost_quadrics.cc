@@ -45,16 +45,9 @@
 #include "queue/Communicator.h"
 #include "queue/globals.h"
 #include "include/internal/type_copy.h"
+#include "collective/coll_fns.h"
 
 #ifdef USE_ELAN_COLL
-
-/* For now, just put a dummy checksum/crc into the header */
-#define  DEFAULT_CHECKSUM     (0xABCDDCBA)
-#define  DEFAULT_CRC_32       (0xFEDCCDFE)
-
-#ifdef ENABLE_RELIABILITY
-#undef ENABLE_RELIABILITY
-#endif
 
 #define CHECK_MALLOC(cmd)                                              \
 do {                                                                   \
@@ -160,8 +153,7 @@ int Broadcaster::init_bcaster
     for ( i = 0 ; i < tn ; i ++ )
     {
       ctrl->glob_event[i] = glob_elan_mem;
-      /*ctrl->glob_event[i] = glob_elan_mem;*/
-      glob_elan_mem = (glob_elan_mem + 2 * sizeof(E3_BlockCopyEvent) );
+      glob_elan_mem = (glob_elan_mem + sizeof(E3_BlockCopyEvent) );
     }
 
     /* local ones */
@@ -173,20 +165,6 @@ int Broadcaster::init_bcaster
       (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk))); 
     CHECK_MALLOC(ctrl->src_blk_elan = elan3_allocElan
       (ctx, E3_BLK_ALIGN, sizeof(E3_Event_Blk)));
-    /*CHECK_MALLOC(ctrl->src_event    = elan3_allocElan*/
-      /*(ctx, E3_EVENT_ALIGN, sizeof(E3_BlockCopyEvent)));*/
-    CHECK_MALLOC(ctrl->wait_event   = elan3_allocElan
-      (ctx, E3_EVENT_ALIGN, sizeof(E3_BlockCopyEvent)));
-
-    CHECK_MALLOC(ctrl->data_dma      = (E3_DMA_MAIN *)elan3_allocMain 
-      (ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN))); 
-    CHECK_MALLOC(ctrl->data_dma_elan = elan3_allocElan
-      (ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN))); 
-
-    CHECK_MALLOC(ctrl->data_dma0     = (E3_DMA_MAIN *)elan3_allocMain 
-      (ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN))); 
-    CHECK_MALLOC(ctrl->data_dma0_elan= elan3_allocElan
-      (ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN))); 
   }
 
   for ( i = 0 ; i < tn ; i++)
@@ -197,7 +175,7 @@ int Broadcaster::init_bcaster
   return ULM_SUCCESS;
 }
 
-int Broadcaster::init_coll_events()
+int Broadcaster::reset_coll_events()
 {
   int              i;
   int              tn = total_channels;
@@ -220,31 +198,9 @@ int Broadcaster::init_coll_events()
      * update its status of a broadcast operation.
      */
     sync_dma = sync->sync_dma;
-    sync_dma->dma_type = 
-      E3_DMA_TYPE (quadrics_Glob_Mem_Info->dmaType, DMA_WRITE, 
-	  DMA_NORMAL, quadrics_Glob_Mem_Info->retryCount);
-    sync_dma->dma_srcCookieVProc=  
-      elan3_local_cookie(quadrics_Glob_Mem_Info->ctx, self_vp, local_master_vp);
-    sync_dma->dma_destCookieVProc= local_master_vp;
-
-    /* no data */
-    sync_dma->dma_dest      = 0;
-    sync_dma->dma_source    = 0;
-
-    /* The dest event needs to updated before firing */
-    sync_dma->dma_destEvent = 0; 
-    sync_dma->dma_srcEvent  = 0; 
+    bzero(sync_dma, sizeof(E3_DMA_MAIN));
 
     elan3_copy32_to_sdram(ctx->sdram, sync_dma, sync->sync_dma_elan);
-
-    /* Every Body update its parent with the chained dma. */
-    sync_dma->dma_srcCookieVProc=  
-      elan3_local_cookie(quadrics_Glob_Mem_Info->ctx, self_vp, parent_vp);
-    sync_dma->dma_destCookieVProc= parent_vp;
-
-    /* These are fixed event */
-    sync_dma->dma_destEvent = 0; 
-    sync_dma->dma_srcEvent  = 0; 
 
     for ( i = 0 ; i < tn; i ++ )
     {
@@ -254,12 +210,107 @@ int Broadcaster::init_coll_events()
       event      = sync->glob_event[i];
       waitevent  = sync->src_wait_ack + sizeof(E3_WaitEvent0)*i;
 
+      elan3_initevent(ctx, event);
+      elan3_primeevent(ctx, event, 0);
+      elan3_initevent(ctx, waitevent);
+      elan3_primeevent(ctx, waitevent, 0);
+      E3_RESET_BCOPY_BLOCK(blk);
+      elan3_copy32_to_sdram(ctx->sdram, sync_dma, 
+	  sync->chain_dma_elan + i*sizeof(E3_DMA_MAIN));
+
+      blk        = sync->nack_blk_main[i];
+      blk_elan   = sync->src_blk_elan;
+      event      = sync->nack_event[i];
+      waitevent  = sync->src_wait_nack + sizeof(E3_WaitEvent0)*i;
+
+      elan3_initevent(ctx, event);
+      elan3_primeevent(ctx, event, 0);
+      elan3_initevent(ctx, waitevent);
+      elan3_primeevent(ctx, waitevent, 0);
+      E3_RESET_BCOPY_BLOCK(blk);
+      elan3_copy32_to_sdram(ctx->sdram, sync_dma, 
+	  sync->chain_dma_elan + i*sizeof(E3_DMA_MAIN));
+
+      /* Ctrl Ones */
+      blk        = ctrl->recv_blk_main[i];
+      blk_elan   = ctrl->src_blk_elan;
+      event      = ctrl->glob_event[i];
+
+      elan3_initevent(ctx, event);
+      E3_RESET_BCOPY_BLOCK(blk);
+      elan3_primeevent(ctx, event, 0);
+    }
+  }
+
+  /* A barrier is needed hereafter if this is invoked due to a nack. */
+  END_MARK;
+  return ULM_SUCCESS;
+}
+
+int 
+Broadcaster::init_coll_events
+(int start_index, int end_index, int set_sync_dma)
+{
+  int              i,j;
+  int              tn = total_channels;
+
+  ELAN3_CTX             *ctx;
+
+  START_MARK;
+  ctx         = quadrics_Glob_Mem_Info->ctx;
+
+  {
+    /* Prime the recv events for asynchronous recv */
+    E3_Event_Blk      * blk ;
+    sdramaddr_t         blk_elan ;
+    sdramaddr_t         event;
+    sdramaddr_t         waitevent;
+    E3_DMA_MAIN       * sync_dma;
+
+    /* 
+     * Every process can have a sync_dma_elan to 
+     * update its status of a broadcast operation.
+     */
+    sync_dma = sync->sync_dma;
+    sync_dma->dma_type = 
+      E3_DMA_TYPE (quadrics_Glob_Mem_Info->dmaType, DMA_WRITE, 
+	  DMA_NORMAL, quadrics_Glob_Mem_Info->retryCount);
+
+    sync_dma->dma_dest      = 0;
+    sync_dma->dma_source    = 0;
+    sync_dma->dma_destEvent = 0; 
+    sync_dma->dma_srcEvent  = 0; 
+
+    if (set_sync_dma)
+    {
+      int              remote_vp;
+      /* To which vp should I trigger the event */
+      remote_vp = num_branches ? local_master_vp : parent_vp;
+      sync_dma->dma_srcCookieVProc=  
+	elan3_local_cookie(ctx, self_vp, remote_vp);
+      sync_dma->dma_destCookieVProc= remote_vp;
+      elan3_copy32_to_sdram(ctx->sdram, sync_dma, sync->sync_dma_elan);
+    }
+
+    for ( j = start_index ; j <= end_index ; j ++ )
+    {
+      i = j % tn;
+      /* Sync Ones */
+      blk        = sync->recv_blk_main[i];
+      blk_elan   = sync->src_blk_elan;
+      event      = sync->glob_event[i];
+      waitevent  = sync->src_wait_ack + sizeof(E3_WaitEvent0)*i;
+
+      /* Every Body update its parent with the chained dma. */
+      sync_dma->dma_srcCookieVProc=  
+	elan3_local_cookie(ctx, self_vp, parent_vp);
+      sync_dma->dma_destCookieVProc= parent_vp;
+
       if ( self_vp == master_vp )
       {
-	elan3_initevent_main (quadrics_Glob_Mem_Info->ctx, event, blk_elan, blk);
+	elan3_initevent_main(ctx, event, blk_elan, blk);
 	E3_RESET_BCOPY_BLOCK(blk);
 	elan3_primeevent(ctx, event, num_branches + 1);
-
       }
       else if ( self_vp == local_master_vp )
       {
@@ -278,19 +329,20 @@ int Broadcaster::init_coll_events()
       event      = sync->nack_event[i];
       waitevent  = sync->src_wait_nack + sizeof(E3_WaitEvent0)*i;
 
+      /* NACK is generated to the master_vp directly */
+      sync_dma->dma_srcCookieVProc=  
+	elan3_local_cookie(ctx, self_vp, master_vp);
+      sync_dma->dma_destCookieVProc= master_vp;
+
       if ( self_vp == master_vp )
       {
 	/* One nack wins over all acks */
-	elan3_initevent_main (quadrics_Glob_Mem_Info->ctx, event, blk_elan, blk);
+	elan3_initevent_main(ctx, event, blk_elan, blk);
 	E3_RESET_BCOPY_BLOCK(blk);
 	elan3_primeevent(ctx, event, 1);
       }
       else if ( self_vp == local_master_vp )
       {
-	elan3_initevent(ctx, event);
-	elan3_waitdmaevent0(ctx, 
-	    (sync->chain_dma_elan_nack + i * sizeof(E3_DMA_MAIN)),
-	    event, waitevent, 1); 
 	sync_dma->dma_destEvent = S2E(event);
 	sync_dma->dma_srcEvent  = 0;
 	elan3_copy32_to_sdram(ctx->sdram, sync_dma, 
@@ -302,14 +354,13 @@ int Broadcaster::init_coll_events()
       blk_elan   = ctrl->src_blk_elan;
       event      = ctrl->glob_event[i];
 
-      elan3_initevent_main (quadrics_Glob_Mem_Info->ctx, event, blk_elan, blk);
+      elan3_initevent_main (ctx, event, blk_elan, blk);
       E3_RESET_BCOPY_BLOCK(blk);
       elan3_primeevent(ctx, event, 1);
     }
   }
 
   /* A barrier is needed hereafter if this is invoked due to a nack. */
-
   END_MARK;
   return ULM_SUCCESS;
 }
@@ -317,6 +368,7 @@ int Broadcaster::init_coll_events()
 void 
 Broadcaster::init_segment_dma(bcast_segment_t *temp)
 {
+  E3_DMA_MAIN            temp_dma;
   E3_DMA_MAIN           *sync_dma;
   ELAN3_CTX             *ctx;
   int slot_offset ;
@@ -325,24 +377,24 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
   ctx         = quadrics_Glob_Mem_Info->ctx;
 
   /* use data dma for broadcasting */
-  elan3_initevent_main (quadrics_Glob_Mem_Info->ctx, sync->src_event,
+  elan3_initevent_main (ctx, sync->src_event,
       sync->src_blk_elan, sync->src_blk_main);
   E3_RESET_BCOPY_BLOCK(sync->src_blk_main);
   elan3_primeevent(ctx, sync->src_event, 1);
 
-  sync_dma = ctrl->data_dma;
+  sync_dma = (E3_DMA_MAIN*)&temp_dma;
   sync_dma->dma_type = 
     E3_DMA_TYPE (quadrics_Glob_Mem_Info->dmaType, DMA_WRITE, 
 	DMA_NORMAL_BROADCAST, quadrics_Glob_Mem_Info->retryCount);
 
   sync_dma->dma_srcCookieVProc =  
-    elan3_local_cookie(quadrics_Glob_Mem_Info->ctx, self_vp, temp->bcastVp);
+    elan3_local_cookie(ctx, self_vp, temp->bcastVp);
   sync_dma->dma_destCookieVProc = temp->bcastVp;
 
   /* The following four and the events need to be updated */
-  sync_dma->dma_dest   = 0;     /* to be updated */
-  sync_dma->dma_source = 0;     /* to be updated */
-  sync_dma->dma_size   = 0;     /* to be updated */
+  sync_dma->dma_dest      = 0;  /* to be updated */
+  sync_dma->dma_source    = 0;  /* to be updated */
+  sync_dma->dma_size      = 0;  /* to be updated */
   sync_dma->dma_destEvent = 0;  /* to be updated */
 
   /* Initialize the transmission DMAs */
@@ -412,24 +464,23 @@ void Broadcaster::segment_create()
 {
   int            vp;
   int            nvp;
-  int            self_proc;
   int            member;
   ELAN_LOCATION  location;
   ELAN_LOCATION  mylocation;
-  int            maxNode = 0;
-  int            maxCtx  = 0;
-  int            minNode = 1024*64;
-  int            minCtx  = 1024*64;
-  int            nodeSpan = 0;
-  int            firstCtx = 0;
+  int            max_node = 0;
+  int            max_ctx  = 0;
+  int            min_node = 1<<20;
+  int            min_ctx  = 1<<20;
+  int            node_extent = 0;
+  int            first_ctx = 0;
   int            llocalId;
-  int            nodeCount;
+  int            node_num;
   int            nself = 0;
   int            parent_host;
   bcast_segment_t *first;
   int            i;
-  int           *map_nid_to_gid;
-  int           *map_vp_to_gid;
+  int           *nid_to_gid_tab;
+  int           *vp_to_gid_tab;
   Group          *localGroup;
 
   ELAN3_CTX             *ctx;
@@ -441,7 +492,7 @@ void Broadcaster::segment_create()
 
   localGroup = communicators[comm_index]->localGroup;
   nvp = elan3_nvps(cap);
-  self_vp = self_proc = elan3_process(ctx);
+  self_vp = elan3_process(ctx);
 
   first = segment = NULL;
 
@@ -455,74 +506,71 @@ void Broadcaster::segment_create()
       
       location = elan3_vp2location(vp,cap);
       
-      if ( location.Node > maxNode )
-          maxNode = location.Node;
-      if ( location.Node < minNode )
-          minNode = location.Node;
-      if ( location.Context > maxCtx )
-          maxCtx = location.Context;
-      if ( location.Context < minCtx )
-          minCtx = location.Context;
+      if ( location.Node > max_node )
+          max_node = location.Node;
+      if ( location.Node < min_node )
+          min_node = location.Node;
+      if ( location.Context > max_ctx )
+          max_ctx = location.Context;
+      if ( location.Context < min_ctx )
+          min_ctx = location.Context;
   }
 
-  /*quadrics_Glob_Mem_Info->nhosts;*/
-  nodeSpan = maxNode - minNode + 1;
+  node_extent = max_node - min_node + 1;
 
   /* Will be set to ELAN_INVALID_PROCESS for non group members */
-  map_nid_to_gid = (int*)malloc(sizeof(int)*nodeSpan);
-  map_vp_to_gid  = (int*)malloc(sizeof(int)*nvp);
+  nid_to_gid_tab = (int*)malloc(sizeof(int)*node_extent);
+  vp_to_gid_tab  = (int*)malloc(sizeof(int)*nvp);
 
-  if ( map_nid_to_gid == NULL  || !map_vp_to_gid )
+  if ( nid_to_gid_tab == NULL  || !vp_to_gid_tab )
   {
-      ulm_exit((-1, "Failed to allocate memory\n"));
+    ulm_exit((-1, "Failed to allocate memory\n"));
   }
   
-  for ( i = 0 ; i < nodeSpan ; i++ )
+  for ( i = 0 ; i < node_extent ; i++ )
   {
-      map_nid_to_gid[i] = ELAN_INVALID_PROCESS;
+    nid_to_gid_tab[i] = ELAN_INVALID_PROCESS;
   }
 
   for ( i = 0 ; i < nvp; i++)
   {
-    map_vp_to_gid[i] = ELAN_INVALID_PROCESS;
+    vp_to_gid_tab[i] = ELAN_INVALID_PROCESS;
   }
 
   for ( i = 0 ; i < groupSize; i++)
   {
     member = localGroup->mapGroupProcIDToGlobalProcID[i];
-    map_vp_to_gid[member] = i;
+    vp_to_gid_tab[member] = i;
   }
 
   /* Walk throught the grid of possible members, trying to find segments */
-  mylocation     = elan3_vp2location(self_proc, cap);
+  mylocation     = elan3_vp2location(self_vp, cap);
 
-  nodeCount = 0;
-  for ( location.Node = 0; location.Node <= maxNode ; location.Node++ )
+  node_num = 0;
+  for ( location.Node = 0; location.Node <= max_node ; location.Node++ )
   {  
       llocalId = -1;
       /* For each context */
-      for ( location.Context = 0; location.Context <= maxCtx ; 
+      for ( location.Context = 0; location.Context <= max_ctx ; 
           location.Context++ )
       {
           vp = elan3_location2vp(location,cap);
           
           /* It's not a valid vp or it's not in our group */
           if ( vp == -1 || vp == ELAN_INVALID_PROCESS ||
-	      map_vp_to_gid[vp] == ELAN_INVALID_PROCESS)
+	      vp_to_gid_tab[vp] == ELAN_INVALID_PROCESS)
 	    continue;
           
           llocalId++;
           
           if ( llocalId == 0 )
           {
-	    firstCtx = location.Context;
-	    if ( nodeCount == 0)
-	      groupRoot = map_vp_to_gid[vp];
-	      /*groupRoot = map_vp_to_gid[vp];*/
+	    first_ctx = location.Context;
+	    if ( node_num == 0)
+	      groupRoot = vp_to_gid_tab[vp];
 
 	    if ( mylocation.Node == location.Node )
-	      localRoot =  map_vp_to_gid[vp];
-	      /*localRoot =  map_vp_to_gid[vp];*/
+	      localRoot =  vp_to_gid_tab[vp];
           }
       }
 
@@ -533,15 +581,14 @@ void Broadcaster::segment_create()
       /* If this is my node then stash nLocal and nself*/
       if ( mylocation.Node == location.Node )
       {
-          /*nLocalIds = llocalId + 1;*/
-          nself = nodeCount;
+          nself = node_num;
           assert ( nself == host_index);
-          host_index = nodeCount;
+          host_index = node_num;
       }
       
       if ( mylocation.Node == location.Node )
       {
-        location.Context = firstCtx;
+        location.Context = first_ctx;
         vp = elan3_location2vp(location,cap);
       }
       else 
@@ -549,67 +596,67 @@ void Broadcaster::segment_create()
           /* There is no segment list, this must be the first node */
           if ( ! first )
           {
-      	
-      	CHECK_MALLOC(first = segment = (bcast_segment_t*)
-      	  ulm_malloc(sizeof(bcast_segment_t)));
-      	memset(segment, 0, sizeof(bcast_segment_t));
-      	/*segment->coll   = coll;*/
-      	segment->min    = location.Node;
-      	segment->max    = location.Node;
-      	segment->ctx    = firstCtx;
+	    CHECK_MALLOC(first = segment = (bcast_segment_t*)
+	      ulm_malloc(sizeof(bcast_segment_t)));
+	    memset(segment, 0, sizeof(bcast_segment_t));
+	    segment->min    = location.Node;
+	    segment->max    = location.Node;
+	    segment->ctx    = first_ctx;
 
-      	location.Context = segment->ctx;
-      	vp = elan3_location2vp(location,cap);
+	    location.Context = segment->ctx;
+	    vp = elan3_location2vp(location,cap);
           } 
           else 
           {
-      	location.Context = segment->ctx;
-      	vp = elan3_location2vp(location,cap);
-      	
-      	/* Does this node extend the current context ? */
-      	if ( location.Node == segment->max + 1 &&
-      	     vp != -1 &&
-      	     vp != ELAN_INVALID_PROCESS &&
-      	     map_vp_to_gid[vp] != ELAN_INVALID_PROCESS )
-      	{
-      	    segment->max++;
-      	} 
-      	else 
-      	{
-      	    /* Create a new segment */
-      	    CHECK_MALLOC(segment->next  = (bcast_segment_t*)
-      	      ulm_malloc(sizeof(bcast_segment_t)));
-      	    segment        = segment->next;
-      	    memset(segment, 0, sizeof(bcast_segment_t));
-      	    /*segment->coll   = coll;*/
-      	    segment->min   = location.Node;
-      	    segment->max   = location.Node;
-      	    segment->ctx   = firstCtx;
+	    /* It is wrong to take the previous ctx */
+	    /*location.Context = segment->ctx;*/
+	    location.Context = first_ctx;
+	    vp = elan3_location2vp(location,cap);
+	    
+	    /* Does this node extend the current context ? */
+	    if ( location.Node == segment->max + 1 &&
+		 location.Context == segment->ctx &&
+		 vp != -1 &&
+		 vp != ELAN_INVALID_PROCESS &&
+		 vp_to_gid_tab[vp] != ELAN_INVALID_PROCESS )
+	    {
+	      segment->max++;
+	    } 
+	    else 
+	    {
+		/* Create a new segment */
+		CHECK_MALLOC(segment->next  = (bcast_segment_t*)
+		  ulm_malloc(sizeof(bcast_segment_t)));
+		segment        = segment->next;
+		memset(segment, 0, sizeof(bcast_segment_t));
+		segment->min   = location.Node;
+		segment->max   = location.Node;
+		segment->ctx   = first_ctx;
 
-      	    /* Work out the vp based on the new Context */
-      	    location.Context = segment->ctx;
-      	    vp = elan3_location2vp(location,cap);
-      	}
+		/* Work out the vp based on the new Context */
+		location.Context = segment->ctx;
+		vp = elan3_location2vp(location,cap);
+	    }
           }
       }
 
-    if ( nself == nodeCount ) 
+    if ( nself == node_num ) 
     {
       local_master_vp = vp;
       local_size      = llocalId + 1;
     }
 
     /* Store a link between nodeId and netVp */
-    map_nid_to_gid[nodeCount] = vp;
+    nid_to_gid_tab[node_num] = vp;
 
     /* Increase the number of nodes */  
-    nodeCount++;
+    node_num++;
   }
 
-  nhosts = nodeCount;
+  nhosts = node_num;
 
   if ( comm_index == ULM_COMM_WORLD )
-    quadrics_Glob_Mem_Info->nhosts = nodeCount;
+    quadrics_Glob_Mem_Info->nhosts = node_num;
 
   segment = first;
   while (segment)
@@ -649,79 +696,119 @@ void Broadcaster::segment_create()
   /* Find the parent host index and its vp */
   parent_host = create_syncup_tree();
 
-  master_vp = map_nid_to_gid[0];
-  parent_vp = map_nid_to_gid[parent_host];
+  master_vp = nid_to_gid_tab[0];
+  parent_vp = nid_to_gid_tab[parent_host];
 
-  ulm_free(map_nid_to_gid);
-  ulm_free(map_vp_to_gid);
+  ulm_free(nid_to_gid_tab);
+  ulm_free(vp_to_gid_tab);
 
   END_MARK;
 }
 
 int Broadcaster::create_syncup_tree()
 {
-  int branch, nSub, parent, netSelf;
+  int start_node, total_nodes, parent_index, self_index;
 
   START_MARK;
 
   /* Find my location in a balanced tree rooted at process 0, where each
    * process in the tree has at most 'branchRatio' immediate
    * descendents.
-   * Process 'branch' is the root of a sub-tree of size 'nSub'. She
-   * therefore has 'nSub' - 1 descendents that she divides as equally as 
+   * Process 'start_node' is the root of a sub-tree of size 'total_nodes'. She
+   * therefore has 'total_nodes' - 1 descendents that she divides as equally as 
    * possible among her branches.
    *
    * Note also that the group index number of the processes in any
    * sub-tree are contiguous (important for parallel prefix).  
    */
 
-  branch = 0;                                 /* start with process 0 */
-  nSub = nhosts;                              /* and whole tree */
-  netSelf = host_index;
-  branchIndex = -1;                           /* my branch # in parent */
-  parent = -1;                                /* my parent's group index # */
+  start_node = 0;                  
+  total_nodes = nhosts;            
+  self_index = host_index;
+  branchIndex = -1;               
+  parent_index = -1;               
 
-  while (branch != netSelf)                   /* descend process tree */
-  {                                           /* until I find myself */
-      int rem, x, y, z;
+  while (start_node != self_index) 
+  {                                
+      int extra, cutoff, distance, non_extra_index;
 
-      parent = branch;
-      branch++;                               /* parent + 1 = first born */
-      nSub--;                                 /* set # descendents */
+      parent_index = start_node;
+      start_node++;                  
+      total_nodes--;                
 
-      rem = nSub % branchRatio;
-      nSub = nSub / branchRatio + 1;
-      x = rem * nSub;
-      y = netSelf - branch;
+      extra = total_nodes % branchRatio;
+      total_nodes = total_nodes / branchRatio + 1;
+      cutoff = extra * total_nodes;
+      distance = self_index - start_node;
 
-      if (y < x)                              /* my first 'rem' branches have */
-      {                                       /* 1 more descendent... */
-	  branchIndex = y / nSub;
-	  branch += branchIndex * nSub;
+      if (distance < cutoff)                      
+      {                              
+	  branchIndex = distance / total_nodes;
+	  start_node += branchIndex * total_nodes;
       }
-      else                                    /* than the rest of my branches */
+      else                            
       {
-	  nSub--;
-	  z = (y - x) / nSub;
-	  branchIndex = rem + z;
-	  branch += x + z * nSub;
+	  total_nodes--;
+	  non_extra_index = (distance - cutoff) / total_nodes; 
+	  branchIndex = extra + non_extra_index;    
+	  start_node += cutoff + non_extra_index * total_nodes;  
       }
   }
-  branch++;                                   /* my first born */
-  nSub --;                                    /* total # of my descendent */
+  start_node++;                    
+  total_nodes --;                 
 
   /* leaves + their parents may have # children < branchRatio */
-  num_branches = (nSub < branchRatio) ? nSub : branchRatio;
+  num_branches = (total_nodes < branchRatio) ? total_nodes : branchRatio;
 
+  if (host_index == 0) parent_index = 0;
 
   END_MARK;
-  return parent;
+  return parent_index;
 }
 
-/*
- *  Hardware based collectives initialization function. --Weikuan
- */
+/* The function to free the collective . --Weikuan */
+int Broadcaster::broadcaster_free( )
+{
+  bcast_segment_t *first, *temp;
+  int rc;
+  START_MARK;
 
+  ELAN3_CTX             *ctx;
+
+  ctx = quadrics_Glob_Mem_Info->ctx;
+
+  /* Assert no more traffic */
+  while (ack_index < queue_index && rc != ULM_ERR_BCAST_FAIL)
+    rc = make_progress_bcast();
+
+  reset_coll_events();
+
+  /* free  the segements, during which bcast_vp is to be freed*/
+  first = segment;
+  while(first)
+  {
+    temp = first;
+    first = first->next;
+
+    /* Free the elan structures */
+    elan3_freeElan(ctx, temp->dma_elan);
+    elan3_freeElan(ctx, temp->event);
+
+    /* Free the segment */
+    ulm_free(temp);
+  }
+ 
+  /* Reset the fields, I do not want to take the risk of resetting sync */
+  bzero((void*)&comm_index, ((int) &segment - (int) &comm_index )); 
+
+  /* Make sure the first segment is reset */
+  segment= 0;
+
+  END_MARK;
+  return rc;
+}
+
+/* Hardware based collectives initialization function. --Weikuan */
 int Broadcaster::hardware_coll_init( )
 {
     Group *localGroup; 
@@ -735,11 +822,12 @@ int Broadcaster::hardware_coll_init( )
     page_size   = sysconf(_SC_PAGESIZE);
 
     groupSize   = localGroup->groupSize;
+    nhosts      = localGroup->numberOfHostsInGroup;
+
     groupRoot   = localGroup->groupHostData[0].groupProcIDOnHost[0];
     host_index  = localGroup->hostIndexInGroup;
     localRoot   = localGroup->groupHostData[host_index].groupProcIDOnHost[0];
     self        = localGroup->ProcID;
-    nhosts      = localGroup->numberOfHostsInGroup;
     branchRatio = SYNC_BRANCH_RATIO ;
     total_channels  = QUADRICS_NUM_COLL_ENTRIES; 
     faulted     = 0 ;        
@@ -754,14 +842,19 @@ int Broadcaster::hardware_coll_init( )
     if ( !(branchRatio >= 2 && total_channels >= 2) )
     {
       ulm_exit((-1, "Please reset LAMPI_BCAST_BRANCHRATIO " 
-	  "or LAMPI_BCAST_BRANCHRATIO\n" ));
+	  "or LAMPI_BCAST_CHANNELS\n" ));
     }
 
-    /* Create the segment for noncontiguous vps */
     desc_avail = total_channels;
+
+    /* Create the segment for noncontiguous vps */
     segment_create();
 
-    init_coll_events();
+    /* Make sure the number of host is greater than 1 */
+    if ( nhosts <=1 )
+      return ULM_ERR_BCAST_INIT;
+
+    init_coll_events(0, total_channels-1, 1);
 
     first = segment;
     while(first)
@@ -791,28 +884,6 @@ enum {
   PACKING          = 1,
   UNPACKING        = 2,
 };
-
-void check_data( void * addr, int count)
-{
-#if 0
-  unsigned char *offset;
-  unsigned char * start_addr ;
-  int dtype_cnt;
-  start_addr= (unsigned char*)addr;
-
-  for (dtype_cnt = 0; dtype_cnt < count; dtype_cnt++) 
-  {
-    offset = (unsigned char *)start_addr + dtype_cnt;
-    /*printf("%x:%02x ", (int) offset, (*  offset ));*/
-    printf("%02x ", (*  offset ));
-    /*if ( dtype_cnt > 0 &&  !(dtype_cnt % 16 ))*/
-  }
-  printf("\n");
-  fflush(stdout);
-#endif
-  return;
-}
-
 
 inline unsigned int pack_buffer(void *src_addr, void * dest_addr, 
     int count, ULMType_t * dtype, 
@@ -982,11 +1053,11 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
   {
     /* contiguous data in non-elan addressable memory or 
      * non-contiguous data - checksum almost free */
-      pack_buffer(start_addr, mesg_env->sform.inline_data, 
-	  count, dtype, 0, size, packing, 0 );
-      /* Mark the mesg type */
-      /*bcopy(send_addr, mesg_env->sform.inline_data, size);*/
+    pack_buffer(start_addr, mesg_env->sform.inline_data, 
+	count, dtype, 0, size, packing, 0 );
 
+    /* Mark the mesg type */
+#if 1
     mesg_env->sform.coll_type  = (size <= BCAST_INLINE_SIZE_SMALL)? 
       BCAST_MESG_TYPE_INLINE_S: BCAST_MESG_TYPE_INLINE_L;
     mesg_env->sform.mesg_length   = size;
@@ -1006,6 +1077,19 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
 	  uicrc  (mesg_env, 128): uicsum (mesg_env, 128);
       }
     }
+#else
+    mesg_env->sform.coll_type  = BCAST_MESG_TYPE_INLINE_L;
+    mesg_env->sform.mesg_length   = size;
+    mesg_env->sform.data_length   = 128;
+
+    if ( quadricsDoChecksum)
+    {
+      {
+	mesg_env->lform.checksum      = usecrc()?
+	  uicrc  (mesg_env, 128): uicsum (mesg_env, 128);
+      }
+    }
+#endif
     return ;
   }
 
@@ -1019,6 +1103,8 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
     mesg_env->sform.data_checksum = 
       pack_buffer(start_addr, mesg_env->sform.data, 
 	  count, dtype, 0, size, packing, quadricsDoChecksum);
+    mesg_env->sform.checksum      = usecrc()?
+      uicrc  (mesg_env, 64): uicsum (mesg_env, 64);
     return ;
   }
   else 
@@ -1072,10 +1158,10 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
 	  int count, ULMType_t * dtype, int size)
 {
   quadrics_coll_header_t * header;
-  int                      data_checksum=0;
-  int                      header_checksum=0;
-  int                      recv_checksum=0;
-  int                      recv_data_checksum=0;
+  int             data_checksum=0;
+  int             header_checksum=0;
+  int             recv_checksum=0;
+  int             recv_data_checksum=0;
   char                    *from = NULL, *to = NULL;
   int                      length_to_check = 0;
   int                      packing_mode = COPYING;
@@ -1166,18 +1252,23 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
     }
     else
       errorcode = ((data_checksum == recv_data_checksum) && 
-	( header_checksum == (unsigned int)(recv_checksum + recv_checksum)))?
+	( header_checksum == (recv_checksum + recv_checksum)))?
 	ULM_SUCCESS : ULM_ERR_BCAST_RECV;
 
-    /* Retransmission is not tested, disable it. --Weikuan */
-    errorcode = ULM_SUCCESS;
+#if 1
+    if ( errorcode != ULM_SUCCESS)
+    {
+      fprintf(stdout, "DataChecksum: Recv %x computed %x\n", 
+	  recv_data_checksum, data_checksum);
+      fflush(stdout);
+    }
+#endif
   }
   else 
   if ( length_to_check)
   {
     int offset = (header->sform.coll_type == BCAST_MESG_TYPE_BUGGY )
       ? header->sform.frag_length : 0;
-    /*bcopy((from), to, length_to_check);*/
     pack_buffer(from, to, count, dtype, offset, length_to_check,
 	packing_mode, 0);
   }
@@ -1186,7 +1277,7 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
   return errorcode;
 }
 
-void Broadcaster::bcast_recv(quadrics_channel_t * channel)
+int Broadcaster::bcast_recv(quadrics_channel_t * channel)
 {
   Group       * localGroup;
   int           errorcode = ULM_SUCCESS;
@@ -1200,7 +1291,7 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
   ctx         = quadrics_Glob_Mem_Info->ctx;
 
 #ifdef ENABLE_RELIABILITY
-  /* Record the clock */
+  /* Take the timestamp of the ulm_request */
   if (channel->repeats < 1 )
     channel->time_started = 
       ((bcast_request_t *)channel->ulm_request)->time_started;
@@ -1211,7 +1302,7 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
     if ( channel->repeats == 10) 
     {
       communicators[comm_index]->hw_bcast_enabled = 0;
-      return ;
+      return ULM_ERR_BCAST_FAIL;
     }
   }
 #endif 
@@ -1224,8 +1315,8 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
      (localRoot != self))
   {
      /* Just mark the channel as pseudo completed */
-     channels[index]->status = ULM_STATUS_COMPLETE;
-     channels[index]->send_mode = BCAST_USMP_CHANNEL;
+     channel->status = ULM_STATUS_COMPLETE;
+     channel->send_mode = BCAST_USMP_CHANNEL;
   }
   else 
   {
@@ -1238,30 +1329,18 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
       time_now = dclock();
 
     if (time_now >= channel->time_started + BCAST_RECV_TIMEOUT)
-    {
       errorcode = ULM_ERR_BCAST_RECV;
-    }
 #else
-    /* 
-     * Recv is always blocking?
-     */
+    /* Recv is always blocking? */
     elan3_waitevent_blk (ctx, ctrl->glob_event[index],
-       	ctrl->recv_blk_main[index], 
-	quadrics_Glob_Mem_Info->waitType);
+       	ctrl->recv_blk_main[index], quadrics_Glob_Mem_Info->waitType);
 #endif
 
     /* Does the message has the expected tag, etc? */
     if ((channel->tag != header->sform.tag_m )|| 
 	(header->sform.mesg_length != 
 	(int)channel->count * channel->data_type->packed_size))
-      errorcode = ULM_ERR_BCAST_RECV;
-
-#if 0
-    printf("Root %d Ch_Index %d Desc_Index %d Tag %x Mesg_Tag %x data: ", 
-	channel->root, index, header->sform.desc_index, 
-	channel->tag, header->sform.tag_m);
-    check_data(header->sform.inline_data, header->sform.mesg_length);
-#endif
+      errorcode = (errorcode == ULM_SUCCESS)? ULM_ERR_BCAST_RECV : errorcode;
 
     /* Copy away and CRC checking */
     if ( errorcode == ULM_SUCCESS )
@@ -1277,9 +1356,10 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
     if ( errorcode != ULM_SUCCESS )
     {
       faulted   = 1;
-      E3_WRITE_DMA_SRCEVENT(ctx, sync->sync_dma_elan, 
+      E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
 	  S2E(sync->nack_event[index])); 
       elan3_putdma(ctx, sync->sync_dma_elan);
+      return errorcode;
     }
     else
     {
@@ -1290,11 +1370,13 @@ void Broadcaster::bcast_recv(quadrics_channel_t * channel)
       elan3_primeevent(ctx, ctrl->glob_event[index], 1);
     }
   }
+
   END_MARK;
+  return ULM_SUCCESS;
 }
 
 
-void Broadcaster:: bcast_send(quadrics_channel_t * channel)
+int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 {
   Group               *localGroup;
 
@@ -1317,7 +1399,7 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
   START_MARK;
 
 #ifdef ENABLE_RELIABILITY
-  /* Record the elan clock */
+  /* Take the timestamp of the ulm_request */
   if (channel->repeats < 1 )
     channel->time_started = 
       ((bcast_request_t *)channel->ulm_request)->time_started;
@@ -1328,7 +1410,7 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
     if ( channel->repeats == 10) 
     {
       communicators[comm_index]->hw_bcast_enabled = 0;
-      return ;
+      return ULM_ERR_BCAST_FAIL;
     }
   }
 #endif 
@@ -1367,7 +1449,7 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
   mesg_env = (quadrics_coll_header_t*) channel->mcast_buff;
 
   /* Consider moving this to somewhere else */
-  memset((void*) mesg_env, 0, 64);
+  memset((void*) mesg_env, 0, 128);
 
   /* All these should be done here */
   mesg_env->sform.comm_index = comm_index; 
@@ -1379,14 +1461,6 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
   bcast_init_env_crc(addr, channel->mcast_buff, 
       count, dtype, packing, copying, elan_bugged);
 
-#if 0
-  printf("Root %d Ch_Index %d Desc_Index %d Tag %x Mesg_Tag %x packed: ", 
-      channel->root, channel->index, mesg_env->sform.desc_index, 
-      channel->tag, mesg_env->sform.tag_m);
-  check_data(mesg_env->sform.inline_data, 
-      count*dtype->packed_size);
-#endif
- 
   if ( num_dma == 1)
   {
     slot_offset = index * MAX_BCAST_FRAGS;
@@ -1450,7 +1524,6 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
     } 
     while(temp);
 
-
     E3_WRITE_DMA_SRCEVENT(ctx, temp->dma_elan+slot_offset*sizeof(E3_DMA_MAIN), 
       S2E(temp->event+ slot_offset*sizeof(E3_Event))); 
 
@@ -1495,6 +1568,7 @@ void Broadcaster:: bcast_send(quadrics_channel_t * channel)
   }
 
   END_MARK;
+  return ULM_SUCCESS;
 }
 
 void 
@@ -1546,6 +1620,11 @@ Broadcaster::update_channels(int next_toack)
            (sync->src_wait_ack+index*sizeof(E3_WaitEvent0)), 
            (num_branches +1));
     }
+    else if ( channels[index]->root == self )
+    {
+      /*E3_RESET_BCOPY_BLOCK(sync->recv_blk_main[index]);*/
+      /*elan3_primeevent(ctx, sync->glob_event[index], (num_branches +1));*/
+    }
   }
 
   /* remove the ulm requests */
@@ -1562,209 +1641,16 @@ Broadcaster::update_channels(int next_toack)
   END_MARK;
 }
 
+/* Function to check outstanding channels */
 int 
-Broadcaster::sync_parent()
-{
-  int                  toack, toqueue, next_toack;
-  int                  i, index, root_id;
-  double               time_now ; 
-  E3_DMA              *sync_dma;
-  E3_Event_Blk        *blk;
-  /*E3_Event_Blk        *nack_blk;*/
-  /*volatile E3_uint32  *sync_word ;*/
-  /*volatile E3_uint32  *nack_word ;*/
-  /*int                  nack_index = 0;*/
-  Group               *localGroup;
-
-  ELAN3_CTX             *ctx;
-
-  START_MARK;
-  ctx         = quadrics_Glob_Mem_Info->ctx;
-  
-  localGroup = communicators[comm_index]->localGroup;
-  next_toack = toack = ack_index;
-  toqueue = queue_index;
-
-  assert ( toack + total_channels >= toqueue);
-
-  if (toack == toqueue) 
-  {
-    END_MARK;
-    return ULM_SUCCESS;
-  }
-
-#ifdef ENABLE_RELIABILITY
-  if ( ! faulted )
-#endif
-  {
-    for ( i = toack ; i < toqueue ; i++)
-    {
-      volatile E3_int32 * done_word;
-      index = i % total_channels;
-      done_word = (volatile E3_int32 *)	
-	& ctrl->recv_blk_main[index]->eb_done;
-
-      /* Need to check all the outstanding send channels */
-      /* not needed until we do non-blocking dma */
-      if ( channels[index]->send_mode == BCAST_SEND_CHANNEL )
-      {
-#ifdef ENABLE_RELIABILITY
-	time_now = dclock();
-	while (!(EVENT_WORD_READY(done_word)) && 
-	    time_now < channels[index]->time_started + BCAST_SEND_TIMEOUT)
-	  time_now = dclock();
-	if (time_now >= channels[index]->time_started + BCAST_SEND_TIMEOUT)
-	  break;
-#else
-	elan3_waitevent_blk (ctx, ctrl->glob_event[index], 
-	    ctrl->recv_blk_main[index], quadrics_Glob_Mem_Info->waitType);
-#endif       /* End of ENABLE_RELIABILITY */
-	E3_RESET_BCOPY_BLOCK(ctrl->recv_blk_main[index]);
-	elan3_primeevent(ctx, ctrl->glob_event[index], 1);
-      }
-    }
-
-    index = (toqueue -1 ) % total_channels;
-    root_id = channels[index]->root ;
-
-    /* Only if the sender is not a process on this host */
-    if ( self == root_id  ||
-	(localGroup->mapGroupProcIDToHostID[root_id] != 
-	 localGroup->mapGroupProcIDToHostID[self] )) 
-    {
-#ifdef ENABLE_RELIABILITY
-      time_now = dclock();
-      if (time_now >= channels[index]->time_started + BCAST_RECV_TIMEOUT)
-	E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
-	  S2E(sync->nack_event[index])); 
-      else
-#endif
-	E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
-	  S2E(sync->glob_event[index])); 
-      elan3_putdma(ctx, sync->sync_dma_elan);
-    }
-  }
-
-  /* The master checked the current status of outstanding channels,
-   * then it updates others about its conclusion */
-  {
-#ifdef ENABLE_RELIABILITY
-    int nack_detected = 0;
-    int timed_out = 0;
-#endif
-
-    sync_dma = sync->sync_dma;
-
-    /*toack  = ((ulm_coll_env_t*) sync->glob_env)->desc_index;*/
-    i = toqueue - 1;
-    index = i % total_channels;
-    blk = sync->recv_blk_main[index];
-
-#ifdef ENABLE_RELIABILITY
-    {
-      volatile E3_int32 * sync_word;
-      volatile E3_int32 * nack_word;
-      sync_word = (volatile E3_int32 *)	& blk->eb_done;
-
-      while (!(EVENT_WORD_READY(sync_word)) && ! nack_detected &&
-	  time_now < channels[index]->time_started + BCAST_SYNC_TIMEOUT)
-      {
-	/* If timed out or nack detected */
-	for ( i = toack ; i < toqueue ; i++)
-	{
-	  /* Need to check all the outstanding send channels */
-	  nack_word = (volatile E3_int32 *)	
-	    & sync->nack_blk_main[i%total_channels]->eb_done;
-
-	  if (EVENT_WORD_READY(nack_word)) 
-	    nack_detected = 1;
-	}
-	time_now = dclock();
-      }
-    }
-
-    if ( nack_detected || timed_out)
-    {
-      ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_NACK;
-    }
-    else
-    {
-      ((ulm_coll_env_t*) sync->glob_env)->desc_index  = toqueue;
-      ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_SYNC;
-    }
-#else
-    elan3_waitevent_blk (ctx, sync->glob_event[index], 
-	blk, quadrics_Glob_Mem_Info->waitType);
-    ((ulm_coll_env_t*) sync->glob_env)->desc_index  = toqueue;
-    ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_SYNC;
-#endif
-
-    {
-      bcast_segment_t * temp;
-      int slot_offset;
-      temp = segment; 
-
-      slot_offset = (total_channels * MAX_BCAST_FRAGS );
-      do
-      {
-	if ( !temp->next) 
-	  break;
-	else
-	{
-	  elan3_initevent(ctx, temp->event + slot_offset*sizeof(E3_Event)); 
-	  elan3_waitdmaevent(ctx, 
-	      temp->next->dma_elan + slot_offset * sizeof(E3_DMA_MAIN), 
-	      temp->event+ slot_offset*sizeof(E3_Event)); 
-	}
-	temp = temp->next;
-      } 
-      while(temp);
-      /*E3_WRITE_DMA_SRCEVENT(ctx, temp->dma_elan, S2E(sync->src_event));*/
-      elan3_putdma(ctx, segment->dma_elan+slot_offset * sizeof(E3_DMA_MAIN));
-    }
-
-    elan3_waitevent_blk (ctx, sync->src_event,
-	sync->src_blk_main, quadrics_Glob_Mem_Info->waitType);
-    E3_RESET_BCOPY_BLOCK(sync->src_blk_main);
-    elan3_primeevent(ctx, sync->src_event, 1);
-
-#ifdef ENABLE_RELIABILITY
-    if ( nack_detected || timed_out)
-    {
-      /* If nack fired, reset all the resources */
-      init_coll_events();
-
-      /* sync with a barrier */
-      /* Some barrier function */
-
-      /* restart the bcast_req */
-      for ( i = toack; i < queue_index; i++)
-      {
-        if ( channels[i]->ulm_request->requestType == REQUEST_TYPE_SEND)
-          bcast_send(channels[i]);
-        else
-          bcast_recv(channels[i]);
-      }
-    }
-    else
-#endif
-    {
-      update_channels(toqueue);
-    }
-  }
- 
-  END_MARK;
-  return ULM_SUCCESS;
-}
-
-int 
-Broadcaster::sync_leaves()
+Broadcaster::check_channels()
 {
   int                  toack, toqueue;
+  int                  errorcode = ULM_SUCCESS; 
   int                  i=0, index=0, root_id=0;
   Group               *localGroup;
-  /*uint64_t             start0, end0;*/
-  double time_now = 0;
+  double               time_now = 0;
+  int                  timed_out = 0; 
 
   ELAN3_CTX             *ctx;
 
@@ -1783,37 +1669,37 @@ Broadcaster::sync_leaves()
   }
 
 #ifdef ENABLE_RELIABILITY
-  if ( ! faulted )
+  if ( faulted )
+    return ULM_ERR_BCAST_SYNC;
 #endif
   {
     for ( i = toack ; i < toqueue ; i++)
     {
-      volatile E3_int32 * done_word;
       index = i % total_channels;
-      done_word = (volatile E3_int32 *)	
-	& ctrl->recv_blk_main[index]->eb_done;
 
       /* Need to check all the outstanding send channels */
       if ( channels[index]->send_mode == BCAST_SEND_CHANNEL )
       {
 #ifdef ENABLE_RELIABILITY
+	volatile E3_int32 * done_word;
+	done_word = (volatile E3_int32 *)	
+	  & ctrl->recv_blk_main[index]->eb_done;
 	while (!(EVENT_WORD_READY(done_word)) && 
-	    time_now < channels[index]->time_started + BCAST_RECV_TIMEOUT)
+	    time_now < channels[index]->time_started + BCAST_SEND_TIMEOUT)
 	  time_now = dclock();
-	if (time_now >= channels[index]->time_started + BCAST_RECV_TIMEOUT)
-	  break;
+	if (time_now >= channels[index]->time_started + BCAST_SEND_TIMEOUT)
+	{ 
+	  timed_out = 1;
+	  return ULM_ERR_BCAST_SYNC;
+	}
 #else
 	elan3_waitevent_blk (ctx, ctrl->glob_event[index], 
-	    ctrl->recv_blk_main[index], quadrics_Glob_Mem_Info->waitType);
-	/*while (!(EVENT_WORD_READY(done_word)))*/
-	    ;
+	  ctrl->recv_blk_main[index], quadrics_Glob_Mem_Info->waitType);
 #endif
-	/*E3_RESET_BCOPY_BLOCK(ctrl->recv_blk_main[index]);*/
-	/*elan3_primeevent(ctx, ctrl->glob_event[index], 1);*/
       }
     }
 
-    /*index = (toqueue - 1 ) % total_channels;*/
+    index = (toqueue -1 ) % total_channels;
     root_id = channels[index]->root ;
 
     if ( self == root_id  ||
@@ -1822,16 +1708,159 @@ Broadcaster::sync_leaves()
 	(self_vp == local_master_vp )))
     {
 #ifdef ENABLE_RELIABILITY
-      if (time_now >= channels[index]->time_started + BCAST_RECV_TIMEOUT)
+      if (timed_out)
 	E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
 	  S2E(sync->nack_event[index])); 
       else
 #endif
+      {
 	E3_WRITE_DMA_DESTEVENT(ctx, sync->sync_dma_elan, 
 	  S2E(sync->glob_event[index])); 
+      }
       elan3_putdma(ctx, sync->sync_dma_elan);
     }
   }
+  return ULM_SUCCESS;
+}
+
+
+int 
+Broadcaster::sync_parent(int errorcode)
+{
+  int                  toack, toqueue, next_toack;
+  int                  i, index, root_id;
+  double               time_now = 0; 
+  int                  timed_out = 0; 
+  E3_DMA              *sync_dma;
+  E3_Event_Blk        *blk;
+  Group               *localGroup;
+
+  /* The master checked the current status of outstanding channels,
+   * then it updates others about its conclusion */
+#ifdef ENABLE_RELIABILITY
+  int nack_detected = 0;
+#endif
+
+  ELAN3_CTX             *ctx;
+
+  START_MARK;
+  ctx         = quadrics_Glob_Mem_Info->ctx;
+  localGroup = communicators[comm_index]->localGroup;
+  next_toack = toack = ack_index;
+  toqueue = queue_index;
+
+  sync_dma = sync->sync_dma;
+
+  /*toack  = ((ulm_coll_env_t*) sync->glob_env)->desc_index;*/
+  i = toqueue - 1;
+  index = i % total_channels;
+  blk = sync->recv_blk_main[index];
+
+#ifdef ENABLE_RELIABILITY
+  {
+    volatile E3_int32 * sync_word;
+    volatile E3_int32 * nack_word;
+    sync_word = (volatile E3_int32 *)	& blk->eb_done;
+
+    while (!(EVENT_WORD_READY(sync_word)) && ! nack_detected && !timed_out)
+    {
+      /* If timed out or nack detected */
+      for ( i = toack ; i < toqueue ; i++)
+      {
+	/* Need to check all the outstanding send channels */
+	nack_word = (volatile E3_int32 *)	
+	  & sync->nack_blk_main[i%total_channels]->eb_done;
+
+	if (EVENT_WORD_READY(nack_word)) 
+	  nack_detected = 1;
+      }
+      time_now = dclock();
+      if (time_now >= channels[index]->time_started + BCAST_SYNC_TIMEOUT)
+	timed_out = 1;
+    }
+  }
+
+  if ( nack_detected || timed_out)
+  {
+    ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_NACK;
+  }
+  else
+  {
+    /* Here we are only sync on the last outstanding channel,
+     * If there is anything wrong encountered, all the outstanding
+     * channels would be marked as incomplete.
+     */
+    ((ulm_coll_env_t*) sync->glob_env)->desc_index  = toqueue;
+    ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_SYNC;
+  }
+#else
+
+  elan3_waitevent_blk (ctx, sync->glob_event[index], 
+      blk, quadrics_Glob_Mem_Info->waitType);
+  ((ulm_coll_env_t*) sync->glob_env)->desc_index  = toqueue;
+  ((ulm_coll_env_t*) sync->glob_env)->coll_type = BCAST_MESG_TYPE_SYNC;
+#endif
+
+  {
+    bcast_segment_t * temp;
+    int slot_offset;
+    temp = segment; 
+
+    slot_offset = (total_channels * MAX_BCAST_FRAGS );
+    do
+    {
+      if ( !temp->next) 
+	break;
+      else
+      {
+	elan3_initevent(ctx, temp->event + slot_offset*sizeof(E3_Event)); 
+	elan3_waitdmaevent(ctx, 
+	    temp->next->dma_elan + slot_offset * sizeof(E3_DMA_MAIN), 
+	    temp->event+ slot_offset*sizeof(E3_Event)); 
+      }
+      temp = temp->next;
+    } 
+    while(temp);
+    /*E3_WRITE_DMA_SRCEVENT(ctx, temp->dma_elan, S2E(sync->src_event));*/
+    elan3_putdma(ctx, segment->dma_elan+slot_offset * sizeof(E3_DMA_MAIN));
+  }
+
+  elan3_waitevent_blk (ctx, sync->src_event,
+      sync->src_blk_main, quadrics_Glob_Mem_Info->waitType);
+  E3_RESET_BCOPY_BLOCK(sync->src_blk_main);
+  elan3_primeevent(ctx, sync->src_event, 1);
+
+  /* Reset the index */
+  ((ulm_coll_env_t*) sync->glob_env)->desc_index  = 0;
+
+#ifdef ENABLE_RELIABILITY
+  if ( nack_detected || timed_out)
+  {
+    /* Complete all bcast_request_t upto toqueue */
+    return ULM_ERR_BCAST_SYNC;
+  }
+#endif
+ 
+  END_MARK;
+  return ULM_SUCCESS;
+}
+
+int 
+Broadcaster::sync_leaves(int errorcode)
+{
+  int                  toack, toqueue;
+  int                  i=0, index=0, root_id=0;
+  Group               *localGroup;
+  double               time_now = 0;
+  int                  timed_out = 0; 
+
+  ELAN3_CTX             *ctx;
+
+  START_MARK;
+  ctx        = quadrics_Glob_Mem_Info->ctx;
+  localGroup = communicators[comm_index]->localGroup;
+  toack = ack_index;
+  toqueue = queue_index;
 
   /* The local_master waits for the conclusion from the master */
   if (self_vp == local_master_vp )
@@ -1841,88 +1870,156 @@ Broadcaster::sync_leaves()
     volatile E3_uint32 *coll_type;
 
     time_now = 0;
-    new_ack = (E3_uint32 *)&(((ulm_coll_env_t*) 
+    new_ack = ((E3_uint32 *)&((ulm_coll_env_t*) 
 	  sync->glob_env)->desc_index);
 
 #ifdef ENABLE_RELIABILITY
-    coll_type = (E3_uint32 *)&(((ulm_coll_env_t*) 
+    coll_type = ((E3_uint32 *)&((ulm_coll_env_t*) 
 	  sync->glob_env)->coll_type);
+    index = (toqueue - 1) % total_channels;
 
-    while ( ((*new_ack) <= (E3_uint32) toack )  && 
+    while (((*new_ack) <= (E3_uint32) toack )  && 
 	((*coll_type) != BCAST_MESG_TYPE_NACK)  && 
-	(time_now < channels[next_ack % total_channels]->time_started +
-	BCAST_SYNC_TIMEOUT))
+	(time_now < channels[index]->time_started + BCAST_SYNC_TIMEOUT))
       time_now = dclock();
 
-    next_ack = *new_ack;
-
-    if ((*coll_type)==BCAST_MESG_TYPE_NACK)
+    if ((time_now >= channels[index]->time_started + BCAST_SYNC_TIMEOUT) ||
+	(*coll_type)==BCAST_MESG_TYPE_NACK)
     {
-      /* Suspecting hard failure of the network */
-      if (time_now >= channels[next_ack % total_channels]->time_started +
-	        BCAST_RAIL_TIMEOUT)
-      {
-	communicators[comm_index]->hw_bcast_enabled = 0;
-	return ULM_ERR_BCAST_FAIL;
-      }
-      else
-      {
-	/* If nack fired, reset all the resources */
-	init_coll_events();
-
-	/* sync with a barrier */
-	/* Some barrier function */
-
-	/* restart the broadcast operations */
-	for ( i = next_ack ; i < queue_index; i++)
-	{
-	  if ( channels[i]->ulm_request->requestType == REQUEST_TYPE_SEND)
-	    bcast_send(channels[i]);
-	  else
-	    bcast_recv(channels[i]);
-	}
-      }
+      /* Notify the error */
+      return ULM_ERR_BCAST_SYNC;
     }
     else
+    {
+      next_ack = *new_ack;
+      *new_ack = 0;
+    }
 #else
-    while ( ((*new_ack) <= (E3_uint32) toack ))
+    while (((*new_ack) < (E3_uint32) toqueue))
 	;
     next_ack = *new_ack;
+    *new_ack = 0;
 #endif
-      update_channels(next_ack );
   }
   /* neither local master nor masters */
   else
-    update_channels( toqueue );
+  {
+    ((ulm_coll_env_t*) sync->glob_env)->desc_index = 0;
+  }
 
   END_MARK;
   return ULM_SUCCESS;
 }
+
+#ifdef ENABLE_RELIABILITY
+
+/* A function to retransmit the outstanding broadcast when the
+ * hw/bcast is still available */
+int 
+Broadcaster::resync_bcast()
+{
+  int errorcode = ULM_SUCCESS;
+  int i, index ;
+
+  ELAN3_CTX             *ctx;
+  START_MARK;
+  ctx         = quadrics_Glob_Mem_Info->ctx;
+
+#if 1
+  /* Synchronization, use ulm_barrier().*/
+  ulm_barrier(comm_index);
+  init_coll_events(ack_index, queue_index-1, 0);
+  ulm_barrier(comm_index);
+
+  /* retransmission with pt2pt */
+  return ULM_ERR_BCAST_MOVE;
+
+  /* retransmission with hw/bcast */
+  for ( i = ack_index ; i < queue_index; i++)
+  {
+    index = i % total_channels;
+    if (channels[index]->root == self)
+      errorcode = bcast_send(channels[index]);
+    else
+      errorcode = bcast_recv(channels[index]);
+  }
+ 
+  errorcode = check_channels();
+
+  /* The master process */
+  if (self_vp == master_vp )        
+  {
+    errorcode = sync_parent(errorcode);
+  }
+  /* The children */
+  else                             
+  {
+    errorcode = sync_leaves(errorcode);
+  }
+#endif
+  return errorcode;
+}
+#endif
 
 int 
 Broadcaster::make_progress_bcast()
 {
   int errorcode = ULM_SUCCESS;
 
+  START_MARK;
+
   ELAN3_CTX             *ctx;
-  START_MARK;
   ctx         = quadrics_Glob_Mem_Info->ctx;
+  errorcode   = check_channels();
 
-  START_MARK;
-
-#ifdef ENABLE_RELIABILITY
-  if ( communicators[comm_index]->hw_bcast_enabled == 0)
-    return ULM_ERR_BCAST_FAIL;
-#endif
-
-  if (self_vp == master_vp)        /* The master process */
+  /* The master process */
+  if (self_vp == master_vp )        
   {
-    errorcode = sync_parent();
+    errorcode = sync_parent(errorcode);
   }
   else                             /* The children */
   {
-    errorcode = sync_leaves();
+    errorcode = sync_leaves(errorcode);
   }
+
+#ifdef ENABLE_RELIABILITY
+  while ( errorcode != ULM_SUCCESS && errorcode != ULM_ERR_BCAST_FAIL)
+  {
+    double time_now = 0;
+    double time_last_req ; 
+
+    /* A retransmission function */
+    errorcode = resync_bcast();
+
+    if (errorcode == ULM_ERR_BCAST_MOVE)
+    {
+      /* When leaving this function, no more chances to update the
+       * channels. Do it now. */
+      update_channels(queue_index);
+      return errorcode;
+    }
+    else if ( errorcode != ULM_SUCCESS)
+    {
+      time_now = dclock();
+      time_last_req = channels[ack_index %total_channels]->time_started;
+      if (time_now >=  time_last_req + BCAST_SYNC_TIMEOUT )
+      {
+	/* Update anyway, although they are not to be used again*/
+	update_channels(queue_index);
+
+	/* a communicator function needs to complete the 
+	 * outstanding bcast_request's */
+	communicators[comm_index]->hw_bcast_enabled = 0;
+	errorcode = ULM_ERR_BCAST_FAIL;
+      }
+    }
+  }
+
+#endif
+
+  /* Update the channels to release the ulm_request's */
+  if (errorcode == ULM_SUCCESS)
+    update_channels(queue_index);
 
   END_MARK;
   return errorcode;
@@ -1945,7 +2042,7 @@ Communicator::bcast_bind(bcast_request_t * ulm_req, int self,
     CollectiveSMBuffer_t *coll_desc, int sendMode)
 {
     quadrics_channel_t * channel;
-    int assigned_index ;
+    int rc, assigned_index ;
 
     ELAN3_CTX             *ctx;
 
@@ -1953,7 +2050,8 @@ Communicator::bcast_bind(bcast_request_t * ulm_req, int self,
     ctx         = quadrics_Glob_Mem_Info->ctx;
 
     /* make sure that the request object is in the inactive state */
-    if (ulm_req->status == ULM_STATUS_INVALID) {
+    if (ulm_req->status == ULM_STATUS_INVALID) 
+    {
         ulm_err(("Error: ULM request structure has invalid status\n"
                  "  Status :: %d\n", ulm_req->status));
       END_MARK;
@@ -1962,20 +2060,20 @@ Communicator::bcast_bind(bcast_request_t * ulm_req, int self,
 
 #ifdef ENABLE_RELIABILITY
     /* 
-     * Trigger the progress engine, before running out of channels,  
-     * to avoid race condition.
+     * Trigger the progress, before running out of channels.
      */
-    while ( (bcaster->desc_avail <= 1) && hw_bcast_enabled) 
-      bcaster->make_progress_bcast();
-
-    /* Fail-over if hw_bcast is no longer enabled */
-    if ( ! hw_bcast_enabled )
+    while (bcaster->desc_avail <= (bcaster->total_channels /2)) 
     {
-      END_MARK;
-      return ULM_ERR_BCAST_FAIL;
+      rc = bcaster->make_progress_bcast();
+      if ( rc != ULM_SUCCESS);
+      {
+	bcast_request_t * prev = (bcast_request_t*)ulm_req->prev; 
+	fail_over(prev);
+	return rc;
+      }
     }
 #else
-    while ( bcaster->desc_avail <= 1)
+    while ( bcaster->desc_avail <= (bcaster->total_channels /2 ))
       bcaster->make_progress_bcast();
 #endif 
 
@@ -2046,6 +2144,7 @@ Communicator::bcast_bind(bcast_request_t * ulm_req, int self,
       channel->comm_type     = ulm_req->requestType;
       channel->root          = ulm_req->posted_m.proc.source_m;
       channel->count         = ulm_req->datatypeCount;
+      ulm_req->seqno         =
       channel->seqno         = bcaster->queue_index;
 
       if ((dtype != NULL) && (dtype->layout != CONTIGUOUS) 
@@ -2080,9 +2179,7 @@ int Communicator::ibcast_start( bcast_request_t * ulm_req)
   channel = (quadrics_channel_t*)ulm_req->channel;
 
 #ifdef ENABLE_RELIABILITY
-  /* 
-   * Record the timestamp.
-   */
+  /* Record the timestamp. */
   ulm_req->time_started = dclock(); 
 #endif
 
@@ -2113,7 +2210,8 @@ int Communicator::ibcast_start( bcast_request_t * ulm_req)
 int Communicator::bcast_wait( bcast_request_t * ulm_req)
 {
   quadrics_channel_t * channel;
-  int rc, total_hosts, total_procs;
+  int total_hosts, total_procs;
+  int rc = ULM_SUCCESS;
 
   START_MARK;
   channel = (quadrics_channel_t*)ulm_req->channel;
@@ -2122,32 +2220,29 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   if ( ulm_req->requestType  == REQUEST_TYPE_RECV
      || ulm_req->requestType  == REQUEST_TYPE_SHARE)
   {
-#ifdef ENABLE_RELIABILITY
-    bcaster->bcast_recv(channel);
-    /* what if the recv failed */
-#else
-    bcaster->bcast_recv(channel);
-#endif
-    ulm_req->ready_toShare = true;
+    rc = bcaster->bcast_recv(channel);
   }
 
 #ifdef ENABLE_RELIABILITY
-
-  /* Must synchronize first before sharing */
-  if ((channel->count * channel->data_type->packed_size)> BCAST_SMALLMESG)
+  /* Must sync before sharing. To avoid the situation
+   * when the other processes are waiting to share the data,
+   * but comm_root is waiting for the retransmission of the data 
+   * which is to be done only after a sync.
+   */
+  /*if ((channel->count * channel->data_type->packed_size)> BCAST_SMALLMESG)*/
   {
-    double time_now = 0;
-
-    while ((bcaster->ack_index < bcaster->queue_index )&& 
-	(time_now < ulm_req->time_started + BCAST_SYNC_TIMEOUT ))
+    while ((bcaster->ack_index < bcaster->queue_index )&& hw_bcast_enabled)
     {
-      bcaster->make_progress_bcast();
-      time_now = dclock();
+      rc = bcaster->make_progress_bcast();
+      if ( rc != ULM_SUCCESS )
+	rc = fail_over(ulm_req);
     }
-
-    if (time_now >= ulm_req->time_started + BCAST_SYNC_TIMEOUT )
-      return ULM_ERR_BCAST_SYNC;
   }
+
+  if ( rc == ULM_SUCCESS)
+    ulm_req->ready_toShare = true;
+  else
+    return ULM_ERR_BCAST_FAIL;
 #endif
 
   rc = ulm_get_info(ulm_req->ctx_m, ULM_INFO_NUMBER_OF_HOSTS, 
@@ -2183,8 +2278,6 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
     while (ti < (size_t) count) {
         offset = 0;
         if (bcaster->self == ulm_req->comm_root) {
-	  /*YUW_PRINTF("My rank %d Root %d\n", myproc(),
-	   * ulm_req->root);*/
             type_pack(TYPE_PACK_PACK, shared_buffer, copy_buffer_size,
       		&offset, buff, count, type, &ti, &mi, &mo);
             wmb();
@@ -2203,20 +2296,98 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
     }
   }
 
+  /* Record that the message is already in the application buffer */
+  if ( !ulm_req->messageDone )
+    ulm_req->messageDone = true;
+
 #ifndef ENABLE_RELIABILITY
-  /* synchronization after sharing */
+  /* Sync after sharing */
   if ((channel->count * channel->data_type->packed_size)> BCAST_SMALLMESG)
   {
-    while (bcaster->ack_index < bcaster->queue_index)
-      bcaster->make_progress_bcast();
+    while (bcaster->ack_index < bcaster->queue_index && hw_bcast_enabled)
+    {
+      rc = bcaster->make_progress_bcast();
+    }
   }
 #endif
 
-  ulm_req->status = ULM_STATUS_COMPLETE ;
+  if ( rc == ULM_SUCCESS)
+    ulm_req->status = ULM_STATUS_COMPLETE ;
 
+  END_MARK;
   return ULM_SUCCESS;
-
 }
 
-#endif	/* USE_ELAN_COLL */
+static int bcast_restart (bcast_request_t * ulm_req)
+{
+  void * buff ;
+  int count; 
+  ULMType_t *type; 
+  int root; 
+  int comm;
+  int total_length;
+  int rc = ULM_SUCCESS;
 
+  START_MARK;
+  quadrics_channel_t * channel;
+  quadrics_coll_header_t * header;
+  channel = (quadrics_channel_t*)ulm_req->channel;
+
+  buff  = ulm_req->posted_buff;
+  count = ulm_req->datatypeCount ;
+  type  = ulm_req->datatype;
+  root  = ulm_req->posted_m.proc.source_m;
+  comm  = ulm_req->ctx_m;
+
+  total_length = count * type->packed_size; 
+
+  /* For large size message, we can still use 
+   * the application buffer */
+  if ( total_length > BCAST_SMALLMESG)
+  {
+    END_MARK;
+    return ulm_bcast_interhost(buff, count, type, root, comm);
+  }
+
+  if (ulm_req->messageDone)
+  {
+    header = (quadrics_coll_header_t*) channel->mcast_buff;
+    count  = total_length;
+    type   = (ULMType_t*)MPI_CHAR;
+    if ( total_length <= BCAST_INLINE_SIZE )
+      buff   = (void *) header->sform.inline_data;
+    else
+      buff   = (void *) header->sform.data;
+  }
+
+  rc = ulm_bcast_interhost(buff, count, type, root, comm);
+  END_MARK;
+  return rc; 
+}
+
+int Communicator::fail_over(bcast_request_t * ulm_req)
+{
+  bcast_request_t * temp;
+  bcast_request_t * prev;
+  int rc = ULM_SUCCESS;
+
+  START_MARK;
+
+  /* Find the first bcast_request_t to be synchronized */
+  temp = bcast_queue.first;
+
+  while (temp)
+  {
+    prev = temp;
+    assert(temp->seqno <= ulm_req->seqno );
+    rc = bcast_restart(temp);
+    if (rc != ULM_SUCCESS) return rc;
+    temp = (bcast_request_t*)temp->next;
+    free_bcast_req(prev);
+  }
+
+  END_MARK;
+  return ULM_SUCCESS;
+}
+
+#endif  /* USE_ELAN_COLL */

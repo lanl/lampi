@@ -314,22 +314,7 @@ bcast_size : shared_buffer_size;
          */
         rc = comm_ptr->bcast_wait(bcast_desc);
 
-#ifdef  ENABLE_RELIABILITY
-        /* Fail-over if not completed. Incorrect implementation */
-        if ( rc )
-        {
-            comm_ptr->free_bcast_req(bcast_desc);
-            rc = ulm_bcast(p, n, type, root, comm);
-        }
-#endif
-
 next_block:
-            if (rc != ULM_SUCCESS)
-            {
-                comm_ptr->releaseCollectiveSMBuffer(coll_desc);
-                return rc;
-            }
-
         cnt -= n;
         p += n * type->extent;
     }

@@ -99,6 +99,7 @@ static int *StderrPipes;
 static int *StdoutPipes;
 
 #include "internal/Private.h"
+
 /*
  * Entry point for LA-MPI initialization.
  *
@@ -185,6 +186,11 @@ void lampi_init(void)
     /* this must follow lampi_init_postfork_paths as it initializes the collective function pointers
         which depend on the devices available. */
     lampi_init_postfork_communicators(&_ulm);
+
+#ifdef USE_ELAN_COLL
+    /* Enable the hw/bcast support for ULM_COMM_WORLD */
+    lampi_init_postfork_coll_setup(&_ulm);
+#endif
     
     /* barrier until all procs - local and remote - have started up */
     lampi_init_wait_for_start_message(&_ulm);

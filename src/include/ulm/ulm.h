@@ -723,6 +723,13 @@ int ulm_communicator_alloc(int comm, int useThreads, int group1Index,
 			   int sizeCtxCache, int *lstCtxElements,
 			   int commType, int okToDeleteComm,
 			   int useSharedMem, int useSharedMemForColl);
+#ifdef USE_ELAN_COLL
+/*!
+ * Allocate a broacaster for a communicator, new_comm. 
+ */
+int ulm_alloc_bcaster(int new_comm, int useThreads);
+#endif
+
 /*!
  *  Try to release the resources associated with a communicator
  */

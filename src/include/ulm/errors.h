@@ -65,10 +65,12 @@ enum {
     ULM_ERR_BAD_PATH = -15,	/* message must be rebound to new path */
     ULM_ERR_BAD_SUBPATH = -16,	/* message needs new device for this path */
 #ifdef USE_ELAN_COLL
-    ULM_ERR_BCAST_SEND = -17,	/* Error Sending   */
-    ULM_ERR_BCAST_RECV = -18,	/* Error Receiving */
-    ULM_ERR_BCAST_SYNC = -19,   /* Error Sync      */
-    ULM_ERR_BCAST_FAIL  = -20,	/* Bcast Failed, hw/bcast unavailable */
+    ULM_ERR_BCAST_INIT = -17,	/* Error Initialization */
+    ULM_ERR_BCAST_SEND = -18,	/* Error Sending   */
+    ULM_ERR_BCAST_RECV = -19,	/* Error Receiving */
+    ULM_ERR_BCAST_SYNC = -20,   /* Error Sync      */
+    ULM_ERR_BCAST_MOVE = -21,	/* hw/bcast is ok, but recommend pt2pt */
+    ULM_ERR_BCAST_FAIL = -22,	/* Bcast Failed, hw/bcast unavailable */
 #endif
 };
 

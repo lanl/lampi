@@ -35,6 +35,63 @@
 #include "mpi/constants.h"
 #include "ulm/ulm.h"
 
+#ifdef USE_ELAN_COLL
+#include "path/quadrics/path.h"
+#include "path/quadrics/state.h"
+#endif
+
+#ifdef USE_ELAN_COLL
+static inline void ulm_free_bcaster(int comm, int useThreads)
+{
+    Broadcaster * bcaster ; 
+    int errorcode = ULM_SUCCESS;
+
+    START_MARK;
+    /* 
+     * To complete all the broadcast traffic, 
+     * Code put here for the time being as a makeshfit.
+     */
+    if (useThreads)
+      broadcasters_locks.lock();
+
+    bcaster = communicators[comm]->bcaster;
+    if ( bcaster && communicators[comm]->hw_bcast_enabled 
+	&& comm != ULM_COMM_WORLD && comm != ULM_COMM_SELF)
+    {
+      /* To make sure the process is within the communicator. */
+      if ( comm == MPI_COMM_NULL )
+	goto unlock_and_exit;
+
+      /* reinitialize the transmission structures, not really 
+       * free the broadcaster's memory */
+      errorcode = bcaster->broadcaster_free();
+
+      /* In case of error, use point-to-point */
+      if (errorcode != ULM_SUCCESS)
+      {
+	/*bcast_request_t * last = communicators[comm]->bcast_queue.last;*/
+	/*communicators[comm]->fail_over(last);*/
+      }
+
+      /* Mark the broadcaster as not busy */
+      busy_broadcasters[bcaster->id] = 0;
+      bcaster->inuse  = 0;
+
+      /* Reset the bcaster_request queue from the communicator */
+      ulm_free(communicators[comm]->bcast_queue.handle);
+      communicators[comm]->bcast_queue.handle = 0;
+
+      communicators[comm]->hw_bcast_enabled = 0;
+      communicators[comm]->bcaster = 0;
+    }
+
+unlock_and_exit:
+    if (useThreads)
+      broadcasters_locks.unlock();
+    END_MARK;
+    return;
+}
+#endif
 
 int ulm_communicator_really_free(int comm)
 {
@@ -59,6 +116,12 @@ int ulm_communicator_really_free(int comm)
     if (!okToDelete) {
         return MPI_SUCCESS;
     }
+
+#ifdef USE_ELAN_COLL
+    /* To Free the bcaster */
+    ulm_free_bcaster(comm, communicators[comm]->useThreads);
+#endif
+
     // reset activeCommunicators
     for (commInUse = 0; commInUse < nCommunicatorInstancesInUse;
          commInUse++) {
