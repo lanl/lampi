@@ -250,6 +250,7 @@ typedef struct {
 
 /* file systems */
 #define ADIO_NFS                 150
+#define ADIO_CFS                 160   /* HP/Compaq PFS */
 #define ADIO_PIOFS               151   /* IBM */
 #define ADIO_UFS                 152   /* Unix file system */
 #define ADIO_PFS                 153   /* Intel */

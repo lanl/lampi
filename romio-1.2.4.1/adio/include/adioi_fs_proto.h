@@ -74,6 +74,71 @@ void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp,
 void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 #endif
 
+#ifdef CFS
+extern struct ADIOI_Fns_struct ADIO_CFS_operations;
+
+void ADIOI_CFS_Open(ADIO_File fd, int *error_code);
+void ADIOI_CFS_Close(ADIO_File fd, int *error_code);
+void ADIOI_CFS_ReadContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                     ADIO_Offset offset, ADIO_Status *status, int
+		     *error_code);
+void ADIOI_CFS_WriteContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Status *status, int
+		      *error_code);   
+void ADIOI_CFS_IwriteContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+void ADIOI_CFS_IreadContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+int ADIOI_CFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+int ADIOI_CFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_CFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code); 
+void ADIOI_CFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
+			int *error_code); 
+void ADIOI_CFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
+		*error_code); 
+void ADIOI_CFS_WriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_CFS_ReadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_CFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_CFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_CFS_IreadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_CFS_IwriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_CFS_Flush(ADIO_File fd, int *error_code);
+void ADIOI_CFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
+ADIO_Offset ADIOI_CFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
+                       int whence, int *error_code);
+void ADIOI_CFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+void ADIOI_CFS_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
+			 int *error_code);
+void ADIOI_CFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
+#endif
+
 #ifdef PFS
 extern struct ADIOI_Fns_struct ADIO_PFS_operations;
 

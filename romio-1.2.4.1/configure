@@ -181,7 +181,7 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
-known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs"
+known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs cfs"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -4065,6 +4065,20 @@ SEDDEFS="${SEDDEFS}\${SEDdA}NFS\${SEDdB}NFS\${SEDdC}1\${SEDdD}
 }
 
 fi
+if test -n "$file_system_cfs"; then
+        
+{
+test -n "$verbose" && \
+echo "	defining CFS"
+echo "#define" CFS 1 >> confdefs.h
+DEFS="$DEFS -DCFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}CFS\${SEDdB}CFS\${SEDdC}1\${SEDdD}
+\${SEDuA}CFS\${SEDuB}CFS\${SEDuC}1\${SEDuD}
+\${SEDeA}CFS\${SEDeB}CFS\${SEDeC}1\${SEDeD}
+"
+}
+
+fi
 if test -n "$file_system_ufs"; then
         
 {
@@ -4835,7 +4849,7 @@ trap 'rm -fr Makefile mpi-io/Makefile mpi2-other/info/Makefile \
 		   mpi2-other/array/Makefile adio/common/Makefile \
 		   test/Makefile test/misc.c test/large_file.c \
 		   test/runtests util/romioinstall include/mpio.h \
-		   include/mpiof.h \
+		   include/mpiof.h adio/ad_cfs/Makefile  \
 		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
 		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
@@ -4925,7 +4939,7 @@ CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile \
 		   mpi2-other/array/Makefile adio/common/Makefile \
 		   test/Makefile test/misc.c test/large_file.c \
 		   test/runtests util/romioinstall include/mpio.h \
-		   include/mpiof.h \
+		   include/mpiof.h adio/ad_cfs/Makefile \
 		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
 		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
