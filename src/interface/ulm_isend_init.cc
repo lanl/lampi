@@ -70,7 +70,7 @@ extern "C" int ulm_isend_init(void *buf, size_t size, ULMType_t *dtype,
         return errorCode;
     }
 
-    assert(SendDescriptor->WhichQueue == REQUESTFREELIST);
+    assert(SendDescriptor->WhichQueue == SENDDESCFREELIST);
 
     SendDescriptor->WhichQueue = REQUESTINUSE;
 
