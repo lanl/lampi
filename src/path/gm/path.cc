@@ -400,6 +400,12 @@ void gmPath::callback(struct gm_port *port,
                   (int) status));
     }
 
+    // bsd could be NULL if an Ack was processed before GM invoked this callback via our call
+    // to gm_unknown to complete the send logic.  This can occur when we have multiple GM devices,
+    // since we only call gm_unknown() in our receive() logic.
+    if ( NULL == bsd )
+        return;
+    
     if (usethreads())
         bsd->Lock.lock();
 
