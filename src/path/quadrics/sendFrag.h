@@ -1,34 +1,35 @@
 /*
- * Copyright 2002.  The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002.  The Regents of the University of California. This
+ * material was produced under U.S. Government contract W-7405-ENG-36
+ * for Los Alamos National Laboratory, which is operated by the
+ * University of California for the U.S. Department of Energy. The
+ * Government is granted for itself and others acting on its behalf a
+ * paid-up, nonexclusive, irrevocable worldwide license in this
+ * material to reproduce, prepare derivative works, and perform
+ * publicly and display publicly. Beginning five (5) years after
+ * October 10,2002 subject to additional five-year worldwide renewals,
+ * the Government is granted for itself and others acting on its
+ * behalf a paid-up, nonexclusive, irrevocable worldwide license in
+ * this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-
 
 #ifndef QUADRICS_SENDFRAG
 #define QUADRICS_SENDFRAG
@@ -71,41 +72,41 @@ public:
         flags = 0;
     }
 
-    BaseSendDesc_t *parentSendDesc;	//!< pointer to "owning" message descriptor
-    ELAN3_CTX *ctx;				//!< pointer to Quadrics context for DMA...
-    int cmType;				//!< type of control message (data, mem. req., mem. release)
-    int flags;				//!< state of this frag (see QSF_* defines)
-    int rail;				//!< Quadrics rail index of ctx
-    int nEachSendRscs;			//!< number of "each send" resources have been alloc.
-    int nDMADescsNeeded;			//!< number of DMA descs. needed to send this frag
-    int numTransmits;			//!< number of times that we have attempted transmission
-    int globalDestID;			//!< global destination process ID
-    int tmap_index;				//!< typemap index for datatypes
-    bool usePackBuffer;			//!< need to pack data, or not...
-    bool freeWhenDone;			//!< free or possibly retransmit when done...
-    unsigned char *srcAddr;			//!< base pointer to user application data
-    void *destAddr;				//!< pointer to remote data buffer
-    int destBufType;			//!< for peerMemoryTracker.push()
-    size_t sequential_offset;		//!< "contiguous" byte offset as if all data was packed
-    size_t fragLength;			//!< frag data length in bytes
-    double timeSent;			//!< time that the frag was enqueued for DMA...
-    unsigned long long frag_seq;		//!< duplicate/dropped detection sequence number
-    quadricsCtlHdr_t *srcEnvelope;		//!< not necessarily aligned memory to store frag envelope info
+    BaseSendDesc_t *parentSendDesc;     //!< pointer to "owning" message descriptor
+    ELAN3_CTX *ctx;                     //!< pointer to Quadrics context for DMA...
+    int cmType;                         //!< type of control message (data, mem. req., mem. release)
+    int flags;                          //!< state of this frag (see QSF_* defines)
+    int rail;                           //!< Quadrics rail index of ctx
+    int nEachSendRscs;                  //!< number of "each send" resources have been alloc.
+    int nDMADescsNeeded;                //!< number of DMA descs. needed to send this frag
+    int numTransmits;                   //!< number of times that we have attempted transmission
+    int globalDestID;                   //!< global destination process ID
+    int tmap_index;                     //!< typemap index for datatypes
+    bool usePackBuffer;                 //!< need to pack data, or not...
+    bool freeWhenDone;                  //!< free or possibly retransmit when done...
+    unsigned char *srcAddr;             //!< base pointer to user application data
+    void *destAddr;                     //!< pointer to remote data buffer
+    int destBufType;                    //!< for peerMemoryTracker.push()
+    size_t sequential_offset;           //!< "contiguous" byte offset as if all data was packed
+    size_t fragLength;                  //!< frag data length in bytes
+    double timeSent;                    //!< time that the frag was enqueued for DMA...
+    unsigned long long frag_seq;        //!< duplicate/dropped detection sequence number
+    quadricsCtlHdr_t *srcEnvelope;      //!< not necessarily aligned memory to store frag envelope info
     //   before init
 
     /* set up by init() once (context dependent) */
-    quadricsCtlHdr_t *fragEnvelope;		//!< ptr to 64-byte aligned memory for frag envelope info
-    E3_Addr elanFragEnvelope;		//!< Elan address of fragEnvelope
-    sdramaddr_t elanEnvelope;		//!< SDRAM frag envelope info copy (for performance)
-    E3_Addr elanElanEnvelope;		//!< Elan address of elanEnvelope
-    E3_DMA_MAIN *mainDMADesc;		//!< array of ptrs to Elan-addr. 64-byte algn. main memory DMA descs.
+    quadricsCtlHdr_t *fragEnvelope;     //!< ptr to 64-byte aligned memory for frag envelope info
+    E3_Addr elanFragEnvelope;           //!< Elan address of fragEnvelope
+    sdramaddr_t elanEnvelope;           //!< SDRAM frag envelope info copy (for performance)
+    E3_Addr elanElanEnvelope;           //!< Elan address of elanEnvelope
+    E3_DMA_MAIN *mainDMADesc;           //!< array of ptrs to Elan-addr. 64-byte algn. main memory DMA descs.
 
     /* allocated every send, if needed (context dependent) */
-    unsigned char *packedData;		//!< ptr to Elan-addr. 64-byte aligned main memory for frag data
-    sdramaddr_t srcEvent[3];		//!< E3_Event memory on Elan
+    unsigned char *packedData;          //!< ptr to Elan-addr. 64-byte aligned main memory for frag data
+    sdramaddr_t srcEvent[3];            //!< E3_Event memory on Elan
     E3_Addr elanSrcEvent[3];
-    sdramaddr_t elanDMADesc[3];		//!< E3_DMA memory on Elan
-    volatile E3_Event_Blk *srcEventBlk;		//!< obtained via dmaThrottle()
+    sdramaddr_t elanDMADesc[3];         //!< E3_DMA memory on Elan
+    volatile E3_Event_Blk *srcEventBlk; //!< obtained via dmaThrottle()
 
     // called each time this descriptor is removed from the free list
     // ...should be called until true is returned...
@@ -400,20 +401,20 @@ private:
              * if ENABLE_RELIABILITY is defined -- since it is recorded and ACK'ed...
              */
             if (!quadricsDoAck) {
-                if ((parentSendDesc->sendType != ULM_SEND_SYNCHRONOUS) || 
+                if ((parentSendDesc->sendType != ULM_SEND_SYNCHRONOUS) ||
                     (sequential_offset != 0)) {
                     frag_seq = 0;
                     return;
                 }
             }
 
-	    // thread-safe allocation of frag sequence number in header
-            
-	    if (usethreads())
-       		    reliabilityInfo->next_frag_seqsLock[globalDestID].lock();
-  	    frag_seq = (reliabilityInfo->next_frag_seqs[globalDestID])++;
-	    if (usethreads())
-       		    reliabilityInfo->next_frag_seqsLock[globalDestID].unlock();
+            // thread-safe allocation of frag sequence number in header
+
+            if (usethreads())
+                reliabilityInfo->next_frag_seqsLock[globalDestID].lock();
+            frag_seq = (reliabilityInfo->next_frag_seqs[globalDestID])++;
+            if (usethreads())
+                reliabilityInfo->next_frag_seqsLock[globalDestID].unlock();
         }
 #endif
 
@@ -422,38 +423,38 @@ private:
             mainDMADesc = (E3_DMA_MAIN *)elan3_allocMain(ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN));
         }
         if (!fragEnvelope) {
-	    unsigned long mask = ~(ctx->pageSize - 1);
-	    void *bad_addresses[10];
-	    int bad_addrcnt = 0;
-	    for (int i = 0; i < 10; i++) {
-            	fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
-                                                               sizeof(quadricsCtlHdr_t));
-            	if (fragEnvelope) {
-			if (((unsigned long)fragEnvelope & mask) !=
-				((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
-				bad_addresses[i] = fragEnvelope;
-				bad_addrcnt++;
-				fragEnvelope = 0;
-			}
-			else {
-                		elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
-				break;
-			}
-		}
-	    }
-	    if (bad_addrcnt) {
-			if (bad_addrcnt == 10) {
-				ulm_err(("quadricsSendFragDesc::initInitOnceResources: exceeded 10"
-				" memory allocations tries for fragEnvelope!\n"));
-				freeInitOnceResources();
-				return false;
-			}
-			else {
-				for (int i = 0; i < bad_addrcnt; i++) {
-					elan3_free(ctx, bad_addresses[i]);
-				}
-			}
-	    }
+            unsigned long mask = ~(ctx->pageSize - 1);
+            void *bad_addresses[10];
+            int bad_addrcnt = 0;
+            for (int i = 0; i < 10; i++) {
+                fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
+                                                                   sizeof(quadricsCtlHdr_t));
+                if (fragEnvelope) {
+                    if (((unsigned long)fragEnvelope & mask) !=
+                        ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
+                        bad_addresses[i] = fragEnvelope;
+                        bad_addrcnt++;
+                        fragEnvelope = 0;
+                    }
+                    else {
+                        elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
+                        break;
+                    }
+                }
+            }
+            if (bad_addrcnt) {
+                if (bad_addrcnt == 10) {
+                    ulm_dbg(("quadricsSendFragDesc::initInitOnceResources: exceeded 10"
+                             " memory allocations tries for fragEnvelope!\n"));
+                    freeInitOnceResources();
+                    return false;
+                }
+                else {
+                    for (int i = 0; i < bad_addrcnt; i++) {
+                        elan3_free(ctx, bad_addresses[i]);
+                    }
+                }
+            }
         }
         /* PERFORMANCE is worse!
            if (elanEnvelope == (sdramaddr_t)NULL) {
@@ -627,7 +628,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     /* initialize the QDMA descriptor */
     qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
     qdma->dma_dest = 0;
-    qdma->dma_destEvent = quadricsQueue[rail].elanQAddr;	// global queue object
+    qdma->dma_destEvent = quadricsQueue[rail].elanQAddr;        // global queue object
     qdma->dma_size = sizeof(quadricsCtlHdr_t);
     qdma->dma_source = (elanEnvelope != (sdramaddr_t)NULL) ? elanElanEnvelope : elanFragEnvelope;
     qdma->dma_srcEvent = elanSrcEvent[index];
@@ -682,11 +683,11 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         quadricsDataHdr_t *p = &(fragEnvelope->msgDataHdr);
         if (parentSendDesc->sendType == ULM_SEND_SYNCHRONOUS) {
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-			    MSGTYPE_PT2PT_SYNC);
+                                                        MSGTYPE_PT2PT_SYNC);
         }
         else {
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-			    MSGTYPE_PT2PT);
+                                                        MSGTYPE_PT2PT);
         }
         p->tag_m = parentSendDesc->posted_m.UserTag_m;
         p->senderID = myproc();
@@ -832,7 +833,7 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
 
     if (elanbug) {
         /* initialize the second DMA descriptor */
-	    d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
+        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
 
         d->dma_dest = (E3_Addr)((unsigned char *)destAddr + toEndOfPageBytes);
         d->dma_destEvent = (E3_Addr)0;
