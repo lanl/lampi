@@ -168,13 +168,12 @@ void gmSetup(lampiState_t *s)
     gm_status_t returnValue;
     int *nDevsPerProc;
     int dev;
-    int i;
+    int i,*devs,proc,rDevIndex;
     int j;
     int localDev;
     int maxDevs;
     int port;
     int rc;
-    int remoteDev;
     int reserved;
     localBaseDevInfo_t *allBaseDevInfo, *localBaseDevInfo;
     unsigned int tmpNodeID;
@@ -443,51 +442,66 @@ void gmSetup(lampiState_t *s)
 	    /*
 	     * figure out network connectivity
 	     */
-	
-	    /* loop over local devices */
-	    for (localDev = 0; localDev < gmState.nDevsAllocated; localDev++) {
-	        /* loop over all remote devices */
-	        for (remoteDev = 0; remoteDev < s->global_size * maxDevs;
-	             remoteDev++) {
-	            int proc = remoteDev / maxDevs;
-	            int rDevIndex = remoteDev - (proc * maxDevs);
-	            /* check to make sure this is not just dummied up data */
-	            if ((rDevIndex >= nDevsPerProc[proc]) || 
-                    (allBaseDevInfo[remoteDev].node_id == (unsigned int)-1))
-	                continue;
-
+            /* loop over all procs */
+            devs=(int *)ulm_malloc(sizeof(int)*maxDevs);
+            for(proc=0 ; proc < s->global_size ; proc++ ) {
+	          /* loop over local devices */
+	          for (localDev = 0; localDev < gmState.nDevsAllocated; 
+                    localDev++) {
+                      /* figure out how many remote devices one can
+                       *   commnicate with via this local device */
+                       int count=0;
+                       for(i=0 ; i < maxDevs ; i++)
+                         devs[i]=-1;
+	               for( rDevIndex = proc * maxDevs;
+                            rDevIndex < (proc+1) * maxDevs ;
+                            rDevIndex++ ) {
+	                  /* check to make sure this is not just dummied up data */
+	                  if ( (allBaseDevInfo[rDevIndex].node_id == 
+                                (unsigned int)-1))
+	                  continue;
+                          /* check and see if the devices are connected */
 #if GM_API_VERSION >= 0x200
-	             gm_global_id_to_node_id(gmState.localDevList[localDev].gmPort,
-                                    allBaseDevInfo[remoteDev].global_node_id,
-                                    &(allBaseDevInfo[remoteDev].node_id));
+	                  gm_global_id_to_node_id(
+                              gmState.localDevList[localDev].gmPort,
+                              allBaseDevInfo[rDevIndex].global_node_id,
+                              &(allBaseDevInfo[rDevIndex].node_id));
 #endif
-	            /* check to see if remote device is reachable from
-	             *   the local device */
-	            returnValue =
-	                gm_node_id_to_unique_id(gmState.localDevList[localDev].
-	                                        gmPort,
-	                                        allBaseDevInfo[remoteDev].node_id,
-	                                        tmpMacAddress);
-	            if (returnValue != GM_SUCCESS) {
-	                continue;
-	            }
-	            /* compare mac addresses to see if remoteDev matches
-	             *   up with the device accessible by the local
-	             *   device */
-	            if ((rc = memcmp
-	                (tmpMacAddress, allBaseDevInfo[remoteDev].macAddress,
-	                 LENMACADDR)) != 0) {
-	                /* if both mac addresses match, the return
-	                 * value from memcmp is 0 */
-	                continue;
-	            }
-	
-	            gmState.localDevList[localDev].remoteDevList[proc].node_id =
-	                allBaseDevInfo[remoteDev].node_id;
-	            gmState.localDevList[localDev].remoteDevList[proc].port_id =
-	                allBaseDevInfo[remoteDev].port_id;
-	        }                       /* end remoteDev */
-	    }                           /* end localDev */
+	                  /* check to see if remote device is reachable from
+	                   *   the local device */
+	                  returnValue =
+	                      gm_node_id_to_unique_id(gmState.
+                               localDevList[localDev].gmPort,
+	                       allBaseDevInfo[rDevIndex].node_id,tmpMacAddress);
+	                  if (returnValue != GM_SUCCESS) {
+	                      continue;
+	                  }
+	                  /* compare mac addresses to see if rDevIndex matches
+	                   *   up with the device accessible by the local
+	                   *   device */
+	                  if ((rc = memcmp
+	                      (tmpMacAddress, allBaseDevInfo[rDevIndex].macAddress,
+	                       LENMACADDR)) != 0) {
+	                      /* if both mac addresses match, the return
+	                       * value from memcmp is 0 */
+	                      continue;
+	                  }
+                          devs[count]=rDevIndex;
+                          count++;
+
+                       }  /*  end rDevIndex loop */
+                       /* now we know how many remote devices we can connect
+                        *   to, and which ones they are.  Set connectivity
+                        *   information */
+                        rDevIndex= localDev%count;
+                        rDevIndex=devs[rDevIndex];
+	                gmState.localDevList[localDev].remoteDevList[proc].
+                          node_id=allBaseDevInfo[rDevIndex].node_id;
+	                gmState.localDevList[localDev].remoteDevList[proc].
+                          port_id=allBaseDevInfo[rDevIndex].port_id;
+                  }
+            }  /* end proc loop */
+            ulm_free(devs);
 	
 	    /* initialize pinned memory buffer pool and freelist for each local device */
 	    for (i = 0; i < gmState.nDevsAllocated; i++) {
