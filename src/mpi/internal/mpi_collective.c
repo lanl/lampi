@@ -43,7 +43,11 @@ int _mpi_init_collectives(void)
     _mpi.collective.alltoallv = ulm_alltoallv;
     _mpi.collective.alltoallw = NULL; /* ulm_alltoallw; */
     _mpi.collective.barrier = ulm_barrier;
+#ifdef USE_ELAN_COLL
+    _mpi.collective.bcast = ulm_bcast_quadrics;
+#else
     _mpi.collective.bcast = ulm_bcast;
+#endif
     _mpi.collective.gather = ulm_gather;
     _mpi.collective.gatherv = ulm_gatherv;
     _mpi.collective.reduce = ulm_reduce;

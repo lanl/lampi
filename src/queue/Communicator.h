@@ -45,12 +45,17 @@
 #include "queue/Group.h"
 #include "sender_ackinfo.h"
 #include "ulm/ulm.h"
+#include "internal/new.h"
 #include "util/DblLinkList.h"
 #include "util/Lock.h"
 
 #ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPFragDesc.h"
 #include "queue/SharedMemForCollective.h"
+#endif
+
+#ifdef USE_ELAN_COLL
+#include "path/quadrics/coll.h"
 #endif
 
 enum { MCAST_BUF_SZ = 16384 };
@@ -473,6 +478,108 @@ public:
 
     // check to see if there is any data to be received
     int iprobe(int sourceProc, int tag, int *found, ULMStatus_t *status);
+
+#ifdef USE_ELAN_COLL
+
+    /*
+        * The list of qsnet hw broadcast operations,
+     * may appear completed to the ULM, but SRL is still working on them.
+     */
+    struct {
+        bcast_request_t* first;
+        bcast_request_t* last;
+        bcast_request_t* first_free;
+    } bcast_queue;
+
+    void               init_bcast_queue()
+    {
+        bcast_queue.first = bcast_queue.last = (bcast_request_t*)NULL;
+        bcast_queue.first_free =
+            (bcast_request_t*) ulm_new(bcast_request_t, 32);
+
+        if (! bcast_queue.first_free)
+            ulm_err(("Error in allocating memory for bcast requests\n"));
+        else
+        {
+            bcast_request_t * temp_req = bcast_queue.first_free;
+            for ( int k = 1 ; k < 32; k++)
+            {
+                temp_req->next = bcast_queue.first_free + k;
+                (bcast_queue.first_free + k)->prev = temp_req;
+                /* Point to the new element */
+                temp_req = (bcast_request_t*)temp_req->next;
+            }
+            /* No more elements after this */
+            temp_req->next = bcast_queue.first_free ;
+            bcast_queue.first_free->prev = temp_req;
+        }
+    }
+
+    bcast_request_t *  commit_bcast_req(bcast_request_t* bcast_desc)
+    {
+        assert (bcast_desc == bcast_queue.first_free);
+
+        bcast_queue.first_free =
+            (bcast_request_t *)bcast_desc->next;
+
+        /* Remove the desc from the link list */
+        bcast_desc->prev->next = bcast_desc->next;
+        bcast_desc->next->prev = bcast_desc->prev;
+
+        /* Commit the descriptor */
+        if ( bcast_queue.first == (bcast_request_t*)NULL )
+        {
+            bcast_queue.first = bcast_queue.last  = bcast_desc;
+        }
+        else
+        {
+            bcast_queue.last->next = bcast_desc;
+            bcast_queue.last = bcast_desc;
+        }
+        bcast_desc->next = (bcast_request_t *) NULL;
+        bcast_desc->prev = (bcast_request_t *) NULL;
+    }
+
+    void               free_bcast_req(bcast_request_t* bcast_desc)
+    {
+        assert ( bcast_queue.first == bcast_desc);
+
+        /* remove from the used list */
+        bcast_queue.first = (bcast_request_t*)bcast_desc->next;
+        if (bcast_desc == bcast_queue.last)
+            bcast_queue.last = (bcast_request_t *) NULL;
+
+        /* return to the free list */
+        bcast_queue.first_free->prev->next = bcast_desc;
+        bcast_desc->prev = bcast_queue.first_free->prev;
+
+        bcast_queue.first_free->prev = bcast_desc;
+        bcast_desc->next = bcast_queue.first_free;
+    }
+
+    /* The transporter exported from SRL */
+    Broadcaster        *bcaster;
+
+    volatile int        hw_bcast_enabled;   /* if hw_bcast is available */
+
+    /*
+     * Bind a bcast request to a channel.
+     * May trigger progress or fail-over
+     */
+    int                bcast_bind( bcast_request_t *, int, int, int,
+                                   void *, size_t , ULMType_t *, int, int,
+                                   CollectiveSMBuffer_t *, int );
+
+    /*
+     * Wait on a bcast request to complete,
+     * May trigger progress or fail_over
+     */
+    int                ibcast_start(bcast_request_t *);
+    int                bcast_wait  (bcast_request_t *);
+    int                fail_over   (bcast_request_t *);
+
+#endif
+
 
     //
     // message matching functions

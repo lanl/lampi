@@ -86,6 +86,12 @@ void lampi_init_prefork_rms(lampiState_t *s)
 #else
     // For the latest linux releases, I *think* this is what we want...
     elan_nodeId = devinfo.Position.NodeId - cap.LowNode;
+
+    /* This is true only if the nodes are contiguous,
+     * A better solution would be to find the list of nodes from the cap->entries,
+     * by doing elan3_vp2location(i). -- Weikuan
+     */
+
 #endif
 
 #else 

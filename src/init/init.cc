@@ -2110,7 +2110,7 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
 
     /* Context ID allocation control */
     s->contextIDCtl = (contextIDCtl_t *) ulm_malloc((sizeof(contextIDCtl_t)));
-    if (!s->bsendData) {
+    if (!s->contextIDCtl) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }

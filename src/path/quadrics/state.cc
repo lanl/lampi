@@ -60,6 +60,17 @@ long maxQuadricsSendFragsDescRetries		 = 1000;
 bool quadricsSendFragDescsDescRetryForResources   = false;
 bool quadricsSendFragDescsDescAbortWhenNoResource = true;
 
+#ifdef USE_ELAN_COLL
+/* The global memory available for elan3 */
+quadricsGlobInfo_t  *  quadrics_Glob_Mem_Info = 0;
+/*quadrics_global_vm_pool_t * quadrics_global_vm_pools = 0;*/
+/* A pool of collective request decriptors per communicator */
+/*quadrics_coll_comm_t **quadrics_coll_comm_pools = 0;*/
+Broadcaster         ** quadrics_broadcasters;
+int                    broadcasters_array_len = 0;
+int                    next_broadcaster_id = 0;
+#endif
+
 FreeListShared_t <quadricsRecvFragDesc> quadricsRecvFragDescs;
 long maxQuadricsRecvFragsDescRetries		 = 1000;
 bool quadricsRecvFragsDescRetryForResources   = false;

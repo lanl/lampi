@@ -49,6 +49,94 @@ void lampi_init_prefork_quadrics(lampiState_t *s)
     }
 }
 
+#ifdef USE_ELAN_COLL /* Start USE_ELAN_COLL, --Weikuan */
+void lampi_init_postfork_coll_setup(lampiState_t *s)
+{
+    /* if daemon - return */
+
+    if ((s->nhosts == 1) || (s->iAmDaemon)) {
+        return;
+    }
+
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_postfork_coll_setup");
+    }
+
+    Broadcaster   * bcaster;
+    maddr_vm_t  main_base = quadrics_Glob_Mem_Info->globMainMem;
+    sdramaddr_t elan_base = quadrics_Glob_Mem_Info->globElanMem;
+    int returnCode = ULM_SUCCESS;
+
+    //! initialize array to broadcasters
+
+    broadcasters_array_len = getenv("LAMPI_NUM_BCASTERS") ?
+        atoi (getenv("LAMPI_NUM_BCASTERS") ) :
+        QUADRICS_GLOB_BUFF_POOLS;
+
+    broadcasters_array_len =
+        (broadcasters_array_len > QUADRICS_GLOB_BUFF_POOLS)
+        ? broadcasters_array_len : QUADRICS_GLOB_BUFF_POOLS;
+
+    if ( !(broadcasters_array_len >= 8))
+    {
+        ulm_exit((-1, "Please set LAMPI_NUM_BCASTERS larger than 8.\n"));
+    }
+
+    quadrics_broadcasters = ulm_new(Broadcaster *, broadcasters_array_len);
+    if (!quadrics_broadcasters) {
+        ulm_exit((-1,
+                  "Unable to allocate space for broadcasters\n"));
+    }
+
+    /* Need to link the broadcaster to the quadrics path,
+        * and have the push function also push the broadcast traffic */
+    for (int i = 0; i < broadcasters_array_len; i++) {
+        quadrics_broadcasters[i] = (Broadcaster*) ulm_new(Broadcaster, 1);
+        if (!quadrics_broadcasters[i])
+            ulm_exit((-1, "Unable to allocate space for Broadcaster \n"));
+        else
+        {
+            returnCode = quadrics_broadcasters[i]->init_bcaster(
+                                                                main_base, elan_base);
+            if ( returnCode != ULM_SUCCESS)
+                ulm_exit((-1, "Unable to allocate resource for Broadcaster \n"));
+        }
+        main_base = (char *)main_base +
+            (QUADRICS_GLOB_MEM_MAIN_POOL_SIZE + CONTROL_MAIN);
+        elan_base += (QUADRICS_GLOB_MEM_ELAN_POOL_SIZE);
+    }
+
+    if (usethreads())
+        communicatorsLock.lock();
+
+    /* Assign the first broadcaster to the base group */
+    Communicator * cp = communicators[ULM_COMM_WORLD];
+    bcaster = quadrics_broadcasters[0];
+
+    /* Link back to the communicator */
+    bcaster->comm_index = cp->contextID;
+
+    /* Enable the hardware multicast */
+    returnCode = bcaster->hardware_coll_init();
+
+    next_broadcaster_id = 1;
+
+    if ( returnCode == ULM_SUCCESS)
+    {
+        cp->hw_bcast_enabled |= QSNET_COLL ;
+        cp->bcaster          = bcaster;
+    }
+
+    if (usethreads())
+        communicatorsLock.unlock();
+
+    /*return returnCode;*/
+}
+#endif
+
 
 void lampi_init_postfork_quadrics(lampiState_t *s)
 {
@@ -70,7 +158,13 @@ void lampi_init_postfork_quadrics(lampiState_t *s)
 
 	quadricsInitAfterFork();
 
-        /*
+#ifdef USE_ELAN_COLL
+    /*
+        * Retrospect to enable the hw bcast for ULM_COMM_WORLD
+     */
+    lampi_init_postfork_coll_setup(s);
+#endif
+    /*
          * Add Quadrics path to global pathContainer
          */
 

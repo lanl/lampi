@@ -62,6 +62,12 @@ enum {
     ULM_ERR_UNKNOWN = -14,
     ULM_ERR_BAD_PATH = -15,	/* send message must be rebound to new path */
     ULM_ERR_BAD_SUBPATH = -16,	/* send message needs new device for this path */
+#ifdef USE_ELAN_COLL
+    ULM_ERR_BCAST_SEND = -17,	/* Error Sending   */
+    ULM_ERR_BCAST_RECV = -18,	/* Error Receiving */
+    ULM_ERR_BCAST_SYNC = -19,   /* Error Sync      */
+    ULM_ERR_BCAST_FAIL  = -20,	/* Bcast Failed, hw/bcast unavailable */
+#endif
 };
 
 #ifdef __cplusplus

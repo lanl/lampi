@@ -32,6 +32,7 @@
 
 #include <sys/errno.h>
 #include <unistd.h>
+#include <elan3/elan3.h>
 #include <rms/rmscall.h>
 
 #include "client/ULMClient.h"
@@ -44,6 +45,12 @@
 #include "ulm/ulm.h"
 
 /* initialization code */
+
+#ifndef ELAN_ALIGNUP
+#define ELAN_ALIGNUP(x,a)       (((uintptr_t)(x) + ((a)-1)) & (-(a)))
+/* 'a' power of 2 */
+#endif
+
 
 void quadricsInitRecvDescs() {
     long minPagesPerList = 4;
@@ -130,13 +137,19 @@ ELAN3_CTX *getElan3Ctx(int rail) {
 #define offsetof(T,F)   ((int)&(((T *)0)->F))
 #endif
 
-void quadricsInitQueueInfo() {
+void quadricsInitQueueInfo()
+{
 
     int pageSize = sysconf(_SC_PAGESIZE);
     E3_uint32 msize = ELAN_ALIGNUP(ELAN_ALLOC_SIZE, pageSize);
     E3_uint32 esize = ELAN_ALIGNUP(ELAN_ALLOCELAN_SIZE, pageSize);
     E3_Addr mbase = (E3_Addr)ELAN_ALLOC_BASE;
     E3_Addr ebase = (E3_Addr)ELAN_ALLOCELAN_BASE;
+
+#ifdef  USE_ELAN_COLL
+    quadricsGlobInfo_t * base;
+    ELAN_CAPABILITY    * cap;
+#endif
 
     int *dev = (int *)ulm_malloc(sizeof(int) * quadricsNRails);
     if (!dev) {
@@ -157,6 +170,24 @@ void quadricsInitQueueInfo() {
         exit(1);
     }
 
+#ifdef USE_ELAN_COLL
+    cap = &quadricsCap;
+
+    /* Initialize the global memory structure */
+    quadrics_Glob_Mem_Info = (quadricsGlobInfo_t *)
+        ulm_malloc(sizeof(quadricsGlobInfo_t));
+
+    quadrics_Glob_Mem_Info->allCtxs = (ELAN3_CTX **)
+        ulm_malloc(sizeof(ELAN3_CTX *)*quadricsNRails);
+
+    if (!quadrics_Glob_Mem_Info || ! quadrics_Glob_Mem_Info->allCtxs) {
+        ulm_err(("quadricsInitQueueInfo: malloc for %d bytes for quadrics_Glob_Mem_Info failed!\n",
+                 sizeof(quadricsGlobInfo_t)));
+        exit(1);
+    }
+    base = quadrics_Glob_Mem_Info;
+#endif
+
     for (int i = 0; i < quadricsNRails; i++) {
 
         quadricsQueueInfo_t *p = &(quadricsQueue[i]);
@@ -167,6 +198,13 @@ void quadricsInitQueueInfo() {
 
         // initalize the Elan3 device
         p->ctx = elan3_init(dev[i], mbase, msize, ebase, esize);
+
+#ifdef USE_ELAN_COLL
+        /* Stash the array of ctx. */
+        quadrics_Glob_Mem_Info->allCtxs[i] = p->ctx;
+        if ( i==0) base->ctx = p->ctx;
+#endif
+
         if (p->ctx == (ELAN3_CTX *)NULL) {
             ulm_err(("quadricsInitQueueInfo: elan3_init(%d, 0x%x, %d, 0x%x, %d) failed!\n",
                      dev[i], mbase, msize, ebase, esize));
@@ -206,6 +244,166 @@ void quadricsInitQueueInfo() {
                      elan3_process(p->ctx), myproc()));
             exit(1);
         }
+
+
+#ifdef USE_ELAN_COLL
+        /* Stash self_vp. */
+        base->self = myproc();
+    }
+
+    /* Allocate Global Memory, code stolen from libelan. -- Weikuan */
+    {
+
+        /* Request the minimum about of 'Global' memory to
+        * allocate for the base group
+        */
+        int gMainMemSize, gElanMemSize, gElanMemSizeUp;
+        maddr_vm_t  gMemMain;
+        sdramaddr_t gMemElan; // *gMemShm;
+
+        gMainMemSize = QUADRICS_GLOB_MEM_MAIN;
+        gElanMemSize = QUADRICS_GLOB_MEM_ELAN;
+
+        /* As these are mmap'ed in we need them to be PAGESIZE multiples */
+        gMainMemSize = ELAN_ALIGNUP(gMainMemSize, PAGESIZE);
+        gElanMemSizeUp = ELAN_ALIGNUP(gElanMemSize, PAGESIZE);
+
+        /* Allocate 'Global' Main memory for base allGroup
+            * This is basically what the gallocCreate() code does but we can't
+            * use that as we are boot-strapping here.
+            */
+        ELAN_ADDR gMemMainAddr = ELAN_BAD_ADDR;
+        int zfd;
+
+        if ((zfd = open ("/dev/zero", O_RDWR)) < 0)
+        {
+            fprintf(stderr, "Failed to open /dev/zero - check permissions!\n");
+            exit(1);
+        }
+
+        for (int i = 0; i < quadricsNRails; i++)
+        {
+            quadricsQueueInfo_t *p = &(quadricsQueue[i]);
+            ELAN_ADDR eaddr;
+
+            if ((eaddr = elan3_allocVaddr(p->ctx, PAGESIZE, gMainMemSize)) == ELAN_ADDR_NULL)
+                fprintf(stderr, "Failed to allocate vaddr space from Main allocator ctx %lx rail %d : %x\n",
+                        p->ctx, i, (long )eaddr);
+
+            if (gMemMainAddr != ELAN_BAD_ADDR && eaddr != gMemMainAddr)
+                fprintf(stderr, "Failed to allocate matching vaddr space from Main allocator ctx %x rail %d: %x.%x\n",
+                        p->ctx, i, eaddr, gMemMainAddr);
+            else
+                /* Remember the allocated Elan address */
+                gMemMainAddr = eaddr;
+            fflush(stderr);
+        }
+
+        /* Find the corresponding main memory address. */
+        gMemMain = (void *) elan3_elan2main (base->ctx, gMemMainAddr);
+
+        /* Unmap this main memory. */
+        (void) munmap( gMemMain, gMainMemSize);
+
+        /* Now map some real main memory against the reserved Elan address
+            * space */
+        if ((gMemMain = mmap(gMemMain, gMainMemSize,
+                             PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED,
+                             zfd, 0)) == (void *)-1)
+        {
+            fprintf(stderr, "Failed to mmap global main memory \n");
+            fflush(stderr);
+            exit(1);
+        }
+
+        /* Now map it into each rail */
+        for (int i = 0; i < quadricsNRails; i++)
+        {
+            quadricsQueueInfo_t *p = &(quadricsQueue[i]);
+
+            /* Remove any previous Main mappings */
+            (void) elan3_clearperm_main (p->ctx, (char *)gMemMain, gMainMemSize);
+
+            /* Remove any previous Elan mappings */
+            (void) elan3_clearperm_elan (p->ctx, gMemMainAddr, gMainMemSize);
+
+            /* Create a new mapping from SHM to the Elan memory addresses */
+            if (elan3_setperm (p->ctx, (char*)gMemMain, gMemMainAddr,
+                               gMainMemSize, ELAN_PERM_REMOTEALL) < 0)
+            {
+                fprintf(stderr, "Failed setperm main \n");
+                fflush(stderr);
+                exit(1);
+            }
+            /* Stash it into the quadricsQueueInfo_t */
+            quadrics_Glob_Mem_Info->allCtxs[i] = p->ctx;
+        }
+
+        /* Stash the address and length */
+        quadrics_Glob_Mem_Info->globMainMem = (maddr_vm_t) gMemMain;
+        quadrics_Glob_Mem_Info->globMainMem_len = QUADRICS_GLOB_MEM_MAIN;
+        (void) close(zfd);
+
+        /*
+            * allocate a chunk of elan (sdram) memory from each rail from
+         * the elan memory allocator (this means it comes from ctx->sdram)
+         */
+        {
+
+            ELAN_ADDR gMemElanAddr = ELAN_BAD_ADDR;
+            for (int i = 0; i < quadricsNRails; i++)
+            {
+                quadricsQueueInfo_t *p = &(quadricsQueue[i]);
+                ELAN_ADDR eaddr;
+
+                if ((gMemElan= (sdramaddr_t)elan3_allocElan(p->ctx,
+                                                            PAGESIZE, gElanMemSize)) == NULL)
+                {
+                    fprintf(stderr, "elan_baseinit: failed to allocate gmemelan space from elan allocator ctx %lx rail %d : %x\n",
+                            p->ctx, i, gMemElan);
+                    exit(1);
+                }
+
+                eaddr = elan3_sdram2elan(p->ctx, p->ctx->sdram, (sdramaddr_t)gMemElan);
+
+                if (gMemElanAddr != ELAN_BAD_ADDR && eaddr != gMemElanAddr)
+                {
+                    fprintf(stderr, "elan_baseinit:4 failed to allocate matching vaddr from elan allocator ctx %x rail %d : %x.%x\n",
+                            p->ctx, i, eaddr, gMemElanAddr);
+                    exit(1);
+                }
+                else
+                    gMemElanAddr = eaddr;
+
+                /* Stash the address */
+                quadrics_Glob_Mem_Info->globElanMem = gMemElan;
+            }
+        }
+
+        /* Stash the length */
+        quadrics_Glob_Mem_Info->globElanMem_len = QUADRICS_GLOB_MEM_ELAN;
+
+    }
+
+    /* Setup some environment parameters. */
+    base->retryCount = 63;
+    base->dmaType    = DMA_BYTE;
+    base->waitType   = ELAN_POLL_EVENT;
+
+    base->cap        = cap ;
+    base->nrails     = quadricsNRails;
+    base->nvp        = elan3_nvps(cap);
+    base->myloc      = elan3_vp2location(base->self, cap);
+    base->maxlocals  = elan3_maxlocal(cap);
+    /*base->hostid     = base->myloc.Node ;*/
+    base->nlocals    = elan3_nlocal(base->myloc.Node, cap);
+
+    /* Break the loop into two, so that a global memory can be created */
+
+    for (int i = 0; i < quadricsNRails; i++) {
+
+        quadricsQueueInfo_t *p = &(quadricsQueue[i]);
+#endif
 
         // allocate the E3_Queue object in Elan SDRAM -- round up to nearest block size
         // since we will actually touch q_event as a block copy event (16 bytes > 8 allocated for
@@ -277,6 +475,11 @@ void quadricsInitQueueInfo() {
         elan3_write32_sdram(p->ctx->sdram, p->sdramQAddr + offsetof(E3_Queue, q_state),
                             0);
     }
+
+#ifdef USE_ELAN_COLL
+    /* Take the first rail as the representative */
+    quadrics_Glob_Mem_Info->ctx = quadrics_Glob_Mem_Info->allCtxs[0];
+#endif
 
     free(dev);
 }

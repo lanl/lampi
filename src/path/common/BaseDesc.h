@@ -48,10 +48,13 @@
 #include "path/udp/sendInfo.h"
 #include "path/quadrics/sendInfo.h"
 #include "path/sharedmem/sendInfo.h"
+#include "queue/SharedMemForCollective.h"
 
 enum RequestType_t {
     REQUEST_TYPE_SEND = 1,
-    REQUEST_TYPE_RECV = 2
+    REQUEST_TYPE_RECV = 2,
+	REQUEST_TYPE_BCAST = 3,
+	REQUEST_TYPE_SHARE = 4 
 };
 
 enum RequestState_t {
@@ -407,6 +410,67 @@ public:
             return fragIndex_m * maxSegSize_m;
         }
 };
+
+
+#ifdef USE_ELAN_COLL
+
+typedef struct {
+    size_t length_m;		// length of request
+    union {
+        int source_m;		// on a recv this is the source process
+        int destination_m;	// on send this is the destination process
+    } proc;
+    int UserTag_m;		// user tag
+} msgRequest;
+
+
+/*structure that defines a broadcast request */
+struct bcast_request_t : public Links_t {
+
+    // Locks Lock;             // object lock
+
+    unsigned long long sequenceNumber_m;
+    double time_started;
+    /*sequence number, globally synchronized*/
+
+    void *posted_buff;                // pointer to buffer
+    /*void *orig_buff;           */
+    // set to point to the original buffer
+    CollectiveSMBuffer_t *coll_desc; // descriptor for SMBuffer
+
+    ULMType_t *datatype;       // datatype (NULL => contiguous)
+    int   datatypeCount;       // datatype element count
+
+    int   messageType;         // message type - point-to-point or collective
+    int   requestType;         // request type - send or receive
+
+    int   sendType;            // normal, buffered, synchronous, or ready
+    bool  persistent;          // persistence flag
+
+    int   status;              // indicates request status
+    volatile bool ready_toShare;   // Data ready for dispersion in a box
+    volatile bool messageDone; // message completion flag
+
+    int   root  ;
+    int   comm_root  ;
+
+    msgRequest posted_m;       // set when bound - never modified afterwards
+    msgRequest reslts_m;       // values set as for each satisfied request
+
+    void *channel ;            // Bcast Channel descriptor;
+    int   ctx_m;               // communicator ID
+
+    /*unsigned long long next_send_time; */
+
+    // default constructor
+    bcast_request_t()
+    { WhichQueue = QUADRICS_BCAST_LIST; }
+
+    // constructor
+    bcast_request_t(int poolIndex)
+    { WhichQueue = QUADRICS_BCAST_LIST; }
+};
+#endif
 
 
 #endif // NET_COMMON_BASEDESC_H

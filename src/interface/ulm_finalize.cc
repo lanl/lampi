@@ -47,6 +47,17 @@ extern "C" void ulm_finalize(void)
     int pathCount;
     int rc;
 
+#ifdef USE_ELAN_COLL
+    /*
+        * To complete all the broadcast traffic,
+     * Code put here for the time being as a makeshfit.
+     */
+    Broadcaster * bcaster = communicators[ULM_COMM_WORLD]->bcaster;
+    if ( bcaster && communicators[ULM_COMM_WORLD]->hw_bcast_enabled)
+        while ( bcaster->desc_avail < bcaster->total_channels )
+            bcaster->make_progress_bcast();
+#endif
+
     rc = ulm_barrier(ULM_COMM_WORLD);
     if (rc != ULM_SUCCESS) {
         ulm_err(("ulm_finalize: barrier failed with return code %d\n", rc));

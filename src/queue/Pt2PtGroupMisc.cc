@@ -478,7 +478,12 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     multicast_vpid = 0;
     elan_mcast_buf = 0;
     hw_ctx_stripe = -1;
-
+#ifdef USE_ELAN_COLL        /* fields for bcast, --Weikuan */
+    hw_bcast_enabled  = 0;
+    bcaster           = (Broadcaster*)NULL;
+    init_bcast_queue();
+#endif
+    
     return ULM_SUCCESS;
 }
 

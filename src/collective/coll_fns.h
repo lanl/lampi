@@ -80,5 +80,8 @@ int ulm_scatterv_interhost(int comm, void *dataBuffer,
 
 int ulm_bcast_interhost(void *buf, size_t count, ULMType_t *type, int root, int comm);
 
+#ifdef USE_ELAN_COLL
+int ulm_bcast_quadrics(void *buf, size_t count, ULMType_t *type, int root, int comm);
+#endif
 
 #endif /* _COLL_FNS */

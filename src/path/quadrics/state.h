@@ -43,6 +43,10 @@
 #include "path/quadrics/header.h"
 #include "path/quadrics/addrCache.h"
 
+#ifdef USE_ELAN_COLL
+#include "path/quadrics/coll.h"
+#endif
+
 #define QUADRICS_BADRAIL_DMA_TIMEOUT 60
 #define QUADRICS_MEMREQ_MINRETRANSMIT 30
 #define QUADRICS_MEMRLS_TIMEOUT 120
@@ -90,6 +94,12 @@ extern int quadricsLastRail;
 extern int quadricsDoChecksum;
 extern int quadricsDoAck;
 extern quadricsQueueInfo_t *quadricsQueue;
+#ifdef USE_ELAN_COLL
+extern quadricsGlobInfo_t  *quadrics_Glob_Mem_Info ;
+extern Broadcaster         ** quadrics_broadcasters;
+extern int                    broadcasters_array_len ;
+extern int                    next_broadcaster_id ;
+#endif
 extern FreeListPrivate_t <quadricsSendFragDesc> quadricsSendFragDescs;
 extern long maxQuadricsSendFragsDescRetries;
 extern bool quadricsSendFragDescsDescRetryForResources;

@@ -36,6 +36,16 @@
 #include "util/Lock.h"
 #include "internal/collective.h"
 
+#ifdef USE_ELAN_COLL     /* Start of USE_ELAN_COLL, --Weikuan */
+
+/* The maximum number of non-acked collective operation */
+#define MAX_CURR_COLL  128
+
+/* The maximum number of communicators in use, can be tuned for large */
+#define MAX_COMM_IN_USE 256
+
+#endif  /* end of USE_ELAN_COLL */
+
 typedef struct {
     int *groupProcIDOnHost; // list of ranks in this context on a host
     int nGroupProcIDOnHost; // number of ranks on host in this context
