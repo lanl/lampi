@@ -171,6 +171,13 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     fragIndex_m = seqOffset_m / quadricsBufSizes[PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
 
+    // check for valid communicator - if the communicator has already been released 
+    // this is a duplicate fragment that can be dropped
+    if(communicators[ctx_m] == NULL) {
+        ReturnDescToPool(getMemPoolIndex());
+        return;
+    }
+
 #if ENABLE_RELIABILITY
     isDuplicate_m = UNIQUE_FRAG;
 #endif

@@ -365,6 +365,13 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     isDuplicate_m = UNIQUE_FRAG;
 #endif
 
+    // check for valid communicator - if the communicator has already been freed - this is a duplicate
+    // fragment that can be dropped
+    if(communicators[ctx_m] == NULL) {
+        ReturnDescToPool(getMemPoolIndex());
+        return;
+    }
+
     // make sure destination process is on this host
     int dest_proc = dstProcID_m;
     if (dest_proc != myproc()) {

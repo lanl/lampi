@@ -235,6 +235,13 @@ void gmRecvFragDesc::msgData(double timeNow)
     msgLength_m = p->msgLength;
     fragIndex_m = seqOffset_m / gmState.bufSize;    
                                                                         
+    // check for valid communicator - if the communicator has already been released 
+    // this is a duplicate fragment that can be dropped
+    if(communicators[ctx_m] == NULL) {
+        ReturnDescToPool(getMemPoolIndex());
+        return;
+    }
+
     if (0) { // debug
         ulm_warn(("%d received frag from %d (length %ld)\n"
                   "%d\tgmFragBuffer_m %p gmHeader_m %p addr_m %p sizeof(gmHeader) %ld dev_m %d Dest %d\n"

@@ -277,6 +277,13 @@ void ibRecvFragDesc::msgData(double timeNow)
     msgLength_m = msg_m->header.msgLength;
     length_m = msg_m->header.dataLength;
 
+    // check for valid communicator - if the communicator has already been released 
+    // this is a duplicate fragment that can be dropped
+    if(communicators[ctx_m] == NULL) {
+        ReturnDescToPool(getMemPoolIndex());
+        return;
+    }
+
 #if ENABLE_RELIABILITY
     isDuplicate_m = UNIQUE_FRAG;
 #endif
