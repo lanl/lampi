@@ -49,6 +49,81 @@
 class ibRecvFragDesc;
 class ibSendFragDesc;
 
+class ib_ud_av_cache {
+    struct info {
+        int egress_port_index;
+        VAPI_ud_av_hndl_t ah; 
+        IB_lid_t dlid;
+        struct info *next;
+    };
+        
+    public:
+        struct info *cache;
+
+        ib_ud_av_cache() { cache = 0; }
+
+        VAPI_ud_av_hndl_t get(int dest, int pindex, IB_lid_t dlid)
+        {
+            VAPI_ud_av_hndl_t result = VAPI_INVAL_HNDL;
+            struct info *p;
+
+            if (cache == 0) {
+                return result;
+            }
+
+            p = &(cache[dest]);
+            do {
+                if ((p->egress_port_index == pindex) && 
+                    (p->dlid == dlid)) {
+                    result = p->ah;
+                    break;      
+                } 
+                p = p->next;
+            } while (p);
+            
+            return result;
+        }
+
+        bool store(VAPI_ud_av_hndl_t ah, int dest, int pindex, IB_lid_t dlid)
+        {
+            struct info *p;
+
+            if (cache == 0) {
+                cache = (struct info *)ulm_malloc(sizeof(struct info) * nprocs());
+                if (cache == 0) {
+                    return false;
+                }
+                for (int i = 0; i < nprocs(); i++) {
+                    cache[i].egress_port_index = 0;
+                    cache[i].ah = VAPI_INVAL_HNDL;
+                    cache[i].dlid = 0;
+                    cache[i].next = 0;
+                }
+            }
+
+            p = &(cache[dest]);
+            while (p->next) { p = p->next; }
+            if (p->ah == VAPI_INVAL_HNDL) {
+                p->egress_port_index = pindex;
+                p->ah = ah;
+                p->dlid = dlid;
+            }
+            else {
+                p->next = (struct info *)ulm_malloc(sizeof(struct info));
+                if (p->next == 0) {
+                    return false;
+                }
+                p = p->next;
+                p->egress_port_index = pindex;
+                p->ah = ah;
+                p->dlid = dlid;
+                p->next = 0;
+            }
+            
+            return true;
+        }
+};
+
 /* no dynamic sizing to help performance -- or at least
  * not unintentionally hurt it... 
  */
@@ -69,6 +144,8 @@ typedef struct {
     int max_ports;
     int proc_entries;
     ib_ud_peer_info_t *info;
+    int *next_remote_hca;
+    int *next_remote_port;
 } ib_ud_peer_t;
 
 typedef struct {
@@ -85,6 +162,7 @@ typedef struct {
     int num_sbufs;
     void *base_rbuf;
     void *base_sbuf;
+    ib_ud_av_cache ah_cache;
 } ib_ud_qp_state_t;
 
 typedef struct {

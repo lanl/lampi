@@ -56,23 +56,26 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
             LOCALACKED = (1 << 5)
         };
 
+        int type_m;
         int hca_index_m;
+        int port_index_m;
         state state_m;
         qp_type qp_type_m;
         VAPI_sr_desc_t sr_desc_m;
         VAPI_sg_lst_entry_t sg_m[1];
         double timeSent_m;
-        int numTransmits_m;
         int globalDestID_m;
         unsigned long long frag_seq_m;
-        SendDesc_t *parentSendDesc_m;
 
 
         ibSendFragDesc(int poolIndex) { state_m = UNINITIALIZED; }
 
+        unsigned int pack_buffer(void *dest);
         bool init(SendDesc_t *message, int hca, int port);
         bool init(enum ibCtlMsgTypes type, int glDestID, int hca, int port);
         bool init(void);
+        bool ud_init(void);
+        bool get_remote_ud_info(VAPI_ud_av_hndl_t *ah, VAPI_qp_num_t *qp);
         bool post(double timeNow, int *errorCode);
 
         bool done(double timeNow, int *errorCode)

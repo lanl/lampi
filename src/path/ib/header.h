@@ -73,9 +73,11 @@ struct ibDataAck : public BaseAck_t {
     ulm_uint32_t checksum;			//!< additive checksum or CRC of the message header
 };
 
+#define IB2KMSGDATABYTES (2048 - sizeof(struct ibDataHdr))
+
 struct ibData2KMsg {
     struct ibDataHdr header;
-    char data[2048 - sizeof(struct ibDataHdr)];
+    char data[IB2KMSGDATABYTES];
 };
 
 typedef struct ibCommon ibCommon_t;

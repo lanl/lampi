@@ -31,25 +31,411 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <vapi_common.h>
+#undef PAGESIZE
 #include "path/ib/sendFrag.h"
+#include "queue/globals.h"
+
+inline bool ibSendFragDesc::get_remote_ud_info(VAPI_ud_av_hndl_t *ah, VAPI_qp_num_t *qp)
+{
+    VAPI_ud_av_hndl_t ud_ah;
+    ib_ud_peer_info_t *udpi = 
+        &(ib_state.ud_peers.info[ib_state.ud_peers.proc_entries * globalDestID_m]);
+    int *next_remote_hca = &(ib_state.ud_peers.next_remote_hca[globalDestID_m]);
+    int *next_remote_port = &(ib_state.ud_peers.next_remote_port[globalDestID_m]);
+    int i, j, k, remote_hca, remote_port;
+    bool found_dest_info = false;
+    
+    for (i = 0; i < ib_state.ud_peers.max_hcas; i++) {
+        remote_hca = (i + *next_remote_hca) % ib_state.ud_peers.max_hcas;
+        for (j = 0; j < ib_state.ud_peers.max_ports; j++) {
+            remote_port = (j + *next_remote_port) % ib_state.ud_peers.max_ports;
+            k = ((remote_hca * ib_state.ud_peers.max_ports) + remote_port);
+            if (PEER_INFO_IS_VALID(udpi[k])) {
+                found_dest_info = true;
+                *next_remote_port = remote_port + 1;
+                if (*next_remote_port >= ib_state.ud_peers.max_ports) {
+                    *next_remote_port = 0;
+                    *next_remote_hca = remote_hca + 1;
+                    if (*next_remote_hca >= ib_state.ud_peers.max_hcas) {
+                        *next_remote_hca = 0;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    if (!found_dest_info) {
+        ulm_warn(("ibSendFragDesc::get_remote_ud_info trying to send to process"
+            " %d no UD peer info found!\n", globalDestID_m));
+        return false;
+    }
+
+    ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
+    ud_ah = h->ud.ah_cache.get(globalDestID_m, port_index_m, udpi[k].lid);
+
+    if (ud_ah == VAPI_INVAL_HNDL) {
+        VAPI_ret_t vapi_result;
+        VAPI_ud_av_t ud_av;
+
+        // create address handle, if possible
+        ud_av.dlid = udpi[k].lid;
+        // set static rate setting to 100% for matched links
+        ud_av.static_rate = 0;
+        ud_av.grh_flag = 0;
+        // convert from port array index to port number
+        ud_av.port = port_index_m + 1;
+
+        vapi_result = VAPI_create_addr_hndl(h->handle, h->pd, &ud_av, &ud_ah);
+        if (vapi_result != VAPI_OK) {
+            ulm_warn(("ibSendFragDesc::get_remote_ud_info VAPI_create_addr_hndl for HCA %d "
+                "returned %s\n", hca_index_m, VAPI_strerror(vapi_result)));
+            return false;
+        }
+        if (!h->ud.ah_cache.store(ud_ah, globalDestID_m, port_index_m, udpi[k].lid)) {
+            ulm_warn(("ibSendFragDesc::get_remote_ud_info can't store ud_av_hndl!\n"));
+            return false;
+        }
+    }
+
+    *ah = ud_ah;
+    *qp = udpi[k].qp_num;
+    return true;
+}
+
+inline unsigned int ibSendFragDesc::pack_buffer(void *dest)
+{
+    /* contiguous data */
+    if (tmapIndex_m < 0) {
+        if (ib_state.checksum) {
+            if (usecrc()) {
+                return bcopy_uicrc(((unsigned char *)parentSendDesc_m->addr_m + seqOffset_m), 
+                    dest, length_m, length_m);
+            }
+            else {
+                return bcopy_uicsum(((unsigned char *)parentSendDesc_m->addr_m + seqOffset_m), 
+                    dest, length_m, length_m);
+            }
+        }
+        else {
+            MEMCOPY_FUNC(((unsigned char *)parentSendDesc_m->addr_m + seqOffset_m), 
+                dest, length_m);
+            return 0;
+        }
+    }
+
+    /* non-contiguous data */
+    unsigned char *src_addr, *dest_addr = (unsigned char *)dest;
+    size_t len_to_copy, len_copied;
+    ULMType_t *dtype = parentSendDesc_m->datatype;
+    ULMTypeMapElt_t *tmap = dtype->type_map;
+    int dtype_cnt, ti;
+    int tm_init = tmapIndex_m;
+    int init_cnt = seqOffset_m / dtype->packed_size;
+    int tot_cnt = parentSendDesc_m->posted_m.length_m / dtype->packed_size;
+    unsigned char *start_addr = (unsigned char *)parentSendDesc_m->addr_m + init_cnt * dtype->extent;
+    unsigned int csum = 0, ui1 = 0, ui2 = 0;
+
+
+    // handle first typemap pair
+    src_addr = start_addr
+        + tmap[tm_init].offset
+        - init_cnt * dtype->packed_size - tmap[tm_init].seq_offset + seqOffset_m;
+    len_to_copy = tmap[tm_init].size
+        + init_cnt * dtype->packed_size + tmap[tm_init].seq_offset - seqOffset_m;
+    len_to_copy = (len_to_copy > length_m) ? length_m : len_to_copy;
+
+    if (ib_state.checksum) {
+        if (usecrc()) {
+            csum = bcopy_uicrc(src_addr, dest_addr, len_to_copy, len_to_copy, CRC_INITIAL_REGISTER);
+        }
+        else {
+            csum = bcopy_uicsum(src_addr, dest_addr, len_to_copy, len_to_copy, &ui1, &ui2);
+        }
+    }
+    else {
+        MEMCOPY_FUNC(src_addr, dest_addr, len_to_copy);
+    }
+    len_copied = len_to_copy;
+
+    tm_init++;
+    for (dtype_cnt = init_cnt; dtype_cnt < tot_cnt; dtype_cnt++) {
+        for (ti = tm_init; ti < dtype->num_pairs; ti++) {
+            src_addr = start_addr + tmap[ti].offset;
+            dest_addr = (unsigned char *)dest + len_copied;
+            len_to_copy = (length_m - len_copied >= tmap[ti].size) ?
+                tmap[ti].size : length_m - len_copied;
+            if (len_to_copy == 0) {
+                return csum;
+            }
+
+            if (ib_state.checksum) {
+                if (usecrc()) {
+                    csum = bcopy_uicrc(src_addr, dest_addr, len_to_copy, len_to_copy, csum);
+                }
+                else {
+                    csum += bcopy_uicsum(src_addr, dest_addr, len_to_copy, len_to_copy, &ui1, &ui2);
+                }
+            }
+            else {
+                MEMCOPY_FUNC(src_addr, dest_addr, len_to_copy);
+            }
+            len_copied += len_to_copy;
+        }
+
+        tm_init = 0;
+        start_addr += dtype->extent;
+    }
+
+    return csum;
+}
+
+inline bool ibSendFragDesc::ud_init(void)
+{
+    bool need_frag_seq, need_tmap_index;
+    VAPI_ud_av_hndl_t remote_ah;
+    VAPI_qp_num_t remote_qp;
+
+    if ((state_m & INITCOMPLETE) != 0) {
+        return true;
+    }
+
+    // get remote address handle, if we can or bail...
+    if (!get_remote_ud_info(&remote_ah, &remote_qp)) {
+        return false;
+    }
+
+    sr_desc_m.remote_ah = remote_ah;
+    sr_desc_m.remote_qp = remote_qp;
+    sr_desc_m.remote_qkey = ib_state.qkey;
+
+    // from here on out, we will complete the initialization successfully...
+
+    // figure out the length and sequential offset of this fragment
+    // also figure out if we need to get a fragment sequence number
+    switch (type_m) {
+        case MESSAGE_DATA:
+            seqOffset_m = (parentSendDesc_m->pathInfo.ib.allocated_offset_m < 0) ? 0 :
+                parentSendDesc_m->pathInfo.ib.allocated_offset_m;
+            length_m = ((parentSendDesc_m->posted_m.length_m - seqOffset_m) > IB2KMSGDATABYTES) ?
+                IB2KMSGDATABYTES : (parentSendDesc_m->posted_m.length_m - seqOffset_m);
+            // update allocated sequential offset for message
+            parentSendDesc_m->pathInfo.ib.allocated_offset_m = seqOffset_m + length_m;
+            need_frag_seq = (ib_state.ack || ((parentSendDesc_m->sendType == 
+                ULM_SEND_SYNCHRONOUS) && (seqOffset_m == 0))) ? true : false;
+            need_tmap_index = ((parentSendDesc_m->datatype == NULL) || 
+                (parentSendDesc_m->datatype->layout == CONTIGUOUS)) ? false : true;
+            break;
+        case MESSAGE_DATA_ACK:
+            length_m = sizeof(ibDataAck_t);
+            seqOffset_m = 0;
+            need_frag_seq = false;
+            need_tmap_index = false;
+            break;
+        default:
+            ulm_err(("ibSendFragDesc::init() unrecognized send fragment type "
+            "%d\n", type_m));
+            return false;
+    }
+    
+#ifdef ENABLE_RELIABILITY
+    // assign fragment sequence number(s) if we need them...
+    frag_seq_m = 0;
+
+    if (need_frag_seq) { 
+        if (usethreads())
+            reliabilityInfo->next_frag_seqsLock[globalDestID_m].lock();
+        frag_seq_m = (reliabilityInfo->next_frag_seqs[globalDestID_m])++;
+        if (usethreads())
+            reliabilityInfo->next_frag_seqsLock[globalDestID_m].unlock();
+    }
+#else
+    frag_seq_m = 0;
+#endif
+
+    tmapIndex_m = -1;
+
+    if (need_tmap_index) {
+        // calculate type map index based on this fragment's offset...
+        int dtype_cnt = seqOffset_m / parentSendDesc_m->datatype->packed_size;
+        size_t data_copied = dtype_cnt * parentSendDesc_m->datatype->packed_size;
+        ssize_t data_remaining = (ssize_t)(seqOffset_m - data_copied);
+        tmapIndex_m = parentSendDesc_m->datatype->num_pairs - 1;
+        for (int ti = 0; ti < parentSendDesc_m->datatype->num_pairs; ti++) {
+            if (parentSendDesc_m->datatype->type_map[ti].seq_offset == data_remaining) {
+                tmapIndex_m = ti;
+                break;
+            } else if (parentSendDesc_m->datatype->type_map[ti].seq_offset > data_remaining) {
+                tmapIndex_m = ti - 1;
+                break;
+            }
+        }
+    }
+
+    // copy data or control msg. payload to registered memory
+    switch (type_m) {
+        case MESSAGE_DATA:
+            {
+                ibData2KMsg *p = (ibData2KMsg *)((unsigned long)sg_m[0].addr);
+                p->header.common.type = MESSAGE_DATA;
+                p->header.ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc_m->ctx_m,
+                    (parentSendDesc_m->sendType == ULM_SEND_SYNCHRONOUS) ? 
+                    MSGTYPE_PT2PT_SYNC : MSGTYPE_PT2PT);
+                p->header.tag_m = parentSendDesc_m->posted_m.tag_m;
+                p->header.senderID = myproc();
+                p->header.destID = globalDestID_m;
+                p->header.dataLength = length_m;
+                p->header.msgLength = parentSendDesc_m->posted_m.length_m;
+                p->header.frag_seq = frag_seq_m;
+                p->header.isendSeq_m = parentSendDesc_m->isendSeq_m;
+                p->header.sendFragDescPtr.ptr = this;
+                p->header.dataSeqOffset = seqOffset_m;
+                p->header.dataChecksum = (length_m != 0) ? pack_buffer(p->data) : 0;
+                if (ib_state.checksum) {
+                    p->header.checksum = (usecrc()) ? uicrc(p, sizeof(ibDataHdr_t) - 
+                        sizeof(ulm_uint32_t)) : uicsum(p, sizeof(ibDataHdr_t) - 
+                        sizeof(ulm_uint32_t));
+                }
+                else {
+                    p->header.checksum = 0;
+                }
+                // now set the real send length
+                sg_m[0].len = sizeof(ibDataHdr_t) + length_m;
+            }
+            break;
+        case MESSAGE_DATA_ACK:
+            {
+                // everything should be filled out already by AckData()
+                // so we only need to calculate the checksum, if wanted...
+                ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+                p->checksum = 0;
+                if (ib_state.checksum) {
+                    if (usecrc()) {
+                        p->checksum = uicrc(p, length_m - sizeof(ulm_uint32_t));
+                    }
+                    else {
+                        p->checksum = uicsum(p, length_m - sizeof(ulm_uint32_t));
+                    }
+                }
+                // now set the real send length
+                sg_m[0].len = sizeof(ibDataAck_t);
+            }
+            break;
+        default:
+            break;
+    }
+
+    // mark this fragment descriptor as ready to post
+    state_m = (state)(state_m | INITCOMPLETE);
+
+    return true;
+}
 
 inline bool ibSendFragDesc::init(void)
 {
-    return true;
+    switch (qp_type_m) {
+        case UD_QP:
+            return ud_init();
+        // we only support UD traffic for now...
+        case RC_QP:
+        case NOTASSIGNED_QP:
+        default:
+            ulm_warn(("ibSendFragDesc::init() qp_type_m "
+            "is %d (not supported UD_QP %d)\n", qp_type_m, UD_QP));
+            return false;
+    }
 }
 
 inline bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
 {
-    return true;
+    if ((state_m & BASICINFO) == 0) {
+        type_m = MESSAGE_DATA;
+        hca_index_m = hca;
+        port_index_m = port;
+        timeSent_m = -1.0;
+        numTransmits_m = 0;
+        parentSendDesc_m = message;
+        globalDestID_m = communicators[message->ctx_m]->remoteGroup->
+            mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
+        state_m = (state)(state_m | BASICINFO);
+    }
+    switch (qp_type_m) {
+        case UD_QP:
+            return ud_init();
+        // we only support UD traffic for now...
+        case RC_QP:
+        case NOTASSIGNED_QP:
+        default:
+            return false;
+    }
 }
 
 inline bool ibSendFragDesc::init(enum ibCtlMsgTypes type, int glDestID, 
 int hca, int port)
 {
-    return true;
+    if (qp_type_m != UD_QP) {
+        ulm_warn(("ibSendFragDesc::init() control msg. qp_type_m "
+        "is %d (not UD_QP %d)\n", qp_type_m, UD_QP));
+        return false;
+    }
+
+    if ((state_m & BASICINFO) == 0) {
+        type_m = type;
+        hca_index_m = hca;
+        port_index_m = port;
+        timeSent_m = -1.0;
+        numTransmits_m = 0;
+        parentSendDesc_m = 0;
+        globalDestID_m = glDestID;
+        frag_seq_m = 0;
+        state_m = (state)(state_m | BASICINFO);
+    }
+
+    // all control messages use the UD transport
+    return ud_init();
 }
 
 inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
 {
+    VAPI_ret_t vapi_result;
+    ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
+
+    *errorCode = ULM_SUCCESS;
+
+    if ((state_m & POSTED) == 0) {
+        vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+        if (vapi_result != VAPI_OK) {
+            return false;
+        }
+        state_m = (state)(state_m | POSTED);
+    }
+#ifdef ENABLE_RELIABILITY
+    else if ((state_m & LOCALACKED) != 0) {
+        bool got_tokens = false;
+        // try to get tokens and resend...
+        if (usethreads()) {
+            ib_state.lock.lock();
+        }
+        if ((h->ud.sq_tokens >= 1) && (h->send_cq_tokens >= 1)) {
+            (h->ud.sq_tokens)--;
+            (h->send_cq_tokens)--;
+            got_tokens = true;
+        } 
+        if (usethreads()) {
+            ib_state.lock.unlock();
+        }
+        if (got_tokens) {
+            state_m = (state)(state_m & ~LOCALACKED);
+            vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            if (vapi_result != VAPI_OK) {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+#endif
     return true;
 }

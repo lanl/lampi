@@ -443,6 +443,10 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
     } while (message->pathInfo.ib.allocated_offset_m < (ssize_t)message->posted_m.length_m);
 
+    if (usethreads()) {
+        ib_state.lock.unlock();
+    }
+
     /* send list -- finish initialization, post request, and move to frag ack list if successful */
 
     if ((timeNow < 0) && message->FragsToSend.size())
@@ -490,9 +494,6 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
                 // which is the default for now...
                 *errorCode = ULM_ERR_BAD_PATH;
-                if (usethreads()) {
-                    ib_state.lock.unlock();
-                }
                 return false;
             }
         }
