@@ -113,7 +113,18 @@ extern "C" int ulm_bind_pt2pt_message(ULMRequest_t *request, int ctx,int destina
         }
         pathArray[useLocal]->bind(SendDesc, &globalDestID, 1, &errorCode);
     }
-    // use Quadrics as option #2a
+    // use InfiniBand as option #2a
+    else if (pathList[globalDestID].useIB_m >= 0) {
+        int useIB = pathList[globalDestID].useIB_m;
+        /* if not available, get from free list */
+        SendDesc = _ulm_SendDescriptors.getElement(0, errorCode);
+        if (!SendDesc) {
+            return errorCode;
+        }
+        pathArray[useIB]->bind(SendDesc, &globalDestID, 1,
+                                     &errorCode);
+    }
+    // use Quadrics as option #2b
     else if (pathList[globalDestID].useQuadrics_m >= 0) {
         int useQuadrics = pathList[globalDestID].useQuadrics_m;
         /* if not available, get from free list */
@@ -124,7 +135,7 @@ extern "C" int ulm_bind_pt2pt_message(ULMRequest_t *request, int ctx,int destina
         pathArray[useQuadrics]->bind(SendDesc, &globalDestID, 1,
                                      &errorCode);
     }
-    // use Myrinet/GM as option #2b
+    // use Myrinet/GM as option #2c
     else if (pathList[globalDestID].useGM_m >= 0) {
         int useGM = pathList[globalDestID].useGM_m;
         /* if not available, get from free list */
