@@ -43,6 +43,7 @@
 #include "internal/constants.h"
 #include "internal/state.h"
 #include "ulm/ulm.h"
+#include "queue/ReliabilityInfo.h"
 
 // network path specific objects embbedded in SendDesc_t
 #include "path/udp/sendInfo.h"
@@ -64,11 +65,16 @@ enum RequestState_t {
     REQUEST_RELEASED
 };
 
+/* ack macros */
+#define ACKSTATUS_DATAGOOD 0x1			//!< data arrived okay (value for ackStatus below)
+#define ACKSTATUS_DATACORRUPT 0x2		//!< data arrived corrupted (value for ackStatus below)
+#define ACKSTATUS_AGGINFO_ONLY 0x4		//!< ack fields for a specific frag are not valid (OR'ed with ackStatus)
+
 // forward declarations
 class SMPFragDesc_t;
 class SMPSecondFragDesc_t;
 class BasePath_t;
-
+typedef struct BaseAck BaseAck_t;
 
 // RequestDesc_t:
 //
@@ -296,6 +302,7 @@ public:
     // methods
 };
 
+enum { UNIQUE_FRAG=0, DUPLICATE_RECEIVED=1, DUPLICATE_DELIVERD=2 };
 
 // BaseRecvFragDesc_t:
 //
@@ -323,8 +330,9 @@ public:
     int tag_m;                   // user specified tag
     int ctx_m;                   // context ID (communicator index)
     unsigned long long seq_m;    // sequence number of this frag
-    unsigned long isendSeq_m;     // message sequence number (assigned by the sender)
-    bool isDuplicate_m;          // is this frag a duplicate?
+    unsigned long isendSeq_m;    // message sequence number (assigned by the sender)
+    int isDuplicate_m;           // is this frag a duplicate?
+    bool DataOK;                 // is the data that arrived ok ?
     int msgType_m;               // comm type ID (point-to-point, collective, etc.)
     int poolIndex_m;             //resource pool index
 
@@ -344,7 +352,7 @@ public:
             // set fragment sequence number to indicate it is not being used
             // unless overwritten
             seq_m = (unsigned long long) 0;
-            isDuplicate_m = false;
+            isDuplicate_m = UNIQUE_FRAG;
         }
 
     // constructor that initializes locks
@@ -359,6 +367,10 @@ public:
         {
             return true;
         }
+
+    // process received fragment sequence range
+    int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr, 
+		    int glSourceProcess, ReliabilityInfo *reliabilityData);
 
     // return descriptor to descriptor pool
     virtual void ReturnDescToPool(int LocalRank) {}
@@ -426,8 +438,6 @@ struct BaseAck
     ulm_int32_t dest_proc;	 //!< global ProcID of original sending process
     ulm_int32_t src_proc;	 //!< global ProcID of the acknowledging process;
     ulm_ptr_t ptrToSendDesc;	 //!< pointer to original send frag desc
-    //ulm_uint64_t single_mseq;	 //!< message sequence number of single frag
-    //ulm_uint64_t single_fseq;	 //!< frag sequence number within message
     ulm_uint64_t thisFragSeq;    //!< frag sequence number
 
     // last consecutive in-order frag received but not necessarily

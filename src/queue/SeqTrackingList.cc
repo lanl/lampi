@@ -49,6 +49,15 @@ SeqTrackingList::SeqTrackingList(unsigned long startSize,
 {
     long i;
 
+    /* sanity check - the size of baseArray is decremented if
+     *   startShrinkBy > 0, and startShrinkBy elements can
+     *   be removed from the list leaving it non-empty.  So,
+     *   reduce the startSize, if need be, to avoid this.
+     */
+    if( startShrinkBy && ( startSize > startShrinkBy ) ) {
+	    startSize=startShrinkBy;
+    }
+
     headp = freep = hintp = 0;
     arraySize = startSize;
     if (shared) {
@@ -138,15 +147,11 @@ void SeqTrackingList::freeSeqRangeListElement(SeqTrackingList::SeqRangeListEleme
 		headp = &newArray[0];
 		for (i = 0; i < listSize; i++) {
 		    newArray[i].next =
-			(i ==
-			 (listSize -
-			  1)) ? &newArray[0] :
+			(i == (listSize - 1)) ? &newArray[0] :
 			&newArray[i + 1];
 		    newArray[i].prev =
-			(i ==
-			 0) ?
-			&newArray[listSize -
-				  1] :
+			(i == 0) ?
+			&newArray[listSize - 1] :
 			&newArray[i - 1];
 		    newArray[i].lower =
 			tmp->lower;

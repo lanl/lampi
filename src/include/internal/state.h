@@ -48,8 +48,8 @@ extern lampiState_t _ulm;
  * Accessor methods for state information
  */
 
-#define STATE(X)        (lampiState.(X))
-#define SETSTATE(X,Y)  (lampiState.(X) = (Y))
+#define STATE(X)        (lampiState.X)
+#define SETSTATE(X,Y)  (lampiState.X = (Y))
 
 /*
  * State dependent locking (for threads)

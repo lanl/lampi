@@ -42,9 +42,6 @@ enum gmMsgTypes {
 
 // Other constants
 enum {
-    ACKSTATUS_DATAGOOD = 0x1,           // data arrived okay (value for ackStatus below)
-    ACKSTATUS_DATACORRUPT = 0x2,        // data arrived corrupted (value for ackStatus below)
-    ACKSTATUS_AGGINFO_ONLY = 0x4,       // ack fields for a specific frag are not valid (OR'ed with ackStatus)
     HEADER_SIZE = 18 * sizeof(ulm_uint32_t),
     DATAACK_PADDING = 4
 };

@@ -46,7 +46,6 @@ class quadricsSendFragDesc;
 class quadricsRecvFragDesc : public BaseRecvFragDesc_t {
 public:
     quadricsCtlHdr_t envelope;
-    bool DataOK;
     ELAN3_CTX *ctx;
     int rail;
     quadricsPath *path;

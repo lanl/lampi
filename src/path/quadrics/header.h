@@ -86,9 +86,6 @@ struct quadricsDataHdr {
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
-#define ACKSTATUS_DATAGOOD 0x1			//!< data arrived okay (value for ackStatus below)
-#define ACKSTATUS_DATACORRUPT 0x2		//!< data arrived corrupted (value for ackStatus below)
-#define ACKSTATUS_AGGINFO_ONLY 0x4		//!< ack fields for a specific frag are not valid (OR'ed with ackStatus)
 #define DATAACK_PADDING 16
 
 // note: sizeof(BaseAck) is not obvious because it may include

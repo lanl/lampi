@@ -102,6 +102,10 @@ int udpRecvFragDesc::pullFrags(int &retVal)
 	    desc->copyError = false;
 	    desc->pt2ptNonContig = false;
 	    desc->dataReadFromSocket = false;
+	    /* we rely on the udp checksum, so if data is delivered,
+	     *   we trust that it is ok
+	     */
+	    desc->DataOK = true;
 	    bytesRecvd += desc->handleShortSocket();
             /* if udp channel is being used, always check for data on this
              *   path
@@ -145,6 +149,10 @@ int udpRecvFragDesc::pullFrags(int &retVal)
 	    desc->copyError = false;
 	    desc->pt2ptNonContig = false;
 	    desc->dataReadFromSocket = false;
+	    /* we rely on the udp checksum, so if data is delivered,
+	     *   we trust that it is ok
+	     */
+	    desc->DataOK = true;
 	    bytesRecvd += desc->handleLongSocket();
 	}
 	else {
@@ -182,9 +190,9 @@ ssize_t udpRecvFragDesc::handleShortSocket()
     msgHdr.msg_iovlen = 2;
 
     iov[0].iov_base = (char *) &header;
-    iov[0].iov_len = sizeof(udp_header);;
+    iov[0].iov_len = sizeof(udp_header);
     iov[1].iov_base = (char *) data;
-    iov[1].iov_len = maxShortPayloadSize_g;;
+    iov[1].iov_len = maxShortPayloadSize_g;
 
     do {
     count = recvmsg(sockfd, &msgHdr, 0);
@@ -351,7 +359,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     seqOffset_m         = dataOffset();
 
 #ifdef ENABLE_RELIABILITY
-    isDuplicate_m = false;
+    isDuplicate_m = UNIQUE_FRAG;
 #endif
 
     // make sure destination process is on this host
@@ -477,7 +485,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 {
     int DescPoolIndex = 0;
 
-    if (ack.ackStatus == UDP_ACK_GOODACK) {
+    if (ack.ackStatus == ACKSTATUS_DATAGOOD) {
 
 	// register frag as acked
 	sendDesc->clearToSend_m = true;
@@ -550,7 +558,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	 * the process that sent the original message; otherwise,
 	 * just rely on sender side retransmission
 	 */
-	ulm_warn(("Warning: Copy Error upon receipt.  Will retransmit.\n"));
+	ulm_warn(("Warning: Copy Error upon receipt.  Will retransmit. myproc() %d src_proc %d \n",myproc(),(ulm_int32_t)(Frag->header.src_proc)));
 
 	// save and then reset WhichQueue flag
 	short whichQueue = Frag->WhichQueue;
@@ -708,7 +716,7 @@ unsigned long udpRecvFragDesc::nonContigCopyFunction(void *appAddr, void *fragAd
 //-----------------------------------------------------------------------------
 bool udpRecvFragDesc::AckData(double timeNow)
 {
-    int useShortMsg = true;
+    int useShortMsg = true,returnValue;
     int hostRank, sendSockfd, count;
     udp_header hd;
     udp_ack_header & ack = hd.ack;
@@ -740,117 +748,24 @@ bool udpRecvFragDesc::AckData(double timeNow)
     ack.ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(ctx_m, msgType_m);
     ack.ptrToSendDesc = header.msg.udpio;
 
-#ifdef ENABLE_RELIABILITY
-    Communicator *pg = communicators[ctx_m];
+    /* set the sequence number information */
+    ack.thisFragSeq = seq_m;
 
-    // pt-2-pt acks must be processed by the frag destination process only to
-    // properly access process private sequence tracking lists...
-    if ((msgType_m == MSGTYPE_PT2PT) && (dstProcID_m != pg->localGroup->ProcID)) {
-	return false;
-    }
-    //       record this frag as having been delivered, so that aggregate
-    // ack info may get to the peer before this ack is resent possibly
-    if (msgType_m == MSGTYPE_PT2PT) {
-	unsigned int glSourceProcess = pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-	reliabilityInfo->dataSeqsLock[glSourceProcess].lock();
-	if (!isDuplicate_m && !copyError && !reliabilityInfo->deliveredDataSeqs[glSourceProcess].record(seq_m)) {
-	    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-	    ulm_exit((-1, "unable to record point-to-point %lld sequence "
-                      "number for source (global procID) %d\n",
-                      seq_m, glSourceProcess));
-	}
-	reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else {			// collective communications
-	int source_box = global_proc_to_host(srcProcID_m);
-	reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-	if (!isDuplicate_m && !copyError && !reliabilityInfo->coll_deliveredDataSeqs[source_box].record(seq_m)) {
-	    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-	    ulm_exit((-1, "unable to record collective %lld sequence number "
-                      "for source host (global procID) %d\n",
-                      seq_m, source_box));
-	}
-	reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-    }
-#endif
+    /* process the deliverd sequence number range */
+    Communicator *pg = communicators[ctx_m];
+    unsigned int glSourceProcess =  pg->remoteGroup->
+	    mapGroupProcIDToGlobalProcID[srcProcID_m];
+    returnValue=processRecvDataSeqs(&(hd.ack), glSourceProcess,reliabilityInfo);
+    if(returnValue != ULM_SUCCESS )
+	    return false;
 
     // fill in src and dest_proc with proper global process ids
     if (msgType_m == MSGTYPE_PT2PT) {
-	ack.dest_proc = communicators[ctx_m]->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-	ack.src_proc = communicators[ctx_m]->localGroup->mapGroupProcIDToGlobalProcID[dstProcID_m];
-    } else {			// collective communications
-	ack.dest_proc = srcProcID_m;
-	ack.src_proc = dstProcID_m;
+	ack.dest_proc = communicators[ctx_m]->remoteGroup->
+		mapGroupProcIDToGlobalProcID[srcProcID_m];
+	ack.src_proc = communicators[ctx_m]->localGroup->
+		mapGroupProcIDToGlobalProcID[dstProcID_m];
     }
-
-#ifdef ENABLE_RELIABILITY
-    if (isDuplicate_m) {
-	ack.ackStatus = UDP_ACK_GOODACK;
-    } else {
-	ack.ackStatus = (copyError) ? UDP_ACK_NACK : UDP_ACK_GOODACK;
-    }
-#else
-    ack.ackStatus = (copyError) ? UDP_ACK_NACK : UDP_ACK_GOODACK;
-#endif
-    //ack.single_mseq = isendSeq_m;
-    //ack.single_fseq = fragIndex_m;
-    ack.thisFragSeq = seq_m;
-
-#ifdef ENABLE_RELIABILITY
-    if (msgType_m == MSGTYPE_PT2PT) {
-	unsigned int glSourceProcess = pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-	// grab lock for sequence tracking lists
-	reliabilityInfo->dataSeqsLock[glSourceProcess].lock();
-
-	// do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-	bool recorded;
-	bool send_specific_ack = reliabilityInfo->deliveredDataSeqs[glSourceProcess].recordIfNotRecorded(seq_m, &recorded);
-
-	// if the frag is a duplicate but has not been delivered to the user process,
-	// then set the field to 0 so the other side doesn't interpret
-	// these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
-	if (isDuplicate_m && !send_specific_ack) {
-	    ack.thisFragSeq = 0;
-	    if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-		reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-		ulm_exit((-1, "udpRecvFragDesc::AckData(pt2pt) unable to erase "
-                          "duplicate deliv'd sequence number\n"));
-	    }
-	}
-	// record this frag as successfully delivered or not even received, as appropriate...
-	if (!(isDuplicate_m)) {
-	    if (!copyError) {
-		if (!recorded) {
-		    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(pt2pt) unable to "
-                              "record deliv'd sequence number\n"));
-		}
-	    } else {
-		if (!(reliabilityInfo->receivedDataSeqs[glSourceProcess].erase(seq_m))) {
-		    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(pt2pt) unable to "
-                              "erase rcv'd sequence number\n"));
-		}
-		if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-		    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-		    ulm_exit((-1, "udpRecvFragDesc::AckData(pt2pt) unable to "
-                              "erase deliv'd sequence number\n"));
-		}
-	    }
-	}
-	ack.receivedFragSeq = reliabilityInfo->receivedDataSeqs[glSourceProcess].largestInOrder();
-	ack.deliveredFragSeq = reliabilityInfo->deliveredDataSeqs[glSourceProcess].largestInOrder();
-
-	// unlock sequence tracking lists
-	reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else {
-	// unknown communication type
-	ulm_exit((-1, "udpRecvFragDesc::AckData() unknown communication "
-                  "type %d\n", msgType_m));
-    }
-#else
-    ack.receivedFragSeq = 0;
-    ack.deliveredFragSeq = 0;
-#endif
 
     //
     // select send path

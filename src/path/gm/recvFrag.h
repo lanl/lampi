@@ -40,7 +40,6 @@
 
 class gmRecvFragDesc : public BaseRecvFragDesc_t {
 public:
-    bool DataOK;
     int dev_m;
     gmFragBuffer *gmFragBuffer_m;
     gmHeader *gmHeader_m;

@@ -38,9 +38,6 @@
 #include "queue/globals.h"
 #include "client/ULMClient.h"
 #include "queue/globals.h"
-/* debug
-   #include "Utility/dclock.h"
-   end debug */
 
 //!
 //! process received frag pulled "off the wire"
@@ -73,13 +70,14 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	    // unlock so we can lock while building the ACK...
 	    if (reliabilityInfo->deliveredDataSeqs[glfragSrc].isRecorded(DataHeader->seq_m)) {
 		// send another ACK for this specific frag...
-		DataHeader->isDuplicate_m = true;
+		DataHeader->isDuplicate_m = DUPLICATE_DELIVERD;
+		DataHeader->DataOK=ACKSTATUS_DATAGOOD;
 		sendthisack = true;
 	    }
 	    else if (reliabilityInfo->receivedDataSeqs[glfragSrc].
 		     largestInOrder() >= DataHeader->seq_m) {
 		// send a non-specific ACK that should prevent this frag from being retransmitted...
-		DataHeader->isDuplicate_m = true;
+		DataHeader->isDuplicate_m = DUPLICATE_RECEIVED;
 		sendthisack = true;
 	    } else {	// no acknowledgment is appropriate, just discard this frag and continue...
 		sendthisack = false;
@@ -89,8 +87,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	    // do we send an ACK for this frag?
 	    if (!sendthisack) {
 		// return descriptor to pool
-		DataHeader->
-		    ReturnDescToPool(getMemPoolIndex());
+		DataHeader->ReturnDescToPool(getMemPoolIndex());
 		return ULM_SUCCESS;
 	    }
 	    // yes we do, try to send it
@@ -147,14 +144,6 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 
 	//! if match found, process data
 	if (MatchedPostedRecvHeader) {
-/* debug
-   MatchedPostedRecvHeader->t0=DataHeader->t0;
-   MatchedPostedRecvHeader->t1=DataHeader->t1;
-   MatchedPostedRecvHeader->t2=DataHeader->t2;
-   MatchedPostedRecvHeader->t3=DataHeader->t3;
-   MatchedPostedRecvHeader->t4=DataHeader->t4;
-   MatchedPostedRecvHeader->t5=dclock();
-   end debug */
 
             /* process received data */
 		request=(RequestDesc_t *)MatchedPostedRecvHeader;

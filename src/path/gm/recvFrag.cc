@@ -77,84 +77,17 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
     p->thisFragSeq = seq_m;
 
+
+
     if (0 && OPT_RELIABILITY) {  // bypass for now!!!
 
-        Communicator *pg = communicators[ctx_m];
-        unsigned int glSourceProcess = pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-
-        if (isDuplicate_m) {
-            p->ackStatus = ACKSTATUS_DATAGOOD;
-        } else {
-            p->ackStatus = DataOK ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
-        }
-        if ((msgType_m == MSGTYPE_PT2PT)
-            || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
-            // grab lock for sequence tracking lists
-            if (usethreads())
-                reliabilityInfo->dataSeqsLock[glSourceProcess].lock();
-
-            // do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-            bool recorded;
-            bool send_specific_ack = reliabilityInfo->
-                deliveredDataSeqs[glSourceProcess].recordIfNotRecorded(seq_m, &recorded);
-
-            // record this frag as successfully delivered or not even received, as appropriate...
-            if (!(isDuplicate_m)) {
-                if (DataOK) {
-                    if (!recorded) {
-                        reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(pt2pt) unable "
-                                  "to record deliv'd sequence number\n"));
-                    }
-                } else {
-                    if (!(reliabilityInfo->receivedDataSeqs[glSourceProcess].erase(seq_m))) {
-                        reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(pt2pt) unable "
-                                  "to erase rcv'd sequence number\n"));
-                    }
-                    if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                        reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                        ulm_exit((-1,
-                                  "gmRecvFragDesc::AckData(pt2pt) unable "
-                                  "to erase deliv'd sequence number\n"));
-                    }
-                }
-            } else if (!send_specific_ack) {
-                // if the frag is a duplicate but has not been delivered to the user process,
-                // then set the field to 0 so the other side doesn't interpret
-                // these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
-                p->thisFragSeq = 0;
-                p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
-                if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1,
-                              "gmRecvFragDesc::AckData(pt2pt) unable to erase duplicate deliv'd sequence number\n"));
-                }
-            }
-
-            p->receivedFragSeq = reliabilityInfo->
-                receivedDataSeqs[glSourceProcess].largestInOrder();
-            p->deliveredFragSeq = reliabilityInfo->
-                deliveredDataSeqs[glSourceProcess].largestInOrder();
-
-            // unlock sequence tracking lists
-            if (usethreads())
-                reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-        } else {
-            // unknown communication type
-            ulm_exit((-1,
-                      "gmRecvFragDesc::AckData() unknown communication "
-                      "type %d\n", msgType_m));
-        }
-
-    } else {                    // no reliability
-
-        p->ackStatus = DataOK ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
-        p->receivedFragSeq = 0;
-        p->deliveredFragSeq = 0;
-
+	    Communicator *pg = communicators[ctx_m];
+	    unsigned int glSourceProcess =  pg->remoteGroup->
+		    mapGroupProcIDToGlobalProcID[srcProcID_m];
+	    /* process the deliverd sequence number range */
+	    returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
+	    if (returnValue != ULM_SUCCESS)
+		    return false;
     }
 
     // fill in other fields of header

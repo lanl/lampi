@@ -93,108 +93,34 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
     if (returnValue != ULM_SUCCESS) {
         int dummyCode;
         free(hdr);
-        path->cleanCtlMsgs(rail, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
+        path->cleanCtlMsgs(rail, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), 
+			&dummyCode);
         return false;
     }
 
     p = &(hdr->msgDataAck);
     p->thisFragSeq = seq_m;
 
-#ifdef ENABLE_RELIABILITY
+    /* process the deliverd sequence number range */
     Communicator *pg = communicators[ctx_m];
-    unsigned int glSourceProcess =  pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-
-    if (isDuplicate_m) {
-        p->ackStatus = ACKSTATUS_DATAGOOD;
-    } else {
-        p->ackStatus = (DataOK) ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
+    unsigned int glSourceProcess =  pg->remoteGroup->
+	    mapGroupProcIDToGlobalProcID[srcProcID_m];
+    returnValue=processRecvDataSeqs(p,glSourceProcess,reliabilityInfo);
+    if (returnValue != ULM_SUCCESS) {
+        int dummyCode;
+        free(hdr);
+        path->cleanCtlMsgs(rail, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), 
+			&dummyCode);
+        return false;
     }
-#else
-    p->ackStatus = (DataOK) ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
-#endif
-
-#ifdef ENABLE_RELIABILITY
-    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
-        // grab lock for sequence tracking lists
-        if (usethreads())
-            reliabilityInfo->dataSeqsLock[glSourceProcess].lock();
-
-        // do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-        bool recorded;
-        bool send_specific_ack = reliabilityInfo->
-            deliveredDataSeqs[glSourceProcess].recordIfNotRecorded(seq_m, &recorded);
-
-        // record this frag as successfully delivered or not even received, as appropriate...
-        if (!(isDuplicate_m)) {
-            if (DataOK) {
-                if (!recorded) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(pt2pt) unable "
-                              "to record deliv'd sequence number\n"));
-                }
-            } else {
-                if (!(reliabilityInfo->receivedDataSeqs[glSourceProcess].erase(seq_m))) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(pt2pt) unable "
-                              "to erase rcv'd sequence number\n"));
-                }
-                if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "quadricsRecvFragDesc::AckData(pt2pt) unable "
-                              "to erase deliv'd sequence number\n"));
-                }
-            }
-        }
-        else if (!send_specific_ack) {
-            // if the frag is a duplicate but has not been delivered to the user process,
-            // then set the field to 0 so the other side doesn't interpret
-            // these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
-            p->thisFragSeq = 0;
-            p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
-            if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                ulm_exit((-1, "quadricsRecvFragDesc::AckData(pt2pt) unable to erase duplicate deliv'd sequence number\n"));
-            }
-        }
-
-        p->receivedFragSeq = reliabilityInfo->
-            receivedDataSeqs[glSourceProcess].largestInOrder();
-        p->deliveredFragSeq = reliabilityInfo->
-            deliveredDataSeqs[glSourceProcess].largestInOrder();
-
-        // unlock sequence tracking lists
-        if (usethreads())
-            reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else {
-        // unknown communication type
-        ulm_exit((-1, "quadricsRecvFragDesc::AckData() unknown communication "
-                  "type %d\n", msgType_m));
-    }
-#else
-    p->receivedFragSeq = 0;
-    p->deliveredFragSeq = 0;
-#endif
 
     // fill in other fields
     p->ctxAndMsgType = envelope.msgDataHdr.ctxAndMsgType;
     p->ptrToSendDesc = envelope.msgDataHdr.sendFragDescPtr;
 
     // use incoming ctx and rail!
-    sfd->init(
-        0,
-        ctx,
-        MESSAGE_DATA_ACK,
-        rail,
-        envelope.msgDataHdr.senderID,
-        -1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        false,
-        hdr
-        );
+    sfd->init( 0, ctx, MESSAGE_DATA_ACK, rail, envelope.msgDataHdr.senderID,
+        -1, 0, 0, 0, 0, 0, false, hdr);
 
     list = &(quadricsQueue[rail].ctlMsgsToSend[MESSAGE_DATA_ACK]);
     if (usethreads()) {
@@ -391,7 +317,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     poolIndex_m = getMemPoolIndex();
 
 #ifdef ENABLE_RELIABILITY
-    isDuplicate_m = false;
+    isDuplicate_m = UNIQUE_FRAG;
 #endif
 
     // make sure this was intended for this process...

@@ -155,6 +155,114 @@ int non_contiguous_copy(BaseRecvFragDesc_t *frag,
     return ULM_SUCCESS;
 }
 
+/*
+ * This routine is called to process fragment sequence numbers.  It is
+ *   called from AckData.  There are two circumstances under which
+ *   this routine is called:
+ *      isDuplicate_m is false - after the fragment has been processed.
+ *        In this case, receivedDataSeqs has been updated to include
+ *        the sequence number range associated with this packet.  If
+ *        the data received is correct, deliveredDataSeqs is also updated
+ *        to include the same range of sequence numbers.  If the data
+ *        is corrupt, the sequence range is erased from the receivedDataSeqs
+ *        list.
+ *      isDuplicate_m is true - this is a duplicate fragment.  Another
+ *        copy of the fragment is either on a list pending future processing,
+ *        or is currently being processed by another thread.  It is also
+ *        possible that an ack has been dropped, and the fragment is being
+ *        retransmitted.
+ */
+int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr, 
+		int glSourceProcess, ReliabilityInfo *reliabilityData)
+{
+	int returnValue=ULM_SUCCESS;
+
+#ifdef ENABLE_RELIABILITY
+
+	if( !isDuplicate_m ) {
+		/* 
+		 * this is called after a fragment's data has been processed 
+		 */
+	
+		if ((msgType_m == MSGTYPE_PT2PT) || 
+				(msgType_m == MSGTYPE_PT2PT_SYNC)) {
+			/* fill in delivered data status */
+			ackPtr->ackStatus = (DataOK) ? ACKSTATUS_DATAGOOD : 
+				ACKSTATUS_DATACORRUPT;
+
+			/* grab lock for sequence tracking lists */
+			if (usethreads())
+				reliabilityData->dataSeqsLock[glSourceProcess].
+					lock();
+
+			/* update sequence tracking lists */
+			bool recorded;
+			if( ackPtr->ackStatus == ACKSTATUS_DATAGOOD ) {
+				/* data is ok - update deliveredDataSeqs list */
+				reliabilityData->
+					deliveredDataSeqs[glSourceProcess].
+					recordIfNotRecorded (seq_m, &recorded);
+				if (!recorded) {
+					reliabilityData->dataSeqsLock
+						[glSourceProcess].unlock();
+					ulm_exit((-1, "BaseRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
+								"to record deliv'd sequence number\n"));
+				}
+			} else {
+				/* data is corrupt - erase sequence data from 
+				 * receivedDataSeqs */
+				if (!(reliabilityData->receivedDataSeqs
+							[glSourceProcess].erase
+							(seq_m))) {
+					reliabilityData->dataSeqsLock
+						[glSourceProcess].unlock();
+					ulm_exit((-1, "seRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
+								"to erase rcv'd sequence number\n"));
+				}
+			}
+
+			// unlock sequence tracking lists
+			if (usethreads())
+				reliabilityData->dataSeqsLock[glSourceProcess].unlock();
+		} else {
+			// unknown communication type
+			ulm_exit((-1, "BaseRecvFragDesc_t::processRecvDataSeqs unknown communication "
+						"type %d\n", msgType_m));
+		}
+	} else {
+		/* 
+		 * This is being called as the result of a duplicate fragment,
+		 *   being detected 
+		 */
+
+		if( isDuplicate_m == DUPLICATE_DELIVERD ) {
+			ackPtr->ackStatus = ACKSTATUS_DATAGOOD;
+		} else if (isDuplicate_m == DUPLICATE_RECEIVED ) {
+			ackPtr->thisFragSeq = 0;
+			ackPtr->ackStatus = ACKSTATUS_AGGINFO_ONLY;
+		}
+
+
+	}
+
+	/* set non-specific ack information */
+	ackPtr->receivedFragSeq = reliabilityData->
+		receivedDataSeqs[glSourceProcess].largestInOrder();
+	ackPtr->deliveredFragSeq = reliabilityData->
+		deliveredDataSeqs[glSourceProcess].largestInOrder();
+
+#else
+	ackPtr->receivedFragSeq = 0;
+	ackPtr->deliveredFragSeq = 0;
+	ackPtr->ackStatus = (DataOK) ? ACKSTATUS_DATAGOOD : 
+		ACKSTATUS_DATACORRUPT;
+#endif
+
+	/* return */
+	return returnValue;
+
+}
+
 void SendDesc_t::shallowCopyTo(RequestDesc_t *request)
 {
     SendDesc_t	*sendDesc = (SendDesc_t *)request;
