@@ -84,40 +84,19 @@ void lampi_init_prefork_rms(lampiState_t *s)
     // This should never be true, but...
     elan_nodeId = devinfo.NodeId - cap.LowNode;
 #else
-
-    if (0) { // debug
-        printf("QSNETLIBS_VERSION_STRING=%s\n", QSNETLIBS_VERSION_STRING);
-        printf("devinfo.Position.NodeId = %d\n", devinfo.Position.NodeId);
-        printf("olddevinfo.NodeId = %d\n",
-               ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId);
-        printf("cap.LowNode = %d\n", cap.LowNode);
-        fflush(stdout);
-    }
-
-#ifdef __osf__
-    // For QA and QB we need to do this weirdness...
-    elan_nodeId = ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId - cap.LowNode;
-#else
     // For the latest linux releases, I *think* this is what we want...
     elan_nodeId = devinfo.Position.NodeId - cap.LowNode;
 #endif
 
-#endif
-
 #else 
-
-#ifdef __osf__
-    // For QA, QB and QSC 6/15/03 we need to do this weirdness...
-    // QSNETLIBS_VERSION_STRING is not defined.
-    elan_nodeId = ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId - cap.LowNode;
-#else
-    // Old versions of qsnetlibs (pre 1.4) do this ..
+    // ASCI-Q  this is okay if we compile with our elan3 header files:
     elan_nodeId = devinfo.NodeId - cap.LowNode;
-#endif
 
-
+    // For ASCI-Q, if we use installed (broken) elan3 header files:
+    // elan_nodeId = ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId - cap.LowNode;
 
 #endif // QSNETLIBS_VERSION_STRING
+
 
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
     /*
