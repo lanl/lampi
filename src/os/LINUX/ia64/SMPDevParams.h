@@ -28,49 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
-#ifndef ATOMIC_H_INCLUDED
-#define ATOMIC_H_INCLUDED
-
-/*
- * Atomic functions
- */
-
-#ifdef __alpha
-#  ifdef __GNUC__
-#    include "os/LINUX/alpha/atomic.h"
-#  else
-#    include "os/TRU64/atomic.h"
-#  endif
-#endif
-
-#ifdef __i386
-#include "os/LINUX/i686/atomic.h"
-#endif
-
-#ifdef __ia64
-#include "os/LINUX/ia64/atomic.h"
-#endif
-
-#ifdef __mips
-#include "os/IRIX/atomic.h"
-#endif
-
-#ifdef __APPLE__
-#include "os/DARWIN/powerpc/atomic.h"
-#endif
-
-#ifndef mb
-#define mb()
-#endif
-
-#ifndef rmb
-#define rmb()
-#endif
-
-#ifndef wmb
-#define wmb()
-#endif
-
-#endif /* ATOMIC_H_INCLUDED */
+static const int LogBase2PageSize = 14;
+static const int SMPPageSize = 1 << LogBase2PageSize;
+static const int LogBase2ChunkSize = 16;
+static const int NumMemoryBuckets = 3;
+static const int MProt = MMAP_SHARED_PROT;
+static const int MFlags = MMAP_SHARED_FLAGS;
+static const int PagesPerDevice = 2048;
+static const int LogBase2MaxPoolSize = 32;
+static const int MaxStkElements = 32768;
+static const bool ZeroAllocBase = false;

@@ -46,6 +46,13 @@
 #define CACHE_ALIGNMENT 128
 
 #else
+#ifdef __ia64
+#define PAGESIZE 16384
+#define SMPPAGESIZE 16384
+#define CACHE_ALIGNMENT 128
+#define intwordaligned(a)   ( ( ((long)(a)&3L) == 0L) ? 1 : 0 )
+
+#else
 #ifdef __alpha
 #define PAGESIZE 8192
 #define SMPPAGESIZE 8192
@@ -54,6 +61,7 @@
 
 #else
 #error
+#endif
 #endif
 #endif
 
