@@ -112,7 +112,7 @@ inline static int spintrylock(lockStructure_t *lockData)
 		"b		3f\n"
 	"2:	addi	%0,0,0x0\n"
 	"3:"
-        : "=r" (gotLock) : "r" (lockptr)
+        : "=&r" (gotLock) : "r" (lockptr)
 		: "memory", "r4", "r5", "r6" );
 				
 	return gotLock;
@@ -143,7 +143,7 @@ inline static int fetchNadd(volatile int *addr, int inc)
 	"stwcx.	r6, 0, %1\n"			/* Try to save the new value */
 	"bne-	1b\n"			/* Didn't get it, try again... */
 	"isync\n" 
-	: "=r" (inputValue) : "r" (addr), "r" (inc) : 
+	: "=&r" (inputValue) : "r" (addr), "r" (inc) : 
 	"memory", "r5", "r6");
 	
 	return inputValue;
@@ -161,7 +161,7 @@ inline static int fetchNset(volatile int *addr, int setValue)
 	"stwcx.	r5, 0, %1\n"			/* Try to save the new value */
 	"bne-	1b\n"			/* Didn't get it, try again... */
 	"isync\n" 
-	: "=r" (inputValue) : "r" (addr), "r" (setValue) : 
+	: "=&r" (inputValue) : "r" (addr), "r" (setValue) : 
 	"memory", "r5");
 	
 	return inputValue;
