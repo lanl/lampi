@@ -90,7 +90,7 @@ int CheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
 #endif
 
     WaitTime.tv_sec = 0;
-    WaitTime.tv_usec = 0;
+    WaitTime.tv_usec = 100000;
 
 
     bzero(&ReadSet, sizeof(ReadSet));
