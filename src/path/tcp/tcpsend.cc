@@ -175,7 +175,7 @@ int TCPSendFrag::init(TCPPeer *tcpPeer, SendDesc_t *message)
 }
 
 
-void TCPSendFrag::ReturnDescToPool(int)
+void TCPSendFrag::ReturnDescToPool(int localIndex)
 {
     if(fragData != 0)
         ulm_free(fragData);
@@ -183,7 +183,7 @@ void TCPSendFrag::ReturnDescToPool(int)
     fragMsg = 0;
     fragData = 0;
     WhichQueue = TCPFRAGFREELIST;
-    TCPSendFrags.returnElement(this);
+    TCPSendFrags.returnElement(this, localIndex);
 }
 
 
