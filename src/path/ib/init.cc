@@ -38,13 +38,17 @@
 
 #include "ulm/ulm.h"
 #include "path/ib/init.h"
-#include "path/ib/state.h"
 #include "internal/malloc.h"
 #include "internal/state.h"
 
 #undef PAGESIZE
+#include "internal/system.h"
 #include "init/init.h"
 #include "client/adminMessage.h"
+#include "path/ib/recvFrag.h"
+#include "path/ib/state.h"
+
+extern FixedSharedMemPool SharedMemoryPools;
 
 void ibSetup(lampiState_t *s)
 {
@@ -54,11 +58,25 @@ void ibSetup(lampiState_t *s)
     VAPI_qp_attr_mask_t qpattrmask;
     VAPI_mr_t mr;
     IB_port_t p;
+    ibRecvFragDesc *rfrag;
     bool mcast_attached = false;
     int i, j, rc, usable = 0, mcast_prefix = htonl(0xff120000);
     int *authdata, *exchange_recv, *exchange_send;
     int maxhcas, maxports, num_bufs;
     void *mem;
+
+    int nFreeLists;
+    long nPagesPerList;
+    ssize_t PoolChunkSize;
+    size_t PageSize;
+    ssize_t ElementSize;
+    long minPagesPerList;
+    long maxPagesPerList;
+    long mxConsecReqFailures;
+    int retryForMoreResources;
+    bool enforceMemAffinity;
+    bool Abort;
+    int threshToGrowList;
 
     exchange_send = (int *)ulm_malloc(sizeof(int) * 2);
     exchange_send[0] = exchange_send[1] = 0;
@@ -294,9 +312,38 @@ void ibSetup(lampiState_t *s)
 
         // initialize bufs addrLifo tracker
         h->ud.bufs = new addrLifo(num_bufs,128,256);
+        // cache value of num_bufs for later reference
+        h->ud.num_bufs = num_bufs;
 
         // grab a hunk of memory...register it as a memory region
         mem = ulm_malloc(num_bufs * 2048);
+        // grab two more hunks for receive descriptors and scatter entries
+        h->ud.rr_descs = (VAPI_rr_desc_t *)ulm_malloc(num_bufs * sizeof(VAPI_rr_desc_t));
+        h->ud.sg = (VAPI_sg_lst_entry_t *)ulm_malloc(num_bufs * sizeof(VAPI_sg_lst_entry_t));
+
+        // initialize a receive fragment descriptor list per HCA -- will eventually
+        // have its memoryPool chunks registered with the HCA for RDMA write access...
+        rc = h->recv_frag_list.Init(nFreeLists = 1,
+            nPagesPerList = ((num_bufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
+            PoolChunkSize = getpagesize(),
+            PageSize = getpagesize(),
+            ElementSize = sizeof(ibRecvFragDesc),
+            minPagesPerList = ((num_bufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
+            maxPagesPerList = -1,
+            mxConsecReqFailures = 1000,
+            "IB receive fragment descriptors",
+            retryForMoreResources = true,
+            NULL,
+            enforceMemAffinity = false,
+            NULL,
+            Abort = true,
+            threshToGrowList = 0); 
+        if (rc) {
+            ulm_exit((-1, "Error: can't initialize IB recv_frag_list for HCA %d\n",
+                ib_state.active_hcas[i]));
+        }
+
+        // register the memory
         mr.type = VAPI_MR;
         mr.start = (VAPI_virt_addr_t)((unsigned long)mem);
         mr.size = num_bufs * 2048;
@@ -309,11 +356,45 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
-        // store 2KB chunks in addrLifo
-        while (num_bufs--) {
+        // store 2KB chunks in addrLifo...and create recv_desc and sg entry
+        for (j = 0; j < num_bufs; j++) {
             h->ud.bufs->push(mem);
+
+            // grab receive fragment descriptor and initialize
+            rfrag = h->recv_frag_list.getElement(0, rc);
+            if (rc != ULM_SUCCESS) {
+                ulm_err(("ibSetup: unable to get receive fragment desc. for HCA %d\n",
+                    ib_state.active_hcas[i]));
+                exit(1);
+            }
+
+            rfrag->hca_index_m = ib_state.active_hcas[i];
+            rfrag->qp_type_m = ibRecvFragDesc::UD_QP;
+            rfrag->desc_index_m = j;
+
+            // store pointer to receive fragment descriptor as id
+            h->ud.rr_descs[j].id = (VAPI_wr_id_t)((unsigned long)rfrag);
+            h->ud.rr_descs[j].opcode = VAPI_RECEIVE;
+            h->ud.rr_descs[j].comp_type = VAPI_SIGNALED;
+            h->ud.rr_descs[j].sg_lst_p = &(h->ud.sg[j]);
+            h->ud.rr_descs[j].sg_lst_len = 1;
+
+            h->ud.sg[j].addr = (VAPI_virt_addr_t)((unsigned long)mem);
+            h->ud.sg[j].len = 2048;
+            h->ud.sg[j].lkey = h->ud.mr.l_key;
+
             mem = (void *)((char *)mem + 2048);
         }
+
+        // now post them all...
+        vapi_result = EVAPI_post_rr_list(h->handle, h->ud.handle,
+            h->ud.num_bufs, h->ud.rr_descs);
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: EVAPI_post_rr_list() for HCA %d returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+            
     }
 
 exchange_info:
@@ -367,34 +448,36 @@ exchange_info:
     ib_state.ud_peers.max_hcas = maxhcas;
     ib_state.ud_peers.max_ports = maxports;
     ib_state.ud_peers.proc_entries = maxhcas * maxports;
-
+	
     ib_ud_peer_info_t *exchange_max_send = 
         (ib_ud_peer_info_t *)ulm_malloc(sizeof(ib_ud_peer_info_t) * 
         maxhcas * maxports);
     ib_state.ud_peers.info = 
         (ib_ud_peer_info_t *)ulm_malloc(sizeof(ib_ud_peer_info_t) * 
         nprocs() * maxhcas * maxports);
-
-    // initialize exchange_max_send with this process' IB active port info...
-    // mark unused entries as invalid
-    for (i = 0; i < ib_state.ud_peers.max_hcas; i++) {
-        for (j = 0; j < ib_state.ud_peers.max_ports; j++) {
-            int l = (i * ib_state.ud_peers.max_ports) + j;
-            
-            exchange_max_send[l].flag = 0;
-
-            if ((i < ib_state.num_active_hcas) && 
-                (j < ib_state.hca[ib_state.active_hcas[i]].num_active_ports)) {
-                int k = ib_state.active_hcas[i];
-                int m = ib_state.hca[k].active_ports[j];
-
-                exchange_max_send[l].qp_num = ib_state.hca[k].ud.prop.qp_num;
-                exchange_max_send[l].lid = ib_state.hca[k].ports[m].lid;
-                exchange_max_send[l].lmc = ib_state.hca[k].ports[m].lmc;
-                SET_PEER_INFO_VALID(exchange_max_send[l]);
-            }
-            else {
-                SET_PEER_INFO_INVALID(exchange_max_send[l]);
+	
+    if (!s->iAmDaemon) {
+        // initialize exchange_max_send with this process' IB active port info...
+        // mark unused entries as invalid
+        for (i = 0; i < ib_state.ud_peers.max_hcas; i++) {
+            for (j = 0; j < ib_state.ud_peers.max_ports; j++) {
+                int l = (i * ib_state.ud_peers.max_ports) + j;
+                
+                exchange_max_send[l].flag = 0;
+    
+                if ((i < ib_state.num_active_hcas) && 
+                    (j < ib_state.hca[ib_state.active_hcas[i]].num_active_ports)) {
+                    int k = ib_state.active_hcas[i];
+                    int m = ib_state.hca[k].active_ports[j];
+    
+                    exchange_max_send[l].qp_num = ib_state.hca[k].ud.prop.qp_num;
+                    exchange_max_send[l].lid = ib_state.hca[k].ports[m].lid;
+                    exchange_max_send[l].lmc = ib_state.hca[k].ports[m].lmc;
+                    SET_PEER_INFO_VALID(exchange_max_send[l]);
+                }
+                else {
+                    SET_PEER_INFO_INVALID(exchange_max_send[l]);
+                }
             }
         }
     }
@@ -409,11 +492,6 @@ exchange_info:
     }
     
     ulm_free(exchange_max_send);
-
-    // client daemons don't do anything else...
-    if (s->iAmDaemon) {
-        return;
-    }
 
     return;
 }

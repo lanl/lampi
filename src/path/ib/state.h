@@ -34,12 +34,18 @@
 #ifndef IB_STATE_H
 #define IB_STATE_H
 
+#include <sys/types.h>
+#include <unistd.h>
 #include <vapi.h>
+#include "mem/FreeLists.h"
 #include "util/Lock.h"
 #include "path/common/addrLifo.h"
 
 #define LAMPI_MAX_IB_HCA_PORTS  2
 #define LAMPI_MAX_IB_HCAS       2
+
+/* forward declarations */
+class ibRecvFragDesc;
 
 /* no dynamic sizing to help performance -- or at least
  * not unintentionally hurt it... 
@@ -71,8 +77,11 @@ typedef struct {
     u_int32_t sq_tokens;
     u_int32_t rq_tokens;
     bool receive_multicast;
+    int num_bufs;
     addrLifo *bufs;
-} ib_qp_state_t;
+    VAPI_rr_desc_t *rr_descs;
+    VAPI_sg_lst_entry_t *sg;
+} ib_ud_qp_state_t;
 
 typedef struct {
     bool usable;
@@ -89,7 +98,8 @@ typedef struct {
     VAPI_cqe_num_t send_cq_size;
     VAPI_cqe_num_t recv_cq_tokens;
     VAPI_cqe_num_t send_cq_tokens;
-    ib_qp_state_t ud;
+    ib_ud_qp_state_t ud;
+    FreeListPrivate_t <ibRecvFragDesc> recv_frag_list;
 } ib_hca_state_t;
 
 typedef struct {
@@ -108,5 +118,8 @@ typedef struct {
 } ib_state_t;
 
 extern ib_state_t ib_state;
+
+/* prototypes */
+extern bool ib_register_chunk(int hca_index, void *addr, size_t size);
 
 #endif

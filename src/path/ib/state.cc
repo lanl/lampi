@@ -31,6 +31,36 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <vapi_common.h>
 #include "path/ib/state.h"
 
 ib_state_t ib_state;
+
+// chunk should be page-aligned or else...ZeroAlloc() should take care of this...
+bool ib_register_chunk(int hca_index, void *addr, size_t size)
+{
+    bool returnValue = true;
+    VAPI_ret_t vapi_result;
+    VAPI_mr_t mr;
+
+    // we need to stash this info for lkey retrieval, etc.
+    VAPI_mr_hndl_t tmp_mr_handle;
+    VAPI_mr_t tmp_mr;
+
+    ib_hca_state_t *h = &(ib_state.hca[hca_index]);
+
+    mr.type = VAPI_MR;
+    mr.start = (VAPI_virt_addr_t)((unsigned long)addr);
+    mr.size = size;
+    mr.pd_hndl = h->pd;
+    mr.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE;
+
+    vapi_result = VAPI_register_mr(h->handle, &mr, &(tmp_mr_handle), 
+        &(tmp_mr));
+    if (vapi_result != VAPI_OK) {
+        ulm_err(("ib_register_chunk: VAPI_register_mr() for HCA %d (addr %p size %ld) returned %s\n",
+            hca_index, addr, (long)size, VAPI_strerror(vapi_result)));
+        returnValue = false;
+    }
+    return returnValue;
+}
