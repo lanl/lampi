@@ -31,13 +31,16 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+extern "C" {
 #include <vapi_common.h>
+}
+
 #undef PAGESIZE
 #include "queue/globals.h"
 #include "path/ib/recvFrag.h"
 #include "path/ib/sendFrag.h"
 
-inline bool ibRecvFragDesc::AckData(double timeNow)
+bool ibRecvFragDesc::AckData(double timeNow)
 {
     ibSendFragDesc *sfd;
     ibDataAck_t *p;
@@ -221,7 +224,7 @@ inline bool ibRecvFragDesc::AckData(double timeNow)
     return true;
 }
 
-inline unsigned int ibRecvFragDesc::CopyFunction(void *fragAddr, 
+unsigned int ibRecvFragDesc::CopyFunction(void *fragAddr, 
 void *appAddr, ssize_t length)
 {
     if (!length) {
@@ -243,7 +246,7 @@ void *appAddr, ssize_t length)
 
 
 // copy function for non-contiguous data with hooks for partial cksum word return
-inline unsigned long ibRecvFragDesc::nonContigCopyFunction(void *appAddr,
+unsigned long ibRecvFragDesc::nonContigCopyFunction(void *appAddr,
                                                            void *fragAddr,
                                                            ssize_t length,
                                                            ssize_t cksumlength,
@@ -268,7 +271,7 @@ inline unsigned long ibRecvFragDesc::nonContigCopyFunction(void *appAddr,
 }
 
 // check data
-inline bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
+bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
 {
     if (!length || !ib_state.checksum) {
         DataOK_m = true;
@@ -286,7 +289,7 @@ inline bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
     return DataOK_m;
 }
 
-inline void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
+void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
 {
     VAPI_ret_t vapi_result;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
@@ -313,7 +316,7 @@ inline void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
     }
 }
 
-inline void ibRecvFragDesc::msgData(double timeNow)
+void ibRecvFragDesc::msgData(double timeNow)
 {
     addr_m = msg_m->data;
     srcProcID_m = msg_m->header.senderID;
@@ -336,7 +339,7 @@ inline void ibRecvFragDesc::msgData(double timeNow)
     communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
 }
 
-inline void ibRecvFragDesc::msgDataAck(double timeNow)
+void ibRecvFragDesc::msgDataAck(double timeNow)
 {
     ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
     ibSendFragDesc *sfd = (ibSendFragDesc *)p->ptrToSendDesc.ptr;

@@ -31,7 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+extern "C" {
 #include <vapi_common.h>
+}
+
 #undef PAGESIZE
 #include "internal/log.h"
 #include "internal/malloc.h"

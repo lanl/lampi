@@ -31,8 +31,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+extern "C" {
 #include <vapi.h>
 #include <vapi_common.h>
+}
+
 #include <string.h>
 #include <netinet/in.h>
 

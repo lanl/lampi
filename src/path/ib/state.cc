@@ -31,7 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+extern "C" {
 #include <vapi_common.h>
+}
+
 #include "path/ib/state.h"
 
 ib_state_t ib_state;

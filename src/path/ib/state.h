@@ -34,9 +34,12 @@
 #ifndef IB_STATE_H
 #define IB_STATE_H
 
+extern "C" {
+#include <vapi.h>
+}
+
 #include <sys/types.h>
 #include <unistd.h>
-#include <vapi.h>
 #include "mem/FreeLists.h"
 #include "util/Lock.h"
 #undef PAGESIZE

@@ -31,7 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+extern "C" {
 #include <vapi_common.h>
+}
+
 #undef PAGESIZE
 #include "path/ib/sendFrag.h"
 #include "queue/globals.h"
@@ -332,7 +335,7 @@ inline bool ibSendFragDesc::ud_init(void)
     return true;
 }
 
-inline bool ibSendFragDesc::init(void)
+bool ibSendFragDesc::init(void)
 {
     switch (qp_type_m) {
         case UD_QP:
@@ -347,7 +350,7 @@ inline bool ibSendFragDesc::init(void)
     }
 }
 
-inline bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
+bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
 {
     if ((state_m & BASICINFO) == 0) {
         type_m = MESSAGE_DATA;
@@ -371,7 +374,7 @@ inline bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
     }
 }
 
-inline bool ibSendFragDesc::init(enum ibCtlMsgTypes type, int glDestID, 
+bool ibSendFragDesc::init(enum ibCtlMsgTypes type, int glDestID, 
 int hca, int port)
 {
     if (qp_type_m != UD_QP) {
@@ -396,7 +399,7 @@ int hca, int port)
     return ud_init();
 }
 
-inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
+bool ibSendFragDesc::post(double timeNow, int *errorCode)
 {
     VAPI_ret_t vapi_result;
     ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);

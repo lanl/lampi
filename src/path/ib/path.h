@@ -81,7 +81,6 @@ class ibPath : public BasePath_t {
         bool receive(double timeNow, int *errorCode, recvType recvTypeArg);
         bool push(double timeNow, int *errorCode);
         bool needsPush(void);
-        void ReturnDesc(SendDesc_t *message, int poolIndex);
         void checkSendCQs(void);
 
 #ifdef ENABLE_RELIABILITY
