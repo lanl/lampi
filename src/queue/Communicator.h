@@ -238,6 +238,29 @@ private:
     unsigned char **elan_mcast_buf;
 
 public:
+
+/*
+ *   MEMBER VARIABLES
+ */
+
+    struct {
+        ulm_allgather_t *allgather;
+        ulm_allgatherv_t *allgatherv;
+        ulm_allreduce_t *allreduce;
+        ulm_alltoall_t *alltoall;
+        ulm_alltoallv_t *alltoallv;
+        ulm_alltoallw_t *alltoallw;
+        ulm_barrier_t *barrier;
+        ulm_bcast_t *bcast;
+        ulm_gather_t *gather;
+        ulm_gatherv_t *gatherv;
+        ulm_reduce_t *reduce;
+        ulm_reduce_scatter_t *reduce_scatter;
+        ulm_scan_t *scan;
+        ulm_scatter_t *scatter;
+        ulm_scatterv_t *scatterv;
+    } collective;
+
     // topology
     ULMTopology_t *topology;
 
@@ -260,8 +283,7 @@ public:
     // enum for indicating communicator type
     enum { INTRA_COMMUNICATOR, INTER_COMMUNICATOR };
     enum { MAX_COMM_CACHE_SIZE = 5 };
-    // tag used for intercomm_merge
-    enum { INTERCOMM_TAG = -3 };
+    enum { INTERCOMM_TAG = -3 };	// intercomm_merge
 
     // communicator type
     int communicatorType;
@@ -293,16 +315,6 @@ public:
     int cacheSize;
     int *commCache;
     int availInCommCache;
-    int updateCache(int baseValue, int len) {
-        if (len > cacheSize)
-            return ULM_ERR_BAD_PARAM;
-
-        for (int i = 0; i < len; i++)
-            commCache[i] = baseValue + i;
-        availInCommCache = len;
-
-        return ULM_SUCCESS;
-    }
 
     /* structures for collective alrogithm optimization */
     int useSharedMemForCollectives;
@@ -317,6 +329,82 @@ public:
 
     /* pointer to pool allocated to this communicator */
     CollectiveSMBuffer_t *sharedCollectiveData;
+
+    // get new contextID - from the cache (may need to refresh the cache)
+    int getNewContextID(int *outputContextID);
+
+    // is threaded access expected for this group
+    bool useThreads;
+
+    // next pt-2-pt message sequence number expected on the receive
+    // side process private
+    ULM_64BIT_INT *next_expected_isendSeqs;
+    Locks *next_expected_isendSeqsLock;
+
+    // posted recv counter - used to keep track internally of
+    //  the posted receives
+    bigAtomicUnsignedInt next_irecv_id_counter;
+    Locks next_irecv_id_counterLock;
+
+    // point-to-point receive lock. To avoid a race conditions between
+    // a receive being posted and an incoming frament being placed on
+    // the privateQueues.OkToMatchRecvFrags list, this lock must be
+    // aquired before posting a receive of processing an incoming
+    // fratment.  Alternatively one could keep checking the posted
+    // receive queues and the privateQueues.OkToMatchRecvFrags queues,
+    // but this seems more expensive.
+    Locks *recvLock;
+
+    // next pt-2-pt message sequence number generated on the send side
+    //    process private
+    ULM_64BIT_INT *next_isendSeqs;
+    Locks *next_isendSeqsLock;
+
+    // see if shared memory queues are actually allocated from shared
+    // memory (for COMM_SELF this is not the case)
+    bool shareMemQueuesUsed;
+    // index of shared memory queues in queue pool
+    int indexSharedMemoryQueue;
+
+    procPrivateQs_t privateQueues;
+
+    enum {
+        SPECIFIC_RECV_QUEUE,    // queue of specific receives
+        WILD_RECV_QUEUE         // queue of wild receives
+    };
+
+    // on host barrier type
+    int SMPBarrierType;
+
+    // pointer to barrier data structure - an optimization (barrierControl also
+    //   holds the pointer as one of it's elements)
+    volatile void *barrierData;
+
+    // pointer to barrier control structure
+    void *barrierControl;
+
+
+
+
+    
+/*
+ *   MEMBER METHODS
+ */
+    
+public:
+        
+
+    int updateCache(int baseValue, int len) {
+        if (len > cacheSize)
+            return ULM_ERR_BAD_PARAM;
+
+        for (int i = 0; i < len; i++)
+            commCache[i] = baseValue + i;
+        availInCommCache = len;
+
+        return ULM_SUCCESS;
+    }
+
     int initializeCollectives(int useSharedMem);
 
     /* structure for caching data for collective's optimizations */
@@ -369,36 +457,6 @@ public:
         }
     } // end releaseCollectiveSMBuffer
 
-    // get new contextID - from the cache (may need to refresh the cache)
-    int getNewContextID(int *outputContextID);
-
-    // is threaded access expected for this group
-    bool useThreads;
-
-    // next pt-2-pt message sequence number expected on the receive
-    // side process private
-    ULM_64BIT_INT *next_expected_isendSeqs;
-    Locks *next_expected_isendSeqsLock;
-
-    // posted recv counter - used to keep track internally of
-    //  the posted receives
-    bigAtomicUnsignedInt next_irecv_id_counter;
-    Locks next_irecv_id_counterLock;
-
-    // point-to-point receive lock. To avoid a race conditions between
-    // a receive being posted and an incoming frament being placed on
-    // the privateQueues.OkToMatchRecvFrags list, this lock must be
-    // aquired before posting a receive of processing an incoming
-    // fratment.  Alternatively one could keep checking the posted
-    // receive queues and the privateQueues.OkToMatchRecvFrags queues,
-    // but this seems more expensive.
-    Locks *recvLock;
-
-    // next pt-2-pt message sequence number generated on the send side
-    //    process private
-    ULM_64BIT_INT *next_isendSeqs;
-    Locks *next_isendSeqsLock;
-
     // function pointer to bind point-to-point messages to a path object
     int (*pt2ptPathSelectionFunction) (void **, int, int);
 
@@ -447,20 +505,8 @@ public:
     // check to see if queues are empty
     bool areQueuesEmpty();
 
-    // see if shared memory queues are actually allocated from shared
-    // memory (for COMM_SELF this is not the case)
-    bool shareMemQueuesUsed;
-    // index of shared memory queues in queue pool
-    int indexSharedMemoryQueue;
     // set up the shared memory queues in process private memory
     int setupSharedMemoryQueuesInPrivateMemory();
-
-    procPrivateQs_t privateQueues;
-
-    enum {
-        SPECIFIC_RECV_QUEUE,    // queue of specific receives
-        WILD_RECV_QUEUE         // queue of wild receives
-    };
 
     //
     // receive functions
@@ -582,7 +628,7 @@ public:
     int                bcast_wait  (bcast_request_t *);
     int                fail_over   (bcast_request_t *);
 
-#endif
+#endif	/* USE_ELAN_COLL  */
 
 
     //
@@ -674,16 +720,6 @@ public:
     // barrier free - host specific
     int barrierFree();
     void freePlatformSpecificBarrier();
-
-    // on host barrier type
-    int SMPBarrierType;
-
-    // pointer to barrier data structure - an optimization (barrierControl also
-    //   holds the pointer as one of it's elements)
-    volatile void *barrierData;
-
-    // pointer to barrier control structure
-    void *barrierControl;
 
     // function pointer to on host Barrier
     void (*smpBarrier) (volatile void *barrierData);

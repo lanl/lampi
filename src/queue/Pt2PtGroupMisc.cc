@@ -483,7 +483,28 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     bcaster           = (Broadcaster*)NULL;
     init_bcast_queue();
 #endif
-    
+
+    // initialize collectives function pointers
+    collective.allgather = ulm_allgather;
+    collective.allgatherv = ulm_allgatherv;
+    collective.allreduce = ulm_allreduce;
+    collective.alltoall = ulm_alltoall;
+    collective.alltoallv = ulm_alltoallv;
+    collective.alltoallw = NULL; /* ulm_alltoallw; */
+    collective.barrier = ulm_barrier;
+#ifdef USE_ELAN_COLL
+    collective.bcast = ulm_bcast_quadrics;
+#else
+    collective.bcast = ulm_bcast;
+#endif
+    collective.gather = ulm_gather;
+    collective.gatherv = ulm_gatherv;
+    collective.reduce = ulm_reduce;
+    collective.reduce_scatter = NULL; /*ulm_reduce_scatter; */
+    collective.scan = ulm_scan;
+    collective.scatter = ulm_scatter;
+    collective.scatterv = ulm_scatterv;
+
     return ULM_SUCCESS;
 }
 
