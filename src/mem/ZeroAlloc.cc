@@ -121,7 +121,7 @@ void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
     ptr = mmap(NULL, len, MemoryProtection, flags, fd, 0);
     if ( ptr == MAP_FAILED )
     {
-	ulm_err(("Error: mmap failed (%s)\n", strerror(errno)));
+	ulm_err(("Error: mmap failed (%s)\n", strerror(errno))); 
 	return (void *)0;
     }
 #else
@@ -171,6 +171,13 @@ void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
     }  // end memory allocation
 #endif
 
+    /* don't hold this descriptor open if its standard input/output/error 
+     * ....might be dup'ed later...in more ways than one...
+     */
+    if ((fd >= 0) && (fd <= 2)) {
+        close(fd);
+        fd = -1;
+    }
     return ptr;
 }
 
