@@ -36,10 +36,40 @@
 
 #include <vapi.h>
 
+#define LAMPI_MAX_IB_HCA_PORTS  2
+#define LAMPI_MAX_IB_HCAS       4
+
+/* no dynamic sizing to help performance -- or at least
+ * not unintentionally hurt it... 
+ */
+
+typedef struct {
+    VAPI_qp_hndl_t handle;
+    VAPI_qp_prop_t prop;
+} ib_qp_state_t;
+
+typedef struct {
+    bool usable;
+    int num_active_ports;
+    int active_ports[LAMPI_MAX_IB_HCA_PORTS];
+    VAPI_hca_hndl_t handle;
+    VAPI_hca_vendor_t vendor;
+    VAPI_hca_cap_t cap;
+    VAPI_hca_port_t ports[LAMPI_MAX_IB_HCA_PORTS];
+    VAPI_pd_hndl_t pd;
+    VAPI_cq_hndl_t recv_cq;
+    VAPI_cq_hndl_t send_cq;
+    VAPI_cqe_num_t recv_cq_size;
+    VAPI_cqe_num_t send_cq_size;
+    ib_qp_state_t ud;
+} ib_hca_state_t;
+
 typedef struct {
     u_int32_t num_hcas;
-    VAPI_hca_id_t *hca_ids;
-    VAPI_hca_hndl_t *hca_handles;
+    int num_active_hcas;
+    int active_hcas[LAMPI_MAX_IB_HCAS];
+    VAPI_hca_id_t hca_ids[LAMPI_MAX_IB_HCAS];
+    ib_hca_state_t hca[LAMPI_MAX_IB_HCAS];
 } ib_state_t;
 
 extern ib_state_t ib_state;
