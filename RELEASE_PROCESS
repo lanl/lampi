@@ -248,9 +248,9 @@ C. Branching (for release 1.0.X)
 
   cvs checkout module
   cd module
-  cvs -q tag MINOR_RELEASE_1_0
-  cvs -q tag -b BRANCH_1_0
-  cvs -q rtag -r BRANCH_1_0 PATCH_RELEASE_1_2_0
+  cvs -q tag MINOR_RELEASE_1_3
+  cvs -q tag -b BRANCH_1_3
+  cvs -q rtag -r BRANCH_1_3 PATCH_RELEASE_1_3_0 module
 
 then, check-out the main branch to directory module_main/ using
 
