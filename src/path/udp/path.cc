@@ -213,19 +213,33 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	    if (message->datatype == NULL || message->datatype->layout == CONTIGUOUS) {
 		if (payloadSize <= EARLY_SEND_SMALL){
                     sendFragDesc->earlySend = (void*)UDPEarlySendData_small.getElement(getMemPoolIndex(), returnValue);
-                    sendFragDesc->earlySend_type = EARLY_SEND_SMALL; 	
+                    if (returnValue != ULM_SUCCESS) {
+			*errorCode = returnValue;
+		 	ulm_warn(("UDPEarlySendData_small is null"));	
+			return false;  
+		   } 
+		    sendFragDesc->earlySend_type = EARLY_SEND_SMALL; 	
                     dest_addr = (unsigned char*)(((UDPEarlySend_small*)sendFragDesc->earlySend)->data);	
                 } 
 		else if (payloadSize <= EARLY_SEND_MED){	
                     sendFragDesc->earlySend = (void*)UDPEarlySendData_med.getElement(getMemPoolIndex(), returnValue);
+		    if (returnValue != ULM_SUCCESS) {
+                        *errorCode = returnValue;
+                        ulm_warn(("UDPEarlySendData_med is null"));
+                        return false;
+                   }  
                     sendFragDesc->earlySend_type = EARLY_SEND_MED; 
                     dest_addr = (unsigned char*)(((UDPEarlySend_med*)sendFragDesc->earlySend)->data);	
                 }	
 		else if (payloadSize <= EARLY_SEND_LARGE) {
                     sendFragDesc->earlySend =  UDPEarlySendData_large.getElement(getMemPoolIndex(), returnValue);
                     sendFragDesc->earlySend_type = EARLY_SEND_LARGE;
-                    dest_addr = (unsigned char*)(((UDPEarlySend_large*)sendFragDesc->earlySend)->data);	
-                    //kkk =  (DoubleLinkList)((UDPEarlySendData_large.freeLists_m[getMemPoolIndex()])->freeList_m);
+               	    if (returnValue != ULM_SUCCESS) {
+                        *errorCode = returnValue;
+                        ulm_warn(("UDPEarlySendData_large is null"));
+                        return false;
+                   } 
+		    dest_addr = (unsigned char*)(((UDPEarlySend_large*)sendFragDesc->earlySend)->data);	
                 }
 		else {
                     returnValue = ULM_ERR_FATAL;

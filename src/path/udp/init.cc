@@ -219,7 +219,7 @@ static void initEarlySendFragmentBuffers(void)
     poolChunkSize = (size_t) SMPPAGESIZE;
     elementSize = sizeof(UDPEarlySend_small);
     desc_string = "UDP small early send";
-    nPagesPerList = 4;
+    nPagesPerList = 10;
     rc = UDPEarlySendData_small.Init(num_free_list, nPagesPerList,
                                      poolChunkSize, pageSize,
                                      elementSize, minPagesPerList,
