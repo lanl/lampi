@@ -297,7 +297,7 @@ bool sharedmemPath::send(SendDesc_t *message, bool *incomplete,
                   message->pathInfo.sharedmem.sharedData->NumAcked) >=
                  (unsigned) maxOutstandingSMPFrags)) {
                 message->pathInfo.sharedmem.sharedData->clearToSend_m = false;
-            } else if (!(waitOnAck && message->NumAcked == 0)) {
+            } else if (!(waitOnAck && message->pathInfo.sharedmem.sharedData->NumAcked == 0)) {
                 message->pathInfo.sharedmem.sharedData->clearToSend_m = true;
             }
             // Request To Send/Clear To Send
@@ -872,7 +872,7 @@ void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex)
 
     // if this was a bsend (or aborted bsend), then decrement the reference
     // count for the appropriate buffer allocation
-    if (message->sendType == ULM_SEND_BUFFERED) {
+    if (message->sendType == ULM_SEND_BUFFERED && !message->persistent) {
         if (message->posted_m.length_m > 0) {
             ulm_bsend_decrement_refcount(
 			    (ULMRequest_t) message,

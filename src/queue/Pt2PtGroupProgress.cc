@@ -144,9 +144,32 @@ int push_frags_into_network(double timeNow)
                     // message has been acked
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         IncompletePostedSends.RemoveLinkNoLock(SendDesc);
-                    if (usethreads())
-                        SendDesc->Lock.unlock();
-                    SendDesc->path_m->ReturnDesc(SendDesc);
+
+                    if (!SendDesc->messageDone) {
+                        SendDesc->messageDone = REQUEST_COMPLETE;
+                        if (!SendDesc->persistent) {
+                            ulm_type_release(SendDesc->datatype);
+                            ulm_type_release(SendDesc->bsendDatatype);
+                        }
+                    }
+
+                    if ((SendDesc->freeCalled)
+                        || (SendDesc->persistFreeCalled)) {
+                        /* a call to free the mpi object has been made,
+                        *   so ok to free this descriptor */
+                        SendDesc->WhichQueue = ONNOLIST;
+                        if (SendDesc->persistent) {
+                            ulm_type_release(SendDesc->datatype);
+                            ulm_type_release(SendDesc->bsendDatatype);
+                        }
+                        if (usethreads())
+                            SendDesc->Lock.unlock();
+                        if (SendDesc->freeCalled)
+                            SendDesc->path_m->ReturnDesc(SendDesc);
+                    } else {
+                        if (usethreads())
+                            SendDesc->Lock.unlock();
+                    }
                     SendDesc = TmpDesc;
                 } else {
                     // message has not been acked - move to unacked_isends list

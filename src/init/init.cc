@@ -2041,16 +2041,7 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         s->LenIOPreFix[i] = 0;
         s->NewLineLast[i] = 1;
     }
-    if (s->output_prefix) {
-        /* activate prefix */
-        for (i = 0; i < NChildren; i++) {
-            sprintf(s->IOPreFix[i], "%d[%d.%d] ",
-                    i + s->global_to_local_offset, s->hostid, i);
-            s->LenIOPreFix[i] = (int) strlen(s->IOPreFix[i]);
-        }
-        sprintf(s->IOPreFix[NChildren], "daemon[%d] ", s->hostid);
-        s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
-    }
+    
     s->StderrBytesWritten = 0;
     s->StdoutBytesWritten = 0;
 }
@@ -2075,6 +2066,18 @@ void lampi_init_postfork_stdio(lampiState_t *s)
 
     /* Client clean up */
     if (s->iAmDaemon) {
+
+        if (s->output_prefix) {
+            /* activate prefix */
+            for (i = 0; i < NChildren; i++) {
+                sprintf(s->IOPreFix[i], "%d[%d.%d] ",
+                        i + s->global_to_local_offset, s->hostid, i);
+                s->LenIOPreFix[i] = (int) strlen(s->IOPreFix[i]);
+            }
+            sprintf(s->IOPreFix[NChildren], "daemon[%d] ", s->hostid);
+            s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
+        }
+        
         /* close all write stderr/stdout pipe fd's ) */
         for (i = 0; i < NChildren; i++) {
             close(StderrPipes[2 * i + 1]);
