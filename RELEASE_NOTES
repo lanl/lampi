@@ -220,3 +220,7 @@ Version 1.4.3
 
 - Fixed problem with synchronous send completion.
 - Changed configure to disable all network paths by default.
+
+Version 1.4.4
+
+- Fixed resource leak with persistent sends.
