@@ -245,7 +245,6 @@ bool TCPRecvFrag::recvHeader(int sd)
                 addr_m = ((unsigned char*)fragRequest->addr_m + offset);
             }
             sendAck(sd); // start an ack now as a match has already been made
-            ulm_dbg(("TCPRecvFrag[%d,%d]::recvEventHandler: matched posted recv.\n",thisProc,peerProc));
         }
 
         // allocate a buffer for the receive

@@ -204,7 +204,7 @@ been added to receive the TCP configuration parameters
 (lampi_init_prefork_receive_setup_params_tcp()) and the list of
 interface names to be used for IP connections
 (lampi_init_prefork_ip_addresses()). The latter routine retrieves the
-list of interface names from mpirun, and maps the interface name to
+list of interface names from mpirun, and maps each interface name to
 its primary IP address. The list of interface names and IP addresses
 are then saved in the global lampiState_t data structure for use by
 both the TCP and UDP paths. 
