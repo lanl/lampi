@@ -57,7 +57,8 @@ private:
         
 public:
     CTClient(CTChannel *channel);
-        
+
+    virtual CTChannelStatus sendMessage(CTMessage *msg) {return kCTChannelOK;}
     virtual CTChannelStatus sendMessage(CTMessage *msg, unsigned int ctrlSize, char *control);
         
     CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);

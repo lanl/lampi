@@ -624,6 +624,7 @@ void CTServer::handleMessage(CTChannel *chnl, char *pmsg, long int msglen, unsig
     if ( CTMessage::kUser == msg->type() )
     {
         // check if msg is for a connected CTClient
+        // ASSERT: all connected CTClients should have clientID > 0
         if ( msg->destinationClientID() )
         {
             // search list of client connections for matching clientID

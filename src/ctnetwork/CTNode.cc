@@ -472,13 +472,13 @@ unsigned int *HypercubeNode::children(unsigned int source, unsigned int *cnt)
 {
     /*
       ASSERT: - link from node u to node v exists iff link from node v to node u exists.
-      - Hypercube is a complete hypercube, using ghost nodes if necessary.
     */
     unsigned int    i, idx, *children, reladdr, label;
     bool                    exists;
         
     // We loop through all possible child nodes and check if current node
-    // would be a parent.
+    // would be a parent.  Current node is a parent if it is in the path for
+    // a pt-to-pt message to source.
     *cnt = 0;
     if ( NULL == (children = (unsigned int *)malloc(sizeof(unsigned int)*hsz_m)) )
         return NULL;
@@ -516,6 +516,7 @@ unsigned int *HypercubeNode::children(unsigned int source, unsigned int *cnt)
             {
                 // NOTE: This only works for non-faulty networks.  Need to add extra
                 // logic for faulty links.
+                // Current logic attempts to do the same logic as nextNeighborLabelToNode().
                                 
                 // link exists. Next, compute relative address from neighbor to source.
                 // Then find most significant bit, j, that is 1 and link j exists from

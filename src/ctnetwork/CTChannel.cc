@@ -112,7 +112,7 @@ void CTChannel::CTChannelInit()
 
     _init_factories();
 
-    if ( 0 )
+    if ( 1 )
     {
         /* set to handle SIGPIPE */
         act.sa_handler = _handle_sigpipe;
@@ -564,7 +564,7 @@ CTChannelStatus CTTCPChannel::getMessage(CTMessage **msg)
     */
     *msg = NULL;
     status = getPackedMessage(&buf, NULL);
-    if ( buf )
+    if ( kCTChannelOK == status )
     {
         *msg = CTMessage::unpack(buf);
         free(buf);
@@ -603,10 +603,8 @@ CTChannelStatus CTTCPChannel::getPackedMessage(char **buffer, long int *msglen)
         {
             // Continue receiving until we get entire msg.
             status = receive(msg, len, &rlen);
-            if ( rlen != len )
+            if ( kCTChannelOK != status )
             {
-                ulm_ferr(("Warning! only received %d bytes of expected %d bytes.\n",
-                          len - rlen, len));
                 free(msg);
                 msg = NULL;
             }
@@ -784,17 +782,19 @@ bool CTTCPChannel::setIsBlocking(bool tf)
 
 void CTTCPChannel::setTimeout(unsigned int secs)
 {
-#ifdef FIX_ME_ROB
-    unsigned int            tout;
-#endif
-
+    struct timeval		tval;
+    
     CTChannel::setTimeout(secs);
-
-#ifdef FIX_ME_ROB
-    if ( tout )
+    // set the socket option
+    if ( INVALID_SOCKET != sockfd_m )
     {
+        tval.tv_sec = secs;
+        tval.tv_usec = 0;
+        if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
+            ulm_err(("Unable to set recv timeout. errno = %d.\n", errno));
+        if ( setsockopt(sockfd_m, SOL_SOCKET, SO_SNDTIMEO, &tval, sizeof(tval)) < 0 )
+            ulm_err(("Unable to set send timeout. errno = %d.\n", errno));
     }
-#endif
 }
 
 

@@ -148,17 +148,17 @@ public:
 */
 class CTChannelServer
 {
-        protected:
-                CTChannel               *channel_m;
-                
-        public:
-                /*
-                 * Server related methods.
-                 */
-                virtual bool setupToAcceptConnections() = 0;
-                virtual CTChannelStatus acceptConnections(int timeoutSecs, CTChannel **client) = 0;
-                
-                virtual CTChannel *channel() {return channel_m;}
+protected:
+        CTChannel    *channel_m;
+        
+public:
+        /*
+        * Server related methods.
+        */
+    virtual bool setupToAcceptConnections() = 0;
+    virtual CTChannelStatus acceptConnections(int timeoutSecs, CTChannel **client) = 0;
+    
+    virtual CTChannel *channel() {return channel_m;}
 };
 
 
@@ -174,67 +174,67 @@ class CTChannelServer
 
 class CTTCPChannel : public CTChannel
 {
-        private:
-                bool                    blocking_m;
-                
-        protected:
-                int                                     sockfd_m;
-                struct sockaddr_in      addr_m;
+private:
+        bool    blocking_m;
         
-        private:
-                void CTTCPChannelInit();
-                
-        public:
-                static CTChannel *createChannel(const char *connectionInfo);
-                /*
-                        PRE:    connection info should look like:
-                                        <host>;<port>
-                                        e.g. "foo.somewhere.com;4444"
-                */
-                
-                CTTCPChannel(const char *host, unsigned short port);
-                CTTCPChannel(struct sockaddr_in *addr);
-                CTTCPChannel(int socketfd, struct sockaddr_in *addr);
-                virtual ~CTTCPChannel();
-                
-                virtual bool openChannel(int timeoutSecs = 0);
-                virtual void closeChannel();
-                
-                /* checking status of channel */
-                virtual bool isReadable();
-                virtual bool isWriteable();
+protected:
+        int    sockfd_m;
+        struct sockaddr_in      addr_m;
 
-                /* send/recv methods. */
-                virtual CTChannelStatus sendData(const char *data, long int len, long int *sent);
-                virtual CTChannelStatus sendData(const ulm_iovec_t *iov, int iovcnt, long int *sent);
+private:
+        void CTTCPChannelInit();
+        
+public:
+    static CTChannel *createChannel(const char *connectionInfo);
+    /*
+            PRE:    connection info should look like:
+                            <host>;<port>
+                            e.g. "foo.somewhere.com;4444"
+    */
+    
+    CTTCPChannel(const char *host, unsigned short port);
+    CTTCPChannel(struct sockaddr_in *addr);
+    CTTCPChannel(int socketfd, struct sockaddr_in *addr);
+    virtual ~CTTCPChannel();
+    
+    virtual bool openChannel(int timeoutSecs = 0);
+    virtual void closeChannel();
+    
+    /* checking status of channel */
+    virtual bool isReadable();
+    virtual bool isWriteable();
 
-                virtual CTChannelStatus receive(char *buffer, long int len, long int *lenrcvd);
-                virtual CTChannelStatus receive(const ulm_iovec_t *iov, int iovcnt, long int *lenrcvd);
-        virtual CTChannelStatus receiveAtMost(char *buffer, long int len, long int *lenrcvd);
-                
-                /* msg-oriented methods. */
-                virtual CTChannelStatus getMessage(CTMessage **msg);
-                virtual CTChannelStatus getPackedMessage(char **buffer, long int *msglen);
-                
-                virtual CTChannelStatus sendError(int errNumber);
-                virtual CTChannelStatus sendMessage(CTMessage *msg);
-                virtual CTChannelStatus sendPackedMessage(char *msg, long int msglen);
+    /* send/recv methods. */
+    virtual CTChannelStatus sendData(const char *data, long int len, long int *sent);
+    virtual CTChannelStatus sendData(const ulm_iovec_t *iov, int iovcnt, long int *sent);
 
-                /* accessor methods. */
-                const char *className() {return "CTTCPChannel";}
-
-                int socketfd() {return sockfd_m;}
-                void setSocketfd(int sockfd) {sockfd_m = sockfd;}
+    virtual CTChannelStatus receive(char *buffer, long int len, long int *lenrcvd);
+    virtual CTChannelStatus receive(const ulm_iovec_t *iov, int iovcnt, long int *lenrcvd);
+    virtual CTChannelStatus receiveAtMost(char *buffer, long int len, long int *lenrcvd);
                 
-                unsigned short port() {return ntohs(addr_m.sin_port);}
-                void setPort(unsigned short port) {addr_m.sin_port = htons(port);}
-                
-                bool isBlocking() {return blocking_m;}
-                bool setIsBlocking(bool tf);
-                
-                void setTimeout(unsigned int secs);
-
-                struct sockaddr_in *socketAddress() {return &addr_m;}
+    /* msg-oriented methods. */
+    virtual CTChannelStatus getMessage(CTMessage **msg);
+    virtual CTChannelStatus getPackedMessage(char **buffer, long int *msglen);
+    
+    virtual CTChannelStatus sendError(int errNumber);
+    virtual CTChannelStatus sendMessage(CTMessage *msg);
+    virtual CTChannelStatus sendPackedMessage(char *msg, long int msglen);
+    
+    /* accessor methods. */
+    const char *className() {return "CTTCPChannel";}
+    
+    int socketfd() {return sockfd_m;}
+    void setSocketfd(int sockfd) {sockfd_m = sockfd;}
+    
+    unsigned short port() {return ntohs(addr_m.sin_port);}
+    void setPort(unsigned short port) {addr_m.sin_port = htons(port);}
+    
+    bool isBlocking() {return blocking_m;}
+    bool setIsBlocking(bool tf);
+    
+    void setTimeout(unsigned int secs);
+    
+    struct sockaddr_in *socketAddress() {return &addr_m;}
 };
 
 

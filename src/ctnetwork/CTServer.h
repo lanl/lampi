@@ -74,9 +74,10 @@ private:
     char                *buffer_m[CT_SVR_MAX_COLL];
         
 protected:
-    CTNode              *node_m;
-    link_t              *clients_m;
-    link_t              *collClients_m[CT_SVR_MAX_COLL];                /* used for tracking which clients to send collective response msg. */
+    CTNode    *node_m;
+    link_t    *clients_m;
+    link_t    *collClients_m[CT_SVR_MAX_COLL]; // used for tracking which clients
+                                               // to send collective response msg.
         
 public:
         
@@ -86,15 +87,15 @@ public:
     enum
         {
             kUnknownCmd = 0,
-            kLinkNetwork,                               /* perform network link up (for not-so-large networks). */
-            kLinkData,                                  /* msg contains link info. */
-            kGetServerInfo,                             /* meant for initial handshake with CTClient. (Synchronous) */
-            kVerifyNode,                                /* determine if a node is alive. */
+            kLinkNetwork,    /* perform network link up (for not-so-large networks). */
+            kLinkData,       /* msg contains link info. */
+            kGetServerInfo,  /* meant for initial handshake with CTClient. (Synchronous) */
+            kVerifyNode,     /* determine if a node is alive. */
                 
             /* collectives (NOTE: keep collectives together) */
-            kAllgather,                                 /* cmd for allgather collective. */
-            kAllgatherv,                                /* cmd for allgather collective. */
-            kSynchronize                                /* cmd for synchronization. */
+            kAllgather,      /* cmd for allgather collective. */
+            kAllgatherv,     /* cmd for allgather collective. */
+            kSynchronize     /* cmd for synchronization. */
         };
 
     /*
@@ -194,8 +195,8 @@ public:
     CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);
     CTChannelStatus broadcast(CTMessage *msg);
 
+    virtual CTChannelStatus sendMessage(CTMessage *, unsigned int, char *){return kCTChannelOK;}
     virtual CTChannelStatus sendMessage(CTMessage *msg);
-
     /*
       POST:     sends pt-to-pt message to destination set in  msg.
     */
