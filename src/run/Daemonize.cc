@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
+ * Copyright 2002-2004. The Regents of the University of California. This material 
  * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
  * National Laboratory, which is operated by the University of California for 
  * the U.S. Department of Energy. The Government is granted for itself and 
@@ -28,12 +28,11 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <termio.h>
+#include <termios.h>
+
 #if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
 #else
@@ -191,18 +190,18 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         /* input from terminal */
         if(isatty(RunParameters->STDINfd)) {
          
-            struct termio term;
-            if(ioctl(RunParameters->STDINfd, TCGETA, &term) != 0) {
-                ulm_err(("ioctl(%d,TCGETA) failed with errno=%d\n", 
-                    RunParameters->STDINfd,errno));
+            struct termios term;
+            if(tcgetattr(RunParameters->STDINfd, &term) != 0) {
+                ulm_err(("tcgetattr(%d) failed with errno=%d\n", 
+                         RunParameters->STDINfd,errno));
                 RunParameters->STDINfd = -1;
             }
             term.c_lflag &= ~ICANON;
             term.c_cc[VMIN] = 0;
             term.c_cc[VTIME] = 0;
-            if(ioctl(RunParameters->STDINfd, TCSETA, &term) != 0) {
-                ulm_err(("ioctl(%d,TCSETA) failed with errno=%d\n", 
-                    RunParameters->STDINfd,errno));
+            if(tcsetattr(RunParameters->STDINfd, TCSANOW, &term) != 0) {
+                ulm_err(("tcsetattr(%d) failed with errno=%d\n", 
+                         RunParameters->STDINfd,errno));
                 RunParameters->STDINfd = -1;
             }
         /* input from pipe or file */

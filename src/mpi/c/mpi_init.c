@@ -34,6 +34,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
+#pragma weak MPI_Init = PMPI_Init
+#endif
+
 int PMPI_Init(int *argc, char ***argv)
 {
     int rc;
@@ -69,17 +73,3 @@ int PMPI_Init(int *argc, char ***argv)
 
     return MPI_SUCCESS;
 }
-
-#ifdef HAVE_PRAGMA_WEAK
-
-#pragma weak MPI_Init = PMPI_Init
-
-#else
-
-int MPI_Init(int *argc, char ***argv)
-{
-    return PMPI_Init(argc, argv);
-}
-
-#endif
-
