@@ -213,14 +213,38 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     strncpy(LocalHostName, RunParameters->mpirunName,
             ULM_MAX_HOSTNAME_LEN);
 
-    /* setup stdin forwarding */
-    RunParameters->STDINfd = dup(STDIN_FILENO);
-    close(STDIN_FILENO);
-
     /* list of hosts for which the ULMRun fork() succeeded - needed for
      *  cleanup after abnormal termination.
      */
     *ListHostsStarted = ulm_new(int, RunParameters->NHosts);
+
+    /* dup current stderr and stdout so that ULMRun's stderr and stdout can
+     * be resored to those before exiting this routines.
+     */
+    
+    /* setup stdin forwarding */
+    RunParameters->STDINfd = dup(STDIN_FILENO);
+
+    int dupSTDERRfd = dup(STDERR_FILENO);
+    if (dupSTDERRfd <= 0) {
+        printf("Error: duping STDERR_FILENO.\n");
+        Abort();
+    }
+    int dupSTDOUTfd = dup(STDOUT_FILENO);
+    if (dupSTDOUTfd <= 0) {
+        printf("Error: duping STDOUT_FILENO.\n");
+        Abort();
+    }
+
+    fflush(stdout);
+    fflush(stderr);
+    int fd = open("/dev/null", 0, 0);
+    if(fd > 0) {
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+    }
+    close(STDIN_FILENO);
 
     /*
      * Loop through the NHosts and spawn remote job by using ls_rtask().
@@ -231,6 +255,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
                          RunParameters);
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
+
 
 #ifdef  ENABLE_LSF
         if ((RetVal = ls_chdir(RunParameters->HostList[host],
@@ -278,6 +303,21 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         ulm_delete(ExecArgs);
         ulm_delete(EnvList);
     }                           /* end of for loop for each remote host */
+
+
+    /* restore STDERR_FILENO and STDOUT_FILENO to state when this
+     *   routine was entered
+     */
+    RetVal = dup2(dupSTDERRfd, STDERR_FILENO);
+    if (RetVal <= 0) { 
+        printf("Error: in dup2 dupSTDERRfd, STDERR_FILENO.\n");
+        Abort();
+    }
+    RetVal = dup2(dupSTDOUTfd, STDOUT_FILENO);
+    if (RetVal <= 0) {
+        printf("Error: in dup2 dupSTDOUTfd, STDOUT_FILENO.\n");
+        Abort();
+    }
     return 0;
 }
 
