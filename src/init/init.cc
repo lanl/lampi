@@ -151,6 +151,7 @@ void lampi_init(void)
     lampi_init_prefork_resource_management(&lampiState);
     lampi_init_prefork_check_stdio(&lampiState);
     lampi_init_prefork_connect_to_mpirun(&lampiState);
+    lampi_init_prefork_send_version_string(&lampiState);
     lampi_init_prefork_receive_setup_params(&lampiState);
     lampi_init_prefork_ip_addresses(&lampiState);
     lampi_init_prefork_debugger(&lampiState);
@@ -236,6 +237,8 @@ void lampi_init_check_for_error(lampiState_t *s)
           "Initialization failed connecting to daemon" },
         { ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN,
           "Initialization failed connecting to mpirun" },
+        { ERROR_LAMPI_INIT_PREFORK_SEND_VERSION_STRING,
+          "Initialization failed sending version string to mpirun" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS,
           "Initialization failed receiving run-time parameters" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY,
@@ -1350,6 +1353,32 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     lampi_init_prefork_receive_setup_params_ib(s);
     lampi_init_prefork_receive_setup_params_tcp(s);
 
+}
+
+
+void lampi_init_prefork_send_version_string(lampiState_t *s)
+{
+    if (s->error) {
+        return;
+    }
+
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_send_version_string");
+    }
+
+    char version[ULM_MAX_VERSION_STRING];
+    int errorCode;
+
+    memset(version, '\0', sizeof(version));
+    strncpy(version, PACKAGE_VERSION, sizeof(version) - 1);
+    s->client->reset(adminMessage::SEND);
+    s->client->pack((void *) version,
+                    (adminMessage::packType) sizeof(char), sizeof(version));
+    s->client->send(-1, adminMessage::CLIENTVERSION, &errorCode);
+    if (errorCode != ULM_SUCCESS) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_SEND_VERSION_STRING;
+        return;
+    }
 }
 
 

@@ -46,6 +46,7 @@
 #define ULM_MAX_PREFIX                  256
 #define ULM_MAX_TMP_BUFFER              20000
 #define ULM_MAX_IO_BUFFER               65536
+#define ULM_MAX_VERSION_STRING          256
 
 /* Times: alarms, heartbeats, retransmission (in seconds) */
 

@@ -64,6 +64,7 @@ enum {
     ERROR_LAMPI_INIT_ALLFORKED_RESOURCE_MANAGEMENT,
     ERROR_LAMPI_INIT_CONNECT_TO_DAEMON,
     ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN,
+    ERROR_LAMPI_INIT_PREFORK_SEND_VERSION_STRING,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS,
@@ -108,6 +109,7 @@ void lampi_init_prefork_globals(lampiState_t *);
 void lampi_init_prefork_initialize_state_information(lampiState_t *);
 void lampi_init_prefork_paths(lampiState_t *);
 void lampi_init_prefork_process_resources(lampiState_t *);
+void lampi_init_prefork_send_version_string(lampiState_t *);
 void lampi_init_prefork_receive_setup_params(lampiState_t *);
 void lampi_init_prefork_ip_addresses(lampiState_t *);
 void lampi_init_prefork_resource_management(lampiState_t *);

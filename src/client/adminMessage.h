@@ -208,6 +208,7 @@ class adminMessage {
         TVDEBUG,                /* indicates if totalview debuging will be enables - 2 integers */
         CRC,                    /* 1 bool of use CRC */
         CLIENTPIDS,             /* (client) n pid_t client PIDs */
+        CLIENTVERSION,          /* char[ULM_MAX_VERSION_STRING] client version string */
         IFNAMES,
         QUADRICSFLAGS,          /* 1 bool of DoAck, and 1 bool of DoChecksum */
         BARRIER,                /* 1 integer of go-ahead status (0 = abort, 1 = go-ahead) */

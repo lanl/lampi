@@ -160,6 +160,49 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
 }
 
 
+/*
+ * collect library version numbers from clients and check for
+ * consistency
+ */
+static bool checkClientVersions(void)
+{
+    adminMessage *s = RunParams.server;
+    bool status = true;
+    int rc, rank, tag, contacted = 0;
+    int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
+    char version[ULM_MAX_VERSION_STRING];
+    int errorCode;
+
+    while (contacted < RunParams.NHosts) {
+        rc = s->receiveFromAny(&rank, &tag, &errorCode,
+                               (alarm_time == -1) ? -1 : alarm_time * 1000);
+        if (rc == adminMessage::OK) {
+            if ((tag == adminMessage::CLIENTVERSION) &&
+                (s->unpack(version,
+                           (adminMessage::packType) sizeof(char),
+                           sizeof(version), alarm_time))) {
+                contacted++;
+            }
+            if (RunParams.Verbose) {
+                fprintf(stderr,
+                        "LA-MPI: *** host %d has version libmpi-%s\n",
+                        rank, version);
+            }
+            if (strcmp(PACKAGE_VERSION, version)) {
+                ulm_err(("Error: host %d: version mismatch: "
+                         "mpirun-%s != libmpi-%s\n",
+                         rank, PACKAGE_VERSION, version));
+                status = false;
+            }
+        } else {
+            status = false;
+        }
+    }
+
+    return status;
+}
+
+
 static bool releaseClients(int *errorCode)
 {
     adminMessage *s = RunParams.server;
@@ -661,6 +704,12 @@ int mpirun(int argc, char **argv)
 
     /* now all daemon processes have connected back to mpirun */
     RunParams.ClientsSpawned = 1;
+
+    /* check that version numbers of mpirun and libmpi are consistent */
+    if (!checkClientVersions()) {
+        ulm_err(("Error: While checking version numbers\n"));
+        Abort();
+    }
 
     /* update runtime information using returned host information */
     FixRunParams(RunParams.server->nhosts());
