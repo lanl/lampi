@@ -31,7 +31,8 @@ enum {
     SCAN = 1 << 11,
     SCATTER = 1 << 12,
     SCATTERV = 1 << 13,
-    END_MARKER = 1<< 14
+    END_MARKER = 1<< 14,
+    ALLREDUCE_M = 1 << 15
 };
 
 struct {
@@ -40,7 +41,8 @@ struct {
 } op_table[] = {
     { "allgather",	ALLGATHER },
     { "allgatherv",	ALLGATHERV },
-    { "allreduce",	ALLREDUCE },
+    { "allreduce",	ALLREDUCE },     
+    { "allreduce_m",	ALLREDUCE_M },     /* MAX instead of SUM */
     { "alltoall",	ALLTOALL },
     { "alltoallv",	ALLTOALLV },
     { "alltoallw",	ALLTOALLW },
@@ -86,6 +88,8 @@ static void help(void)
                "   Flags may be any of\n"
                "      -a                all processes print times\n"
                "      -C                check data\n"
+               "      -d                use double instead of int (only for: \n"
+	       "                        allreduce\n"
                "      -O <operation>    operation to time\n"
                "      -W                perform warm-up phase\n"
                "      -s number         sample size (repetitions) to time\n"
@@ -144,7 +148,7 @@ static double second(void)
 
 #define SAMPLE(NSAMPLE,SAMPLE_SIZE,CODE) {                         \
     int i, j;                                                      \
-    double t, trms, tmin, tmax, tave;                              \
+    double t, trms, tmin, tmax, tave, ttot;                        \
     tmin = 1.0e99;                                                 \
     trms = tmax = tave = 0.0;                                      \
     for (j = 0; j < NSAMPLE; j++) {                                \
@@ -162,10 +166,12 @@ static double second(void)
     }                                                              \
     trms /= (double) NSAMPLE;                                      \
     trms = sqrt(trms);                                             \
+    tave /= NSAMPLE;                                               \
     trms /= (double) SAMPLE_SIZE;                                  \
     tmax /= (double) SAMPLE_SIZE;                                  \
     tmin /= (double) SAMPLE_SIZE;                                  \
-    tave /= (double) ( NSAMPLE * SAMPLE_SIZE );                    \
+    ttot = tave;                                                   \
+    tave /= (double) SAMPLE_SIZE;                                  \
     if (self == 0 || allprint)                                     \
         printf(                                                    \
            "Code:\n"                                               \
@@ -176,8 +182,9 @@ static double second(void)
            "  trms = %e secs\n"                                    \
            "  tmin = %e secs\n"                                    \
            "  tmax = %e secs\n"                                    \
-	   "  tave = %e secs\n\n",                                 \
-           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
+	   "  tave = %e secs\n"                                    \
+	   "  ttot = %e secs\n\n",                                 \
+           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave, ttot);  \
     if ((self == 0 || allprint) && outFile)                                    \
         fprintf(outFile,                                           \
            "Code:\n"                                               \
@@ -188,14 +195,17 @@ static double second(void)
            "  trms = %e secs\n"                                    \
            "  tmin = %e secs\n"                                    \
            "  tmax = %e secs\n"                                    \
-	   "  tave = %e secs\n\n",                                 \
-           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
+	   "  tave = %e secs\n"                                    \
+	   "  ttot = %e secs\n\n",                                 \
+           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave, ttot);  \
 }
 
 int main(int argc, char *argv[])
 {
     int *rbuf;
     int *sbuf;
+    double *rbuf_d;
+    double *sbuf_d;
     int count;
     int *countv;
     int *dispv;
@@ -212,8 +222,10 @@ int main(int argc, char *argv[])
      */
     int sample_size = 100;
     int nsample = 10;
+    int type_size=sizeof(int);      
     int allprint = 0;
     int check = 0;
+    int use_double=0;
     int operations = 0;
     int inc_bytes = 0;
     int max_bytes = 0;
@@ -224,7 +236,7 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
 
-    while ((c = getopt(argc, argv, "aCO:n:s:h")) != -1) {
+    while ((c = getopt(argc, argv, "adCO:n:s:h")) != -1) {
         switch (c) {
 
         case 'a':
@@ -233,6 +245,11 @@ int main(int argc, char *argv[])
 
         case 'C':
             check = 1;
+            break;
+
+        case 'd':
+            use_double = 1;
+	    type_size=sizeof(double);
             break;
 
         case 'O':
@@ -334,6 +351,8 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
+    sbuf_d = (void *) sbuf;
+    rbuf_d = (void *) rbuf;
 
     if ((countv = (int *) malloc(sizeof(int) * nproc)) == NULL) {
         perror("malloc");
@@ -345,6 +364,14 @@ int main(int argc, char *argv[])
         perror("malloc");
         MPI_Finalize();
         exit(EXIT_FAILURE);
+    }
+
+    /* use non-zero data for MPI_SUM, MPI_MAX */
+    count = max_bytes/type_size;
+    if (use_double) {
+      for (i=0; i<count; ++i) sbuf_d[i]=1.01;
+    }else{
+      for (i=0; i<count; ++i) sbuf[i]=1;
     }
 
     if (check) {
@@ -386,7 +413,7 @@ int main(int argc, char *argv[])
     for (bytes = min_bytes; bytes <= max_bytes;
          bytes = inc_bytes ? bytes + inc_bytes : bytes ? 2 * bytes : 1) {
 
-        count = bytes / sizeof(int);
+        count = bytes / type_size;
         for (i = 0; i < nproc; i++) {
             countv[i] = count;
         }
@@ -396,10 +423,10 @@ int main(int argc, char *argv[])
         if (self == 0) {
             printf("--------------------------------"
                    "--------------------------------\n"
-                   "Bytes = %d\n"
+                   "Bytes = %d    count=%d\n"
                    "--------------------------------"
                    "--------------------------------\n",
-                   bytes);
+                   bytes,count);
         }
 
         if (operations & ALLGATHER) {
@@ -419,11 +446,39 @@ int main(int argc, char *argv[])
         }
 
         if (operations & ALLREDUCE) {
+	  if (use_double) {
+	    double testbuf[count]; 
+/* 
+use testbuf instead of sbuf_d - code will hang on QSC
+because of client segfault on non initialized floating point error?
+*/
+
+            SAMPLE(nsample, sample_size,
+                   MPI_Allreduce(sbuf_d, rbuf_d, count, MPI_DOUBLE, MPI_SUM,
+                                 MPI_COMM_WORLD);
+		   );
+          }else{
             SAMPLE(nsample, sample_size,
                    MPI_Allreduce(sbuf, rbuf, count, MPI_INT, MPI_SUM,
                                  MPI_COMM_WORLD);
                 );
+	  }
         }
+
+        if (operations & ALLREDUCE_M) {
+	  if (use_double){
+            SAMPLE(nsample, sample_size,
+                   MPI_Allreduce(sbuf_d, rbuf_d, count, MPI_DOUBLE, MPI_MAX,
+                                 MPI_COMM_WORLD);
+		   );
+	  }else{
+	    SAMPLE(nsample, sample_size,
+		   MPI_Allreduce(sbuf, rbuf, count, MPI_INT, MPI_MAX,
+				 MPI_COMM_WORLD);
+		   );
+	  }
+        }
+
 
         if (operations & ALLTOALL) {
             SAMPLE(nsample, sample_size,
@@ -479,7 +534,7 @@ int main(int argc, char *argv[])
         if (operations & REDUCE) {
             SAMPLE(nsample, sample_size,
                    MPI_Reduce(sbuf, rbuf, count, MPI_INT, MPI_SUM,
-                              0, MPI_COMM_WORLD);
+                              i%nproc, MPI_COMM_WORLD);
                 );
         }
 
