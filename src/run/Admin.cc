@@ -284,14 +284,18 @@ int CheckForControlMsgs(void)
                 size = RecvSocket(fd[host], &abnormal_term_msg,
                                   sizeof(abnormal_term_msg), &error);
                 if (size > 0 || error != ULM_SUCCESS) {
-                    ulm_err(("Error: Process %d exited abnormally "
+                    char s[256];
+                    snprintf(s, sizeof(s),
+                             "Error: Process %d exited abnormally "
                              "(host=%d proc=%d pid=%d sig=%d stat=%d)\n",
                              abnormal_term_msg.grank,
                              host,
                              abnormal_term_msg.lrank,
                              abnormal_term_msg.pid,
                              abnormal_term_msg.signal,
-                             abnormal_term_msg.status));
+                             abnormal_term_msg.status);
+                    LogJobMsg(s);
+                    ulm_err((s));
                 }
                 return -1;
                 break;

@@ -50,6 +50,7 @@ int IsTVDebug(void);
 void KillAppProcs(int hostrank);
 void LogJobAbort(void);
 void LogJobExit(void);
+void LogJobMsg(const char *);
 void LogJobStart(void);
 void PrintRusage(const char *label, struct rusage *ru);
 void PrintTotalRusage(void);

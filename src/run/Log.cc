@@ -199,6 +199,17 @@ void LogJobExit(void)
 }
 
 
+void LogJobMsg(const char *msg)
+{
+    if (ENABLE_SYSLOG) {
+        if (RunParams.Verbose) {
+            fprintf(stderr, "LA-MPI: *** writing syslog\n");
+        }
+        syslog(priority, msg);
+    }
+}
+
+
 void LogJobAbort(void)
 {
     if (ENABLE_SYSLOG) {
