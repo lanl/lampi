@@ -47,21 +47,28 @@
 
 class gmFragBuffer : public Links_t {
  public:
+
     gmFragBuffer *me;
     gmHeader header;
     char payload[GMFRAG_DEFAULT_FRAGMENT_SIZE - sizeof(gmHeader)];
-
+    
+    
     gmFragBuffer(int poolIndex) {}
 };
 
 struct remoteDevInfo_t {
+    unsigned int global_node_id;
     unsigned int node_id;
     unsigned int port_id;
 };
 
+/* GM 2.x now uses local node ID and a global node ID.  For versions earlier
+	than 2.x, the local ID is the same as the global ID.
+*/
 class localDevInfo_t {
 public:
     Locks Lock;
+    unsigned int global_node_id;
     unsigned int node_id;
     unsigned int port_id;
     unsigned int sendTokens;

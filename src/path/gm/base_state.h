@@ -36,8 +36,12 @@ enum {
     LENMACADDR = 6,
 };
 
+/* GM 2.x now uses local node ID and a global node ID.  For versions earlier
+than 2.x, the local ID is the same as the global ID.
+*/
 class localBaseDevInfo_t {
 public:
+    unsigned int global_node_id;
     unsigned int node_id;
     unsigned int port_id;
     char macAddress[LENMACADDR];

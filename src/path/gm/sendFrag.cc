@@ -43,8 +43,8 @@ bool gmSendFragDesc::init(int globalDestProc,
                              int numTransmits)
 {
     gmFragBuffer *buf = 0;
-    gmHeaderData *header;
-    void *payload;
+    gmHeaderData *headerp;
+    void *payloadp;
     int rc;
 
     if (!initialized_m) {
@@ -59,6 +59,8 @@ bool gmSendFragDesc::init(int globalDestProc,
         numTransmits_m = numTransmits;
 
         initialized_m = true;
+        didRecvAck_m = false;
+        sendDidComplete_m = false;
     }
 
     if (!currentSrcAddr_m) {
@@ -92,33 +94,34 @@ bool gmSendFragDesc::init(int globalDestProc,
 
         // build header
 
-        header = &(buf->header.data);
-        payload = (void *) buf->payload;
+        headerp = &(buf->header.data);
+        payloadp = (void *) buf->payload;
 
         if (parentSendDesc_m->sendType == ULM_SEND_SYNCHRONOUS) {
-            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
+            headerp->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
 		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT_SYNC);
         } else {
-            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
+            headerp->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
 		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT);
         }
 
-        header->common.ctlMsgType = MESSAGE_DATA;
-        header->user_tag = parentSendDesc_m->posted_m.tag_m;
-        header->senderID = myproc();
-        header->destID = globalDestProc_m;
-        header->dataLength = length_m;
-        header->msgLength = parentSendDesc_m->posted_m.length_m;
-        header->frag_seq = 0;  // fix later for reliability!!!!
-        header->isendSeq_m = parentSendDesc_m->isendSeq_m;
-        header->sendFragDescPtr.ptr = (void *) this;
-        header->dataSeqOffset = seqOffset_m;
-        header->checksum = 0; // header checksum -- fix later!!!!
+        headerp->common.ctlMsgType = MESSAGE_DATA;
+        headerp->user_tag = parentSendDesc_m->posted_m.tag_m;
+        headerp->senderID = myproc();
+        headerp->destID = globalDestProc_m;
+        headerp->dataLength = length_m;
+        headerp->msgLength = parentSendDesc_m->posted_m.length_m;
+        headerp->frag_seq = 0;  // fix later for reliability!!!!
+
+        headerp->isendSeq_m = parentSendDesc_m->isendSeq_m;
+        headerp->sendFragDescPtr.ptr = (void *) this;
+        headerp->dataSeqOffset = seqOffset_m;
+        headerp->checksum = 0; // header checksum -- fix later!!!!
     }
 
     buf = (gmFragBuffer *)currentSrcAddr_m;
-    header = &(buf->header.data);
-    payload = (void *) buf->payload;
+    headerp = &(buf->header.data);
+    payloadp = (void *) buf->payload;
 
     // copy and/or pack data
 
@@ -128,9 +131,9 @@ bool gmSendFragDesc::init(int globalDestProc,
 
         if (gmState.doChecksum) {
             if (usecrc()) {
-                header->dataChecksum = bcopy_uicrc(src, payload, length_m, length_m);
+                headerp->dataChecksum = bcopy_uicrc(src, payloadp, length_m, length_m);
             } else {
-                header->dataChecksum = bcopy_uicsum(src, payload, length_m, length_m);
+                headerp->dataChecksum = bcopy_uicsum(src, payloadp, length_m, length_m);
             }
         } else {
             MEMCOPY_FUNC(src, buf->payload, length_m);
@@ -139,7 +142,7 @@ bool gmSendFragDesc::init(int globalDestProc,
     } else {                     // non-contiguous data
 
         unsigned char *src_addr;
-        unsigned char *dest_addr = (unsigned char *) payload;
+        unsigned char *dest_addr = (unsigned char *) payloadp;
         size_t len_to_copy, len_copied;
         ULMType_t *dtype = parentSendDesc_m->datatype;
         ULMTypeMapElt_t *tmap = dtype->type_map;
@@ -173,11 +176,11 @@ bool gmSendFragDesc::init(int globalDestProc,
         for (dtype_cnt = init_cnt; dtype_cnt < tot_cnt; dtype_cnt++) {
             for (ti = tm_init; ti < dtype->num_pairs; ti++) {
                 src_addr = start_addr + tmap[ti].offset;
-                dest_addr = (unsigned char *) payload + len_copied;
+                dest_addr = (unsigned char *) payloadp + len_copied;
                 len_to_copy = (length_m - len_copied >= tmap[ti].size) ?
                     tmap[ti].size : length_m - len_copied;
                 if (len_to_copy == 0) {
-                    header->dataChecksum = csum;
+                    headerp->dataChecksum = csum;
                     return true;
                 }
                 if (gmState.doChecksum) {
@@ -196,8 +199,66 @@ bool gmSendFragDesc::init(int globalDestProc,
             start_addr += dtype->extent;
         }
 
-        header->dataChecksum = csum;
+        headerp->dataChecksum = csum;
     }
 
     return true;
 }
+
+
+void gmSendFragDesc::freeResources()
+{
+    SendDesc_t 			*bsd;
+
+    if ( GMFRAGFREELIST == WhichQueue )
+        return;		// already freed
+
+    bsd = (SendDesc_t *) parentSendDesc_m;
+    bsd->clearToSend_m = true;
+
+    // remove frag descriptor from list of frags to be acked
+    if (WhichQueue == GMFRAGSTOACK) {
+        bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
+    }
+    else if (OPT_RELIABILITY && WhichQueue == GMFRAGSTOSEND) {
+        bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
+        // increment NumSent since we were going to send this again...
+        (bsd->NumSent)++;
+    }
+    else {
+        ulm_exit((-1,
+                  "Error: gmPath::callback: Frag on %d queue\n",
+                  WhichQueue));
+    }
+
+    if (OPT_RELIABILITY) {
+        // set frag_seq value to 0/null/invalid to detect duplicate ACKs
+        fragSeq_m = 0;
+    }
+
+    // return all sfd send resources
+    WhichQueue = GMFRAGFREELIST;
+
+    // return fragment buffer to free list
+    if (usethreads()) {
+        gmState.localDevList[dev_m].Lock.lock();
+        gmState.localDevList[dev_m].bufList.returnElementNoLock((Links_t *) currentSrcAddr_m, 0);
+        gmState.localDevList[dev_m].Lock.unlock();
+    } else {
+        gmState.localDevList[dev_m].bufList.returnElementNoLock((Links_t *) currentSrcAddr_m, 0);
+    }
+
+    // clear fields that will be initialized in init()
+    currentSrcAddr_m = NULL;
+    initialized_m = false;
+
+    // return frag descriptor to free list
+    if (usethreads()) {
+        gmState.sendFragList.returnElement(this, 0);
+    } else {
+        gmState.sendFragList.returnElementNoLock(this, 0);
+    }
+
+    
+}
+

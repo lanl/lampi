@@ -55,6 +55,7 @@ inline bool gmPath::canReach(int globalDestProcessID)
     return false;
 }
 
+
 int maxOutstandingGmFrags = 5;
 
 bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
@@ -66,6 +67,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     int nDescsToAllocate;
     int rc;
     int tmapIndex;
+    int numSent;
     size_t leftToSend;
     size_t payloadSize;
     size_t offset;
@@ -170,6 +172,13 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
 
     // send fragments if they are ready; otherwise, try to finish their initialization
+    /*
+        We use a local numSent to mean how many fragments in FragsToSend were able to start
+        sending from gm_send_with_callback().  We can't use message->NumSent because its value
+        means the number of frags whose send completed.  However, GM does not complete a send
+        until it calls the callback function.
+     */
+    numSent = 0;
     for (sfd = (gmSendFragDesc *) message->FragsToSend.begin();
          sfd != (gmSendFragDesc *) message->FragsToSend.end();
          sfd = (gmSendFragDesc *) sfd->next) {
@@ -195,7 +204,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                     gmState.localDevList[sfd->dev_m].Lock.unlock();
                 continue;
             }
-
+            
             if (usethreads())
                 gmState.localDevList[sfd->dev_m].Lock.unlock();
 
@@ -227,21 +236,21 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             afd->WhichQueue = GMFRAGSTOACK;
             sfd = (gmSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
             message->FragsToAck.AppendNoLock(afd);
-            (message->NumSent)++;
+            numSent++;
 
         }
     }
 
     if (message->messageDone == REQUEST_INCOMPLETE) {
 
-        if (message->NumSent == message->numfrags &&
+        if ( (numSent + message->NumSent) == message->numfrags &&
             message->sendType != ULM_SEND_SYNCHRONOUS) {
 
             message->messageDone = REQUEST_COMPLETE;
         }
     }
 
-    if (message->NumSent == message->numfrags) {
+    if ((numSent + message->NumSent) == message->numfrags) {
         *incomplete = false;
     }
 
@@ -252,7 +261,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 {
     int i, rc;
-
+    
     *errorCode = ULM_SUCCESS;
 
     // check each Myrinet adapter
@@ -286,6 +295,18 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
             switch (GM_RECV_EVENT_TYPE(event)) {
             case GM_NO_RECV_EVENT:
                 keepChecking = false;
+                break;
+            case GM_RECV_TOKEN_VIOLATION_EVENT:
+                ulm_err(("Proc %d: GM error: GM_RECV_TOKEN_VIOLATION_EVENT.\n", myproc()));
+                break;
+            case GM_BAD_RECV_TOKEN_EVENT:
+                ulm_err(("Proc %d: GM error: GM_BAD_RECV_TOKEN_EVENT.\n", myproc()));
+                break;
+            case GM_BAD_SEND_DETECTED_EVENT:
+                ulm_err(("Proc %d: GM error: GM_BAD_SEND_DETECTED_EVENT.\n", myproc()));
+                break;
+            case GM_SEND_TOKEN_VIOLATION_EVENT:
+                ulm_err(("Proc %d: GM error: GM_SEND_TOKEN_VIOLATION_EVENT.\n", myproc()));
                 break;
             case GM_RECV_EVENT:
                 // increment implicit # of receive tokens
@@ -353,6 +374,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 void *addr = &(buf->header);
                 if (usethreads())
                     gmState.gmLock.lock();
+
                 gm_provide_receive_buffer_with_tag(devInfo->gmPort,
                                                    addr,
                                                    gmState.log2Size,
@@ -364,7 +386,6 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 (devInfo->recvTokens)--;
 
             }
-
             if (usethreads())
                 devInfo->Lock.unlock();
         }
@@ -381,16 +402,13 @@ void gmPath::callback(struct gm_port *port,
     gmSendFragDesc *sfd = (gmSendFragDesc *) context;
     SendDesc_t *bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
-    // reclaim send token
-    if (port) {
-        if (usethreads()) 
-            gmState.localDevList[sfd->dev_m].Lock.lock();
+    if (usethreads())
+        gmState.localDevList[sfd->dev_m].Lock.lock();
 
-        gmState.localDevList[sfd->dev_m].sendTokens++;
+    gmState.localDevList[sfd->dev_m].sendTokens++;
 
-        if (usethreads()) 
-            gmState.localDevList[sfd->dev_m].Lock.unlock();
-    }
+    if (usethreads())
+        gmState.localDevList[sfd->dev_m].Lock.unlock();
 
     // fail if there was a failure -- first cut, no fault tolerance!
     if (status != GM_SUCCESS) {
@@ -398,79 +416,29 @@ void gmPath::callback(struct gm_port *port,
                   "Error: gmPath::callback called with error status (%d)\n",
                   (int) status));
     }
-
-    // bsd could be NULL if an Ack was processed before GM invoked this callback via our call
-    // to gm_unknown to complete the send logic.  This can occur when we have multiple GM devices,
-    // since we only call gm_unknown() in our receive() logic.
-    if ( NULL == bsd )
-        return;
     
+    // Register frag as acked, if this is not a synchronous message first fragment.
+    // If it is, we need to wait for a fragment ACK upon matching the message.
     if (usethreads())
         bsd->Lock.lock();
 
-    // register frag as acked, if this is not a synchronous message first fragment
-    // if it is, we need to wait for a fragment ACK upon matching the message
-    //
-    // Don't do this if port is NULL -- then we're being called by
-    // gmRecvFragDesc::msgDataAck() to free send resources on reception of
-    // a data ACK
-    if (port) {
-        if ((bsd->sendType == ULM_SEND_SYNCHRONOUS) && (sfd->seqOffset_m == 0)) {
-            if (usethreads())
-                bsd->Lock.unlock();
-            return;
-        }
+    (bsd->NumSent)++;
+    sfd->setSendDidComplete(true);
+
+    if ( (bsd->sendType == ULM_SEND_SYNCHRONOUS) && (sfd->seqOffset_m == 0) )
+    {
+        if ( sfd->didReceiveAck() )
+            sfd->freeResources();
     }
-
-    bsd->clearToSend_m = true;
-    (bsd->NumAcked)++;
-
-    // remove frag descriptor from list of frags to be acked
-    if (sfd->WhichQueue == GMFRAGSTOACK) {
-        bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
-    }
-    else if (OPT_RELIABILITY && sfd->WhichQueue == GMFRAGSTOSEND) {
-        bsd->FragsToSend.RemoveLinkNoLock((Links_t *) sfd);
-        // increment NumSent since we were going to send this again...
-        (bsd->NumSent)++;
-    }
-    else {
-        ulm_exit((-1,
-                  "Error: gmPath::callback: Frag on %d queue\n",
-                  sfd->WhichQueue));
-    }
-
-    if (OPT_RELIABILITY) {
-        // set frag_seq value to 0/null/invalid to detect duplicate ACKs
-        sfd->fragSeq_m = 0;
-    }
-
-    // reset send descriptor pointer
-    sfd->parentSendDesc_m = 0;
-
-    // return all sfd send resources
-    sfd->WhichQueue = GMFRAGFREELIST;
-
-    // return fragment buffer to free list
-    if (usethreads()) {
-        gmState.localDevList[sfd->dev_m].Lock.lock();
-        gmState.localDevList[sfd->dev_m].bufList.returnElementNoLock((Links_t *) sfd->currentSrcAddr_m, 0);
-        gmState.localDevList[sfd->dev_m].Lock.unlock();
-    } else {
-        gmState.localDevList[sfd->dev_m].bufList.returnElementNoLock((Links_t *) sfd->currentSrcAddr_m, 0);
-    }
-
-    // clear fields that will be initialized in init()
-    sfd->currentSrcAddr_m = NULL;
-    sfd->initialized_m = false;
-
-    // return frag descriptor to free list
-    if (usethreads()) {
-        gmState.sendFragList.returnElement(sfd, 0);
-    } else {
-        gmState.sendFragList.returnElementNoLock(sfd, 0);
+    else
+    {
+        // revisit this when reliability is implemented!!!!
+        if ( false == gmState.doAck )
+            (bsd->NumAcked)++;
+        sfd->freeResources();
     }
 
     if (usethreads())
         bsd->Lock.unlock();
+
 }
