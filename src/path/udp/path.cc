@@ -516,7 +516,6 @@ bool udpPath::resend(BaseSendDesc_t *message, int *errorCode)
 	 
             if (FragDesc->earlySend != NULL && FragDesc->earlySend_type != -9 ) {
                 int index = getMemPoolIndex();
-                FragDesc->earlySend_type = -9;
                 if (FragDesc->earlySend_type ==  EARLY_SEND_SMALL) {
                     UDPEarlySendData_small.returnElement((Links_t *) FragDesc->earlySend, index);
                 } else if (FragDesc->earlySend_type ==  EARLY_SEND_MED)
@@ -526,7 +525,8 @@ bool udpPath::resend(BaseSendDesc_t *message, int *errorCode)
                 } else {
                     ulm_warn(("no size match\n"));
                     return false; 
-		}
+                }
+                FragDesc->earlySend_type = -9;
             }	    
 
 
