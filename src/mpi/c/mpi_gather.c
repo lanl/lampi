@@ -73,7 +73,7 @@ int PMPI_Gather(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_GATHER, &gather);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_GATHER, (void **)&gather);
     if ( ULM_SUCCESS == rc )
     {
         rc = gather(sendbuf, sendcount, sendtype, recvbuf,

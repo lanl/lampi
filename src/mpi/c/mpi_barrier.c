@@ -54,7 +54,7 @@ int PMPI_Barrier(MPI_Comm comm)
         }
     }
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_BARRIER, &barrier);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_BARRIER, (void **)&barrier);
     if ( ULM_SUCCESS == rc )
     {
         rc = barrier(comm);        

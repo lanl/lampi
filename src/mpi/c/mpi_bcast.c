@@ -62,7 +62,7 @@ int PMPI_Bcast (void *buffer, int count, MPI_Datatype type, int root,
         }
     }
     
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_BCAST, &bcast);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_BCAST, (void **)&bcast);
     if ( ULM_SUCCESS == rc )
     {
         rc = bcast(buffer, count, datatype, root, comm);

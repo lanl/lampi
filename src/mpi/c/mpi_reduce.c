@@ -63,7 +63,7 @@ int PMPI_Reduce(void *sendbuf, void *recvbuf, int count,
         }
     }
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_REDUCE, &reduce);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_REDUCE, (void **)&reduce);
     if ( ULM_SUCCESS == rc )
     {
         rc = reduce(sendbuf, recvbuf, count, type, op,

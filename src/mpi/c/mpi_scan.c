@@ -61,7 +61,7 @@ int PMPI_Scan(void *sendbuf, void *recvbuf, int count,
         }
     }
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCAN, &scan);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCAN, (void **)&scan);
     if ( ULM_SUCCESS == rc )
     {
         rc = scan(sendbuf, recvbuf, count, type, op, comm);

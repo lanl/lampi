@@ -77,7 +77,7 @@ int PMPI_Alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
 
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLV, &alltoallv);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLV, (void **)&alltoallv);
     if ( ULM_SUCCESS == rc )
     {
         rc = alltoallv(sendbuf, sendcounts, senddispls,

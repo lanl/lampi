@@ -76,7 +76,7 @@ int PMPI_Scatterv(void *sendbuf, int *sendcounts, int *displs,
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCATTERV, &scatterv);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCATTERV, (void **)&scatterv);
     if ( ULM_SUCCESS == rc )
     {
         rc = scatterv(sendbuf, sendcounts, displs, sendtype,

@@ -73,7 +73,7 @@ int PMPI_Scatter(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCATTER, &scatter);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_SCATTER, (void **)&scatter);
     if ( ULM_SUCCESS == rc )
     {
         rc = scatter(sendbuf, sendcount, sendtype, recvbuf,

@@ -78,7 +78,7 @@ int PMPI_Alltoallw(void *s_buf, int *s_counts, int *s_displs,
     s_types = (ULMType_t **) s_mtypes;
     r_types = (ULMType_t **) r_mtypes;
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLW, &alltoallw);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLW, (void **)&alltoallw);
     if ( ULM_SUCCESS == rc )
     {
         rc = alltoallw(s_buf, s_counts, s_displs,

@@ -68,7 +68,7 @@ int PMPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
 
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALL, &alltoall);
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALL, (void **)&alltoall);
     if ( ULM_SUCCESS == rc )
     {
         rc = alltoall(sendbuf, sendcount, sendtype, recvbuf,
