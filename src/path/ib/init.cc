@@ -256,9 +256,15 @@ void ibSetup(lampiState_t *s)
         // set Q_Key for QP and transition to INIT state
         qpattr.qp_state = VAPI_INIT;
         qpattr.qkey = ib_state.qkey;
+        // the partition key index and port are for RC/UC only -- but
+        // empirical evidence shows otherwise
+        qpattr.pkey_ix = 0;
+        qpattr.port = h->active_ports[0] + 1;
         QP_ATTR_MASK_CLR_ALL(qpattrmask);
         QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QKEY);
         QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_PKEY_IX);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_PORT);
         vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, 
             &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
         if (vapi_result != VAPI_OK) {
@@ -295,8 +301,10 @@ void ibSetup(lampiState_t *s)
         }
         // transition the QP to RTS (ready to use)
         qpattr.qp_state = VAPI_RTS;
+        qpattr.sq_psn = 1;
         QP_ATTR_MASK_CLR_ALL(qpattrmask);
         QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_SQ_PSN);
         vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, 
             &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
         if (vapi_result != VAPI_OK) {
