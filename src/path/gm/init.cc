@@ -543,7 +543,7 @@ void gmSetup(lampiState_t *s)
                 gmState.localDevList[i].gmPort;
             rc = gmState.localDevList[i].memPool.Init(PoolSize = initialSize,
                                                       maxLen = -1,
-                                                      (long long)PoolChunkSize = poolChunkSize,
+                                                      PoolChunkSize = poolChunkSize,
                                                       PgSize = getpagesize());
             if (rc != ULM_SUCCESS) {
                 ulm_err(("Error: GM memory pool initialization "
