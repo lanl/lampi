@@ -263,7 +263,7 @@ class adminMessage {
 
     enum {
         MAXHOSTNAMESIZE = 512,
-        DEFAULTBUFFERSIZE = 8192,
+        DEFAULTBUFFERSIZE = (64<<10),
         MAXSOCKETS = 8192
     };
 
