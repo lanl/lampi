@@ -44,6 +44,19 @@ CPPFLAGS	+= -DUDP
 #debug queues
 CPPFLAGS	+= -D_DEBUGQUEUES
 
+# Quadrics RMS / Elan support
+# USE_RMS	:= 1
+ifdef USE_RMS
+USE_QUADRICS	:= 1
+#RMS_PREFIX	:= /usr
+CPPFLAGS	+= -DQUADRICS -DUSE_RMS
+LDLIBS		+= -lrt -lrmscall -lelan -lelan3
+ifdef RMS_PREFIX
+CPPFLAGS	+= -I$(RMS_PREFIX)/include
+LDFLAGS		+= -L $(RMS_PREFIX)/lib
+endif
+endif
+
 #GM support
 ifdef USE_GM
 #
@@ -52,8 +65,8 @@ ifdef USE_GM
 GM_PREFIX	:= /opt/gm-1.6.3
 CPPFLAGS	+= -DGM
 CPPFLAGS	+= -I$(GM_PREFIX)/include
-LDFLAGS_LIBMPI		+= -L$(GM_PREFIX)/lib
-LDLIBS_LIBMPI		+= -lgm
+LDFLAGS_LIBMPI	+= -L$(GM_PREFIX)/lib
+LDLIBS_LIBMPI	+= -lgm
 endif
 
 # LSF support
