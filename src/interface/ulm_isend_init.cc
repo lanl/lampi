@@ -61,7 +61,6 @@ extern "C" int ulm_isend_init(void *buf, size_t size, ULMType_t *dtype,
                               int persistent)
 {
     int errorCode;
-    int listIndex = 0;
     BaseSendDesc_t *SendDescriptor;
 
     /* bind send descriptor to a given path....this can fail... */
