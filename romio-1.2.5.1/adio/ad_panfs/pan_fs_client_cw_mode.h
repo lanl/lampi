@@ -43,6 +43,7 @@
 
 #define PAN_FS_CLIENT_CW_MODE_FLUSH_F__NONE        0x00000000
 #define PAN_FS_CLIENT_CW_MODE_FLUSH_F__INVAL_BUFS  0x00000001
+#define PAN_FS_CLIENT_CW_MODE_FLUSH_F__INVAL_ATTRS 0x00000002
 
 typedef struct pan_fs_client_cw_mode_flush_args_s pan_fs_client_cw_mode_flush_args_t;
 struct pan_fs_client_cw_mode_flush_args_s {

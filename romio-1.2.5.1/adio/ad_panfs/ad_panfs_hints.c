@@ -129,7 +129,7 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
                      * trying to create it
                      */
                     err = stat(fd->filename,&stat_buf);
-                    if(err == ENOENT)
+                    if((err == -1) && (errno == ENOENT))
                     {
                         /* File does not exist */
                         if (fd->perm == ADIO_PERM_NULL) {
