@@ -230,6 +230,9 @@ typedef struct ULMRunParams {
     /* should we use CRCs instead of checksums -- where supported */
     int UseCRC;
 
+    /* use SSH instead of RSH for spawning processes. */
+    int UseSSH;
+    
     /* should we use local send completion notification or not on Quadrics */
     int quadricsDoAck;
 

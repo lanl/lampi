@@ -78,6 +78,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->quadricsRailMask = 0;
     RunParameters->quadricsHW = 0;
     RunParameters->GDBDebug = 0;
+    RunParameters->UseSSH = 0;
 
     /* schedulers to try (determined at compile time) */
 
