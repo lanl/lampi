@@ -31,6 +31,8 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <pthread.h>
+
 extern "C" {
 #include <vapi_common.h>
 }
@@ -45,6 +47,8 @@ extern "C" {
 #include "path/ib/header.h"
 #include "client/ULMClient.h"
 #include "queue/globals.h"
+
+static unsigned int cq_empty_cnt = 0;
 
 bool ibPath::canReach(int globalDestProcessID)
 {
@@ -74,16 +78,23 @@ inline void ibPath::checkSendCQs(void)
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
 
         do {
+            if (cq_empty_cnt != 0) {
+                // yield the processor to Mellanox completion
+                // queue and event handler threads, etc....
+                pthread_yield();
+            }
 
             // poll completion queue
             vapi_result = VAPI_poll_cq(h->handle, h->send_cq, &wc_desc);
             if (vapi_result == VAPI_CQ_EMPTY) {
+                cq_empty_cnt++;
                 break;
             }
             else if (vapi_result != VAPI_OK) {
                 ulm_exit((-1, "ibPath::checkSendCQs VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
+            cq_empty_cnt = 0;
 
             if (usethreads() && !locked) {
                 ib_state.lock.lock();
@@ -592,6 +603,12 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
 
         do {
+            if (cq_empty_cnt != 0) {
+                // yield the processor to Mellanox completion
+                // queue and event handler threads, etc....
+                pthread_yield();
+            }
+
             // poll completion queue for receive
             vapi_result = VAPI_poll_cq(h->handle, h->recv_cq, &wc_desc);
             if (vapi_result == VAPI_CQ_EMPTY) {
@@ -601,6 +618,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 ulm_exit((-1, "ibPath::receive VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
+            cq_empty_cnt = 0;
 
             if (usethreads() && !locked) {
                 ib_state.lock.lock();
@@ -672,6 +690,11 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                         rd->addr_m = addr;
                         rd->msgDataAck(timeNow);
                         break;
+                    default:
+                        ulm_warn(("ibPath::receive unable to process message type %d\n",
+                            msg_type));
+                        rd->ReturnDescToPool(getMemPoolIndex());
+                        continue;
                 }
             }
             else {
@@ -712,6 +735,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 }
 #endif
             }
+
         } while (1);
     }
 

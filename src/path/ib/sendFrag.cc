@@ -86,9 +86,14 @@ inline bool ibSendFragDesc::get_remote_ud_info(VAPI_ud_av_hndl_t *ah, VAPI_qp_nu
         ud_av.dlid = udpi[k].lid;
         // set static rate setting to 100% for matched links
         ud_av.static_rate = 0;
+        // don't use global routing header
         ud_av.grh_flag = 0;
         // convert from port array index to port number
         ud_av.port = port_index_m + 1;
+        // set service level to 0
+        ud_av.sl = 0;
+        // set source path bits to 0
+        ud_av.src_path_bits = 0;
 
         vapi_result = VAPI_create_addr_hndl(h->handle, h->pd, &ud_av, &ud_ah);
         if (vapi_result != VAPI_OK) {
@@ -409,9 +414,12 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
     if ((state_m & POSTED) == 0) {
         vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
         if (vapi_result != VAPI_OK) {
+            ulm_warn(("ibSendFragDesc::post send of desc. %p failed with %s\n",
+                this, VAPI_strerror(vapi_result)));
             return false;
         }
         state_m = (state)(state_m | POSTED);
+
         return true;
     }
 #ifdef ENABLE_RELIABILITY
@@ -424,9 +432,15 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode)
             got_tokens = true;
         } 
         if (got_tokens) {
-            state_m = (state)(state_m & ~LOCALACKED);
             vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
-            return (vapi_result == VAPI_OK) ? true : false;
+            if (vapi_result == VAPI_OK) {
+                state_m = (state)(state_m & ~LOCALACKED);
+                return true;
+            }
+            else {
+                ulm_warn(("ibSendFragDesc::post resend of desc. %p failed with %s\n", 
+                    this, VAPI_strerror(vapi_result)));
+            }
         }
     }
 #endif
