@@ -1833,7 +1833,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         lampi_init_print("lampi_init_prefork_stdio");
     }
 
-    /* do nothing if stdio is not being managed */
+    /* allocate pipe for determining when all processes have exited... */
+    if(pipe(s->commonAlivePipe) < 0) {
+        ulm_err(("Error: pipe(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
+
+    /* do nothing else if stdio is not being managed */
     if (!s->interceptSTDio) {
         return;
     }
@@ -1971,7 +1978,17 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_stdio");
     }
 
-    /* do nothing if stdio is not being managed */
+    /* daemon holds read end of pipe...all other process hold write end together */
+    if (s->iAmDaemon) {
+        close(s->commonAlivePipe[1]);
+        s->commonAlivePipe[1] = -1;
+    }
+    else {
+        close(s->commonAlivePipe[0]);
+        s->commonAlivePipe[0] = -1;
+    }
+
+    /* do nothing else if stdio is not being managed */
     if (!s->interceptSTDio) {
         return;
     }
