@@ -37,12 +37,9 @@
 
 void lampi_init_postfork_ib(lampiState_t * s)
 {
-    if (s->nhosts == 1)
+    if ((s->nhosts == 1) || (s->error))
         return;
 
-    if (s->error) {
-        return;
-    }
     if (s->verbose) {
         lampi_init_print("lampi_init_postfork_ib");
     }
@@ -52,23 +49,25 @@ void lampi_init_postfork_ib(lampiState_t * s)
         return;
     }
 
-    int pathHandle;
-    ibPath *pathAddr;
-
-    /* set up GM communications */
-    ibSetup(s, s->client->getAuthData());
-    if (s->error) {
+    /* set up IB communications */
+    ibSetup(s);
+    if ((s->error) || (!s->ib)) {
         return;
     }
 
-    /*
-     * Add InfiniBand path to global pathContainer
-     */
-    pathAddr = (ibPath *) (pathContainer()->add(&pathHandle));
-    if (!pathAddr) {
-        s->error = ERROR_LAMPI_INIT_POSTFORK_PATHS;
-        return;
+    if (!s->iAmDaemon) {
+        int pathHandle;
+        ibPath *pathAddr;
+
+        /*
+         * Add InfiniBand path to global pathContainer
+         */
+        pathAddr = (ibPath *) (pathContainer()->add(&pathHandle));
+        if (!pathAddr) {
+            s->error = ERROR_LAMPI_INIT_POSTFORK_PATHS;
+            return;
+        }
+        new(pathAddr) ibPath;
+        pathContainer()->activate(pathHandle);
     }
-    new(pathAddr) ibPath;
-    pathContainer()->activate(pathHandle);
 }

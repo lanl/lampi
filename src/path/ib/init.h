@@ -36,6 +36,6 @@
 
 #include "internal/state.h"
 
-void ibSetup(lampiState_t *s, int *authdata);
+void ibSetup(lampiState_t *s);
 
 #endif

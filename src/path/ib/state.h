@@ -44,6 +44,24 @@
  */
 
 typedef struct {
+    VAPI_qp_num_t qp_num;
+    IB_lid_t lid;
+    u_int8_t lmc;
+    u_int8_t flag;
+} ib_ud_qp_info_t;
+
+#define INFO_VALID  (1 << 7)
+#define PORT_INFO_VALID(x) (((ib_ud_info_t *)x)->flag & INFO_VALID)
+#define SET_PORT_INFO_VALID(x) (((ib_ud_info_t *)x)->flag | INFO_VALID)
+#define SET_PORT_INFO_INVALID(x) (((ib_ud_info_t *)x)->flag & ~INFO_VALID)
+
+typedef struct {
+    int max_hcas;
+    int max_ports;
+    ib_ud_qp_info_t *info;
+} ib_ud_peer_t;
+
+typedef struct {
     VAPI_qp_hndl_t handle;
     VAPI_qp_prop_t prop;
     bool receive_multicast;
@@ -72,6 +90,8 @@ typedef struct {
     VAPI_hca_id_t hca_ids[LAMPI_MAX_IB_HCAS];
     ib_hca_state_t hca[LAMPI_MAX_IB_HCAS];
     VAPI_qkey_t qkey;
+    VAPI_gid_t mcast_gid;
+    ib_ud_peer_t ud_peers;
 } ib_state_t;
 
 extern ib_state_t ib_state;

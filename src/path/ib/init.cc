@@ -33,18 +33,38 @@
 
 #include <vapi.h>
 #include <vapi_common.h>
+#include <string.h>
+#include <netinet/in.h>
+
+#include "ulm/ulm.h"
 #include "path/ib/init.h"
 #include "path/ib/state.h"
 #include "internal/malloc.h"
+#include "internal/state.h"
 
-void ibSetup(lampiState_t *s, int *authdata)
+#undef PAGESIZE
+#include "init/init.h"
+#include "client/adminMessage.h"
+
+void ibSetup(lampiState_t *s)
 {
     VAPI_ret_t vapi_result;
     VAPI_qp_init_attr_t qpinit;
     VAPI_qp_attr_t qpattr;
     VAPI_qp_attr_mask_t qpattrmask;
     IB_port_t p;
-    int i, usable = 0;
+    bool mcast_attached = false;
+    int i, rc, usable = 0, mcast_prefix = htonl(0xff120000);
+    int *authdata, *exchange_recv, *exchange_send;
+    int maxhcas, maxports;
+
+    exchange_send = (int *)ulm_malloc(sizeof(int) * 2);
+    exchange_send[0] = exchange_send[1] = 0;
+
+    // client daemon does info exchanges only
+    if (s->iAmDaemon) {
+        goto exchange_info;
+    }
 
     // get the number of available InfiniBand HCAs
     ib_state.num_hcas = 0;
@@ -129,6 +149,10 @@ void ibSetup(lampiState_t *s, int *authdata)
             // set the HCA as active if there is at least one active port
             if (hca_active) {
                 ib_state.active_hcas[ib_state.num_active_hcas++] = i;
+                // record max number of active ports per HCA for first allgather()...see exchange_info
+                if (ib_state.hca[i].num_active_ports > exchange_send[1]) {
+                    exchange_send[1] = ib_state.hca[i].num_active_ports;
+                }
             }
         }
     } 
@@ -137,8 +161,13 @@ void ibSetup(lampiState_t *s, int *authdata)
         goto exchange_info;
     }
 
+    authdata = s->client->getAuthData();
     // set Q_Key to timestamp from mpirun...
     ib_state.qkey = (VAPI_qkey_t)authdata[2];
+    // set mcast_gid to value constructed from mpirun authorization data...
+    // all process must be running on the same endian type of machine for this to work...
+    memcpy(&(ib_state.mcast_gid), &mcast_prefix, 4);
+    memcpy(&(ib_state.mcast_gid[4]), authdata, 12);
 
     for (i = 0; i < ib_state.num_active_hcas; i++) {
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
@@ -192,7 +221,41 @@ void ibSetup(lampiState_t *s, int *authdata)
         QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
         vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
         if (vapi_result != VAPI_OK) {
-            ulm_err(("ibSetup: VAPI_modify_qp() for HCA %d returned %s\n",
+            ulm_err(("ibSetup: VAPI_modify_qp() RST->INIT for HCA %d returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+        // start multicast support on only UD QP on one HCA...last arg mcast dlid currently ignored
+        if (!mcast_attached) {
+            vapi_result = VAPI_attach_to_multicast(h->handle, ib_state.mcast_gid, h->ud.handle, (IB_lid_t)0);
+            if (vapi_result != VAPI_OK) {
+                ulm_err(("ibSetup: VAPI_attach_to_multicast for HCA %d returned %s\n",
+                    ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+                exit(1);
+            }
+            h->ud.receive_multicast = true;
+            mcast_attached = true;
+        }
+        else {
+            h->ud.receive_multicast = false;
+        }
+        // transition the QP to RTR 
+        qpattr.qp_state = VAPI_RTR;
+        QP_ATTR_MASK_CLR_ALL(qpattrmask);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
+        vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: VAPI_modify_qp() INIT->RTR for HCA %d returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+        // transition the QP to RTS (ready to use)
+        qpattr.qp_state = VAPI_RTS;
+        QP_ATTR_MASK_CLR_ALL(qpattrmask);
+        QP_ATTR_MASK_SET(qpattrmask, QP_ATTR_QP_STATE);
+        vapi_result = VAPI_modify_qp(h->handle, h->ud.handle, &(qpattr), &(qpattrmask), &(h->ud.prop.cap));
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: VAPI_modify_qp() RTR->RTS for HCA %d returned %s\n",
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
@@ -200,6 +263,48 @@ void ibSetup(lampiState_t *s, int *authdata)
 
 exchange_info:
 
+    exchange_send[0] = ib_state.num_active_hcas;
+    exchange_recv = (int *)ulm_malloc(nprocs() * sizeof(int) * 2);
+
+    // determine max number of active HCAS and active ports per HCA
+    rc = s->client->allgather(exchange_send, exchange_recv, 2 * sizeof(int));
+    if (rc != ULM_SUCCESS) {
+        s->error = ERROR_LAMPI_INIT_POSTFORK_IB;
+        return;
+    }
+
+    maxhcas = 0;
+    maxports = 0;
+
+    for (i = 0; i < nprocs(); i++) {
+        if (exchange_recv[i*2] > maxhcas) {
+            maxhcas = exchange_recv[i*2];
+        }
+        if (exchange_recv[i*2+1] > maxports) {
+            maxports = exchange_recv[i*2+1];
+        }
+    }
+
+    ulm_free(exchange_send);
+    ulm_free(exchange_recv);
+
+    // don't use IB if there are no active HCAs or ports
+    if ((maxhcas == 0) || (maxports == 0)) {
+        s->ib = 0;
+        return;
+    }
+
+    // cache size of soon-to-be-gathered array of ib_ud_qp_info_t structs
+    ib_state.ud_peers.max_hcas = maxhcas;
+    ib_state.ud_peers.max_ports = maxports;
+
+    ib_ud_qp_info_t *exchange_max_send = 
+        (ib_ud_qp_info_t *)ulm_malloc(sizeof(ib_ud_qp_info_t) * maxhcas * maxports);
+    ib_state.ud_peers.info = 
+        (ib_ud_qp_info_t *)ulm_malloc(sizeof(ib_ud_qp_info_t) * nprocs() * maxhcas * maxports);
+
+    // initialize all ud_qp_info as invalid to start with
+    
     return;
 }
 
