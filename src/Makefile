@@ -16,6 +16,14 @@ INSTALL		:= $(shell pwd)/install-sh -c
 VERSION	:= include/internal/version.h
 
 ######################################################################
+#
+# Common definitions for all platforms
+#
+######################################################################
+
+CFLAGS       := -DUSE_PRAGMA_WEAK -DUSE_CT
+
+######################################################################
 
 # configuration selection is based on the variable CONFIG
 
