@@ -886,7 +886,7 @@ bool udpRecvFragDesc::AckData(double timeNow)
 
     // pt-2-pt acks must be processed by the frag destination process only to
     // properly access process private sequence tracking lists...
-    if ((msgType_m == MSGTYPE_PT2PT) && (dstProcID_m != (unsigned)pg->localGroup->ProcID)) {
+    if ((msgType_m == MSGTYPE_PT2PT) && (dstProcID_m != pg->localGroup->ProcID)) {
 	return false;
     }
     //       record this frag as having been delivered, so that aggregate
