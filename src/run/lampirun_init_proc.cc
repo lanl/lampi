@@ -24,7 +24,6 @@ void lampirun_init_proc()
      * Initialize TerminateInitiated to false...
      */
     mpirunSetTerminateInitiated(0);
-
         
     /*
      * Install signal handlers

@@ -562,7 +562,6 @@ int main(int argc, char **argv)
      */
     lampi_environ_init();
 
-
     /*
      * initialize admin network
      */

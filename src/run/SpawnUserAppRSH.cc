@@ -31,6 +31,7 @@
 
 
 #include <sys/types.h> /* CYGWIN needs this first for netinet/in.h */
+#include <sys/wait.h> /* CYGWIN needs this first for netinet/in.h */
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -65,10 +66,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
                     int FirstAppArgument, int argc, char **argv)
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
-    int i, RetVal, offset, LenList, dupSTDERRfd, dupSTDOUTfd;
-#ifndef ENABLE_CT
-    int STDERRpipe[2], STDOUTpipe[2];
-#endif
+    int i, offset, LenList;
     int AlarmReturn;
     size_t len, MaxSize;
     pid_t Child;
@@ -95,42 +93,35 @@ int SpawnUserAppRSH(unsigned int *AuthData,
     }
     /* app name */
     LenList++;
-    /* env. vars. needed for setup  - 3 of them, format:
-       csh/tcsh: setenv X Y ;
-       sh : export X ; X=Y ;
 
-    */
-    /* !!!!!!!!!!!! add code for sh */
-    len = strlen("setenv");
+    len = strlen("export");
     if (len > MaxSize)
         MaxSize = len;
 
     /* csh/tcsh */
-    LenList += (5 * 4);  /* 5 env vars and 4 items per var. */
+    LenList += (5 * 5);  /* 5 env vars and 4 items per var. */
     /* auth data */
-    len = strlen("LAMPI_ADMIN_AUTH0");
-    if (len > MaxSize)
-        MaxSize = len;
     for (i = 0; i<3; i++)
     {
+        len = strlen("LAMPI_ADMIN_AUTH0");
         sprintf(TMP, "%u", AuthData[i]);
-        len = strlen(TMP);
+        len += strlen(TMP);
+        len += 1;
         if (len > MaxSize)
             MaxSize = len;
     }
 
     /* socket number */
     len = strlen("LAMPI_ADMIN_PORT");
-    if (len > MaxSize)
-        MaxSize = len;
     sprintf(TMP, "%d", ReceivingSocket);
-    len = strlen(TMP);
+    len += strlen(TMP);
+    len += 1;
     if (len > MaxSize)
         MaxSize = len;
 
-    if ((len = strlen(RunParameters->mpirunName)) > MaxSize)
-        MaxSize = len;
     len = strlen("LAMPI_ADMIN_IP");
+    len += strlen(RunParameters->mpirunName);
+    len += 1;
     if (len > MaxSize)
         MaxSize = len;
 
@@ -151,11 +142,8 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         if (len > MaxSize)
             MaxSize = len;
     }
-    /* & to background app */
-    LenList++;
-    len = strlen("&");
-    if (len > MaxSize)
-        MaxSize = len;
+    /*  to background app  >/dev/null 2>&1 1>/dev/null & */
+    LenList += 4;
 
     /* null terminator */
     LenList++;
@@ -166,45 +154,20 @@ int SpawnUserAppRSH(unsigned int *AuthData,
             MaxSize = len;
     }
 
-    /* add the csh -c " " lines */
+    /* add the /bin/sh -c " " lines */
     LenList += 4;
 
     /****************************
      *      spawn jobs
      ****************************/
-    /* first setup stderr intercept so that error conditions can be intercepeted */
-
+    /* setup for stdin fowarding */
     RunParameters->STDINfd = STDIN_FILENO;
-    RunParameters->STDERRfds = ulm_new(int, RunParameters->NHosts);
-    RunParameters->STDOUTfds = ulm_new(int, RunParameters->NHosts);
-    for (i = 0; i < RunParameters->NHosts; i++) {
-        RunParameters->STDERRfds[i] = 0;
-        RunParameters->STDOUTfds[i] = 0;
-    }
 
     /*
      * list of hosts for which the ULMRun fork() succeeded - needed for
      * cleanup after abnormal termination
      */
     *ListHostsStarted = ulm_new(int, RunParameters->NHosts);
-
-    /* dup current stderr and stdout so that ULMRun's stderr and
-     * stdout can be resored to those before exiting this routines.
-     */
-
-    dupSTDERRfd = dup(STDERR_FILENO);
-    if (dupSTDERRfd <= 0) {
-        printf("Error: duping STDERR_FILENO.\n");
-        Abort();
-    }
-    dupSTDOUTfd = dup(STDOUT_FILENO);
-    if (dupSTDOUTfd <= 0) {
-        printf("Error: duping STDOUT_FILENO.\n");
-        Abort();
-    }
-
-    fflush(stdout);
-    fflush(stderr);
 
     /* spawn jobs */
 
@@ -213,6 +176,11 @@ int SpawnUserAppRSH(unsigned int *AuthData,
     int hostSpecificLenList;
     // each host could have a different Maximum string size
     size_t hostSpecificMaxSize;
+
+
+#define MAX_CONCURRENT 128
+    int rsh_pid[MAX_CONCURRENT];
+    int rsh_index = 0;
 
     for (i = 0; i < RunParameters->NHosts; i++) {
         /* create exec string */
@@ -230,29 +198,21 @@ int SpawnUserAppRSH(unsigned int *AuthData,
                     strlen(RunParameters->envVarsToSet[eVar].var_m);
                 if (RunParameters->envVarsToSet[eVar].setForAllHosts_m) {
                     addEnvVar = true;
-                    // add elements for  ' setenv x y ; '
-                    hostSpecificLenList += 4;
-                    nAddedElements += 4;
-                    size_t tmp =
-                        strlen(RunParameters->envVarsToSet[eVar].
-                               envString_m[0]);
-                    if (hostSpecificMaxSize < envLen)
-                        hostSpecificMaxSize = envLen;
-                    if (hostSpecificMaxSize < tmp)
-                        hostSpecificMaxSize = tmp;
+                    // add elements for  ' export x=y ; '
+                    hostSpecificLenList += 3;
+                    nAddedElements += 3;
+                    size_t tmp = strlen(RunParameters->envVarsToSet[eVar].envString_m[0]);
+                    if (hostSpecificMaxSize < envLen + tmp + 1)
+                        hostSpecificMaxSize = envLen + tmp + 1;
                 } else if (RunParameters->envVarsToSet[eVar].
                            setForThisHost_m[i]) {
                     addEnvVar = true;
-                    // add elements for  ' setenv x y ; '
-                    hostSpecificLenList += 4;
-                    nAddedElements += 4;
-                    size_t tmp =
-                        strlen(RunParameters->envVarsToSet[eVar].
-                               envString_m[i]);
-                    if (hostSpecificMaxSize < envLen)
-                        hostSpecificMaxSize = envLen;
-                    if (hostSpecificMaxSize < tmp)
-                        hostSpecificMaxSize = tmp;
+                    // add elements for  ' export x=y ; '
+                    hostSpecificLenList += 3;
+                    nAddedElements += 3;
+                    size_t tmp = strlen(RunParameters->envVarsToSet[eVar].envString_m[i]);
+                    if (hostSpecificMaxSize < envLen + tmp + 1)
+                        hostSpecificMaxSize = envLen + tmp + 1;
                 }
             }                   // end eVar loop
         }                       // end if
@@ -278,7 +238,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
            to ExecArgs below where the indices are explicit,
            e.g. ExecArgs[12] = "foo"
         */
-        int EndLibEnvVars = 25;
+        int EndLibEnvVars = 20;
         int CDEntry = EndLibEnvVars + 1 + nAddedElements;
         int WorkingDirEntry = CDEntry + 1;
         int AppEntry = CDEntry + 3;
@@ -290,59 +250,49 @@ int SpawnUserAppRSH(unsigned int *AuthData,
             sprintf(ExecArgs[0], "rsh");
         sprintf(ExecArgs[1], "-n");
         /* entry 2 is the host name - will be filled in loop */
-        sprintf(ExecArgs[3], "csh");
+        sprintf(ExecArgs[3], "/bin/sh");
         sprintf(ExecArgs[4], "-c");
         sprintf(ExecArgs[5], "\"");
 
-        sprintf(ExecArgs[6], "setenv");
-        sprintf(ExecArgs[7], "LAMPI_ADMIN_AUTH0");
-        sprintf(ExecArgs[8], "%u", AuthData[0]);
-        sprintf(ExecArgs[9], ";");
-        sprintf(ExecArgs[10], "setenv");
-        sprintf(ExecArgs[11], "LAMPI_ADMIN_AUTH1");
-        sprintf(ExecArgs[12], "%u", AuthData[1]);
-        sprintf(ExecArgs[13], ";");
-        sprintf(ExecArgs[14], "setenv");
-        sprintf(ExecArgs[15], "LAMPI_ADMIN_AUTH2");
-        sprintf(ExecArgs[16], "%u", AuthData[2]);
-        sprintf(ExecArgs[17], ";");
+        sprintf(ExecArgs[6], "export");
+        sprintf(ExecArgs[7], "LAMPI_ADMIN_AUTH0=%u", AuthData[0]);
+        sprintf(ExecArgs[8], ";");
+        sprintf(ExecArgs[9], "export");
+        sprintf(ExecArgs[10], "LAMPI_ADMIN_AUTH1=%u", AuthData[1]);
+        sprintf(ExecArgs[11], ";");
+        sprintf(ExecArgs[12], "export");
+        sprintf(ExecArgs[13], "LAMPI_ADMIN_AUTH2=%u", AuthData[2]);
+        sprintf(ExecArgs[14], ";");
 		
-        sprintf(ExecArgs[18], "setenv");
-        sprintf(ExecArgs[19], "LAMPI_ADMIN_PORT");
-        sprintf(ExecArgs[20], "%d", ReceivingSocket);
-        sprintf(ExecArgs[21], ";");
-        sprintf(ExecArgs[22], "setenv");
-        sprintf(ExecArgs[23], "LAMPI_ADMIN_IP");
-        sprintf(ExecArgs[24], "%s", RunParameters->mpirunName);
-        sprintf(ExecArgs[25], ";");
+        sprintf(ExecArgs[15], "export");
+        sprintf(ExecArgs[16], "LAMPI_ADMIN_PORT=%d", ReceivingSocket);
+        sprintf(ExecArgs[17], ";");
+        sprintf(ExecArgs[18], "export");
+        sprintf(ExecArgs[19], "LAMPI_ADMIN_IP=%s", RunParameters->mpirunName);
+        sprintf(ExecArgs[20], ";");
         if (addEnvVar) {
             // check to see if any environment variables need to be set
             //  if so adjust paramenters
             int nAdded = 0;
             for (int eVar = 0; eVar < RunParameters->nEnvVarsToSet; eVar++) {
                 if (RunParameters->envVarsToSet[eVar].setForAllHosts_m) {
-                    // add elements for  ' setenv x y ; '
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 1],
-                            "setenv");
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 2],
-                            RunParameters->envVarsToSet[eVar].var_m);
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], "%s",
-                            RunParameters->envVarsToSet[eVar].
-                            envString_m[0]);
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 4], ";");
-                    nAdded += 4;
+                    // add elements for  ' export x = y ; '
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 1], "export");
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
+                            RunParameters->envVarsToSet[eVar].var_m,
+                            RunParameters->envVarsToSet[eVar].envString_m[0]);
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
+                    nAdded += 3;
                 } else if (RunParameters->envVarsToSet[eVar].
                            setForThisHost_m[i]) {
-                    // add elements for  ' setenv x y ; '
+                    // add elements for  ' export x = y ; '
                     sprintf(ExecArgs[EndLibEnvVars + nAdded + 1],
-                            "setenv");
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 2],
-                            RunParameters->envVarsToSet[eVar].var_m);
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], "%s",
-                            RunParameters->envVarsToSet[eVar].
-                            envString_m[i]);
-                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 4], ";");
-                    nAdded += 4;
+                            "export");
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 2], "%s=%s",
+                            RunParameters->envVarsToSet[eVar].var_m,
+                            RunParameters->envVarsToSet[eVar].envString_m[i]);
+                    sprintf(ExecArgs[EndLibEnvVars + nAdded + 3], ";");
+                    nAdded += 3;
                 }
             }                   // end eVar loop
         }                       // end if
@@ -365,39 +315,12 @@ int SpawnUserAppRSH(unsigned int *AuthData,
          * cd'ing to the appropriate directory, executable
          */
         offset = argc - FirstAppArgument;
-        sprintf(ExecArgs[(CDEntry + 3) + offset + 1], "&");
-        sprintf(ExecArgs[(CDEntry + 3) + offset + 2], "\"");
+        sprintf(ExecArgs[(CDEntry + 3) + offset + 1], "</dev/null");
+        sprintf(ExecArgs[(CDEntry + 3) + offset + 2], "1>/dev/null");
+        sprintf(ExecArgs[(CDEntry + 3) + offset + 3], "2>&1");
+        sprintf(ExecArgs[(CDEntry + 3) + offset + 4], "&");
+        sprintf(ExecArgs[(CDEntry + 3) + offset + 5], "\"");
 
-        /* redirect stderr */
-#ifndef ENABLE_CT
-        RetVal = pipe(STDERRpipe);
-        if (RetVal < 0) {
-            printf("Error: creating STDERRpipe pipe.\n");
-            Abort();
-        }
-        RetVal = dup2(STDERRpipe[1], STDERR_FILENO);
-        if (RetVal <= 0) {
-            printf("Error: in dup2 STDERRpipe[0], STDERR_FILENO.\n");
-            Abort();
-        }
-        RunParameters->STDERRfds[i] = STDERRpipe[0];
-        close(STDERRpipe[1]);
-
-        /* redirect stdout */
-        RetVal = pipe(STDOUTpipe);
-        if (RetVal < 0) {
-            printf("Error: creating STDOUTpipe pipe.\n");
-            Abort();
-        }
-        RetVal = dup2(STDOUTpipe[1], STDOUT_FILENO);
-        if (RetVal <= 0) {
-            printf("Error: in dup2 STDOUTpipe[0], STDOUT_FILENO.\n");
-            Abort();
-        }
-        RunParameters->STDOUTfds[i] = STDOUTpipe[0];
-        close(STDOUTpipe[1]);
-#endif
-        
         /* fork() failed */
         if ((Child = fork()) == -1) {
             printf(" Error forking child\n");
@@ -413,26 +336,31 @@ int SpawnUserAppRSH(unsigned int *AuthData,
             printf(" after execv\n");
 
         } else {                /* parent process */
+            rsh_pid[rsh_index++] = Child;
+            if(rsh_index == MAX_CONCURRENT) {
+                // reap children (rsh)
+                for(int index=0; index<rsh_index; index++) {
+                    int status;
+                    waitpid(rsh_pid[index], &status, 0);
+                }
+                rsh_index = 0;
+            }
             (*ListHostsStarted)[NHostsStarted] = i;
             NHostsStarted++;
         }
+
         // free user app argument list
         for (int ii = 0; ii < (hostSpecificLenList - 1); ii++)
             ulm_delete(ExecArgs[ii]);
         ulm_delete(ExecArgs);
     }
-    /* restore STDERR_FILENO and STDOUT_FILENO to state when this routine was entered */
-    RetVal = dup2(dupSTDERRfd, STDERR_FILENO);
-    if (RetVal <= 0) {
-        printf("Error: in dup2 dupSTDERRfd, STDERR_FILENO.\n");
-        Abort();
-    }
-    RetVal = dup2(dupSTDOUTfd, STDOUT_FILENO);
-    if (RetVal <= 0) {
-        printf("Error: in dup2 dupSTDOUTfd, STDOUT_FILENO.\n");
-        Abort();
-    }
 
+    // reap children (rsh)
+    for(int index=0; index<rsh_index; index++) {
+        int status;
+        waitpid(rsh_pid[index], &status, 0);
+    }
+        
     /*
      * Check that clients have started up normally
      */

@@ -66,7 +66,6 @@ int mpirun_spawn_exec(unsigned int *auth_data,
     char buf[BUFSIZE];
     coprocess_t cp[1];
     int rc;
-    static int fd[2];
 
     if (DEBUG) {
         fprintf(stderr, "mpirun_spawn_exec\n");
@@ -120,12 +119,6 @@ int mpirun_spawn_exec(unsigned int *auth_data,
         perror("coprocess_open");
         return EXIT_FAILURE;
     }
-    RunParameters->STDOUTfds = &fd[0];
-    RunParameters->STDOUTfds[0] = cp->fdout;
-    RunParameters->STDERRfds = &fd[1];
-    RunParameters->STDERRfds[0] = cp->fderr;
-
     *hosts_started[0] = 0;
-
     return 0;
 }

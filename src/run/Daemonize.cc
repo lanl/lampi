@@ -116,10 +116,10 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                      ULMRunParams_t *RunParameters)
 {
     int ActiveClients;
-    int i, MaxDescriptorCtl, MaxDescriptorSTDIO, RetVal;
+    int i, MaxDescriptorCtl, RetVal;
     double *HeartBeatTime, LastTime, DeltaTime, TimeInSeconds,
         TimeFirstCheckin;
-    int *ClientSocketFDList, NHosts, *STDERRfds, *STDOUTfds, *ProcessCnt;
+    int *ClientSocketFDList, NHosts, *ProcessCnt;
     HostName_t *HostList;
 	adminMessage	*server;
 #ifdef ENABLE_CT
@@ -140,8 +140,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     mpirunSetTerminateInitiated(0);
 	server = RunParameters->server;
     NHosts = RunParameters->NHosts;
-    STDERRfds = RunParameters->STDERRfds;
-    STDOUTfds = RunParameters->STDOUTfds;
     ProcessCnt = RunParameters->ProcessCount;
     HostList = RunParameters->HostList;
     ActiveClients = RunParameters->NHosts;
@@ -175,21 +173,12 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     LastTime = 0;
 
     /* find the largest descriptor - used for select */
-    MaxDescriptorSTDIO = 0;
     MaxDescriptorCtl = 0;
     for (i = 0; i < NHosts; i++) {
         if (ClientSocketFDList[i] > MaxDescriptorCtl)
             MaxDescriptorCtl = ClientSocketFDList[i];
-	if( RunParameters->handleSTDio && STDERRfds ) {
-	       	if (STDERRfds[i] > MaxDescriptorSTDIO)
-		   	MaxDescriptorSTDIO = STDERRfds[i];
-		if (STDOUTfds[i] > MaxDescriptorSTDIO)
-		   	MaxDescriptorSTDIO = STDOUTfds[i];
-	}
     }
     MaxDescriptorCtl++;
-    MaxDescriptorSTDIO++;
-
     HostsNormalTerminated = 0;
     HostsAbNormalTerminated = 0;
 
@@ -242,15 +231,11 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     for (;;) {
 
         /* check to see if there is any stdin/stdout/stderr data to read and then write */
-	if( RunParameters->handleSTDio ) {
-            if (RunParameters->STDINfd >= 0) {
-                if(mpirunScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
-                    close(RunParameters->STDINfd);
-                    RunParameters->STDINfd = -1;
-                }
+	if( RunParameters->handleSTDio && RunParameters->STDINfd > 0) {
+            if(mpirunScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
+                close(RunParameters->STDINfd);
+                RunParameters->STDINfd = -1;
             }
-            RetVal = mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, NHosts,
-                MaxDescriptorSTDIO, StderrBytesRead, StdoutBytesRead);
         }
 
         /* send heartbeat */
@@ -292,7 +277,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                       NHosts, HeartBeatTime,
                                       &HostsNormalTerminated,
                                       StderrBytesRead, StdoutBytesRead,
-                                      STDERRfds, STDOUTfds,
                                       &HostsAbNormalTerminated,
                                       ActiveHosts, ProcessCnt,
                                       PIDsOfAppProcs, &TimeFirstCheckin,
@@ -323,7 +307,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                           HeartBeatTime,
                                           &HostsNormalTerminated,
                                           StderrBytesRead, StdoutBytesRead,
-                                          STDERRfds, STDOUTfds,
                                           &HostsAbNormalTerminated,
                                           ActiveHosts, ProcessCnt,
                                           PIDsOfAppProcs,

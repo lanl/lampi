@@ -97,166 +97,9 @@ enum {
     END
 };
 
-static void set_non_block(int fd)
-{
-    int flags;
-    flags = fcntl(fd, F_GETFL);
-    if (flags == -1) {
-        perror("fcntl");
-        exit(1);
-    }
-    flags |= O_NONBLOCK;
-    flags = fcntl(fd, F_SETFL, flags);
-    if (flags == -1) {
-        perror("fcntl");
-        exit(1);
-    }
-}
-
-static void set_close_exec(int fd)
-{
-    int flags;
-    flags = fcntl(fd, F_GETFL);
-    if (flags == -1) {
-        perror("fcntl");
-        exit(1);
-    }
-    flags |= FD_CLOEXEC;
-    flags = fcntl(fd, F_SETFL, flags);
-    if (flags == -1) {
-        perror("fcntl");
-        exit(1);
-    }
-}
-
-static int setup_socket(struct sockaddr_in *listenaddr)
-{
-    int fd;
-    socklen_t addrsize;
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-        perror("socket");
-        exit(1);
-    }
-    listenaddr->sin_family = AF_INET;
-    listenaddr->sin_addr.s_addr = INADDR_ANY;
-    listenaddr->sin_port = 0;
-    if (bind(fd, (struct sockaddr *) listenaddr,
-             sizeof(*listenaddr)) == -1) {
-        perror("bind");
-        exit(1);
-    }
-
-    if (listen(fd, 1024) == -1) {
-        perror("listen");
-        exit(1);
-    }
-    addrsize = sizeof(struct sockaddr_in);
-    getsockname(fd, (struct sockaddr *) listenaddr, &addrsize);
-    set_close_exec(fd);
-    set_non_block(fd);
-    return fd;
-}
 
 static int *pids = 0;
-static int iosock_fd[2];
-static int max_sock_fd = -1;
 
-static void *accept_thread(void *arg)
-{
-    ULMRunParams_t *RunParameters = (ULMRunParams_t *) arg;
-    int nHosts = RunParameters->NHosts;
-    int connectCount = 0, i, hostID = 0;
-    fd_set rset;
-    struct timeval tmo;
-
-    /* enable asynchronous cancel mode for this thread */
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *) NULL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *) NULL);
-
-    /*   the front end sits in an select loop
-     *   when the remote side connects. the front end accepts.
-     *   the remote end sends two
-     *   things back. the pid and rfd (the process id
-     *   and what type of file descriptor (stderr,stdout,stdin)
-     */
-    while (connectCount < 2 * nHosts) {
-        FD_ZERO(&rset);
-        tmo.tv_sec = 0;
-        tmo.tv_usec = 10000;
-        /* set the sockets to listen on */
-        for (int fdIndex = 0; fdIndex < 2; fdIndex++) {
-            FD_SET(iosock_fd[fdIndex], &rset);
-        }
-
-        /* see if any sockets to accept */
-        int nRead = select(max_sock_fd + 1, &rset, NULL, NULL, &tmo);
-        if (nRead > 0) {
-            for (int sock = 0; sock < 2; sock++) {
-                if (FD_ISSET(iosock_fd[sock], &rset)) {
-                    int fd = -1, pid = -1, rfd = -1;
-                    socklen_t sa_size;
-                    struct sockaddr sa;
-                    bool foundHostID = false;
-
-                    sa_size = sizeof(sa);
-                    fd = accept(iosock_fd[sock], &sa, &sa_size);
-                    if (fd == -1 && errno != EAGAIN) {
-                        perror("accept");
-                        close(iosock_fd[sock]);
-                        pthread_exit((void *) 0);
-                    }
-                    if (read(fd, &pid, sizeof(pid)) != sizeof(pid) ||
-                        read(fd, &rfd, sizeof(rfd)) != sizeof(rfd)) {
-                        ulm_err(("mpirun_spawn_bproc: "
-                                 "failed to read pid or fd "
-                                 "from IO connection.\n"));
-                        close(fd);
-                        pthread_exit((void *) 0);
-                    }
-                    /* find host index that corresponds to this pid */
-                    while (!foundHostID) {
-                        for (i = 0; i < nHosts; i++)
-                            if (pid == pids[i]) {
-                                hostID = i;
-                                foundHostID = true;
-                                break;
-                            }
-                    }
-                    switch (rfd) {
-                    case STDOUT_FILENO:
-                        if (RunParameters->STDOUTfds[hostID] != -1) {
-                            ulm_err(("mpirun_spawn_bproc: "
-                                     "duplicate host rank %d "
-                                     "for stdout socket %d and %d\n",
-                                     hostID, fd,
-                                     RunParameters->STDOUTfds[hostID]));
-                            close(fd);
-                            pthread_exit((void *) 0);
-                        }
-                        RunParameters->STDOUTfds[hostID] = fd;
-                        connectCount++;
-                        break;
-                    case STDERR_FILENO:
-                        if (RunParameters->STDERRfds[hostID] != -1) {
-                            ulm_err(("mpirun_spawn_bproc: "
-                                     "duplicate host rank %d "
-                                     "for stderr socket %d and %d\n",
-                                     hostID, fd,
-                                     RunParameters->STDERRfds[hostID]));
-                            close(fd);
-                            pthread_exit((void *) 0);
-                        }
-                        RunParameters->STDERRfds[hostID] = fd;
-                        connectCount++;
-                        break;
-                    }
-                }
-            }                   /* end sock loop */
-        }                       /* end nread > 0 */
-    }                           /* end while (connectCount < 2 * nHosts) */
-    pthread_exit((void *) 1);
-}
 
 int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
                        int **ListHostsStarted,
@@ -283,13 +126,6 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_AUTH[MAXBUFFERLEN];
     char LAMPI_SERVER[MAXBUFFERLEN];
 
-#ifndef ENABLE_CT
-    struct bproc_io_t io[2];
-    struct sockaddr_in addr;
-    pthread_t a_thread;
-    void *a_thread_return;
-#endif
-
     /* initialize some values */
     memset(LAMPI_SOCKET, 0, MAXBUFFERLEN);
     memset(LAMPI_SERVER, 0, MAXBUFFERLEN);
@@ -309,16 +145,6 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         nodes[i] = atoi(RunParameters->HostList[i]);
         pids[i] = -1;
     }
-
-#ifndef ENABLE_CT
-    /* allocate space for stdio file handles */
-    RunParameters->STDERRfds = ulm_new(int, nHosts);
-    RunParameters->STDOUTfds = ulm_new(int, nHosts);
-    for (i = 0; i < nHosts; i++) {
-        RunParameters->STDERRfds[i] = -1;
-        RunParameters->STDOUTfds[i] = -1;
-    }
-#endif
 
     /* executable  for each of the hosts */
     execName = RunParameters->ExeList[0];
@@ -373,48 +199,6 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
-#ifdef ENABLE_CT
-    if (bproc_vexecmove(nHosts, nodes, pids, exec_args[EXEC_NAME],
-                        argv + (FirstAppArgument - 1), environ) < 0) {
-        ulm_err(("bproc error  %s at line = %i in file= %s\n",
-                 bproc_strerror(errno), __LINE__, __FILE__));
-        ret_status = errno;
-        goto CLEANUP_ABNORMAL;
-    }
-#else
-    /*
-     * setup stdio sockets for the exec'ed processes to connect back
-     * to
-     */
-    for (int iofd = 0; iofd < 2; iofd++) {
-        io[iofd].fd = iofd + 1;
-        io[iofd].type = BPROC_IO_SOCKET;
-#ifdef BPROC_IO_SEND_INFO
-        io[iofd].flags = BPROC_IO_SEND_INFO;
-#else
-        io[iofd].send_info = 1; /* obsolete */
-#endif
-        ((struct sockaddr_in *) &io[iofd].d.addr)->sin_family = AF_INET;
-        ((struct sockaddr_in *) &io[iofd].d.addr)->sin_addr.s_addr = 0;
-        iosock_fd[iofd] = setup_socket(&addr);
-        if (iosock_fd[iofd] < 0) {
-            perror("setup_socket");
-            goto CLEANUP_ABNORMAL;
-        }
-
-        if (iosock_fd[iofd] > max_sock_fd) {
-            max_sock_fd = iosock_fd[iofd];
-        }
-        ((struct sockaddr_in *) &io[iofd].d.addr)->sin_port = addr.sin_port;
-    }
-
-    /* spawn accept() processing thread */
-    if (pthread_create(&a_thread, (pthread_attr_t *) NULL,
-                       accept_thread, RunParameters) != 0) {
-        ulm_err(("Error: unable to create accept thread!\n"));
-        goto CLEANUP_ABNORMAL;
-    }
-
     /*
      * Running mpirun within a debug environment, e.g. Totalview, can
      * cause a SIGSTOP to be generated, which causes
@@ -422,14 +206,11 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      * ugly fix is to add sleep() to catch the SIGSTOP.
      */
     sleep(1);
-    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 2,
-                           exec_args[EXEC_NAME],
-                           argv + (FirstAppArgument - 1), environ) < 0) {
-        ulm_err(("mpirun_spawn_bproc: bproc_vexecmove_io: error %s\n",
+    if (bproc_vexecmove(nHosts, nodes, pids, exec_args[EXEC_NAME],
+                        argv + (FirstAppArgument - 1), environ) < 0) {
+        ulm_err(("mpirun_spawn_bproc: bproc_vexecmove: error %s\n",
                  bproc_strerror(errno)));
         ret_status = errno;
-        /* cancel accept() processing thread */
-        pthread_cancel(a_thread);
         goto CLEANUP_ABNORMAL;
     }
 
@@ -440,24 +221,9 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
                      "failed to start process on node %d: "
                      "error %s\n", nodes[i], bproc_strerror(pids[i])));
             ret_status = pids[i];
-            /* cancel accept() processing thread */
-            pthread_cancel(a_thread);
             goto CLEANUP_ABNORMAL;
         }
     }
-
-    /* join accept() processing thread */
-    if (pthread_join(a_thread, &a_thread_return) == 0) {
-        int return_value = (int) a_thread_return;
-        if (return_value == 0) {
-            ulm_err(("Error: accept thread error!\n"));
-            goto CLEANUP_ABNORMAL;
-        }
-    } else {
-        ulm_err(("Error: unable to join accept thread!\n"));
-        goto CLEANUP_ABNORMAL;
-    }
-#endif
 
     /* clean up the memory allocations */
     ulm_free(exec_args[EXEC_NAME]);

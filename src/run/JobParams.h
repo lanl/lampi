@@ -169,14 +169,8 @@ typedef struct ULMRunParams {
     /* handle standard i/o traffic */
     int handleSTDio;
 
-    /* STDIN file descriptor */
+    /* STDIN file descriptor - input forward to process 0 */
     int STDINfd;
-
-    /* list of socket that receives standad out data from host i */
-    int *STDOUTfds;
-
-    /* list of socket that receives standad error data from host i */
-    int *STDERRfds;
 
     // LSF being used
     int UseLSF;

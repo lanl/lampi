@@ -31,9 +31,7 @@ SRC_MPIRUN += \
 	src/run/AbortAllHosts.cc \
 	src/run/CheckForControlMsgs.cc \
 	src/run/CheckHeartBeat.cc \
-	src/run/DrainStdioData.cc \
 	src/run/KillAppProcs.cc \
-	src/run/ScanStdErrAndOut.cc \
 	src/run/sigalarm.cc \
 	src/run/coprocess.cc \
 	src/run/fix_RunParameters.cc \
