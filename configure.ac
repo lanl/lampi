@@ -173,6 +173,7 @@ i?86-pc-linux*)
         GM_PREFIX="/opt/gm-1.6.3"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
+        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -219,6 +220,7 @@ ia64-unknown-linux*)
         GM_PREFIX="/opt/gm"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
+        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -274,6 +276,10 @@ alpha*-dec*)
         GM_PREFIX=""
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
+
+        # on ASCI-Q, header files are broken.  Use header files we have installed
+        # in src/path/quadrics/elan3:
+        RMS_BROKEN_PREFIX="src/path/quadrics"
         RMS_PREFIX="/usr/opt/rms"
 
 	;;
@@ -308,6 +314,7 @@ powerpc-apple-darwin*)
         GM_PREFIX="/opt/gm"
         LSF_LIB=""
         LSF_INC=""
+        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -357,6 +364,7 @@ mips-sgi-irix*)
         GM_PREFIX="/opt/gm"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
+        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -409,6 +417,7 @@ AC_ARG_ENABLE(rms,
 echo "feature RMS... ${enable_rms:-no}"
 if test "$enable_rms" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_RMS"   
+   test "$RMS_BROKEN_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$RMS_BROKEN_PREFIX"
    test "$RMS_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$RMS_PREFIX/include"
    test "$RMS_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$RMS_PREFIX/lib"
    LIBS="$LIBS -lrt -lrmscall -lelan -lelan3"
