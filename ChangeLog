@@ -1,3 +1,46 @@
+2004-02-05 14:02  ddd
+
+	* src/: client/adminMessage.cc, run/mpirun.cc: Copyright update
+
+2004-02-05 13:51  ddd
+
+	* configure, configure.ac: Cosmetic change
+
+2004-02-05 13:48  ddd
+
+	* configure, configure.ac, RELEASE_NOTES: Updating version number
+	  to 1.4.11
+
+	  Adding -D_LARGEFILE_SOURCE to the variables defined when
+	  --enable-large-file-support is used
+
+2004-02-05 13:47  ddd
+
+	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec, lampi.spec:
+	  Updating version number to 1.4.11
+
+2004-02-05 13:42  rta
+
+	* src/: client/adminMessage.cc, run/mpirun.cc: Modified to not
+	  create the server_connect() thread if on bproc.  The
+	  bproc_vexecmove_io call will only spawn one remote process when
+	  running from within a debugger, e.g. totalview, if more than 1
+	  thread is created before making the bproc call.
+
+2004-02-05 13:35  ddd
+
+	* src/init/init.cc: Updating copyright notice for 2004
+
+2004-02-04 15:26  ddd
+
+	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Updating rpm
+	  configuration options for Daryl
+
+2004-02-04 10:24  ddd
+
+	* ChangeLog, RELEASE_NOTES: Updating release notes, adding
+	  ChangeLog
+
 2004-02-04 10:01  ddd
 
 	* RELEASE_NOTES, configure, configure.ac,
