@@ -1985,12 +1985,10 @@ void lampi_init_prefork_stdio(lampiState_t *s)
      */
     NChildren = s->local_size;
 
-#if 1
     /* setup stdin/stdout/stderr redirection */
     if(pipe(StdinPipe) < 0) {
         ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
     }
-#endif
 
     StderrPipes = ulm_new(int, 2 * NChildren);
     for (i = 0; i < NChildren; i++) {
@@ -2087,17 +2085,15 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
         }
         
-#if 1
-            /* setup stdin */
-            if(s->hostid != 0) {
-                s->STDINfdToChild = -1;
-                close(StdinPipe[0]);
-                close(StdinPipe[1]);
-            } else {
-                s->STDINfdToChild = StdinPipe[1];
-                close(StdinPipe[0]);
-            }
-#endif
+        /* setup stdin */
+        if(s->hostid != 0) {
+            s->STDINfdToChild = -1;
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        } else {
+            s->STDINfdToChild = StdinPipe[1];
+            close(StdinPipe[0]);
+        }
 
         /* close all write stderr/stdout pipe fd's ) */
         for (i = 0; i < NChildren; i++) {
@@ -2123,17 +2119,15 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         /* end of daemon code */
     } else {
 
-#if 1
-            /* setup stdin handling */
-            if(s->global_rank == 0) {
-                dup2(StdinPipe[0], STDIN_FILENO);
-                close(StdinPipe[1]);
-            } else {
-                close(STDIN_FILENO);
-                close(StdinPipe[0]);
-                close(StdinPipe[1]);
-            }
-#endif
+        /* setup stdin handling */
+        if(s->global_rank == 0) {
+            dup2(StdinPipe[0], STDIN_FILENO);
+            close(StdinPipe[1]);
+        } else {
+            close(STDIN_FILENO);
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        }
 
         /* setup "application process" handling of stdout/stderr */
         dup2(StderrPipes[2 * lampiState.local_rank + 1],
