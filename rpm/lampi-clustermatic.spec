@@ -18,7 +18,7 @@
 %define	compiler	%{nil}
 %endif
 
-%define version 1.5.10
+%define version 1.5.11
 %define name lampi
 %define release 1
 
@@ -32,7 +32,7 @@ Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Vendor: Los Alamos National Laboratory
 Packager: lampi-support@lanl.gov
-URL: http://www.ccs.lanl.gov/ccs1/
+URL: http://public.lanl.gov/lampi/
 Provides: mpi
 
 %description 

@@ -461,3 +461,5 @@ Version 1.5.11
 
 - MPI_Cancel() now prints a one time warning that it is implemented as
   a no-op.
+
+- ROMIO zero-length I/O fixes from Steve Hodson included.

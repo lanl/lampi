@@ -1,4 +1,4 @@
-%define version 1.5.10
+%define version 1.5.11
 %define name lampi
 %define release 1
 
@@ -6,13 +6,13 @@ Summary: Los Alamos Message Passing Interface
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Source0: http://www.acl.lanl.gov/la-mpi/lampi-papers/%{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 License: LGPL
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Vendor: Los Alamos National Laboratory
 Packager: lampi-support@lanl.gov
-URL: http://www.acl.lanl.gov/la-mpi/
+URL: http://public.lanl.gov/lampi/
 Provides: mpi
 
 %description 
