@@ -59,7 +59,6 @@ static int ulm_bcast_onhost(void *buf, int count, ULMType_t *type,
     size_t ti = 0;
     size_t mi = 0;
     size_t mo = 0;
-    unsigned char *p;
     void *RESTRICT_MACRO shared_buffer;
 
     group = communicators[comm]->localGroup;
