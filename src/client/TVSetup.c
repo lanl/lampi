@@ -30,30 +30,41 @@
 
 
 
-#ifndef _ULMCLIENTTV
-#define _ULMCLIENTTV
-
 /*
- *  This header file contains data needed for TotalView to startup its
- *  debugging session.  This is what the application processes need
- *  for setup.  ULMrun also needs some data.  The source for MPICH was
- *  looked at to see how to do the TotalView integration.
- *
- *  ** Names are names TotalView is expecting, so DO NOT change them. **
+ *  This routine does the setup work needed by TotalView on the remote
+ *  hosts.
  */
 
-extern volatile int MPIR_debug_gate;
-extern int MPIR_being_debugged;
-extern volatile int TVDummy;
+#include <stdio.h>
 
-typedef struct {
-    char *host_name;        /* something that can be passed to inet_addr */
-    char *executable_name;  /* name of binary */
-    int pid;                /* process pid */
-} MPIR_PROCDESC;
+#include "internal/log.h"
+#include "internal/profiler.h"
+#include "client/TV.h"
 
-/* function prototypes */
-void ClientTVSetup(void);
-void MPIR_Breakpoint();      /* dummy function used to let TotalView set a breakpoint */
+volatile int MPIR_acquired_pre_main = 1;
+volatile int MPIR_debug_gate = 0;
+volatile int *PtrToGate;
+volatile int TVDummy = 0;       /* NEVER change this - this is a variable the
+                                   MPIR_Breakpoint uses to trick the compiler
+                                   thinking that this might be modified, and
+                                   therefore not optimize MPIR_Breakpoint away */
 
-#endif /* _ULMCLIENTTV */
+void ClientTVSetup()
+{
+    MPIR_acquired_pre_main = 1;
+    PtrToGate = &MPIR_debug_gate;
+    while (*PtrToGate == 0) {
+        /* ulm_dbg(("MPIR_debug_gate %d\n", MPIR_debug_gate));  */
+    }
+    MPIR_Breakpoint();
+}
+
+/*
+ * dummy subroutine - need to make sure that compiler will not
+ * optimize this routine away, so that TotalView can set a breakpoint,
+ * and do what it needs to.
+ */
+void MPIR_Breakpoint(void)
+{
+    while (TVDummy == 1);
+}

@@ -46,7 +46,6 @@
 #include "queue/contextID.h"
 #include "queue/globals.h"
 #include "client/adminMessage.h"
-#include "client/TV.h"
 #include "client/ULMClient.h"
 #include "util/Lock.h"
 #include "util/MemFunctions.h"
@@ -100,6 +99,8 @@ static int *StderrPipes;
 static int *StdoutPipes;
 
 #include "internal/Private.h"
+
+extern "C" void ClientTVSetup();
 
 /*
  * inline functions

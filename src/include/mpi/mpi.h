@@ -125,6 +125,7 @@ extern MPI_Op MPI_LXOR;
  */
 double MPI_Wtick(void);
 double MPI_Wtime(void);
+
 int _MPI_Abort(MPI_Comm, int, char *, int);
 #define MPI_Abort(COMM,RC) _MPI_Abort((COMM), (RC), __FILE__, __LINE__)
 int MPI_Address(void *, MPI_Aint *);
@@ -224,9 +225,17 @@ int MPI_Info_get_nthkey(MPI_Info, int, char *);
 int MPI_Info_get_valuelen(MPI_Info, char *, int *, int *);
 int MPI_Info_set(MPI_Info, char *, char *);
 */
-int MPI_Init(int *, char ***);
-int MPI_Init_thread(int *, char ***, int, int *);
-int MPI_Initialized(int *);
+extern volatile int MPIR_debug_gate;
+int _MPI_Init(int *argc, char ***argv);
+#define MPI_Init(MPI_ARGC, MPI_ARGV)    \
+( (MPIR_debug_gate == 1) ? _MPI_Init(MPI_ARGC, MPI_ARGV) : _MPI_Init(MPI_ARGC, MPI_ARGV) )
+    
+int _MPI_Init_thread(int *, char ***, int, int *);
+#define MPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV)    \
+( (MPIR_debug_gate == 1) ? \
+  _MPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV) : _MPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV) )
+    
+    int MPI_Initialized(int *);
 int MPI_Intercomm_create(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm *);
 int MPI_Intercomm_merge(MPI_Comm, int, MPI_Comm *);
 int MPI_Iprobe(int, int, MPI_Comm, int *flag, MPI_Status *);
@@ -421,8 +430,15 @@ int PMPI_Info_get_nthkey(MPI_Info, int, char *);
 int PMPI_Info_get_valuelen(MPI_Info, char *, int *, int *);
 int PMPI_Info_set(MPI_Info, char *, char *);
 */
-int PMPI_Init(int *, char ***);
-int PMPI_Init_thread(int *, char ***, int, int *);
+int _PMPI_Init(int *, char ***);
+#define PMPI_Init(MPI_ARGC, MPI_ARGV)    \
+    ( (MPIR_debug_gate == 1) ? _PMPI_Init(MPI_ARGC, MPI_ARGV) : _PMPI_Init(MPI_ARGC, MPI_ARGV) )
+    
+int _PMPI_Init_thread(int *, char ***, int, int *);
+#define PMPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV)    \
+    ( (MPIR_debug_gate == 1) ? \
+    _PMPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV) : _PMPI_Init_thread(MPI_ARGC, MPI_ARGV, REQ, PROV) )
+        
 int PMPI_Initialized(int *);
 int PMPI_Intercomm_create(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm *);
 int PMPI_Intercomm_merge(MPI_Comm, int, MPI_Comm *);

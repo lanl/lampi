@@ -34,11 +34,7 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
-#ifdef HAVE_PRAGMA_WEAK
-#pragma weak MPI_Init_thread = PMPI_Init_thread
-#endif
-
-int PMPI_Init_thread(int *argc, char ***argv, int required, int *provided)
+int _PMPI_Init_thread(int *argc, char ***argv, int required, int *provided)
 {
     int rc;
 
@@ -95,3 +91,17 @@ int PMPI_Init_thread(int *argc, char ***argv, int required, int *provided)
 
     return MPI_SUCCESS;
 }
+
+#ifdef HAVE_PRAGMA_WEAK
+
+#pragma weak _MPI_Init_thread = _PMPI_Init_thread
+
+#else
+
+int _MPI_Init_thread(int *argc, char ***argv, int required, int *provided)
+{
+    return _PMPI_Init_thread(argc, argv, required, provided);
+}
+
+#endif
+
