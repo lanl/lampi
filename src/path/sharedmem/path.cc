@@ -40,7 +40,7 @@ static int maxOutstandingSMPFrags = 30;
 
 inline bool sharedmemPath::canReach(int globalDestProcessID)
 {
-    // return true only for processes not on our "box"
+    // return true only for processes on our "box"
 
     int destinationHostID;
     bool returnValue=false;
@@ -1068,4 +1068,71 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 	fetchNadd((int *) &(matchedSender->NumAcked),nFragsProcessed);
 
     return errorCode;
+}
+
+bool sharedmemPath::needsPush(void) 
+{
+    if (SMPSendsToPost[local_myproc()]->size() != 0)
+        return true;
+    else
+        return false;
+}
+
+bool sharedmemPath::push(double timeNow, int *errorCode)
+{
+    int retVal = ULM_SUCCESS;
+    int getSlot;
+    int SortedRecvFragsIndex;
+    SMPFragDesc_t *TmpDesc;
+    Communicator *commPtr;
+    //
+    if (SMPSendsToPost[local_myproc()]->size() == 0)
+        return ULM_SUCCESS;
+    // lock list to make sure reads are atomic
+    SMPSendsToPost[local_myproc()]->Lock.lock();
+    for (SMPFragDesc_t *
+             fragDesc =
+             (SMPFragDesc_t *) SMPSendsToPost[local_myproc()]->begin();
+         fragDesc !=
+             (SMPFragDesc_t *) SMPSendsToPost[local_myproc()]->end();
+         fragDesc = (SMPFragDesc_t *) fragDesc->next) {
+
+        commPtr = (Communicator *) communicators[fragDesc->ctx_m];
+
+        SortedRecvFragsIndex = commPtr->remoteGroup->
+            mapGroupProcIDToGlobalProcID[fragDesc->dstProcID_m];
+        SortedRecvFragsIndex = global_to_local_proc(SortedRecvFragsIndex);
+
+        if (usethreads())
+            getSlot = SharedMemIncomingFrags
+                [local_myproc()][SortedRecvFragsIndex]->getSlot();
+        else {
+            mb();
+            getSlot = SharedMemIncomingFrags
+                [local_myproc()][SortedRecvFragsIndex]->getSlotNoLock();
+            mb();
+        }
+
+        if (getSlot != -1) {
+            TmpDesc =
+                (SMPFragDesc_t *) SMPSendsToPost[local_myproc()]->
+                RemoveLinkNoLock(fragDesc);
+            // returns the value of the slot that was written too
+            retVal =
+                SharedMemIncomingFrags[local_myproc()]
+                [SortedRecvFragsIndex]->writeToSlot(getSlot, &fragDesc);
+
+            fragDesc = TmpDesc;
+        }
+        else {
+            break;
+        }
+    }
+    // unlock queue
+    SMPSendsToPost[local_myproc()]->Lock.unlock();
+
+    if (retVal > 0)
+        retVal = ULM_SUCCESS;
+
+    return retVal;
 }
