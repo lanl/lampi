@@ -320,7 +320,7 @@ public:
 #endif
         else {
             ulm_exit((-1, "quadricsRecvFragDesc::processAck: Frag "
-                      "on %d queue\n", whichQueue));
+                      "on %d queue\n", WhichQueue));
         }
         
         // reset WhichQueue flag
