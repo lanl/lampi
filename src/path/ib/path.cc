@@ -805,11 +805,18 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 		FragDesc->WhichQueue = IBFRAGSTOSEND;
 		TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
 		message->FragsToSend.AppendNoLock(FragDesc);
-        (message->NumSent)--;
-        FragDesc=TmpDesc;
+                (message->NumSent)--;
+                FragDesc=TmpDesc;
 		continue;
-	    }
-    }
+            } else {
+                double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
+                if (message->earliestTimeToResend == -1) {
+                    message->earliestTimeToResend = timeToResend;
+                } else if (timeToResend < message->earliestTimeToResend) {
+                    message->earliestTimeToResend = timeToResend;
+                }
+            }
+        }
     
 	if (free_send_resources) {
 	    message->clearToSend_m=true;
