@@ -49,6 +49,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -135,7 +136,7 @@ int CheckForControlMsgs(void)
     maxfd = 0;
     for (int i = 0; i < RunParams.NHosts; i++) {
         if (fd[i] > 0) {
-            FD_SET(fd[i], (fd_set *) &fdset);
+            ULM_FD_SET(fd[i], &fdset);
             maxfd = ULM_MAX(maxfd, fd[i]);
         }
     }
@@ -146,7 +147,30 @@ int CheckForControlMsgs(void)
     }
 
     for (int host = 0; host < RunParams.NHosts; host++) {
-        if ((fd[host] > 0) && (FD_ISSET(fd[host], (fd_set *) &fdset))) {
+
+        /* test for unexpected exit of daemon */
+        if (ENABLE_BPROC) {
+            int status;
+            pid_t pid = RunParams.DaemonPIDs[host];
+
+            if (waitpid(pid, &status, WNOHANG) == pid) {
+                if (WIFEXITED(status) || WIFSIGNALED(status)) {
+                    ulm_err(("Error: Daemon on host %d exited "
+                             "(status=%d, signal=%d)\n",
+                             host,
+                             WEXITSTATUS(status),
+                             WTERMSIG(status)));
+                    close(fd[host]);
+                    fd[host] = -1;
+                    RunParams.ActiveHost[host] = 0;
+                    RunParams.HostsAbNormalTerminated++;
+                    KillAppProcs(host);
+                }
+            }
+        }
+
+        if ((fd[host] > 0) && (ULM_FD_ISSET(fd[host], &fdset))) {
+
             /* Read tag value */
             size = RecvSocket(fd[host], &tag, sizeof(unsigned), &error);
             /* remote end of socket closed */
@@ -161,7 +185,7 @@ int CheckForControlMsgs(void)
             if (size < 0 || error != ULM_SUCCESS) {
                 ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
                          host, (long) size, error));
-                Abort();
+                return -1;
             }
 
             switch (tag) {      /* process according to message type */
@@ -182,14 +206,14 @@ int CheckForControlMsgs(void)
                                                   ProcessCount[host]);
                 if (NULL == ru) {
                     ulm_err(("Error: Out of memory\n"));
-                    Abort();
+                    return -1;
                 }
                 size = RecvSocket(fd[host], ru, sizeof(struct rusage)
                                   * RunParams.ProcessCount[host], &error);
                 if (size < 0 || error != ULM_SUCCESS) {
                     ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
                              host, (long) size, error));
-                    Abort();
+                    return -1;
                 }
 
                 if (RunParams.Verbose) {
@@ -269,7 +293,7 @@ int CheckForControlMsgs(void)
                              abnormal_term_msg.signal,
                              abnormal_term_msg.status));
                 }
-                Abort();
+                return -1;
                 break;
 
             case STDIOMSG:
@@ -289,7 +313,7 @@ int CheckForControlMsgs(void)
 
             default:
                 ulm_err(("Error: Unknown control message: %d\b", tag));
-                Abort();
+                return -1;
             }                   /* end switch */
         }
     }                           /* loop over hosts */
