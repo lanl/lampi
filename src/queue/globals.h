@@ -128,14 +128,12 @@ ssize_t minPgsIn1pointerPool = -1;
 long maxpointerPoolRetries = 100;
 bool pointerPoolAbortWhenNoResource = true;
 
-#ifdef ENABLE_RELIABILITY
 ReliabilityInfo *reliabilityInfo = 0;
 // last dclock() time CheckForRetransmits() was called
 // this way we can only check every MIN_RETRANS_TIME period
 double lastCheckForRetransmits;
-#endif
 
-#else 
+#else       /* ULM_INSTANTIATE_GLOBALS */
 
 ////////////////////////////////////////////////////////////////////////
 // Declare global variables
@@ -217,10 +215,8 @@ extern bool pointerPoolAbortWhenNoResource;
 // pool for SW SMP barrier data structures
 extern SWBarrierPool swBarrier;
 
-#ifdef ENABLE_RELIABILITY
 extern ReliabilityInfo *reliabilityInfo;
 extern double lastCheckForRetransmits;
-#endif
 
 // per-proc shared memory pool for use before the fork (will apply
 // memory affinity to each pool
