@@ -104,27 +104,27 @@ static struct {
     { "LAMPI_MAXCOMMUNICATORS", 0 },
     { "LAMPI_SMDESCPOOLBYTESPERPROC", 0 },
 	
-	/* authorization code for client/server handshake. */
+    /* authorization code for client/server handshake. */
     { "LAMPI_ADMIN_AUTH0", 0 },
     { "LAMPI_ADMIN_AUTH1", 0 },
     { "LAMPI_ADMIN_AUTH2", 0 },
 	
-	/* TCP port that mpirun is listening on. */
+    /* TCP port that mpirun is listening on. */
     { "LAMPI_ADMIN_PORT", 0 },
 	
     { "LAMPI_NOECHOAPPSTARTED", 0 },
     { "LAMPI_NO_CHECK_ARGS", 0 },
-	/* flag to indicate whether to spawn locally; for debug purposes. */
+    /* flag to indicate whether to spawn locally; for debug purposes. */
     { "LAMPI_LOCAL", 0 },
 
-	/* flag whether procs are running in LSF environ. */
+    /* flag whether procs are running in LSF environ. */
     { "LAMPI_WITH_LSF", 0 },
 	
-	/* config info for RMS environ. */
+    /* config info for RMS environ. */
     { "RMS_NNODES", 0 },
     { "RMS_NODEID", 0 },
 	
-	/* T5 config info. */
+    /* T5 config info. */
     { "T5_EVENT0", E0 },
     { "T5_EVENT1", E1 },
 	
@@ -177,12 +177,12 @@ static struct {
     { "LAMPI_SMPSMPAGESPERPROC", "" },
     { "LAMPI_THREADUSAGE", "" },
 	
-	/* Host name/IP where mpirun process is running. */
+    /* Host name/IP where mpirun process is running. */
     { "LAMPI_ADMIN_IP", "" },
 	
-	/* ??? */
+    /* ??? */
     { "LSB_MCPU_HOSTS", "" },
-	/* BPROC info. */
+    /* BPROC info. */
     { "NODES", "" },
 	
     { NULL }
@@ -358,7 +358,7 @@ void lampi_environ_init(void)
     for (i = 0; lampi_environ_integer[i].name; i++) {
         lampi_environ_integer[i].value =
             getenv_int(lampi_environ_integer[i].name,
-                        lampi_environ_integer[i].default_value);
+                       lampi_environ_integer[i].default_value);
     }
 
     for (i = 0; lampi_environ_real[i].name; i++) {
@@ -387,11 +387,11 @@ void lampi_environ_init(void)
 int lampi_environ_find_integer(const char *name, int *eval)
 {
     int 	i;
-	int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-	if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
 	
-	*eval = 0;
+    *eval = 0;
     for (i = 0; lampi_environ_integer[i].name; i++) {
         if (strcmp(name, lampi_environ_integer[i].name) == 0) {
             *eval = lampi_environ_integer[i].value;
@@ -410,9 +410,9 @@ int lampi_environ_find_integer(const char *name, int *eval)
 int lampi_environ_find_real(const char *name, double *eval)
 {
     int 	i;
-	int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-	if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
 
     *eval = 0.0;
     for (i = 0; lampi_environ_real[i].name; i++) {
@@ -433,11 +433,11 @@ int lampi_environ_find_real(const char *name, double *eval)
 int lampi_environ_find_string(const char *name, char **eval)
 {
     int 	i;
-	int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-	if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
 
-	*eval = NULL;
+    *eval = NULL;
     for (i = 0; lampi_environ_string[i].name; i++) {
         if (strcmp(name, lampi_environ_string[i].name) == 0) {
             *eval = lampi_environ_string[i].value;
@@ -455,12 +455,12 @@ int lampi_environ_find_string(const char *name, char **eval)
  */
 int lampi_environ_find_string_array(const char *name,  char ***eval)
 {
-	int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
     int 	i;
 
-	if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
 
-	*eval = NULL;
+    *eval = NULL;
     for (i = 0; lampi_environ_string_array[i].name; i++) {
         if (strcmp(name, lampi_environ_string_array[i].name) == 0) {
             *eval = lampi_environ_string_array[i].value;
@@ -484,23 +484,23 @@ void lampi_environ_dump(void)
 
     for (i = 0; lampi_environ_integer[i].name; i++) {
         fprintf(stdout, "lampi_environ_dump: %s=%d [default=%d]\n",
-               lampi_environ_integer[i].name,
-               lampi_environ_integer[i].value,
-               lampi_environ_integer[i].default_value);
+                lampi_environ_integer[i].name,
+                lampi_environ_integer[i].value,
+                lampi_environ_integer[i].default_value);
     }
 
     for (i = 0; lampi_environ_real[i].name; i++) {
         fprintf(stdout, "lampi_environ_dump: %s=%lf [default=%lf]\n",
-               lampi_environ_real[i].name,
-               lampi_environ_real[i].value,
-               lampi_environ_real[i].default_value);
+                lampi_environ_real[i].name,
+                lampi_environ_real[i].value,
+                lampi_environ_real[i].default_value);
     }
 
     for (i = 0; lampi_environ_string[i].name; i++) {
         fprintf(stdout, "lampi_environ_dump: %s=\"%s\" [default=\"%s\"]\n",
-               lampi_environ_string[i].name,
-               lampi_environ_string[i].value,
-               lampi_environ_string[i].default_value);
+                lampi_environ_string[i].name,
+                lampi_environ_string[i].value,
+                lampi_environ_string[i].default_value);
     }
 
     for (i = 0; lampi_environ_string_array[i].name; i++) {
