@@ -106,9 +106,9 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
     }
 
     srcGroup=(self%numberGroups);
-    buf_loc = (unsigned char *) sendbuf;
     for (destGroup=srcGroup, count=0;count < maxGroup;)
     {
+	    buf_loc = (unsigned char *) sendbuf;
 	for (procs = 0; procs < groups[destGroup].groupSize;procs++)
 	{
 	    destProc = groups[destGroup].elementsOfGroup[procs];
