@@ -606,6 +606,11 @@ exchange_info:
         s->error = ERROR_LAMPI_INIT_POSTFORK_IB;
         return;
     }
+
+    // this process will not use IB if we don't have any active HCAs
+    if (ib_state.num_active_hcas == 0) {
+        s->ib = 0;
+    }
     
     ulm_free(exchange_max_send);
 
