@@ -250,8 +250,6 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     int nHosts = 0;
     int ret_status = 0;
     size_t len = 0;
-    struct bproc_io_t io[3];
-    struct sockaddr_in addr;
     char *auth0_str = "LAMPI_ADMIN_AUTH0";
     char *auth1_str = "LAMPI_ADMIN_AUTH1";
     char *auth2_str = "LAMPI_ADMIN_AUTH2";
@@ -262,8 +260,13 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_SOCKET[MAXBUFFERLEN];
     char LAMPI_AUTH[MAXBUFFERLEN];
     char LAMPI_SERVER[MAXBUFFERLEN];
+
+#ifndef USE_CT
+    struct bproc_io_t io[3];
+    struct sockaddr_in addr;
     pthread_t a_thread;
     void *a_thread_return;
+#endif
 
     /* initialize some values */
     memset(LAMPI_SOCKET, 0, MAXBUFFERLEN);
@@ -286,6 +289,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         nodes[i] = bproc_getnodebyname(RunParameters->HostList[i]);
     }
 
+#ifndef USE_CT
     // allocate space for stdio file handles
     RunParameters->STDERRfds = ulm_new(int, nHosts);
     RunParameters->STDOUTfds = ulm_new(int, nHosts);
@@ -295,6 +299,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 	RunParameters->STDOUTfds[i] = -1;
 	RunParameters->STDINfds[i] = -1;
     }
+#endif
 
     // executable  for each of the hosts
     execName = RunParameters->ExeList[0];
@@ -346,6 +351,16 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
+#ifdef USE_CT
+    if (bproc_vexecmove
+	(nHosts, nodes, pids, exec_args[EXEC_NAME],
+	 argv + (FirstAppArgument - 1), environ) < 0) {
+	fprintf(stderr, "bproc error  %s at line = %i in file= %s\n",
+		strerror(errno), __LINE__, __FILE__);
+	ret_status = errno;
+	goto CLEANUP_ABNORMAL;
+    }
+#else
     /*
      * setup stdio sockets for the exec'ed processes to connect back
      *  to
@@ -398,6 +413,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         ulm_err(("Error: unable to join accept thread!\n"));
         goto CLEANUP_ABNORMAL;
     }
+#endif
 
     // clean up the memory allocations
     ulm_free(exec_args[EXEC_NAME]);

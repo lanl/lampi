@@ -67,7 +67,7 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 {
     /* local variables */
     int 			returnValue = ULM_SUCCESS;
-    int 			tag, nhosts = RunParameters->NHosts, host, errorCode;
+    int 			tag, nhosts = RunParameters->NHosts, host, errorCode, bytes;
 	unsigned int	cid;
 
     /* initialize data */
@@ -242,9 +242,15 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
         Abort();
     }
 
+    /* calculate how much buffer space is needed for RUNPARAMS scatter */
+    bytes = 0;
+    for( host = 0 ; host < nhosts ; host++ ) {
+        bytes += (sizeof(int) * (9 + RunParameters->NPathTypes[host])) + (sizeof(ssize_t) * 3);
+    }
+
     /* scatter host specific setup data */
 
-	if (!server->reset(adminMessage::SCATTERV) ) {
+	if (!server->reset(adminMessage::SCATTERV, bytes) ) {
 		ulm_err(("Error: SendInitialInputDataToClients: unable to reset sendbuffer - II\n"));
 		returnValue = ULM_ERROR;
 		return returnValue;
