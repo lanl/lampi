@@ -55,7 +55,6 @@ void quadricsInitRecvDescs() {
     ssize_t poolChunkSize = PAGESIZE;
     int nFreeLists = local_nprocs();
 
-    bool useInputPool = true;
     bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
@@ -101,7 +100,6 @@ void quadricsInitSendFragDescs() {
     ssize_t poolChunkSize = PAGESIZE;
     int nFreeLists = quadricsNRails;
 
-    bool useInputPool = false;
     bool enforceAffinity = false;
 
     int retVal = quadricsSendFragDescs.Init

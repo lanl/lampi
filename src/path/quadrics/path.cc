@@ -440,14 +440,14 @@ bool quadricsPath::sendMemoryRequest(BaseSendDesc_t *message, int gldestProc, si
 bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 {
     ELAN3_CTX *ctx;
-    size_t offset = 0, leftToSend = 0, fragLength = 0;
+    ssize_t offset = 0, leftToSend = 0, fragLength = 0;
     quadricsSendFragDesc *sfd = 0, *afd;
     void *dest = 0;
     int returnValue = ULM_SUCCESS;
     int bufCounts[NUMBER_BUFTYPES], railBufCounts[NUMBER_BUFTYPES];
     int smallBufs = 0, largeBufs = 0, bufs = 0;
     int smallBufType = 0, largeBufType = 0, destBufType = 0;
-    int tmap_index, msgType, rail;
+    int tmap_index, rail;
     bool enoughMemory = true, sentMemoryRequest = false;
     int gldestProc = -1;
     int nDescToAllocate = message->numfrags - message->NumFragDescAllocated;
