@@ -621,7 +621,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             (h->ud.rq_tokens)++;
 
             // find receive buffer address
-            addr = (void *)((unsigned long)rd->sg_m[0].addr);
+            addr = (void *)((unsigned long)rd->sg_m[0].addr + IB_GRH_LEN);
 
             // calculate msg_type from first 32-bit integer
             msg_type = (int)*((ulm_uint32_t *)addr);
@@ -658,7 +658,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 // checksum OK (or irrelevant), process ibRecvFragDesc...
                 rd->DataOK_m = false;
                 rd->path = this;
-                rd->ib_bytes_recvd_m = wc_desc.byte_len;
+                rd->ib_bytes_recvd_m = wc_desc.byte_len - IB_GRH_LEN;
 
                 switch (msg_type) {
                     case MESSAGE_DATA:
@@ -666,6 +666,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                         rd->msgData(timeNow);
                         break;
                     case MESSAGE_DATA_ACK:
+                        rd->addr_m = addr;
                         rd->msgDataAck(timeNow);
                         break;
                 }

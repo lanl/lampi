@@ -339,7 +339,7 @@ void ibSetup(lampiState_t *s)
 
         // grab a hunk of memory...make sure it is page-aligned...
         // register it as a memory region for receive buffers
-        rmem = ulm_malloc(num_rbufs * 2048 + getpagesize());
+        rmem = ulm_malloc(num_rbufs * (2048 + IB_GRH_LEN) + getpagesize());
         rmem = (void *)(((unsigned long)rmem + getpagesize() - 1)/getpagesize());
         rmem = (void *)((unsigned long)rmem * getpagesize());
         // cache start of buffer memory for later calculations
@@ -398,7 +398,7 @@ void ibSetup(lampiState_t *s)
         // register the receive buffer memory
         mr.type = VAPI_MR;
         mr.start = (VAPI_virt_addr_t)((unsigned long)rmem);
-        mr.size = num_rbufs * 2048;
+        mr.size = num_rbufs * (2048 + IB_GRH_LEN);
         mr.pd_hndl = h->pd;
         mr.acl = VAPI_EN_LOCAL_WRITE;
         vapi_result = VAPI_register_mr(h->handle, &mr, &(h->ud.recv_mr_handle), 
@@ -449,7 +449,7 @@ void ibSetup(lampiState_t *s)
             rfrag->sg_m[0].len = 2048;
             rfrag->sg_m[0].lkey = h->ud.recv_mr.l_key;
 
-            rmem = (void *)((char *)rmem + 2048);
+            rmem = (void *)((char *)rmem + (2048 + IB_GRH_LEN));
         
             // post it...
             vapi_result = VAPI_post_rr(h->handle, h->ud.handle, &(rfrag->rr_desc_m));
@@ -557,6 +557,14 @@ exchange_info:
     ib_state.ud_peers.max_ports = maxports;
     ib_state.ud_peers.proc_entries = maxhcas * maxports;
 	
+    // create and initialize arrays for round-robin processing
+    ib_state.ud_peers.next_remote_hca = (int *)ulm_malloc(nprocs() * sizeof(int));
+    ib_state.ud_peers.next_remote_port = (int *)ulm_malloc(nprocs() * sizeof(int));
+    for (i = 0; i < nprocs(); i++) {
+        ib_state.ud_peers.next_remote_hca[i] = 0;
+        ib_state.ud_peers.next_remote_port[i] = 0;
+    }
+
     ib_ud_peer_info_t *exchange_max_send = 
         (ib_ud_peer_info_t *)ulm_malloc(sizeof(ib_ud_peer_info_t) * 
         maxhcas * maxports);

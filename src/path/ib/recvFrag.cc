@@ -207,7 +207,6 @@ bool ibRecvFragDesc::AckData(double timeNow)
     p->src_proc = msg_m->header.destID;
     p->ptrToSendDesc = msg_m->header.sendFragDescPtr;
 
-    // use incoming ctx and rail!
     sfd->init(MESSAGE_DATA_ACK, p->dest_proc, hca_index, port_index);
 
     list = &(ib_state.hca[hca_index].ctlMsgsToSend[MESSAGE_DATA_ACK]);
@@ -341,7 +340,7 @@ void ibRecvFragDesc::msgData(double timeNow)
 
 void ibRecvFragDesc::msgDataAck(double timeNow)
 {
-    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    ibDataAck_t *p = (ibDataAck_t *)addr_m;
     ibSendFragDesc *sfd = (ibSendFragDesc *)p->ptrToSendDesc.ptr;
     volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc_m;
 
@@ -381,7 +380,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
 
 inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd)
 {
-    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    ibDataAck_t *p = (ibDataAck_t *)addr_m;
     sender_ackinfo_control_t *sptr;
     sender_ackinfo_t *tptr;
 
@@ -423,7 +422,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
                                                  ibSendFragDesc *sfd)
 {
     short whichQueue = sfd->WhichQueue;
-    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    ibDataAck_t *p = (ibDataAck_t *)addr_m;
     int errorCode;
 
     if (p->ackStatus == ACKSTATUS_DATAGOOD) {
