@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 
 /* Runtime control of warning and debug messages */
 
@@ -74,6 +75,8 @@ extern "C" void _ulm_log(const char *fmt, ...)
 
     stream = fopen(log_filename, "a");
     if (stream) {
+        time_t t = time(NULL);
+        fputs(ctime(&t), stream);
         fputs(buf, stream);
         fflush(stream);
         fclose(stream);
