@@ -35,6 +35,7 @@
 #include <sys/errno.h>
 #include <unistd.h>
 #include <elan3/elan3.h>
+#include <elan/elan.h>
 #include <rms/rmscall.h>
 
 #include "client/ULMClient.h"
@@ -461,6 +462,16 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
 
   END_MARK;
 }
+
+#define elan3_nvps elan_nvps 
+#define elan3_vp2location elan_vp2location
+#define elan3_location2vp elan_location2vp
+#define elan3_maxlocal elan_maxlocal
+#define elan3_nlocal elan_nlocal
+#define Node loc_node
+#define Context loc_context
+
+
 
 void Broadcaster::segment_create(void)
 {
