@@ -53,8 +53,8 @@
 enum RequestType_t {
     REQUEST_TYPE_SEND = 1,
     REQUEST_TYPE_RECV = 2,
-	REQUEST_TYPE_BCAST = 3,
-	REQUEST_TYPE_SHARE = 4 
+    REQUEST_TYPE_BCAST = 3,
+    REQUEST_TYPE_SHARE = 4 
 };
 
 enum RequestState_t {

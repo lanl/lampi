@@ -139,9 +139,14 @@ ptr_table_t *_mpi_create_errhandler_table(void)
  * Call the error handler
  */
 void _mpi_errhandler(MPI_Comm comm, int rc, char *file, int line)
+
 {
     errhandler_t *handler;
     int index;
+
+    if (_mpi.finalized) {
+        return;
+    }
 
     /* retrieve index into error handler table for this communicator */
     if (ulm_get_errhandler_index((int) comm, &index) != ULM_SUCCESS) {

@@ -89,6 +89,8 @@ void mpi_finalize_(MPI_Fint *rc)
 void mpi_finalize__(MPI_Fint *rc)
 {
     *rc = MPI_Finalize();
+    _mpif_finalize();
+}
 }
 
 #endif

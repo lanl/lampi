@@ -38,19 +38,20 @@
 #include "internal/mpif.h"
 
 mpif_state_t _mpif;
-static int called=0;
+static int called = 0;
 
 int _mpif_init(void)
 {
     if (_MPI_DEBUG) {
-	_mpi_dbg("_mpif_init:\n");
+        _mpi_dbg("_mpif_init:\n");
     }
 
-    /* initialize _mpi lock - upper layer is responsible to ensure that
+    /*
+     * initialize _mpif lock - upper layer is responsible to ensure that
      * only one thread at a time makes a call
      */
-    if( !called) {
-        called=1;
+    if (!called) {
+        called = 1;
         cLockInit(&(_mpif.lock));
     }
 
@@ -59,27 +60,76 @@ int _mpif_init(void)
     if (_mpif.initialized == 0) {
 
         if (_MPI_DEBUG) {
-	    _mpi_dbg("_mpif_init: initializing\n");
+            _mpi_dbg("_mpif_init: initializing\n");
         }
 
-	_mpif.initialized = 1;
+        _mpif.initialized = 1;
 
-	_mpif.op_table = _mpif_create_op_table();
-	if (_mpif.op_table == NULL) {
-	    return -1;
-	}
+        _mpif.op_table = _mpif_create_op_table();
+        if (_mpif.op_table == NULL) {
+            return -1;
+        }
 
-	_mpif.request_table = _mpif_create_request_table();
-	if (_mpif.request_table == NULL) {
-	    return -1;
-	}
+        _mpif.request_table = _mpif_create_request_table();
+        if (_mpif.request_table == NULL) {
+            return -1;
+        }
 
-	_mpif.type_table = _mpif_create_type_table();
-	if (_mpif.type_table == NULL) {
-	    return -1;
-	}
+        _mpif.type_table = _mpif_create_type_table();
+        if (_mpif.type_table == NULL) {
+            return -1;
+        }
     }
 
+    _mpi_unlock(&(_mpif.lock));
+
+    return 0;
+}
+
+
+/*
+ * MPI fortran layer clean-up.  By this point, everything is complete,
+ * so unconditionally free everything we can.
+ */
+int _mpif_finalize(void)
+{
+    _mpi_lock(&(_mpif.lock));
+    if (_mpif.finalized == 0) {
+
+        int i;
+
+        _mpif.finalized = 1;
+
+        for (i = 0; i < _mpif.op_table->size; i++) {
+            if (_mpif.op_table->addr[i]) {
+                ulm_free(_mpif.op_table->addr[i]);
+            }
+        }
+        if (_mpif.op_table->addr) {
+            ulm_free(_mpif.op_table->addr);
+        }
+        ulm_free(_mpif.op_table);
+
+        for (i = 0; i < _mpif.request_table->size; i++) {
+            if (_mpif.request_table->addr[i]) {
+                ulm_free(_mpif.request_table->addr[i]);
+            }
+        }
+        if (_mpif.request_table->addr) {
+            ulm_free(_mpif.request_table->addr);
+        }
+        ulm_free(_mpif.request_table);
+
+        for (i = 0; i < _mpif.type_table->size; i++) {
+            if (_mpif.type_table->addr[i]) {
+                ulm_free(_mpif.type_table->addr[i]);
+            }
+        }
+        if (_mpif.type_table->addr) {
+            ulm_free(_mpif.type_table->addr);
+        }
+        ulm_free(_mpif.type_table);
+    }
     _mpi_unlock(&(_mpif.lock));
 
     return 0;
