@@ -786,6 +786,12 @@ int ulm_c_keyval_create(MPI_Copy_function * copyFunction,
 			int *keyval, void *extraState);
 
 /*
+ *  simple call which returns (type->layout == CONTIGUOUS);
+ */
+int ulm_type_iscontig(ULMType_t *type);
+
+
+/*
  * fortran interface for creating new attribute data
  */
 int ulm_f_keyval_create(void *copyFunction,

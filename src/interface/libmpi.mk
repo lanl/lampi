@@ -67,6 +67,7 @@ SRC_LIBMPI += \
 	src/interface/ulm_set_topology.cc \
 	src/interface/ulm_start.cc \
 	src/interface/ulm_type_free.cc \
+	src/interface/ulm_type_iscontig.cc \
 	src/interface/ulm_test.cc \
 	src/interface/ulm_testall.cc \
 	src/interface/ulm_wait.cc 

@@ -32,6 +32,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "internal/malloc.h"
+#include "internal/mpi.h"
+#include "internal/mpif.h"
 #include "ulm/ulm.h"
 
 /*!
@@ -47,6 +49,12 @@
 extern "C" int ulm_type_free(ULMType_t *type)
 {
     if (type) {
+        // remove fortran handle:
+        if (_mpi.fortran_layer_enabled && type->fhandle != -1) {
+            _mpi_ptr_table_free(_mpif.type_table, type->fhandle);
+            type->fhandle = -1;
+        }
+ 
         // free the envelope's integer array
         if ((type->envelope.nints > 0) && (type->envelope.iarray != NULL)) {
             ulm_free(type->envelope.iarray);

@@ -10,6 +10,7 @@
 #include "mpisgi2.h"
 #endif
 
+
 #if (defined(MPICH) || defined(MPICH2))
 /* MPICH2 also provides this routine */
 void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag);
@@ -36,6 +37,14 @@ int MPI_SGI_type_is_contig(MPI_Datatype datatype);
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 {
     *flag = MPI_SGI_type_is_contig(datatype);
+}
+#elif (defined(MPILAMPI))
+
+int ulm_type_iscontig(void *);
+
+void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
+{
+    *flag = ulm_type_iscontig(datatype);
 }
 
 #else
