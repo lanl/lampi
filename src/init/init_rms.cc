@@ -106,13 +106,20 @@ void lampi_init_prefork_rms(lampiState_t *s)
 
 #else 
 
+#ifdef __osf__
+    // For QA, QB and QSC 6/15/03 we need to do this weirdness...
+    // QSNETLIBS_VERSION_STRING is not defined.
+    elan_nodeId = ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId - cap.LowNode;
+#else
     // Old versions of qsnetlibs (pre 1.4) do this ..
     elan_nodeId = devinfo.NodeId - cap.LowNode;
+#endif
+
+
 
 #endif // QSNETLIBS_VERSION_STRING
 
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
-
     /*
      * RMS_NODEIDs are allocated contiguously from zero;
      * ELAN3_DEVINFO.NodeIds are not.
