@@ -55,9 +55,22 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
 {
     struct sigaction action, oldaction;
 
+    /* flush any outstanding I/O */
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+ 
+    /* report the abort */
     _ulm_set_file_line(file, line);
-    _ulm_log("Client aborting (comm=%d, error=%d)\n", comm, error);
+    _ulm_log("MPI_Abort(comm=%d, error=%d) was called\n", comm, error);
 
+    /* gratuitously flush I/O again, and sleep for a second */
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+    sleep(1);
+
+    /* report abnormal exit via shared memory block */
     if (lampiState.AbnormalExit) {
         /* block SIGCHLD processing */
         action.sa_handler = SIG_IGN;
@@ -76,8 +89,6 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
         sigaction(SIGCHLD, &oldaction, NULL);
     }
 
-    fflush(stdout);
-    fflush(stderr);
 #if ENABLE_RMS
     raise(SIGHUP);
 #else
