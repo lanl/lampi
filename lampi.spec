@@ -7,7 +7,7 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Source0: http://www.acl.lanl.gov/la-mpi/lampi-papers/%{name}-%{version}.tar.gz
-License: GPL
+License: LGPL
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Vendor: Los Alamos National Laboratory
@@ -48,7 +48,7 @@ The current API supported being MPI 1.2 (C and Fortran bindings).
 %define mydocdir /usr/share/doc/%{name}-%{version}
 %define mydocroot %{buildroot}%{mydocdir}
 %{__mkdir} -p %{mydocroot}
-%{__install} COPYRIGHT INSTALL LICENSE README RELEASE_PROCESS %{mydocroot}
+%{__install} COPYRIGHT INSTALL LICENSE README %{mydocroot}
 %{__install} %{buildroot}%{_datadir}/lampi/* %{mydocroot}
 %{__rm} -rf %{buildroot}%{_datadir}/lampi
 
