@@ -52,8 +52,6 @@ MODULES_OS	+= os/LINUX/i686
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
 CPPFLAGS	+= -DWITH_UDP
-#debug queues
-CPPFLAGS	+= -D_DEBUGQUEUES
 
 # Quadrics RMS / Elan support
 # USE_RMS	:= 1
