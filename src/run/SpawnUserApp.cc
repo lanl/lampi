@@ -73,20 +73,24 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
     
     /*
      * Check that executable is valid.
+     * (Only need to do this for bproc and RMS).
      */
-    execName = RunParameters->ExeList[0];
-    if ( stat(execName, &fs) < 0 )
+    if ( RunParameters->UseRMS || RunParameters->UseBproc )
     {
-        ulm_exit((-1, "Unable to determine status of executable %s."
-                  "  Please verify that the executable exists.\n",
-                 execName));
-    }
-    isValid = (fs.st_mode & S_IFREG) && ( I_OWN(fs) || GRP_OWN(fs)
-                                         || (fs.st_mode & S_IXOTH) );
-    if ( 0 == isValid )
-    {
-        ulm_err(("File %s is not executable by user.\n", execName));
-        return -1;
+        execName = RunParameters->ExeList[0];
+        if ( stat(execName, &fs) < 0 )
+        {
+            ulm_exit((-1, "Unable to determine status of executable %s."
+                      "  Please verify that the executable exists.\n",
+                      execName));
+        }
+        isValid = (fs.st_mode & S_IFREG) && ( I_OWN(fs) || GRP_OWN(fs)
+                                              || (fs.st_mode & S_IXOTH) );
+        if ( 0 == isValid )
+        {
+            ulm_err(("File %s is not executable by user.\n", execName));
+            return -1;
+        }        
     }
     
     /*
