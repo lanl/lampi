@@ -42,6 +42,7 @@
 
 #include "internal/profiler.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 
 static void handler(int signal)

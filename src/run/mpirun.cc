@@ -73,6 +73,7 @@
 #include "path/udp/UDPNetwork.h"        /* for UDPGlobals::NPortsPerProc */
 #include "path/gm/base_state.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "run/TV.h"
 
 /*
@@ -112,6 +113,10 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
     int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME;
     char version[ULM_MAX_VERSION_STRING];
     int bad_versions = 0;
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** getClientPids\n"));
+    }
 
     while (contacted < RunParams.NHosts) {
         int recvd = s->receiveFromAny(&rank, &tag, errorCode,
@@ -187,6 +192,10 @@ static bool releaseClients(int *errorCode)
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** releaseClients\n"));
+    }
+
     while (contacted < RunParams.NHosts) {
         int recvd = s->receiveFromAny(&rank, &tag, errorCode,
                                       (RunParams.
@@ -228,6 +237,10 @@ static bool exchangeIPAddresses(int *errorCode)
     adminMessage *s = RunParams.server;
     int udphosts = 0;
     int tcphosts = 0;
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** exchangeIPAdresses\n"));
+    }
 
     // we don't do any of this if there is only one host...
     if (RunParams.NHosts == 1)
@@ -278,6 +291,10 @@ static bool exchangeUDPPorts(int *errorCode)
     bool returnValue = true;
     int udphosts = 0, rc;
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** exchangeUDPPorts\n"));
+    }
+
     // we don't do any of this if there is only one host...
     if (RunParams.NHosts == 1)
         return returnValue;
@@ -311,6 +328,10 @@ static bool exchangeTCPPorts(int *errorCode)
     bool returnValue = true;
     int tcphosts = 0, rc;
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** exchangeTCPPorts\n"));
+    }
+
     // we don't do any of this if there is only one host...
     if (RunParams.NHosts == 1)
         return returnValue;
@@ -343,6 +364,10 @@ static bool exchangeIBInfo(int *errorCode)
     int ibhosts = 0, i, j;
     int rc, active[3], tag;
     int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** exchangeIBInfo\n"));
+    }
 
     // we don't do any of this if there is only one host...
     if (RunParams.NHosts == 1)
@@ -422,6 +447,10 @@ static bool exchangeGMInfo(int *errorCode)
     int gmhosts = 0, i, j;
     int rc, maxDevs, tag;
     int alarm_time = (RunParams.TVDebug) ? -1 : ALARMTIME * 1000;
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** exchangeGMInfo\n"));
+    }
 
     // we don't do any of this if there is only one host...
     if (RunParams.NHosts == 1)
@@ -597,6 +626,10 @@ int mpirun(int argc, char **argv)
 
     LogJobStart();
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** Starting job\n"));
+    }
+
     /* create a new server admin connection/message object */
     RunParams.server = new adminMessage;
 
@@ -629,6 +662,10 @@ int mpirun(int argc, char **argv)
         }
     }
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** Spawning application\n"));
+    }
+
     /* spawn user application */
     rc = Spawn(AuthData, ReceivingSocket, &ListHostsStarted,
                argc - FirstAppArg, argv + FirstAppArg);
@@ -648,6 +685,10 @@ int mpirun(int argc, char **argv)
             pthread_join(sc_thread, (void **) NULL);
         }
         Abort();
+    }
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** Waiting for application processes to connect back\n"));
     }
 
     /* 2/4/04 RTA:
@@ -707,6 +748,10 @@ int mpirun(int argc, char **argv)
     /* totalview debugging of client "daemons" */
     MPIrunTVSetUp();
 
+    if (RunParams.Verbose) {
+        ulm_err(("*** Exchanging data with application processes\n"));
+    }
+
     /* send initial input parameters */
     ulm_dbg(("\nmpirun: sending initial input to daemons...\n"));
     rc = SendInitialInputDataToClients();
@@ -720,6 +765,10 @@ int mpirun(int argc, char **argv)
      * at this stage all application processes have been
      * created on the remote hosts
      */
+
+    if (RunParams.Verbose) {
+        ulm_err(("*** Collecting PIDS\n"));
+    }
 
     /* collect PIDs of client applications */
     RunParams.AppPIDs = ulm_new(pid_t *, RunParams.NHosts);

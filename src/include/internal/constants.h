@@ -53,12 +53,8 @@
 #define ALARMTIME                       300
 #define MIN_CONNECT_ALARMTIME           30
 #define PERPROC_CONNECT_ALARMTIME       2
-#define HEARTBEATINTERVAL               (double)(1)
-#define HEARTBEATTIMEOUT                (double)(10*HEARTBEATINTERVAL)
-/* time to allow for orderly shutdown (abort on expiry) */
-#define SHUTDOWNINTERVAL                (double)(4*HEARTBEATINTERVAL)
 /* time from first client startup to timing out if startup not finished */
-#define STARTUPINTERVAL                 (double)(120*HEARTBEATINTERVAL)
+#define STARTUPINTERVAL                 120.0
 /* retransmit timeout */
 #define RETRANS_TIME                    (double)(5.0)
 /* retransmit time for control messages (no received feedback) */

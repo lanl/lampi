@@ -53,6 +53,7 @@
 #include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 /*
  * Use RSH to spawn master process on remote host.  This routine also
@@ -101,7 +102,7 @@ int SpawnRsh(unsigned int *AuthData,
         MaxSize = len;
 
     /* csh/tcsh */
-    LenList += (5 * 5);  /* 5 env vars and 4 items per var. */
+    LenList += (6 * 3);  /* 6 env vars and 3 items per var. */
     /* auth data */
     for (i = 0; i<3; i++)
     {
@@ -123,6 +124,11 @@ int SpawnRsh(unsigned int *AuthData,
 
     len = strlen("LAMPI_ADMIN_IP");
     len += strlen(RunParams.mpirunName);
+    len += 2;
+    if (len > MaxSize)
+        MaxSize = len;
+
+    len = strlen("NO_IB_PREMAIN_INIT=1");
     len += 1;
     if (len > MaxSize)
         MaxSize = len;
@@ -240,7 +246,7 @@ int SpawnRsh(unsigned int *AuthData,
            to ExecArgs below where the indices are explicit,
            e.g. ExecArgs[12] = "foo"
         */
-        int EndLibEnvVars = 20;
+        int EndLibEnvVars = 23;
         int CDEntry = EndLibEnvVars + 1 + nAddedElements;
         int WorkingDirEntry = CDEntry + 1;
         int AppEntry = CDEntry + 3;
@@ -253,7 +259,7 @@ int SpawnRsh(unsigned int *AuthData,
         sprintf(ExecArgs[1], "-n");
         /* entry 2 is the host name - will be filled in loop */
         sprintf(ExecArgs[3], "/bin/sh");
-        sprintf(ExecArgs[4], "-c");
+        sprintf(ExecArgs[4], "-lc");
         sprintf(ExecArgs[5], "\"");
 
         sprintf(ExecArgs[6], "export");
@@ -272,6 +278,10 @@ int SpawnRsh(unsigned int *AuthData,
         sprintf(ExecArgs[18], "export");
         sprintf(ExecArgs[19], "LAMPI_ADMIN_IP=%s", RunParams.mpirunName);
         sprintf(ExecArgs[20], ";");
+        sprintf(ExecArgs[21], "export");
+        sprintf(ExecArgs[22], "NO_IB_PREMAIN_INIT=1");
+        sprintf(ExecArgs[23], ";");
+
         if (addEnvVar) {
             // check to see if any environment variables need to be set
             //  if so adjust paramenters

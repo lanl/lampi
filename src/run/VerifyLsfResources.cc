@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -51,6 +51,7 @@
 #include "run/Input.h"
 #include "run/LSFResource.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "util/ParseString.h"
 #include "util/Utility.h"
 

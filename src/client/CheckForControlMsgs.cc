@@ -116,6 +116,12 @@ int ClientCheckForControlMsgs(int MaxDescriptor,
         switch (tag) {
 
         case HEARTBEAT:
+            if (lampiState.verbose) {
+                ulm_err(("*** heartbeat from mpirun "
+                         "(period = %d, timeout = %d)\n",
+                         lampiState.HeartbeatPeriod,
+                         lampiState.HeartbeatTimeout));
+            }
 #ifndef HAVE_CLOCK_GETTIME
             struct timeval t;
             gettimeofday(&t, NULL);

@@ -231,11 +231,17 @@ struct RunParams_t {
     /* server instance. */
     adminMessage *server;
 	
-    /* Heartbeat timeout period - in seconds */
-    int HeartBeatTimeOut;
-
     /* Connect timeout period - in seconds */
     int ConnectTimeout;
+
+    /* Should we do heartbeats? */
+    int doHeartbeat;
+
+    /* Period in seconds of heartbeat between mpirun and daemons */
+    int HeartbeatPeriod;
+
+    /* Interval without seeing a heartbeat before the application is terminated */
+    int HeartbeatTimeout;
 
     // list of environment variables to set on each host
     int nEnvVarsToSet;
@@ -274,5 +280,13 @@ struct RunParams_t {
     /* should we do any checksumming/CRC on Quadrics */
     int quadricsDoChecksum;
 };
+
+
+/*
+ * Global instance of runtime parameters
+ */
+
+extern RunParams_t RunParams; // mpiurn runtime parameters
+
 
 #endif                          /* _MPIRUNJOBPARAMS */

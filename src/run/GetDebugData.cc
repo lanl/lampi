@@ -43,9 +43,9 @@
 #include "internal/constants.h"
 #include "internal/types.h"
 #include "internal/log.h"
-#include "run/Run.h"
 #include "run/Input.h"
-#include "run/globals.h"
+#include "run/Run.h"
+#include "run/RunParams.h"
 
 /*
  * Set the Totalview debug flags such that debugging will start with
@@ -62,7 +62,9 @@ void GetTVDaemon(const char *InfoStream)
     RunParams.TVDebug = 1;
     RunParams.TVDebugApp = 0;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.HeartBeatTimeOut = -1;
+    RunParams.doHeartbeat = 0;
+    RunParams.HeartbeatPeriod = -1;
+    RunParams.HeartbeatTimeout = -1;
 }
 
 /*
@@ -80,7 +82,9 @@ void GetTVAll(const char *InfoStream)
     RunParams.TVDebug = 1;
     RunParams.TVDebugApp = 1;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.HeartBeatTimeOut = -1;
+    RunParams.doHeartbeat = 0;
+    RunParams.HeartbeatPeriod = -1;
+    RunParams.HeartbeatTimeout = -1;
 }
 
 void GetGDB(const char *InfoStream)
@@ -95,5 +99,7 @@ void GetGDB(const char *InfoStream)
     RunParams.TVDebugApp = 1;
     RunParams.GDBDebug = 1;
     /* shut off heartbeat - so won't time out while debugging */
-    RunParams.HeartBeatTimeOut = -1;
+    RunParams.doHeartbeat = 0;
+    RunParams.HeartbeatPeriod = -1;
+    RunParams.HeartbeatTimeout = -1;
 }

@@ -45,6 +45,7 @@
 #include "internal/malloc.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 /*
  * Kill application processes.

@@ -54,387 +54,412 @@
 #include "internal/new.h"
 #include "internal/profiler.h"
 #include "internal/types.h"
-#include "util/ParseString.h"
 #include "run/Input.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
+#include "util/ParseString.h"
+
+
+static void Help(const char *msg);
+static void ListOptions(const char *msg);
+static void Version(const char *msg);
 
 
 Options_t Options[] =
 {
-    {"-jobfile",
-     "JobDescriptionFile",
-     STRING_ARGS,
-     NoOpFunction,
-     NotImplementedFunction,
-     "File containing parameter settings", 0, "\0"
-    },
-    {"-nolsf",
-     "NoLSF",
+    {{"h", "help"},
+     "Help",
      NO_ARGS,
      NoOpFunction,
-     setNoLSF,
-     "No LSF control will be used in job", 0, "\0"
+     Help,
+     "Print help and exit"
     },
-    /* HostCount must be before HostList */
-    {"-N",
-     "HostCount",
-     STRING_ARGS,
-     NoOpFunction,
-     GetAppHostCount,
-     "Number of hosts (machines)", 0, "\0"
-    },
-    /* HostList must be before Procs */
-    {"-H",
-     "HostList",
-     STRING_ARGS,
-     NoOpFunction,
-     GetAppHostData,
-     "List of hosts (machines)", 0, "\0"
-    },
-    {"-machinefile",
-     "MachineFile",
-     STRING_ARGS,
-     NoOpFunction,
-     GetAppHostDataFromMachineFile,
-     "File containing list of hosts (machines)", 0, "\0"
-    },
-    /* Procs must be after HostCount and HostList */
-    {"-np",
-     "Procs",
-     STRING_ARGS,
-     NoOpFunction,
-     GetClientProcessCount,
-     "Number of processes total or on each host (machine)", 0, "\0"
-    },
-    /* alias for -np, call ...NoInput here! */
-    {"-n",
-     "ProcsAlias",
-     STRING_ARGS,
-     GetClientProcessCountNoInput,
-     GetClientProcessCount,
-     "Number of processes total or on each host (machine)", 0, "\0"
-    },
-    {"-s",
-     "MpirunHostname",
-     STRING_ARGS,
-     GetMpirunHostnameNoInput,
-     GetMpirunHostname,
-     "IP hostname or address of mpirun host", 0, "\0"
-    },
-    {"-i",
-     "InterfaceList",
-     STRING_ARGS,
-     GetInterfaceNoInput,
-     GetInterfaceList,
-     "List of interface names to be used by TCP/UDP paths", 0, "\0"
-    },
-    {"-ni",
-     "Interfaces",
-     STRING_ARGS,
-     NoOpFunction,
-     GetInterfaceCount,
-     "Maximum number of interfaces to be used by TCP/UDP paths", 0, "\0"
-    },
-    {"-cpulist",
-     "CpuList",
-     STRING_ARGS,
-     NoOpFunction,
-     GetClientCpus,
-     "Which CPUs to use", 0, "\0"
-    },
-    {"-d",
-     "WorkingDir",
-     STRING_ARGS,
-     GetClientWorkingDirectoryNoInp,
-     GetClientWorkingDirectory,
-     "Current directory", 0, "\0"
-    },
-    {"-f",
-     "NoArgCheck",
+    {{"V", "version"},
+     "Version",
      NO_ARGS,
      NoOpFunction,
-     SetCheckArgsFalse,
-     "No checking of MPI arguments", 0, "\0"
+     Version,
+     "Print version and exit"
     },
-    {"-t",
-     "OutputPrefix",
-     NO_ARGS,
-     NoOpFunction,
-     SetOutputPrefixTrue,
-     "Prefix standard output and error with helpful information", 0, "\0"
-    },
-    {"-q",
-     "Quiet",
-     NO_ARGS,
-     NoOpFunction,
-     SetQuietTrue,
-     "Suppress start-up messages", 0, "\0"
-    },
-    {"-v",
+    {{"v", "verbose"},
      "Verbose",
      NO_ARGS,
      NoOpFunction,
      SetVerboseTrue,
-     "Verbose start-up messages", 0, "\0"
+     "Verbose start-up messages"
     },
-    {"-w",
-     "Warn",
+    /* HostCount must be before HostList */
+    {{"N", "nhosts"},
+     "HostCount",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostCount,
+     "Number of hosts (machines)"
+    },
+    /* HostList must be before Procs */
+    {{"H", "hostlist"},
+     "HostList",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostData,
+     "List of hosts (machines)"
+    },
+    /* Procs must be after Hostcount and HostList */
+    {{"n", "np", "nprocs"},
+     "Procs",
+     STRING_ARGS,
+     NoOpFunction,
+     GetClientProcessCount,
+     "Number of processes total or on each host (machine)"
+    },
+    {{"machinefile"},
+     "MachineFile",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostDataFromMachineFile,
+     "File containing list of hosts (machines)"
+    },
+    {{"i", "interface"},
+     "InterfaceList",
+     STRING_ARGS,
+     GetInterfaceNoInput,
+     GetInterfaceList,
+     "List of interface names to be used by TCP/UDP paths"
+    },
+    {{"ni", "interfaces"},
+     "Interfaces",
+     STRING_ARGS,
+     NoOpFunction,
+     GetInterfaceCount,
+     "Maximum number of interfaces to be used by TCP/UDP paths"
+    },
+    {{"s", "mpirun-hostname"},
+     "MpirunHostname",
+     STRING_ARGS,
+     GetMpirunHostnameNoInput,
+     GetMpirunHostname,
+     "A comma-delimited list of preferred IP interface name\n"
+     "    fragments (whole, suffix, or prefix) or addresses for TCP/IP\n"
+     "    administrative and UDP/IP data traffic.\n"
+    },
+    {{"nolsf"},
+     "NoLSF",
      NO_ARGS,
      NoOpFunction,
-     SetWarnTrue,
-     "Enable warning messages", 0, "\0"
+     setNoLSF,
+     "No LSF control will be used in job"
     },
-    {"-rusage",
+    {{"cpulist"},
+     "CpuList",
+     STRING_ARGS,
+     NoOpFunction,
+     GetClientCpus,
+     "Which CPUs to use"
+    },
+    {{"d", "working-dir"},
+     "WorkingDir",
+     STRING_ARGS,
+     GetClientWorkingDirectoryNoInp,
+     GetClientWorkingDirectory,
+     "Current directory"
+    },
+    {{"rusage"},
      "PrintRusage",
      NO_ARGS,
      NoOpFunction,
      SetPrintRusageTrue,
-     "Print resource usage (when available)", 0, "\0"
+     "Print resource usage (when available)"
     },
-    {"-dapp",
+    {{"dapp"},
      "DirectoryOfBinary",
      STRING_ARGS,
      NoOpFunction,
      GetAppDir,
-     "Absolute path to binary", 0, "0"
+     "Absolute path to binary"
     },
-    {"-exe",
-     "BinaryName",
+    {{"e", "exe"},
+     "Executable",
      STRING_ARGS,
      FatalNoInput,
      GetClientApp,
-     "Binary name", 0, "0"
+     "Binary name"
     },
-    {"-dev",
+    {{"dev"},
      "NetworkDevices",
      STRING_ARGS,
      GetNetworkDevListNoInput,
      GetNetworkDevList,
-     "Type of network", 0, "\0"
+     "Type of network"
     },
-    {"-tvdbgstrt",
+    {{"tvdbgstrt"},
      "TotalViewDebugStartup",
      NO_ARGS,
      NoOpFunction,
      GetTVDaemon,
-     "Debug the ULM library", 0, "\0"
+     "Debug the ULM library", 1
     },
-    {"-gdb",
+    {{"gdb"},
      "GDBDebugStartup",
      NO_ARGS,
      NoOpFunction,
      GetGDB,
-     "Debug LA-MPI library with gdb and xterm", 0, "\0"
+     "Debug LA-MPI library with gdb and xterm", 1
     },
-    {"-mh",
+    {{"mh"},
      "MasterHost",
      STRING_ARGS,
      NoOpFunction,
      RearrangeHostList,
-     "Startup host", 0, "\0"
+     "Startup host", 1
     },
-    {"-env", "EnvVars",
+    {{"env"},
+      "EnvVars",
      STRING_ARGS,
      NoOpFunction,
      parseEnvironmentSettings,
-     "List environment variables and settings", 0, "\0"
+     "List environment variables and settings"
     },
-    {"-norsrccontinue",
+    {{"norsrccontinue"},
      "OutOfResourceContinue",
      NO_ARGS,
      NoOpFunction,
      parseOutOfResourceContinue,
-     "  ", 1, "\0"
+     "  ", 1
     },
-    {"-retry",
+    {{"retry"},
      "MaxRetryWhenNoResource",
      STRING_ARGS,
      NoOpFunction,
      parseMaxRetries,
-     "Number of times to retry for resources", 0, "0"
+     "Number of times to retry for resources"
     },
-    {"-local",
+    {{"local"},
      "Local",
      NO_ARGS,
      NoOpFunction,
      setLocal,
-     "Run on the local host using fork/exec to spawn the processes", 0, "0"
+     "Run on the local host using fork/exec to spawn the processes"
     },
-    {"-ssh",
+    {{"ssh"},
      "UseSSH",
      NO_ARGS,
      NoOpFunction,
      setUseSSH,
-     "use SSH instead of RSH to create remote processes", 0, "0"
+     "use SSH instead of RSH to create remote processes"
     },
-    {"-threads",
-        "NoThreads",
-        NO_ARGS,
-        NoOpFunction,
-        setThreads,
-        "Threads used in job", 0, "0"
-    },
-    {"-minsmprecvdesc",
-     "MinSMPrecvdescpages",
-     STRING_ARGS,
+    {{"threads"},
+     "NoThreads",
+     NO_ARGS,
      NoOpFunction,
-     parseMinSMPRecvDescPages,
-     "Min shared memory recv descriptor pages", 0, "\0"
+     setThreads,
+     "Threads used in job"
     },
-    {"-timeout",
+    {{"timeout"},
      "ConnectTimeout",
      STRING_ARGS,
      NoOpFunction,
      SetConnectTimeout,
-     "Time in seconds to wait for client applications to connect back", 0, "\0"
+     "Time in seconds to wait for client applications to connect back"
     },
-    {"-maxsmprecvdesc",
+    {{"heartbeat-period"},
+     "HeartbeatPeriod",
+     STRING_ARGS,
+     NoOpFunction,
+     SetHeartbeatPeriod,
+     "Period in seconds of heartbeats between mpirun and daemon processes"
+    },
+    {{"heartbeat-timeout"},
+     "HeartbeatTimeout",
+     STRING_ARGS,
+     NoOpFunction,
+     SetHeartbeatTimeout,
+     "Interval without seeing a heartbeat before the application is terminated"
+    },
+    {{"minsmprecvdesc"},
+     "MinSMPrecvdescpages",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMinSMPRecvDescPages,
+     "Min shared memory recv descriptor pages", 1
+    },
+    {{"maxsmprecvdesc"},
      "MaxSMPrecvdescpages",
      STRING_ARGS,
      NoOpFunction,
      parseMaxSMPRecvDescPages,
-     "Max shared memory recv descriptor pages", 0, "\0"
+     "Max shared memory recv descriptor pages", 1
     },
-    {"-totsmprecvdesc",
+    {{"totsmprecvdesc"},
      "TotSMPrecvdescpages",
      STRING_ARGS,
      NoOpFunction,
      parseTotalSMPRecvDescPages,
-     "Total shared memory recv descriptor pages", 0, "\0"
+     "Total shared memory recv descriptor pages", 1
     },
-    {"-minsmpisenddesc",
+    {{"minsmpisenddesc"},
      "MinSMPisenddescpages",
      STRING_ARGS,
      NoOpFunction,
      parseMinSMPISendDescPages,
-     "Min shared memory isend descriptor pages", 0, "\0"
+     "Min shared memory isend descriptor pages", 1
     },
-    {"-maxsmpisenddesc",
+    {{"maxsmpisenddesc"},
      "MaxSMPisenddescpages",
      STRING_ARGS,
      NoOpFunction,
      parseMaxSMPISendDescPages,
-     "Max shared memory isend descriptor pages", 0, "\0"
+     "Max shared memory isend descriptor pages", 1
     },
-    {"-totsmpisenddesc",
+    {{"totsmpisenddesc"},
      "TotSMPisenddescpages",
      STRING_ARGS,
      NoOpFunction,
      parseTotalSMPISendDescPages,
-     "Total shared memory isend descriptor pages", 0, "\0"
+     "Total shared memory isend descriptor pages", 1
     },
-    {"-totirecvdesc",
+    {{"totirecvdesc"},
      "TotIrecvdescpages",
      STRING_ARGS,
      NoOpFunction,
      parseTotalIRecvDescPages,
-     "Total irevc descriptor Pages", 0, "\0"
+     "Total irevc descriptor Pages", 1
     },
-    {"-totsmpdatapgs",
+    {{"totsmpdatapgs"},
      "TotSMPDatapages",
      STRING_ARGS,
      NoOpFunction,
      parseTotalSMPDataPages,
-     "Total shared memory data pages", 0, "\0"
+     "Total shared memory data pages", 1
     },
-    {"-minsmpdatapgs",
+    {{"minsmpdatapgs"},
      "MinSMPDatapages",
      STRING_ARGS,
      NoOpFunction,
      parseMinSMPDataPages,
-     "Min shared memory data pages", 0, "\0"
+     "Min shared memory data pages", 1
     },
-    {"-maxsmpdatapgs",
+    {{"maxsmpdatapgs"},
      "MaxSMPDatapages",
      STRING_ARGS,
      NoOpFunction,
      parseMaxSMPDataPages,
-     "Max shared memory data pages", 0, "\0"
+     "Max shared memory data pages", 1
     },
 #if ENABLE_NUMA
-    {"-cpuspernode", "CpusPerNode",
-     STRING_ARGS, NoOpFunction, parseCpusPerNode, "Number of CPU's per node to use", 0, "\0"},
-    {"-resrcaffinity", "ResourceAffinity",
-     STRING_ARGS, NoOpFunction, parseResourceAffinity, "Resource affinity usage", 0, "\0"},
-    {"-defltaffinity", "DefaultAffinity",
-     STRING_ARGS, NoOpFunction, parseDefaultAffinity, "Resoruce affinity specification", 0, "\0"},
-    {"-mandatoryAffinity", "MandatoryAffinity",
-     STRING_ARGS, NoOpFunction, parseMandatoryAffinity, "Resource affinity usage mandatory", 0, "\0"},
+    {{"cpuspernode"},
+     "CpusPerNode",
+     STRING_ARGS,
+      NoOpFunction,
+      parseCpusPerNode,
+     "Number of CPU's per node to use", 1
+    }
+    {{"resrcaffinity"},
+     "ResourceAffinity",
+     STRING_ARGS,
+      NoOpFunction,
+      parseResourceAffinity,
+     "Resource affinity usage", 1
+    },
+    {{"defltaffinity"},
+     "DefaultAffinity",
+     STRING_ARGS,
+     NoOpFunction,
+     parseDefaultAffinity,
+     "Resoruce affinity specification", 1
+    },
+    {{"mandatoryAffinity"},
+     "MandatoryAffinity",
+     STRING_ARGS,
+     NoOpFunction,
+     parseMandatoryAffinity,
+     "Resource affinity usage mandatory", 1
+    },
 #endif				// ENABLE_NUMA
-    {"-maxcomms",
+    {{"maxcomms"},
      "MaxComms",
      STRING_ARGS,
      NoOpFunction,
      parseMaxComms,
-     "Maximum number of communicators on each host", 0, "\0"
+     "Maximum number of communicators on each host", 1
     },
-    {"-smdescmemperproc",
+    {{"smdescmemperproc"},
      "SMDescMemPerProc",
      STRING_ARGS,
      NoOpFunction,
      parseSMDescMemPerProc,
-     "Descriptor Shared Memory pool per process allocation - in bytes", 0, "\0"
+     "Descriptor Shared Memory pool per process allocation - in bytes", 1
     },
-    {"-qr",
-     "QuadricsRails",
-     STRING_ARGS,
-     NoOpFunction,
-     parseQuadricsRails,
-     "Quadrics rail numbers to use", 0, "\0"
-    },
-    {"-crc",
+    {{"crc"},
      "UseCRC",
      NO_ARGS,
      NoOpFunction,
      parseUseCRC,
-     "Use CRCs instead of checksums", 0, "\0"
+     "Use CRCs instead of checksums"
     },
-    {"-qf",
+#if ENABLE_QSNET
+    {{"qr"},
+     "QuadricsRails",
+     STRING_ARGS,
+     NoOpFunction,
+     parseQuadricsRails,
+     "Quadrics rail numbers to use"
+    },
+    {{"qf"},
      "QuadricsFlags",
      STRING_ARGS,
      NoOpFunction,
      parseQuadricsFlags,
-     "Special Quadrics flags -- noack, ack, nochecksum, checksum", 0, "\0"
+     "Special Quadrics flags -- noack, ack, nochecksum, checksum"
     },
-    {"-mf",
+#endif
+#if ENABLE_GM
+    {{"mf"},
      "MyrinetFlags",
      STRING_ARGS,
      NoOpFunction,
      parseMyrinetFlags,
-     "Special Myrinet GM flags -- noack, ack, nochecksum, checksum, <number> (fragment size)", 0, "\0"
+     "Special Myrinet GM flags -- noack, ack, nochecksum, checksum, <number> (fragment size)"
     },
-    {"-if",
+#endif
+#if ENABLE_IB
+    {{"if"},
      "IBFlags",
      STRING_ARGS,
      NoOpFunction,
      parseIBFlags,
-     "Special InfiniBand flags -- noack, ack, nochecksum, checksum", 0, "\0"
-    }
-
+     "Special InfiniBand flags -- noack, ack, nochecksum, checksum"
+    },
+#endif
 #if ENABLE_TCP
-    ,
-    {"-tcpmaxfrag",
+    {{"tcpmaxfrag"},
      "TCPMaxFragment",
      STRING_ARGS,
      NoOpFunction,
      parseTCPMaxFragment,
-     "TCP maximum fragment size", 0, "\0"
+     "TCP maximum fragment size"
     },
-    {"-tcpeagersend",
+    {{"tcpeagersend"},
      "TCPEagerSend",
      STRING_ARGS,
      NoOpFunction,
      parseTCPEagerSend,
-     "TCP eager send size", 0, "\0"
+     "TCP eager send size"
     },
-    {"-tcpconretries",
+    {{"tcpconretries"},
      "TCPConnectRetries",
      STRING_ARGS,
      NoOpFunction,
      parseTCPConnectRetries,
-     "TCP connection retries", 0, "\0"
+     "TCP connection retries"
     }
 #endif
+    {{"list-options"},
+     "ListOptions",
+     NO_ARGS,
+     NoOpFunction,
+     ListOptions,
+     "Print detailed list of all options and exit"
+    }
 };
 
 int SizeOfOptions = sizeof(Options) / sizeof(Options_t);
@@ -446,88 +471,99 @@ void Usage(FILE *stream)
             "    mpirun [OPTION]... EXECUTABLE [ARGUMENT]...\n"
             " or mpirun -h|-help\n"
             " or mpirun -version\n"
-            " or mpirun -list-options\n"
             "\n"
             "Run a job under the LA-MPI message-passing system\n"
             "\n"
-            "Options\n"
+            "Command-line options may start with one or more dashes. Options\n"
+            "may also be specied in a configuration file (~.lampi.conf)\n"
+            "using the associated variable (see \"Advanced options\" below)\n"
+            "\n"
+            "Common options:\n\n"
             "-n|-np NPROCS     Number of processes. A single value specifies the\n"
             "                  total number of processes, while a comma-delimited\n"
             "                  list of numbers specifies the number of processes\n"
             "                  on each host.\n"
-            "-N NHOSTS         Number of hosts.\n"
+            "-N                Number of hosts.\n"
             "-H HOSTLIST       A comma-delimited list of hosts (if applicable).\n"
-            "-crc              Use 32-bit CRCs instead of additive checksums if applicable.\n"
-            "-d DIRLIST        A comma-delimited list of one or more working directories\n"
-            "                  for spawned processes.\n"
-            "-dapp DIRLIST     A comma-delimited list of one or more directories\n"
-            "                  where the executable is located.\n"
-            "-dev PATHLIST     A colon-delimited list of one or more network paths to use.\n" 
-            "-i IFLIST         A comma-delimited list of one or more interfaces names\n"
-            "                  to be used by TCP/UDP paths.\n"
-            "-local            Run on the local host using fork/exec to spawn processes.\n"
-            "-ni NINTERFACES   Maximum number of interfaces to be used by TCP/UDP paths.\n"
             "-q                Suppress start-up messages.\n"
-            "-rusage           Print resource usage (where available).\n"
-            "-s MPIRUNHOST     A comma-delimited list of preferred IP interface name\n"
-            "                  fragments (whole, suffix, or prefix) or addresses for TCP/IP\n"
-            "                  administrative and UDP/IP data traffic.\n"
-            "-ssh              Use ssh rather than the default rsh if no other start-up\n"
-            "                  mechanism is available.\n"
             "-t                Tag standard output/error with source information.\n"
-            "-timeout TIMEOUT  Specify a timeout in seconds for application start-up.\n"
             "-v                Verbose start-up information.\n"
             "-w                Enable warning messages.\n"
             "-threads          Enable thread safety.\n"
+            "-local            Run on the local host using fork/exec to spawn processes.\n"
+            "-ssh              Use ssh rather than the default rsh if no other start-up\n"
+            "                  mechanism is available.\n"
+            "-timeout TIMEOUT  Specify a timeout in seconds for application start-up.\n"
+            "-dev PATHLIST     A colon-delimited list of one or more network paths to use.\n" 
+#if ENABLE_TCP || ENABLE_UDP
+            "-i IFLIST         A comma-delimited list of one or more interfaces names\n"
+            "                  to be used by TCP/UDP paths.\n"
+            "-ni NINTERFACES   Maximum number of interfaces to be used by TCP/UDP paths.\n"
+#endif
+#if ENABLE_QSNET
             "-qf FLAGSLIST     A comma-delimited list of keywords for operation on\n"
             "                  Quadrics networks.  The keywords supported are \"ack\",\n"
             "                  \"noack\", \"checksum\", and \"nochecksum\"\n"
             "                  [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+#endif
+#if ENABLE_GM
             "-mf FLAGSLIST     A comma-delimited list of keywords for operation on\n"
             "                  Myrinet GM networks.  The keywords supported are \"ack\",\n"
             "                  \"noack\", \"checksum\", and \"nochecksum\"\n"
             "                  and a number to set the size of the large message\n"
             "                  [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+#endif
+#if ENABLE_IB
             "-if FLAGSLIST     A comma-delimited list of keywords for operation on\n"
             "                  InfiniBand networks.  The keywords supported are \"ack\",\n"
             "                  \"noack\", \"checksum\", and \"nochecksum\"\n"
             "                  [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+#endif
             "\n");
     fflush(stream);
 }
 
 
-static void Help(void)
+static void Help(const char *msg)
 {
     Usage(stdout);
+    ListOptions(NULL);
     exit(EXIT_SUCCESS);
 }
 
 
-static void ListOptions(void)
+static void ListOptions(const char *msg)
 {
-    printf("Advanced options:\n");
+    printf("Advanced options:\n"
+           "\n");
+
     for (int i = 0; i < SizeOfOptions; i++) {
         if (!Options[i].display) {
-            printf("    %s", Options[i].AbreviatedName);
+            printf("  -%s", Options[i].OptName[0]);
+            for (int alias = 1; Options[i].OptName[alias]; alias++) {
+                printf(", -%s", Options[i].OptName[alias]);
+            }
+
             switch (Options[i].TypeOfArgs) {
             case STRING_ARGS:
-                printf(" [ARG]...");
+                printf(" ARG[,...]");
                 break;
             case NO_ARGS:
             default:
                 break;
             }
-            printf("\n        %s [%s]",
-                   Options[i].Usage, Options[i].FileName);
+            printf("\n");
+            printf("    %s\n", Options[i].Usage);
+            printf("    Configuration file variable: %s\n",
+                   Options[i].FileName);
+            printf("\n");
         }
-        printf("\n");
     }
     exit(EXIT_SUCCESS);
 }
 
 
-static void Version(void)
+static void Version(const char *msg)
 {
     if (ENABLE_DEBUG) {
         printf("LA-MPI: Version " PACKAGE_VERSION "-debug\n"
@@ -541,9 +577,10 @@ static void Version(void)
 }
 
 
-void FatalNoInput(const char *ErrorString)
+void FatalNoInput(const char *msg)
 {
-    ulm_err(("Error: No input data provided.\n%s\n", ErrorString));
+    ulm_err(("Error: No input data provided (%s)\n", msg));
+    Usage(stderr);
     exit(EXIT_FAILURE);
 }
 
@@ -552,36 +589,14 @@ void FatalNoInput(const char *ErrorString)
  *  No-op function sed when the corresponding input data is not
  *  requred to run a job, and was not provided at run time.
  */
-void NoOpFunction(const char *ErrorString)
+void NoOpFunction(const char *msg)
 {
     return;
 }
 
 
 /*
- *  Debug function for inromational purposes.
- */
-void NotImplementedFunction(const char *ErrorString)
-{
-    ulm_err(("Error: Function not implemented: %s\n",
-             ErrorString));
-}
-
-
-static void ScanForHelp(int i, char **argv)
-{
-    if (strcmp(argv[i], "-h") == 0) {
-        Help();
-    } else if (strcmp(argv[i], "-help") == 0) {
-        Help();
-    } else if (strcmp(argv[i], "-list-options") == 0) {
-        ListOptions();
-    } else if (strcmp(argv[i], "-version") == 0) {
-        Version();
-    }
-}
-
-/* scan a system-wide configuration file, if it exists...
+ * scan a system-wide configuration file, if it exists...
  */
 static void ScanSystemConfigFile(void)
 {
@@ -781,92 +796,88 @@ static void ScanEnvironment(void)
  */
 static void ScanCmdLine(int argc, char **argv, int *FirstAppArg)
 {
-    int ArgvIndex, BinaryNameIndex, OptionIndex, Flag;
-    size_t ArgvLen, DatabaseLen;
-    bool processedBinaryName = false;
+    int iarg, ExecutableIndex, iopt, Flag;
+    bool processedExecutable = false;
 
     /* set appargsindex to default value indicating no arguments */
     *FirstAppArg = argc;
 
-    BinaryNameIndex =
-        MatchOption("BinaryName");
-    if (BinaryNameIndex < 0) {
-        ulm_err(("Error: Option BinaryName not found\n"));
+    ExecutableIndex = MatchOption("Executable");
+    if (ExecutableIndex < 0) {
+        ulm_err(("Error: Option Executable not found\n"));
         Abort();
     }
 
     /* loop over argv data */
-    for (ArgvIndex = 1; ArgvIndex < argc; ArgvIndex++) {
-        ArgvLen = strlen(argv[ArgvIndex]);
+    for (iarg = 1; iarg < argc; iarg++) {
+
         Flag = 0;
 
-        ScanForHelp(ArgvIndex, argv);
+        /* is this an option (i.e. does it start with dashes)? */
 
-        /* loop over database options */
-        for (OptionIndex = 0; OptionIndex < SizeOfOptions;
-             OptionIndex++) {
+        int pos = 0;
+        while (argv[iarg][pos] == '-') {
+            pos++;
+        }
 
-            /* check AbreviatedName */
-            DatabaseLen =
-                strlen(Options[OptionIndex].AbreviatedName);
-            if ((DatabaseLen == ArgvLen)
-                &&
-                (strncmp
-                 (argv[ArgvIndex],
-                  Options[OptionIndex].AbreviatedName,
-                  DatabaseLen) == 0)) {
-                Flag = 1;
-            }
-            /* process data if Flag == 1 */
-            if (Flag) {
-                if (Options[OptionIndex].TypeOfArgs == NO_ARGS) {
-                    sprintf(Options[OptionIndex].InputData, "yes");
-                    Options[OptionIndex].fpToExecute =
-                        Options[OptionIndex].fpProcessInput;
-                } else if (Options[OptionIndex].TypeOfArgs ==
-                           STRING_ARGS) {
-                    if ((ArgvIndex + 1) < argc) {
-                        sprintf(Options[OptionIndex].InputData,
-                                "%s", argv[++ArgvIndex]);
-                        Options[OptionIndex].fpToExecute =
-                            Options[OptionIndex].fpProcessInput;
+        if (pos > 0) {
+
+            char *opt = argv[iarg] + pos;
+
+            /* loop over database options */
+            for (iopt = 0; iopt < SizeOfOptions; iopt++) {
+
+                /* check option */
+                for (int alias = 0; Options[iopt].OptName[alias]; alias++) {
+                    if (strlen(opt) == strlen(Options[iopt].OptName[alias])
+                        && strncmp(opt, Options[iopt].OptName[alias], strlen(opt)) == 0) {
+                        Flag = 1;
+                        break;
                     }
-                    if (OptionIndex == BinaryNameIndex) {
-                        processedBinaryName = true;
-                    }
-                } else {
-                    ulm_err(("Error: Cannot parse option %s\n",
-                             Options[OptionIndex].FileName));
-                    Abort();
                 }
-                break;
-            }
 
-        }                       /* end OptionIndex loop */
+                /* process data if Flag == 1 */
+                if (Flag) {
+                    if (Options[iopt].TypeOfArgs == NO_ARGS) {
+                        sprintf(Options[iopt].InputData, "yes");
+                        Options[iopt].fpToExecute = Options[iopt].fpProcessInput;
+                    } else if (Options[iopt].TypeOfArgs == STRING_ARGS) {
+                        if ((iarg + 1) < argc) {
+                            sprintf(Options[iopt].InputData, "%s", argv[++iarg]);
+                            Options[iopt].fpToExecute = Options[iopt].fpProcessInput;
+                        }
+                        if (iopt == ExecutableIndex) {
+                            processedExecutable = true;
+                        }
+                    } else {
+                        ulm_err(("Error: Cannot parse option %s\n", Options[iopt].FileName));
+                        Abort();
+                    }
+                    break;
+                }
+            }                   /* end iopt loop */
+        }
 
         /* stop processing - found the binary, binary arguments, or a bad option */
         if (!Flag) {
-            if (processedBinaryName) {
-                *FirstAppArg = ArgvIndex;
+            if (processedExecutable) {
+                *FirstAppArg = iarg;
                 break;
             } else {
-                if (argv[ArgvIndex][0] == '-') {
-                    ulm_err(("Error: unrecognized option \'%s\'.\n", argv[ArgvIndex]));
+                if (argv[iarg][0] == '-') {
+                    ulm_err(("Error: unrecognized option \'%s\'.\n", argv[iarg]));
                     Abort();
                 } else {
-                    sprintf(Options[BinaryNameIndex].InputData,
-                            "%s", argv[ArgvIndex]);
-                    Options[BinaryNameIndex].fpToExecute =
-                        Options[BinaryNameIndex].fpProcessInput;
-                    if (++ArgvIndex < argc) {
-                        *FirstAppArg = ArgvIndex;
+                    sprintf(Options[ExecutableIndex].InputData, "%s", argv[iarg]);
+                    Options[ExecutableIndex].fpToExecute = Options[ExecutableIndex].fpProcessInput;
+                    if (++iarg < argc) {
+                        *FirstAppArg = iarg;
                     }
                     break;
                 }
             }
         }
-
-    }                           /* end ArgvIndex loop */
+    }                           /* end iarg loop */
 }
 
 
@@ -898,43 +909,44 @@ void ScanInput(int argc, char **argv, int *FirstAppArg)
 
 
 /*
- * Match the StringToMatch to a variable in the database.  A search is
+ * Match the "string" to a variable in the database.  A search is
  * performed over all available types of option names.  The index in
  * the options data base table is returned.
  */
-int MatchOption(char *StringToMatch)
+int MatchOption(char *string)
 {
-    int IndexInTable, IndexOfMatch = -1;
-    size_t StringToMatchlen, OptionInTablelen;
+    size_t len = strlen(string);
 
-    /* initialize local data */
-    StringToMatchlen = strlen(StringToMatch);
+    for (int i = 0; i < SizeOfOptions; i++) {
 
-    for (IndexInTable = 0; IndexInTable < SizeOfOptions;
-         IndexInTable++) {
+        /* is this a command-line option (i.e. does it start with dashes)? */
 
-        /* search over Abreviated name */
-        OptionInTablelen =
-            strlen(Options[IndexInTable].AbreviatedName);
-        if ((StringToMatchlen == OptionInTablelen)
-            &&
-            (strncmp
-             (Options[IndexInTable].AbreviatedName, StringToMatch,
-              StringToMatchlen) == 0)) {
-            return IndexInTable;
+        int pos = 0;
+        while (string[pos] == '-') {
+            pos++;
         }
 
-        /* search over FileName */
-        OptionInTablelen = strlen(Options[IndexInTable].FileName);
-        if ((StringToMatchlen == OptionInTablelen) &&
-            (strncmp(Options[IndexInTable].FileName,
-                     StringToMatch, StringToMatchlen) == 0)) {
-            return IndexInTable;
+        if (pos > 0) {
+            char *opt = string + pos;
+            /* search over options (including aliases) */
+            for (int alias = 0; Options[i].OptName[alias]; alias++) {
+                if ((len == strlen(Options[i].OptName[alias])) &&
+                    (strncmp(Options[i].OptName[0], opt, len) == 0)) {
+                    return i;
+                }
+            }
+
+        } else {
+        
+            /* search over FileName */
+            if ((len == strlen(Options[i].FileName)) &&
+                (strncmp(Options[i].FileName, string, len) == 0)) {
+                return i;
+            }
         }
+    }
 
-    }                           /* end loop over IndexInTable */
-
-    return IndexOfMatch;
+    return -1;                  /* no match */
 }
 
 
@@ -953,7 +965,7 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
     if ((cnt != 1) && (cnt != SizeOfArray)) {
         ulm_err(("Error: Wrong number of data elements specified for %s. "
                  "Number or arguments specified (%d) should be either 1 or %d\n",
-                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].OptName[0],
                  cnt, SizeOfArray));
         Abort();
     }
@@ -1006,8 +1018,10 @@ void FillLongData(ParseString * InputObj, int SizeOfArray, long *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n", Options[OptionIndex].AbreviatedName, Options[OptionIndex].FileName));
-        ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n", cnt, SizeOfArray));
+        ulm_err(("Error: Wrong number of data elements specified for  %s, or %s\n",
+                 Options[OptionIndex].OptName[0], Options[OptionIndex].FileName));
+        ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n",
+                 cnt, SizeOfArray));
         ulm_err(("Input line: %s\n",
                  Options[OptionIndex].InputData));
         Abort();
@@ -1056,8 +1070,6 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
                    ssize_t * Array, Options_t * Options,
                    int OptionIndex, int MinVal)
 {
-
-
     /* local data */
     int i, cnt;
     char *TmpCharPtr;
@@ -1068,7 +1080,7 @@ void FillSsizeData(ParseString * InputObj, int SizeOfArray,
     if ((cnt != 1) && (cnt != SizeOfArray)) {
         ulm_err(("Error: "
                  "Wrong number of data elements specified for %s, or %s\n",
-                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].OptName[0],
                  Options[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is %d , but should be either 1 or %d\n", cnt, SizeOfArray));
         ulm_err(("Input line: %s\n",
@@ -1143,7 +1155,7 @@ void GetDirectoryList(char *Option, DirName_t ** Array, int ArrayLength)
     if ((cnt != 1) && (cnt != ArrayLength)) {
         ulm_err(("Error: "
                  " Wrong number of data elements specified for  %s, or %s\n",
-                 Options[OptionIndex].AbreviatedName,
+                 Options[OptionIndex].OptName[0],
                  Options[OptionIndex].FileName));
         ulm_err(("Number or arguments specified is :: %d , but should be either 1 or %d\n", cnt, ArrayLength));
         ulm_err(("Input line: %s\n",
@@ -1699,21 +1711,69 @@ void SetCheckArgsFalse(const char *InfoStream)
     putenv("LAMPI_NO_CHECK_ARGS=1");
 }
 
+
 void SetConnectTimeout(const char *InfoStream)
 {
-    int OptionIndex = MatchOption("ConnectTimeout");
-    if (OptionIndex < 0) {
+    char *ptr;
+    int index = MatchOption("ConnectTimeout");
+    if (index < 0) {
         ulm_err(("Error: Option ConnectTimeout not found\n"));
         Abort();
     }
 
-    errno = 0;
-    RunParams.ConnectTimeout = strtol(Options[OptionIndex].InputData,
-                                      (char **) NULL, 10);
-    if (errno) {
-        ulm_err(("Error: Parsing timeout (%s)\n", Options[OptionIndex].InputData));
+    RunParams.ConnectTimeout = strtol(Options[index].InputData, &ptr, 10);
+    if (ptr == Options[index].InputData) {
+        ulm_err(("Error: Parsing timeout (%s)\n", Options[index].InputData));
         Usage(stderr);
         exit(EXIT_FAILURE);
+    }
+}
+
+
+void SetHeartbeatPeriod(const char *InfoStream)
+{
+    char *ptr;
+    int index = MatchOption("HeartbeatPeriod");
+    if (index < 0) {
+        ulm_err(("Error: Option HeartbeatPeriod not found\n"));
+        Abort();
+    }
+
+    RunParams.HeartbeatPeriod = strtol(Options[index].InputData, &ptr, 10);
+    if (ptr == Options[index].InputData) {
+        ulm_err(("Error: Parsing HeartbeatPeriod (%s)\n", Options[index].InputData));
+        Usage(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    if (RunParams.HeartbeatPeriod <= 0) {
+        RunParams.doHeartbeat = 0;
+        RunParams.HeartbeatPeriod = -1;
+        RunParams.HeartbeatTimeout = -1;
+    }
+}
+
+
+void SetHeartbeatTimeout(const char *InfoStream)
+{
+    char *ptr;
+    int index = MatchOption("HeartbeatTimeout");
+    if (index < 0) {
+        ulm_err(("Error: Option HeartbeatTimeout not found\n"));
+        Abort();
+    }
+
+    RunParams.HeartbeatTimeout = strtol(Options[index].InputData, &ptr, 10);
+    if (ptr == Options[index].InputData) {
+        ulm_err(("Error: Parsing HeartbeatTimeout (%s)\n", Options[index].InputData));
+        Usage(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    if (RunParams.HeartbeatTimeout <= 0) {
+        RunParams.doHeartbeat = 0;
+        RunParams.HeartbeatPeriod = -1;
+        RunParams.HeartbeatTimeout = -1;
     }
 }
 
@@ -1906,11 +1966,11 @@ void parseQuadricsRails(const char *InfoStream)
          i++) {
         int railIndex = atoi(*i);
         if ((railIndex < 0) || (railIndex > 31)) {
-            ulm_err(("Error: specified Quadrics rail index, %d, is outside " "acceptable limits (0 >= n < 32)\n", railIndex));
-            Abort();
-        }
-        RunParams.quadricsRailMask |= (1 << railIndex);
+        ulm_err(("Error: specified Quadrics rail index, %d, is outside " "acceptable limits (0 >= n < 32)\n", railIndex));
+        Abort();
     }
+    RunParams.quadricsRailMask |= (1 << railIndex);
+}
 }
 
 void parseUseCRC(const char *InfoStream)
@@ -2101,5 +2161,3 @@ void parseTCPConnectRetries(const char *InfoStream)
 }
 
 #endif
-
-

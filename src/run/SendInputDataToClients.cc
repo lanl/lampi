@@ -47,6 +47,7 @@
 #include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 /*
  * Routines is used to send setup data to the clients.
@@ -659,6 +660,33 @@ int SendInitialInputDataToClients(void)
         pack(&(RunParams.isatty), (adminMessage::packType) sizeof(int),
              1))
         DataError("isatty");
+
+    // doHeartbeat
+    tag = adminMessage::DOHEARTBEAT;
+    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
+        TagError("DOHEARTBEAT");
+    if (!server->
+        pack(&(RunParams.doHeartbeat), (adminMessage::packType) sizeof(int),
+             1))
+        DataError("doHeartbeat");
+
+    // HeartbeatPeriod
+    tag = adminMessage::HEARTBEATPERIOD;
+    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
+        TagError("HEARTBEATPERIOD");
+    if (!server->
+        pack(&(RunParams.HeartbeatPeriod), (adminMessage::packType) sizeof(int),
+             1))
+        DataError("HeartbeatPeriod");
+
+    // HeartbeatTimeout
+    tag = adminMessage::HEARTBEATTIMEOUT;
+    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
+        TagError("HEARTBEATTIMEOUT");
+    if (!server->
+        pack(&(RunParams.HeartbeatTimeout), (adminMessage::packType) sizeof(int),
+             1))
+        DataError("HeartbeatTimeout");
 
 #if ENABLE_NUMA
     /* cpu list */

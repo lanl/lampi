@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -44,10 +44,11 @@
 #include "internal/types.h"
 #include "internal/log.h"
 #include "internal/new.h"
+#include "run/Input.h"
 #include "run/Run.h"
-#include "internal/new.h"
-#include "util/Utility.h"
 #include "run/LSFResource.h"
+#include "run/RunParams.h"
+#include "util/Utility.h"
 
 static bool gotClientProcessCount = false;
 
@@ -248,21 +249,14 @@ void GetClientProcessCount(const char *InfoStream)
         gotClientProcessCount = true;
     }
 
-    /* find Procs or ProcsAlias index in option list */
+    /* find Procs index in option list */
     int OptionIndex = MatchOption("Procs");
     if (OptionIndex < 0) {
         ulm_err(("Error: Option Procs not found in Input parameter database\n"));
         Abort();
     }
-    if (strlen(Options[OptionIndex].InputData) == 0) {
-        OptionIndex = MatchOption("ProcsAlias");
-        if (OptionIndex < 0) {
-            ulm_err(("Error: Option ProcsAlias not found in Input parameter database\n"));
-            Abort();
-        }
-    }
 
-    /* parse Procs/ProcsAlias data */
+    /* parse Procs data */
     ParseString ProcData(Options[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 

@@ -52,6 +52,7 @@
 #include "internal/types.h"
 #include "util/Utility.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 int StdInCTS = true;
 
@@ -117,7 +118,6 @@ void Daemonize(void)
     adminMessage *server;
     int *HostsNormalTerminated = &RunParams.HostsNormalTerminated;
     int *HostsAbNormalTerminated = &RunParams.HostsAbNormalTerminated;
-
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
@@ -151,8 +151,6 @@ void Daemonize(void)
         PIDsOfAppProcs[i] = ulm_new(pid_t, ProcessCnt[i]);
     }
 
-    /* setup initial control data */
-    HeartBeatTime = ulm_new(double, NHosts);
 #ifndef HAVE_CLOCK_GETTIME
     gettimeofday(&Time, NULL);
     TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -161,10 +159,16 @@ void Daemonize(void)
     TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif
     LastTime = TimeInSeconds;
-    for (i = 0; i < NHosts; i++) {
-        HeartBeatTime[i] = TimeInSeconds;
+
+    if (RunParams.doHeartbeat) {
+        /* setup initial control data */
+        HeartBeatTime = ulm_new(double, NHosts);
+
+        for (i = 0; i < NHosts; i++) {
+            HeartBeatTime[i] = TimeInSeconds;
+        }
+        LastTime = 0;
     }
-    LastTime = 0;
 
     /* find the largest descriptor - used for select */
     MaxDescriptorCtl = 0;
@@ -233,21 +237,24 @@ void Daemonize(void)
             }
         }
 
-        /* send heartbeat */
+        if (RunParams.doHeartbeat) {
+        
+            /* send heartbeat */
 #ifndef HAVE_CLOCK_GETTIME
-        gettimeofday(&Time, NULL);
-        TimeInSeconds =
-            (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
+            gettimeofday(&Time, NULL);
+            TimeInSeconds =
+                (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
 #else
-        clock_gettime(CLOCK_REALTIME, &Time);
-        TimeInSeconds =
-            (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
+            clock_gettime(CLOCK_REALTIME, &Time);
+            TimeInSeconds =
+                (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif
-        DeltaTime = TimeInSeconds - LastTime;
-        if (DeltaTime >= HEARTBEATINTERVAL) {
-            LastTime = TimeInSeconds;
-            RetVal = SendHeartBeat(ClientSocketFDList, NHosts,
-                                   MaxDescriptorCtl);
+            DeltaTime = TimeInSeconds - LastTime;
+            if (DeltaTime > (double) RunParams.HeartbeatPeriod) {
+                LastTime = TimeInSeconds;
+                RetVal = SendHeartBeat(ClientSocketFDList, NHosts,
+                                       MaxDescriptorCtl);
+            }
         }
 
         /* check if any messages have arrived and process */
@@ -294,16 +301,18 @@ void Daemonize(void)
          * check to see if any hosts have timed out - the first
          * host to time out it the return value of CheckHeartBeat
          */
-        if (DeltaTime >= HEARTBEATINTERVAL) {
-            RetVal = CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
-                                    ActiveHosts, RunParams.HeartBeatTimeOut);
+        if (RunParams.doHeartbeat) {
+            if (DeltaTime > (double) RunParams.HeartbeatPeriod) {
+                RetVal = CheckHeartBeat(HeartBeatTime, TimeInSeconds, NHosts,
+                                        ActiveHosts);
 
-            if (RetVal < NHosts) {
-                // Terminate all hosts
-                ulm_err(("Error: No heartbeat from host %d\n", RetVal));
-                ClientSocketFDList[RetVal] = -1;
-                KillAppProcs(RetVal);
-                Abort();
+                if (RetVal < NHosts) {
+                    // Terminate all hosts
+                    ulm_err(("Error: No heartbeat from LA-MPI daemon on host %d\n", RetVal));
+                    ClientSocketFDList[RetVal] = -1;
+                    KillAppProcs(RetVal);
+                    Abort();
+                }
             }
         }
 

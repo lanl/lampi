@@ -50,8 +50,6 @@
 #include "client/SocketGeneric.h"
 #include "util/Utility.h"
 
-static double HeartBeatTimeOut = (double) HEARTBEATTIMEOUT;
-
 static void CleanupOnAbnormalChildTermination(pid_t, int, pid_t *, int *, int);
 
 /*
@@ -88,16 +86,23 @@ void lampi_daemon_loop(lampiState_t *s)
 
     /* initialize data */
     NChildren = ProcessCount[hostIndex];
+
+    /* change heartbeat timeout, if being debugged */
+    if (s->debug == 1) {
+        s->doHeartbeat = 0;
+    }
+
+    if (s->doHeartbeat) {
+        LastTime = 0.0;
 #ifndef HAVE_CLOCK_GETTIME
-    gettimeofday(&Time, NULL);
-    HeartBeatTime =
-        (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
+        gettimeofday(&Time, NULL);
+        HeartBeatTime = (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
 #else
-    clock_gettime(CLOCK_REALTIME, &Time);
-    HeartBeatTime =
-        (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
+        clock_gettime(CLOCK_REALTIME, &Time);
+        HeartBeatTime = (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif                          /* LINUX */
-    LastTime = 0;
+    }
+
     MaxDescriptor = 0;
     for (i = 0; i < (NChildren + 1); i++) {
         if (STDOUTfdsFromChildren[i] > MaxDescriptor)
@@ -110,23 +115,20 @@ void lampi_daemon_loop(lampiState_t *s)
     }
     MaxDescriptor++;
 
-    /* change heartbeat timeout period, if being debugged */
-    if (s->debug == 1)
-        HeartBeatTimeOut = -1;
-
     numDaemonChildren = 0;
     for (;;) {
 
+        if (s->doHeartbeat) {
 #ifndef HAVE_CLOCK_GETTIME
-        gettimeofday(&Time, NULL);
-        TimeInSeconds =
-            (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
+            gettimeofday(&Time, NULL);
+            TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
 #else
-        clock_gettime(CLOCK_REALTIME, &Time);
-        TimeInSeconds =
-            (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
+            clock_gettime(CLOCK_REALTIME, &Time);
+            TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif                          /* LINUX */
-        DeltaTime = TimeInSeconds - LastTime;
+            DeltaTime = TimeInSeconds - LastTime;
+        }
+
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
             CleanupOnAbnormalChildTermination(s->AbnormalExit->pid,
@@ -152,9 +154,11 @@ void lampi_daemon_loop(lampiState_t *s)
         }
 
         /* send heartbeat to Server */
-        if (DeltaTime > HEARTBEATINTERVAL) {
-            SendHeartBeat(&ServerSocketFD, 1, ServerSocketFD + 1);
-            LastTime = TimeInSeconds;
+        if (s->doHeartbeat) {
+            if (DeltaTime > (double) s->HeartbeatPeriod) {
+                SendHeartBeat(&ServerSocketFD, 1, ServerSocketFD + 1);
+                LastTime = TimeInSeconds;
+            }
         }
 
         /* check to see if children alive */
@@ -182,13 +186,17 @@ void lampi_daemon_loop(lampiState_t *s)
                                   StdoutBytesWritten, NewLineLast,
                                   IOPreFix, LenIOPreFix, s);
 
-        /* check to see if Server has timed out */
-        if ((HeartBeatTimeOut > 0) &&
-            ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut)
-            && (!shuttingDown)) {
-            NotifyServer = 0;
-            ClientAbort(ServerSocketFD, ProcessCount, hostIndex,
-                        ChildPIDs, Message, NotifyServer);
+        if (s->doHeartbeat) {
+            /* check to see if Server has timed out */
+            if ((TimeInSeconds - HeartBeatTime) > s->HeartbeatTimeout
+                && (!shuttingDown)) {
+                NotifyServer = 0;
+                ulm_err(("Error: lost heartbeat from mpirun "
+                         "(period = %d, timeout = %d)\n",
+                         s->HeartbeatPeriod, s->HeartbeatTimeout));
+                ClientAbort(ServerSocketFD, ProcessCount, hostIndex,
+                            ChildPIDs, Message, NotifyServer);
+            }                    
         }
     }                           /* end for(;;) */
 }
@@ -224,13 +232,13 @@ static void CleanupOnAbnormalChildTermination(pid_t PIDofChild,
     
     if (lampiState.verbose) {
         ulm_err(("Error: Application process exited abnormally\n"));
-        ulm_err(("Killing child processes\n"));
+        ulm_err(("*** Killing child processes\n"));
     }
 
     for (int i = 0; i < NChildren; i++) {
         if (ChildPIDs[i] != -1) {
             if (lampiState.verbose) {
-                ulm_err(("kill -SIGKILL %ld\n", (long) ChildPIDs[i]));
+                ulm_err(("*** kill -SIGKILL %ld\n", (long) ChildPIDs[i]));
             }
             kill(ChildPIDs[i], SIGKILL);
             ChildPIDs[i] = -1;
@@ -240,7 +248,7 @@ static void CleanupOnAbnormalChildTermination(pid_t PIDofChild,
 
     /* send mpirun notice of abnormal termination */
     if (lampiState.verbose) {
-        ulm_err(("ABNORMALTERM being sent\n"));
+        ulm_err(("*** ABNORMALTERM being sent\n"));
     }
 
     tag = ABNORMALTERM;

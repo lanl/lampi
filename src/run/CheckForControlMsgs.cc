@@ -58,6 +58,7 @@
 #include "internal/log.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "run/TV.h"
 #include "ulm/errors.h"
 
@@ -94,9 +95,9 @@ static int GetIOFromClient(int *fd)
 
     if (RunParams.Verbose) {
         if (stdio_fd == 1) {
-            ulm_err(("stdout: received %ld bytes\n", (long) size));
+            ulm_err(("*** stdout: received %ld bytes\n", (long) size));
         } else if (stdio_fd == 2) {
-            ulm_err(("stderr: received %ld bytes\n", (long) size));
+            ulm_err(("*** stderr: received %ld bytes\n", (long) size));
         } else {
             ulm_err(("WARNING: received %ld bytes for fd = %d\n",
                      (long) size, stdio_fd));
@@ -132,6 +133,8 @@ int CheckForControlMsgs(int MaxDesc,
     ulm_fd_set_t fdset;
     ulm_iovec_t iov;
     unsigned tag;
+
+    extern int StdInCTS;   // stdin flow control (defined in Daemonize.cc)
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 100000;
@@ -174,19 +177,25 @@ int CheckForControlMsgs(int MaxDesc,
 
             case HEARTBEAT:
                 if (RunParams.Verbose) {
-                    ulm_err(("heartbeat from host %d\n", host));
+                    ulm_err(("*** heartbeat from host %d "
+                             "(period = %d, timeout = %d)\n",
+                             host,
+                             RunParams.HeartbeatPeriod,
+                             RunParams.HeartbeatTimeout));
                 }
+                if (RunParams.doHeartbeat) {
 #ifndef HAVE_CLOCK_GETTIME
-                struct timeval t;
-                gettimeofday(&t, NULL);
-                HeartBeat[host] =
-                    (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
+                    struct timeval t;
+                    gettimeofday(&t, NULL);
+                    HeartBeat[host] =
+                        (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
 #else
-                struct timespec t;
-                clock_gettime(CLOCK_REALTIME, &t);
-                HeartBeat[host] =
-                    (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
+                    struct timespec t;
+                    clock_gettime(CLOCK_REALTIME, &t);
+                    HeartBeat[host] =
+                        (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
 #endif
+                }
                 break;
 
             case NORMALTERM:
@@ -209,7 +218,7 @@ int CheckForControlMsgs(int MaxDesc,
                 }
 
                 if (RunParams.Verbose) {
-                    ulm_err(("host %d reports normal exit\n", host));
+                    ulm_err(("*** host %d reports normal exit\n", host));
                 }
 
                 if (RunParams.PrintRusage) {
@@ -239,7 +248,7 @@ int CheckForControlMsgs(int MaxDesc,
                 if ((*HostsNormalTerminated) == NHosts) {
 
                     if (RunParams.Verbose) {
-                        ulm_err(("all hosts reported normal exit\n"));
+                        ulm_err(("*** all hosts reported normal exit\n"));
                     }
 
                     tag = ALLHOSTSDONE;
@@ -249,7 +258,7 @@ int CheckForControlMsgs(int MaxDesc,
                         /* send request if socket still open */
                         if (fd[j] > 0) {
                             if (RunParams.Verbose) {
-                                ulm_err(("all hosts done to host %d\n",
+                                ulm_err(("*** all hosts done to host %d\n",
                                          j));
                             }
                             size = SendSocket(fd[j], 1, &iov);
@@ -267,7 +276,7 @@ int CheckForControlMsgs(int MaxDesc,
 
             case ACKALLHOSTSDONE:
                 if (RunParams.Verbose) {
-                    ulm_err(("host %d done\n", host));
+                    ulm_err(("*** host %d done\n", host));
                 }
                 (*ActiveClients)--;
                 fd[host] = -1;
@@ -291,7 +300,7 @@ int CheckForControlMsgs(int MaxDesc,
 
             case STDIOMSG:
                 if (RunParams.Verbose) {
-                    ulm_err(("stdio: receiving output from host %d\n",
+                    ulm_err(("*** stdio: receiving output from host %d\n",
                              host));
                 }
                 ActiveHosts[host] = GetIOFromClient(&fd[host]);
@@ -299,7 +308,7 @@ int CheckForControlMsgs(int MaxDesc,
 
             case STDIOMSG_CTS:
                 if (RunParams.Verbose) {
-                    ulm_err(("stdin: clear to send from host %d\n", host));
+                    ulm_err(("*** stdin: clear to send from host %d\n", host));
                 }
                 StdInCTS = true;
                 break;

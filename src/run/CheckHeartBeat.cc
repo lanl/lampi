@@ -37,6 +37,7 @@
 
 #include "internal/profiler.h"
 #include "internal/constants.h"
+#include "run/RunParams.h"
 
 /*
  * This routine is used to compute the number of hosts still sending
@@ -45,19 +46,21 @@
  * of the first host to timeout
  */
 int CheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
-                   int *ActiveHosts, int HeartBeatTimeOut)
+                   int *ActiveHosts)
 {
     int i;
     double DeltaT;
 
-    /* if HeartBeatTimeOut set to negative - do not check heart beat */
-    if (HeartBeatTimeOut < 0)
+    if (RunParams.doHeartbeat == 0) {
         return NHosts;
+    }
 
     for (i = 0; i < NHosts; i++) {
         DeltaT = Time - HeartBeatTime[i];
-        if ((DeltaT > HeartBeatTimeOut) && (ActiveHosts[i] != 0))
+        if ((DeltaT > RunParams.HeartbeatTimeout) &&
+            (ActiveHosts[i] != 0)) {
             return i;
+        }
     }
 
     return NHosts;

@@ -44,6 +44,7 @@
 #include "internal/log.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 static int TerminateInitiated = 0;
 

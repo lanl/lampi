@@ -52,6 +52,7 @@
 #include "internal/log.h"
 #include "internal/new.h"
 #include "internal/types.h"
+#include "run/RunParams.h"
 #include "run/Run.h"
 
 /*
@@ -76,6 +77,13 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
     int isValid;
     char *execName = NULL;
     struct stat fs;
+
+    /*
+     * Fix for VAPI shared libraries
+     */
+    if (RunParameters->Networks.UseIB) {
+        putenv("NO_IB_PREMAIN_INIT=1");
+    }
 
     /*
      * Check that executable is valid. Only safe to do this for bproc

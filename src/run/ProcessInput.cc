@@ -49,7 +49,9 @@
 #include "internal/constants.h"
 #include "internal/new.h"
 #include "internal/types.h"
+#include "run/Input.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "util/Utility.h"
 
 extern int MPIR_being_debugged;
@@ -60,6 +62,7 @@ extern int MPIR_being_debugged;
  */
 int ProcessInput(int argc, char **argv, int *FirstAppArg)
 {
+    /* some default runtime parameters */
     RunParams.UserAppDirList = NULL;
     RunParams.HostList = NULL;
     RunParams.HostListSize = 0;
@@ -73,7 +76,9 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
     RunParams.OutputPrefix = 0;
     RunParams.Quiet = 0;
     RunParams.Verbose = 0;
-    RunParams.HeartBeatTimeOut = int (HEARTBEATTIMEOUT);
+    RunParams.doHeartbeat = 1;
+    RunParams.HeartbeatPeriod = 1;
+    RunParams.HeartbeatTimeout = 30;
     RunParams.quadricsRailMask = 0;
     RunParams.quadricsHW = 0;
     RunParams.GDBDebug = 0;
@@ -259,6 +264,13 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg)
                 RunParams.handleSTDio = 0;
                 break;
             }
+        }
+    }
+
+    /* sanity check */
+    if (RunParams.doHeartbeat) {
+        if (RunParams.HeartbeatTimeout <= RunParams.HeartbeatPeriod) {
+            RunParams.HeartbeatTimeout = 2 * RunParams.HeartbeatPeriod;
         }
     }
 

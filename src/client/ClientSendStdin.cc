@@ -95,7 +95,7 @@ int ClientRecvStdin(int *src, int *dst)
     }
     
     if (lampiState.verbose) {
-        ulm_err(("stdin: daemon received %ld bytes\n", (long) size));
+        ulm_err(("*** stdin: daemon received %ld bytes\n", (long) size));
     }
 
     return ClientSendStdin(src, dst);

@@ -62,7 +62,6 @@
 #endif
 
 #include "internal/types.h"
-#include "run/globals.h"
 #include "run/RunParams.h"
 
 //static int priority = LOG_DEBUG | LOG_USER;
@@ -89,8 +88,6 @@ static double seconds(struct timeval *tv)
 
 void PrintRusage(const char *name, struct rusage *ru)
 {
-    int full_printout = 0;
-
     if (RunParams.Verbose) {
         fprintf(
             stderr,

@@ -48,7 +48,9 @@
 #include "internal/types.h"
 #include "internal/new.h"
 #include "internal/log.h"
+#include "run/Input.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "util/if.h"
 
 

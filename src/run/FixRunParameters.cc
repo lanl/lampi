@@ -37,6 +37,7 @@
 
 #include "internal/new.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 /*
  * Reset RunParams data structures when the number of hosts actually

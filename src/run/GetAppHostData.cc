@@ -55,10 +55,11 @@ extern int h_errno;
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
-#include "internal/new.h"
 #include "internal/types.h"
 #include "run/LSFResource.h"
+#include "run/Input.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 #include "util/ParseString.h"
 #include "util/Utility.h"
 
@@ -69,6 +70,7 @@ void GetAppHostCount(const char *InfoStream)
 {
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
+    char *ptr;
 
     /* find HostList index in database */
     int OptionIndex = MatchOption("HostCount");
@@ -82,7 +84,12 @@ void GetAppHostCount(const char *InfoStream)
                          NSeparators, SeparatorList);
 
     /* set number of Host in job */
-    RunParams.NHosts = atoi(*HostData.begin());
+    RunParams.NHosts = (int) strtol(*HostData.begin(), &ptr, 10);
+    if (ptr == *HostData.begin()) {
+        ulm_err(("Error: Parsing nhosts input (%s)\n", *HostData.begin()));
+        Usage(stderr);
+        Abort();
+    }
     RunParams.NHostsSet = true;
 }
 

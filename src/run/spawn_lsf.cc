@@ -59,6 +59,7 @@
 #include "internal/new.h"
 #include "internal/types.h"
 #include "run/Run.h"
+#include "run/RunParams.h"
 
 
 #if ENABLE_LSF
