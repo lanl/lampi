@@ -230,4 +230,11 @@ Version 1.4.5
 - Modified TCP path to stop TCP stack from trying to coalesce data.
   This was lead to erratic performance in certain situations.
 
+Version 1.4.6, 1.4.7
+
+- Various resource exhaustion and reliability fixes.
+
+Version 1.4.8
+
+- Support for new Quadrics QSNET libraries (elanctrl)
 
