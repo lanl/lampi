@@ -50,6 +50,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
                                          double timeNow)
 {
     RecvDesc_t *MatchedPostedRecvHeader;
+    RequestDesc_t *request;
     ULM_64BIT_INT fragSendSeqID = DataHeader->isendSeq_m;
     bool recvDone = false;
 
@@ -165,17 +166,20 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
    end debug */
 
             /* process received data */
-            ProcessMatchedData(MatchedPostedRecvHeader,DataHeader, timeNow, &recvDone);
+		request=MatchedPostedRecvHeader->requestDesc;
+		ProcessMatchedData(MatchedPostedRecvHeader,DataHeader, 
+				timeNow, &recvDone);
 
-	    // Match just completed - scan privateQueues.OkToMatchRecvFrags list
-	    //  to see if any fragements have arrived between the
-	    //  irecv being posted (at which time no frags
-	    //  for that message had arrived, and when this frag
-	    //  is picked up. Need to search the list in any case
-	    //  just in case duplicate frags have arrived.
-	    if (!recvDone)
-		SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,timeNow);
-
+		// Match just completed - scan privateQueues.OkToMatchRecvFrags list
+		//  to see if any fragements have arrived between the
+		//  irecv being posted (at which time no frags
+    		//  for that message had arrived, and when this frag
+    		//  is picked up. Need to search the list in any case
+		//  just in case duplicate frags have arrived.
+		if (!recvDone)
+			SearchForFragsWithSpecifiedISendSeqNum(
+					MatchedPostedRecvHeader, &recvDone,
+					timeNow);
 	} else {
 
 	    //! if match not found, place on privateQueues.OkToMatchRecvFrags list
@@ -211,7 +215,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	 *   this communicator
 	 */
 	if( recvDone ){
-		MatchedPostedRecvHeader->requestDesc->messageDone = true;
+		request->messageDone = true;
 	}
     } else if (fragSendSeqID < nextSeqIDToProcess) {
 
@@ -256,12 +260,13 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
         }
 
 	if (MatchedPostedRecvHeader) {
-	    //! copy data into specified buffer - DataHeader is also
-	    ProcessMatchedData(MatchedPostedRecvHeader,
-			       DataHeader, timeNow, &recvDone);
-	    if( recvDone ){
-	    	    MatchedPostedRecvHeader->requestDesc->messageDone = true;
-	    }
+		//! copy data into specified buffer - DataHeader is also
+		request=MatchedPostedRecvHeader->requestDesc;
+		ProcessMatchedData(MatchedPostedRecvHeader,
+		 		DataHeader, timeNow, &recvDone);
+		if( recvDone ){
+		    	request->messageDone = true;
+		}
 	}
     } else {
 	//

@@ -164,6 +164,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
                                                       double timeNow)
 {
     int errorCode = ULM_SUCCESS;
+    RequestDesc_t *request;
     //
     // Loop over all the out of sequence messages.
     //
@@ -208,12 +209,12 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 
                 // process the frag
                 if (MatchedPostedRecvHeader) {
-                    ProcessMatchedData(MatchedPostedRecvHeader, RecvDesc,
-                                       timeNow, &recvDone);
-		    if( recvDone ){
-			    MatchedPostedRecvHeader->requestDesc->
-				    messageDone = true;
-		    }
+			request=MatchedPostedRecvHeader->requestDesc;
+			ProcessMatchedData(MatchedPostedRecvHeader, RecvDesc,
+			 		timeNow, &recvDone);
+			if( recvDone ){
+			    	request->messageDone = true;
+			}
 
                 } else {
 
@@ -249,12 +250,12 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 
                         // process the frag
                         if (MatchedPostedRecvHeader) {
-                            ProcessMatchedData(MatchedPostedRecvHeader,
-                                               RDesc, timeNow, &recvDone);
-			    if( recvDone ){
-				    MatchedPostedRecvHeader->requestDesc->
-					    messageDone = true;
-			    }
+				request=MatchedPostedRecvHeader->requestDesc;
+				ProcessMatchedData(MatchedPostedRecvHeader,
+				 		RDesc, timeNow, &recvDone);
+				if( recvDone ){
+				    	request->messageDone = true;
+				}
                         } else {
 
                             // if match not found, place on privateQueues.OkToMatchRecvFrags list
