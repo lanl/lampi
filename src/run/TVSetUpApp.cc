@@ -76,7 +76,7 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
             if (RunParameters.GDBDebug) {
                 char title[64];
                 char command[256];
-                bool use_gdbserver = (getenv("GDBDIRECTATTACH") != 0) ? false : true;
+                bool use_gdbserver = (getenv("LAMPI_USE_GDBSERVER") != 0) ? true : false;
 
                 sprintf(title, "rank: %d (pid: %ld host: %s)", cnt, 
                     (long)MPIR_proctable[cnt].pid,
@@ -95,7 +95,8 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
 
                 }
                 else {
-                    sprintf(command, "xterm -title \"%s\" -e gdb %s %ld &", title, 
+                    sprintf(command, "xterm -title \"%s\" -e bpsh %s gdb %s %ld &", title, 
+                        (MPIR_proctable[cnt].host_name + 1),
                         MPIR_proctable[cnt].executable_name,
                         (long)MPIR_proctable[cnt].pid);
                     ulm_warn(("spawning: \"%s\"\n",command));
