@@ -223,7 +223,7 @@ int endIndex, int *errorCode, bool skipCheck, bool already_locked)
         slist = &(p->ctlMsgsToSend[i]);
         alist = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads() && !already_locked) {
+        if (usethreads() && !already_locked && !locked_here) {
             ib_state.lock.lock();
             locked_here = true;
         }
@@ -278,6 +278,7 @@ int endIndex, int *errorCode, bool skipCheck, bool already_locked)
             p->ctlMsgsToAckFlag |= mask;
 
         if (locked_here) {
+            locked_here = false;
             ib_state.lock.unlock();
         }
     }
@@ -334,7 +335,7 @@ int endIndex, int *errorCode, bool skipCheck, bool already_locked)
 
         list = &(p->ctlMsgsToAck[i]);
 
-        if (usethreads() && !already_locked) {
+        if (usethreads() && !already_locked && !locked_here) {
             ib_state.lock.lock(); 
             locked_here = true;
         }
@@ -369,6 +370,7 @@ int endIndex, int *errorCode, bool skipCheck, bool already_locked)
             p->ctlMsgsToAckFlag |= mask;
 
         if (locked_here) {
+            locked_here = false;
             ib_state.lock.unlock();
         }
     }

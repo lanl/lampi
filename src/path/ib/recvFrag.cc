@@ -104,7 +104,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
 
     if ((hca_index < 0) || (port_index < 0)) {
         int dummyCode;
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, 
+            false, locked_here);
         if (locked_here) {
             ib_state.lock.unlock();
         }
@@ -114,7 +115,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
     sfd = ib_state.hca[hca_index].send_frag_list.getElementNoLock(0, returnValue);
     if (returnValue != ULM_SUCCESS) {
         int dummyCode;
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, 
+            false, locked_here);
         if (locked_here) {
             ib_state.lock.unlock();
         }
@@ -131,7 +133,8 @@ bool ibRecvFragDesc::AckData(double timeNow)
         int dummyCode;
         sfd->hca_index_m = hca_index;
         sfd->free(locked_here);
-        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, locked_here);
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode, 
+            false, locked_here);
         if (locked_here) {
             ib_state.lock.unlock();
         }
