@@ -95,13 +95,26 @@ extern int quadricsDoChecksum;
 extern int quadricsDoAck;
 extern int quadricsHW;
 extern quadricsQueueInfo_t *quadricsQueue;
+
 #ifdef USE_ELAN_COLL
 extern quadricsGlobInfo_t  *quadrics_Glob_Mem_Info ;
-extern Locks                  broadcasters_locks;
 extern Broadcaster         ** quadrics_broadcasters;
 extern int                    broadcasters_array_len ;
-extern char                   busy_broadcasters[MAX_BROADCASTERS];
+extern maddr_vm_t             elan_coll_sharedpool;  
+
+/* busy_broadcasters in shared memory.  Lock/unlock with broadcasters_locks */
+/* busy_broadcaster[i] = the unique communicator assigned to the shared memory used
+                         by the i'th Broadcaster.
+                         To identify a communicator uniquely, we need two numbers,
+                         since non-overlapping communicators can have the same context id */
+typedef struct unique_commid {
+    int cid;               /* context id of communicator */
+    int pid;               /* smalled proc id in that communicator */
+} unique_commid_t;
+extern Locks               *  broadcasters_locks;
+extern unique_commid_t      *  busy_broadcasters;  /*[MAX_BROADCASTERS];*/
 #endif
+
 extern FreeListPrivate_t <quadricsSendFragDesc> quadricsSendFragDescs;
 extern long maxQuadricsSendFragsDescRetries;
 extern bool quadricsSendFragDescsDescRetryForResources;

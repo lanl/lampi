@@ -48,8 +48,9 @@
 #include "include/internal/type_copy.h"
 #include "collective/coll_fns.h"
 
-#ifdef USE_ELAN_COLL
+#undef ENABLE_RELIABILITY
 
+#ifdef USE_ELAN_COLL
 #define CHECK_MALLOC(cmd)                                              \
 do {                                                                   \
   int returnAddress = 0;                                               \
@@ -471,8 +472,6 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
 #define Node loc_node
 #define Context loc_context
 
-
-
 void Broadcaster::segment_create(void)
 {
   int            vp;
@@ -782,7 +781,7 @@ int Broadcaster::create_syncup_tree()
 }
 
 /* The function to free the collective . --Weikuan */
-int Broadcaster::broadcaster_free( )
+int Broadcaster::broadcaster_free()
 {
   bcast_segment_t *first, *temp;
   int rc;
@@ -1064,9 +1063,21 @@ inline unsigned int pack_buffer(void *src_addr, void * dest_addr,
 
 
 static void
-bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count, 
-    ULMType_t * dtype, int packing, int copying, int elan_bugged)
+bcast_pack_for_dma(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count, 
+    ULMType_t * dtype, int packing, int copying, int elan_bugged, 
+    int DoChecksum, int dma_headers)
 {
+    /*
+         Added new flag:
+            dma_headers == 0
+    
+         In this case, we are using this routine to simply copy the
+         data into the mcast_buff so that it can be unpacked on the 
+         same node with bcat_unpack_after_dma()
+
+         note: dma_headers==0 assumes DoChecksum==0
+
+     */
   quadrics_coll_header_t        * mesg_env;
   int size ;
   unsigned char * start_addr ; 
@@ -1093,13 +1104,15 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
 
     /* Mark the mesg type */
 #if 1
-    mesg_env->sform.coll_type  = (size <= BCAST_INLINE_SIZE_SMALL)? 
-      BCAST_MESG_TYPE_INLINE_S: BCAST_MESG_TYPE_INLINE_L;
-    mesg_env->sform.mesg_length   = size;
-    mesg_env->sform.data_length   = 
-      (size <= BCAST_INLINE_SIZE_SMALL)? 64 : 128;
+    if (dma_headers) {
+        mesg_env->sform.coll_type  = (size <= BCAST_INLINE_SIZE_SMALL)? 
+            BCAST_MESG_TYPE_INLINE_S: BCAST_MESG_TYPE_INLINE_L;
+        mesg_env->sform.mesg_length   = size;
+        mesg_env->sform.data_length   = 
+            (size <= BCAST_INLINE_SIZE_SMALL)? 64 : 128;
+    }
 
-    if ( quadricsDoChecksum)
+    if ( DoChecksum)
     {
       if ( size <= BCAST_INLINE_SIZE_SMALL )
       {
@@ -1113,11 +1126,13 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
       }
     }
 #else
-    mesg_env->sform.coll_type  = BCAST_MESG_TYPE_INLINE_L;
-    mesg_env->sform.mesg_length   = size;
-    mesg_env->sform.data_length   = 128;
+    if (dma_headers) {
+        mesg_env->sform.coll_type  = BCAST_MESG_TYPE_INLINE_L;
+        mesg_env->sform.mesg_length   = size;
+        mesg_env->sform.data_length   = 128;
+    }
 
-    if ( quadricsDoChecksum)
+    if ( DoChecksum)
     {
       {
 	mesg_env->lform.checksum      = usecrc()?
@@ -1132,14 +1147,20 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
   if ( copying || packing ) 
   {
     /* Mark the mesg type */
-    mesg_env->sform.coll_type     = BCAST_MESG_TYPE_SHORT;
-    mesg_env->sform.mesg_length   = size;
-    mesg_env->sform.data_length   = 64 + ELAN_ALIGNUP(size, 64);
-    mesg_env->sform.data_checksum = 
-      pack_buffer(start_addr, mesg_env->sform.data, 
-	  count, dtype, 0, size, packing, quadricsDoChecksum);
-    mesg_env->sform.checksum      = usecrc()?
-      uicrc  (mesg_env, 64): uicsum (mesg_env, 64);
+    if (dma_headers) {
+        mesg_env->sform.coll_type     = BCAST_MESG_TYPE_SHORT;
+        mesg_env->sform.mesg_length   = size;
+        mesg_env->sform.data_length   = 64 + ELAN_ALIGNUP(size, 64);
+        mesg_env->sform.data_checksum = 
+            pack_buffer(start_addr, mesg_env->sform.data, 
+                        count, dtype, 0, size, packing, DoChecksum);
+        mesg_env->sform.checksum      = usecrc()?
+            uicrc  (mesg_env, 64): uicsum (mesg_env, 64);
+    }else{
+        pack_buffer(start_addr, mesg_env->sform.data, 
+                    count, dtype, 0, size, packing, DoChecksum);
+    }
+
     return ;
   }
   else 
@@ -1153,13 +1174,15 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
       bcopy(send_addr, mesg_env->lform.inline_data, fragged_len);
 
       /* Mark the mesg type */
+      if (dma_headers) {
       mesg_env->lform.coll_type     = BCAST_MESG_TYPE_BUGGY;
       mesg_env->lform.mesg_length   = size;
       mesg_env->lform.frag_length   = fragged_len;
       mesg_env->lform.data_length   = 128 
 	+ ELAN_ALIGNUP((size - fragged_len), E3_BLK_ALIGN );
+      }
 
-      if (quadricsDoChecksum)
+      if (DoChecksum)
 	{
 	  mesg_env->lform.data_checksum = usecrc()?
 	    uicrc (((char*)send_addr + fragged_len), size-fragged_len):
@@ -1171,12 +1194,14 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
     else
     {
       /* Mark the mesg type */
+      if (dma_headers) {
       mesg_env->sform.coll_type     = BCAST_MESG_TYPE_LONG;
       mesg_env->sform.mesg_length   = size;
       mesg_env->sform.frag_length   = 0;
       mesg_env->sform.data_length   = 64 + ELAN_ALIGNUP(size, 64);
+      }
 
-      if (quadricsDoChecksum)
+      if (DoChecksum)
 	{
 	  mesg_env->sform.data_checksum = usecrc()?
 	    uicrc (send_addr, size): uicsum (send_addr, size);
@@ -1189,8 +1214,8 @@ bcast_init_env_crc(maddr_vm_t send_addr, maddr_vm_t mcast_buff, int count,
 }
 
 static int 
-bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
-	  int count, ULMType_t * dtype, int size)
+bcast_unpack_after_dma(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
+	  int count, ULMType_t * dtype, int size, int DoChecksum)
 {
   quadrics_coll_header_t * header;
   int             data_checksum=0;
@@ -1253,7 +1278,7 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
     }
   }
 
-  if (quadricsDoChecksum)
+  if (DoChecksum)
   {
     if ( header->sform.coll_type == BCAST_MESG_TYPE_INLINE_L ||
         header->sform.coll_type == BCAST_MESG_TYPE_BUGGY )
@@ -1311,6 +1336,8 @@ bcast_check_data_crc(maddr_vm_t mcast_buff, maddr_vm_t recv_addr,
   END_MARK;
   return errorcode;
 }
+
+
 
 int Broadcaster::bcast_recv(quadrics_channel_t * channel)
 {
@@ -1379,12 +1406,12 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
     /* Copy away and CRC checking */
     if ( errorcode == ULM_SUCCESS )
     {
-      errorcode = bcast_check_data_crc(
+      errorcode = bcast_unpack_after_dma(
 	  channel->mcast_buff, 
 	  channel->appl_addr, 
 	  channel->count, 
 	  channel->data_type, 
-	  header->sform.mesg_length);
+	  header->sform.mesg_length,quadricsDoChecksum);
     }
 
     if ( errorcode != ULM_SUCCESS )
@@ -1408,6 +1435,9 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
   END_MARK;
   return ULM_SUCCESS;
 }
+
+
+
 
 
 int Broadcaster:: bcast_send(quadrics_channel_t * channel)
@@ -1492,10 +1522,10 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
   mesg_env->sform.root  = channel->root;       
   mesg_env->sform.tag_m = channel->tag;      
 
-  bcast_init_env_crc(addr, channel->mcast_buff, 
-      count, dtype, packing, copying, elan_bugged);
+  bcast_pack_for_dma(addr, channel->mcast_buff, 
+      count, dtype, packing, copying, elan_bugged, quadricsDoChecksum, 1);
 
-  if ( num_dma == 1)
+  if ( num_dma == 1)  /* copying or packing.  bcast from mcast_buff */
   {
     slot_offset = index * MAX_BCAST_FRAGS;
     temp = segment; 
@@ -1518,7 +1548,7 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 
     elan3_putdma(ctx, segment->dma_elan + slot_offset * sizeof(E3_DMA_MAIN));
   }
-  else 
+  else  /* bcast from user buffer */
   {
     maddr_vm_t buff_location;
     int        dma_size; 
@@ -1591,6 +1621,18 @@ int Broadcaster:: bcast_send(quadrics_channel_t * channel)
 
     elan3_putdma(ctx, 
 	segment->dma_elan + (slot_offset +1)*sizeof(E3_DMA_MAIN));
+
+#ifdef USE_ELAN_SHARED
+    /* now copy the data into mcast_buff to distribute to smp processors on this node*/
+    /* do this copy here so we do not delay starting the dma above */
+    /*  set copying==1 to force a copy
+     *  disable CRC - dont need it for shared memory
+     *  disable filling in DMA headers
+     */
+    bcast_pack_for_dma(addr, channel->mcast_buff, 
+                       count, dtype, packing, 1, elan_bugged, 0, 0);
+#endif
+
   }
 
   /* If buffered sending, update the channel , 
@@ -1974,8 +2016,9 @@ Broadcaster::resync_bcast()
     index = i % total_channels;
     if (channels[index]->root == self)
       errorcode = bcast_send(channels[index]);
-    else
+    else {
       errorcode = bcast_recv(channels[index]);
+    }
   }
  
   errorcode = check_channels();
@@ -2246,16 +2289,17 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   quadrics_channel_t * channel;
   int total_hosts, total_procs;
   int rc = ULM_SUCCESS;
-
-  START_MARK;
   channel = (quadrics_channel_t*)ulm_req->channel;
 
-  /* a comm_root receiver first wait for the data */
+  START_MARK;
+
+  // recieve processes: wait for DMA to complete:
   if ( ulm_req->requestType  == REQUEST_TYPE_RECV
-     || ulm_req->requestType  == REQUEST_TYPE_SHARE)
-  {
-    rc = bcaster->bcast_recv(channel);
+       || ulm_req->requestType  == REQUEST_TYPE_SHARE) {
+      rc = bcaster->bcast_recv(channel);
   }
+
+
 
 #ifdef ENABLE_RELIABILITY
   /* Must sync before sharing. To avoid the situation
@@ -2279,11 +2323,35 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
     return ULM_ERR_BCAST_FAIL;
 #endif
 
+
   rc = ulm_get_info(ulm_req->ctx_m, ULM_INFO_NUMBER_OF_HOSTS, 
       &total_hosts, sizeof(int));
   rc = ulm_get_info(ulm_req->ctx_m, ULM_INFO_NUMBER_OF_PROCS, 
       &total_procs, sizeof(int));
 
+#ifdef USE_ELAN_SHARED
+  if ( total_procs != total_hosts ) {
+      if (bcaster->self == ulm_req->root
+          || (ulm_req->comm_root != ulm_req->root
+              && bcaster->self == bcaster->localRoot) ) {
+          // signal data is ready for other SMP processes to start copying:
+          wmb();
+          ulm_req->coll_desc->flag = 2;
+      }else{
+          // just copy data out of shared buffer when ready:
+          quadrics_coll_header_t * header;
+          header = (quadrics_coll_header_t*)channel->mcast_buff;
+          ULM_SPIN_AND_MAKE_PROGRESS(ulm_req->coll_desc->flag != 2);
+          bcast_unpack_after_dma(
+                                 channel->mcast_buff, 
+                                 ulm_req->posted_buff, /*channel->appl_addr, */
+                                 channel->count, 
+                                 channel->data_type, 
+                                 header->sform.mesg_length,0);
+      }
+      smpBarrier(barrierData);
+  }
+#else
   /* To disperse the data on a SMP box */
   if ( total_procs != total_hosts )
   {
@@ -2333,6 +2401,10 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
       }
     }
   }
+#endif
+
+
+
 
   /* Record that the message is already in the application buffer */
   if ( !ulm_req->messageDone )
@@ -2344,7 +2416,7 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   {
     while (bcaster->ack_index < bcaster->queue_index && hw_bcast_enabled)
     {
-      rc = bcaster->make_progress_bcast();
+        rc = bcaster->make_progress_bcast();
     }
   }
 #endif

@@ -67,7 +67,6 @@ while (0)
 /* Define a type for virtual memory address in the main memory */
 typedef void     * maddr_vm_t ;
 
-
 #ifndef ELAN_ADDR_NULL
 #define ELAN_ADDR_NULL 0
 #endif

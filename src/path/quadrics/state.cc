@@ -64,10 +64,14 @@ bool quadricsSendFragDescsDescAbortWhenNoResource = true;
 #ifdef USE_ELAN_COLL
 /* The global memory available for elan3 */
 quadricsGlobInfo_t  *  quadrics_Glob_Mem_Info = 0;
-Locks                  broadcasters_locks;
 Broadcaster         ** quadrics_broadcasters;
 int                    broadcasters_array_len = 0;
-char                   busy_broadcasters[MAX_BROADCASTERS] = { 0 } ;
+maddr_vm_t             elan_coll_sharedpool;  
+
+/* busy_broadcasters in shared memory.  Lock/unlock with broadcasters_locks */
+Locks               *  broadcasters_locks;
+unique_commid_t     *  busy_broadcasters /* [MAX_BROADCASTERS] = { 0 }*/ ;
+
 #endif
 
 FreeListShared_t <quadricsRecvFragDesc> quadricsRecvFragDescs;

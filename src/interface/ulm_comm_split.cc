@@ -47,6 +47,8 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
 {
     // temp arrays
     int *allPairs=0;
+    int *allcolors=0;
+    int ncolors=0;
     int *list=0;
     bool *listDone=0;
     int *sortedList=0;
@@ -81,8 +83,14 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
     int pair[2];
     groupSize = communicators[comm]->localGroup->groupSize;
     allPairs=(int *)ulm_malloc(2 * sizeof(int) * groupSize);
+    allcolors=(int *)ulm_malloc(sizeof(int) * groupSize);
     if(!allPairs) {
 	ulm_err(("Error: ulm_comm_split: can''t allocate memory for allPairs\n"));
+	returnValue=MPI_ERR_NO_SPACE;
+	goto BarrierTag;
+    }
+    if(!allcolors) {
+	ulm_err(("Error: ulm_comm_split: can''t allocate memory for allcolors\n"));
 	returnValue=MPI_ERR_NO_SPACE;
 	goto BarrierTag;
     }
@@ -108,6 +116,26 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
     }
 
 
+    // find how many different colors.  do this before processes 
+    // which are not in any of the new commnicators jump to BarrierTag:
+    for( int proc=0 ; proc < communicators[comm]->localGroup->groupSize ;
+	 proc++ ) {
+        
+        int found=0;
+        for (int i=0 ; i< ncolors; ++i) {
+            if (allPairs[2*proc]==allcolors[i]) {
+                found=1;
+                break;
+            }
+        }
+        if (0==found) {
+            allcolors[ncolors]=allPairs[2*proc];
+            ++ncolors;
+        }
+    }
+
+
+
     // if color is MPI_UNDEFINED, done - return
     if( color == MPI_UNDEFINED ) {
 	*newComm=MPI_COMM_NULL;
@@ -121,6 +149,10 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
 	goto BarrierTag;
     }
 
+    //condense list of keys:
+    // go through all allPairs[0]
+
+
     // find how many processes have the same color value
     nMyColor=0;
     for( int proc=0 ; proc < communicators[comm]->localGroup->groupSize ;
@@ -129,6 +161,7 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
 	    nMyColor++;
 	}
     }
+
 
     // condense list
     list=(int *)ulm_malloc(sizeof(int)*nMyColor);
@@ -206,37 +239,45 @@ extern "C" int ulm_comm_split(int comm, int color, int key, int *newComm)
                                        communicators[comm]->useSharedMemForCollectives);
 
 
+
 BarrierTag:
-    int tmpreturnValue=returnValue;
+    int coll_returnValue=returnValue;
 
     // block to make sure the new communicator is set up in all processes
     //   before  any data is send
     returnValue=ulm_barrier(comm);
     if( returnValue != ULM_SUCCESS ) {
-	if( allPairs) {
-	    ulm_free(allPairs);
-	}
-	if( sortedList) {
-	    ulm_free(sortedList);
-	}
-	if( listDone) {
-	    ulm_free(listDone);
-	}
-	if( list) {
-	    ulm_free(list);
-	}
-	return returnValue;
+        goto ExitTag;
+    }
+    if (coll_returnValue != ULM_SUCCESS) {
+        goto ExitTag;
     }
 
+
 #ifdef USE_ELAN_COLL
-    /* Not all processes have a new communicator generated */
-    if ( *newComm != MPI_COMM_NULL && tmpreturnValue == ULM_SUCCESS)
-      ulm_alloc_bcaster(*newComm, communicators[comm]->useThreads);
+    // hw quadrics shared memory arbritration scheme can fail (and we will revert
+    // to software bcast) if ulm_alloc_bcaster is called simultaneously by 
+    // more than one communicator.  This is gauranteed to happen during MPI_Comm_split,
+    // so we add a barrier here between each call: 
+    for (int i=0; i<ncolors; ++i) {
+        if (allcolors[i]==color) {
+            /* Not all processes have a new communicator generated */
+            if ( *newComm != MPI_COMM_NULL )
+                ulm_alloc_bcaster(*newComm, communicators[comm]->useThreads);
+        }
+        returnValue=ulm_barrier(comm);
+    }
 #endif
+
+
+ ExitTag:
 
     // free temp resources
     if( allPairs) {
 	ulm_free(allPairs);
+    }
+    if( allcolors) {
+	ulm_free(allcolors);
     }
     if( sortedList) {
 	ulm_free(sortedList);
@@ -248,6 +289,6 @@ BarrierTag:
 	ulm_free(list);
     }
 
-    returnValue=tmpreturnValue;
-    return returnValue;
+    if (returnValue!=ULM_SUCCESS) return returnValue;
+    return coll_returnValue;
 }

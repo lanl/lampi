@@ -51,8 +51,6 @@ static inline void ulm_free_bcaster(int comm, int useThreads)
      * To complete all the broadcast traffic, 
      * Code put here for the time being as a makeshfit.
      */
-    if (useThreads)
-      broadcasters_locks.lock();
 
     bcaster = communicators[comm]->bcaster;
     if ( bcaster && communicators[comm]->hw_bcast_enabled 
@@ -75,8 +73,11 @@ static inline void ulm_free_bcaster(int comm, int useThreads)
       errorcode = bcaster->broadcaster_free();
 
       /* Mark the broadcaster as not busy */
-      busy_broadcasters[bcaster->id] = 0;
+      broadcasters_locks->lock();  
+      busy_broadcasters[bcaster->id].cid = MPI_COMM_NULL;
       bcaster->inuse  = 0;
+      broadcasters_locks->unlock();
+
 
       /* Reset the bcaster_request queue from the communicator */
       ulm_free(communicators[comm]->bcast_queue.handle);
@@ -87,8 +88,6 @@ static inline void ulm_free_bcaster(int comm, int useThreads)
     }
 
 unlock_and_exit:
-    if (useThreads)
-      broadcasters_locks.unlock();
     END_MARK;
     return;
 }

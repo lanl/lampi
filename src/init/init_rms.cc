@@ -105,6 +105,7 @@ void lampi_init_prefork_rms(lampiState_t *s)
     */
     s->local_size = elan_nlocal(elan_nodeId - cap.cap_lownode, &cap);
 
+
 #elif QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
     ELAN3_DEVINFO devinfo;
     if (elan3_devinfo(0, &devinfo) != 0) {

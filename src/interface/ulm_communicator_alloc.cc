@@ -46,21 +46,30 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
 {
   int                 errorcode = ULM_SUCCESS;
   int                 bcaster_id;
-  char                busy_bcasters[MAX_BROADCASTERS];
+  char                busy_bcasters_in[MAX_BROADCASTERS];
+  char                busy_bcasters_out[MAX_BROADCASTERS];
+  int                 tmp,gotit,vote,all_vote;
 
   START_MARK;
+
+  Communicator       *cp ; 
+  cp      = communicators[new_comm];
+
+  int GlobalProcID_min=cp->localGroup->mapGroupProcIDToGlobalProcID[0];
 
   if (communicators[new_comm]->localGroup->numberOfHostsInGroup <=1)
     return errorcode;
 
+  /* make sure we all agree we are using hardware broadcast: */
+  /* one cpu may disable after detecting an error  */
+  ulm_allreduce(&quadricsHW, &tmp, 1, (ULMType_t *) MPI_INT, (ULMOp_t *) MPI_LAND, new_comm );
+  quadricsHW=tmp;
+
+
   if (!quadricsHW) // quadrics hardware bcast disabled by user
       return errorcode;
 
-
-  if (useThreads)
-    broadcasters_locks.lock();
-
-  ulm_barrier(new_comm);
+  //ulm_barrier(new_comm);  no need for this since we added allreduce above
 
   /* leave ULM_COMM_WORLD and ULM_COMM_SELF after postfork_path */
   if ( new_comm == ULM_COMM_SELF || new_comm == ULM_COMM_WORLD )
@@ -70,23 +79,66 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
    * are allocated with the broadcaster */
   if ( new_comm == MPI_COMM_NULL ) goto barrier_and_exit;
 
-  ulm_allreduce(busy_broadcasters, busy_bcasters, MAX_BROADCASTERS, 
+  /* try to find a free broadcaster */
+  /* busy_broadcasters[i].cid = MPI_COMM_NULL    bcaster_id NOT in use */
+  /* busy_broadcasters[i].cid = cp->contextID    bcaster_id used by communicator */
+
+  for (int i=0; i<MAX_BROADCASTERS; ++i) 
+      busy_bcasters_in[i]=(busy_broadcasters[i].cid!=MPI_COMM_NULL);
+
+  ulm_allreduce(busy_bcasters_in, busy_bcasters_out, MAX_BROADCASTERS, 
       (ULMType_t *) MPI_CHAR, (ULMOp_t *) MPI_BOR, new_comm );
 
   /* To get the first free broacasters */
   for (bcaster_id = 0; bcaster_id < MAX_BROADCASTERS; bcaster_id ++)
   {
-    if ( busy_bcasters[bcaster_id] == 0) break;
+    if ( busy_bcasters_out[bcaster_id] == 0) break;
   }
+
 
   /* Make sure the available communicator is still within range,
    * otherwise, output a prompt message and quit */
   if ( bcaster_id >= broadcasters_array_len )  {
-      Communicator       *cp = communicators[new_comm]; 
       if (cp->localGroup->ProcID==0) {
-          ulm_err((
-"Warning: exhausted Quadrics hardware broadcasters. New communicator will use \
-software based broadcast.  Limit: %d (see mpirun options to change).\n",broadcasters_array_len));
+          ulm_err(("Warning: exhausted hw bcasters. Reverting to software bcast for communicator=%i\n",new_comm));
+      }
+      goto barrier_and_exit;
+  }
+
+  /* we have all agreed to use bcaster_id.  see if it is still available on this node */
+  broadcasters_locks->lock();
+  if (MPI_COMM_NULL==busy_broadcasters[bcaster_id].cid) {
+      busy_broadcasters[bcaster_id].cid = new_comm;
+      busy_broadcasters[bcaster_id].pid = GlobalProcID_min;
+      gotit = 1;
+      vote = 1;
+  }else{
+      /* I didn't get the lock, but if anyone in my communicator got it, that is
+       * good enough.  Note:  "new_comm" may not be unique accross disjoint communicators,
+       * so we need to match both "new_comm" and smallest proc id in new_comm.  */
+      gotit=0;
+      vote=0;
+      if (busy_broadcasters[bcaster_id].cid==new_comm && 
+          busy_broadcasters[bcaster_id].pid== GlobalProcID_min) vote=1;
+  }
+  broadcasters_locks->unlock();
+
+  ulm_allreduce(&vote, &all_vote, 1,
+      (ULMType_t *) MPI_INT, (ULMOp_t *) MPI_LAND, new_comm );
+
+
+  if (0==all_vote) {  /* we failed to agree */
+      if (1==gotit) { /* give up the broadcaster */
+          broadcasters_locks->lock();
+          busy_broadcasters[bcaster_id].cid=MPI_COMM_NULL;
+          broadcasters_locks->unlock();  
+      }
+
+      /* TODO:  create a centralized arbritrator and try again... */
+
+      if (cp->localGroup->ProcID==0) {
+          ulm_err(("Warning: hw bcast shared memory arbritration failed."
+          " Reverting to software bcast. comm=%i \n",new_comm));
       }
       goto barrier_and_exit;
   }
@@ -95,14 +147,11 @@ software based broadcast.  Limit: %d (see mpirun options to change).\n",broadcas
 
   {
     Broadcaster        *bcaster;
-    Communicator       *cp ; 
-
-
 
 
     /* Assign the first available broadcaster to the communicator*/
+
     bcaster = quadrics_broadcasters[bcaster_id];
-    cp      = communicators[new_comm];
 
     assert(bcaster_id == bcaster->id && bcaster_id != 0 
         && bcaster->inuse == 0);
@@ -120,8 +169,6 @@ software based broadcast.  Limit: %d (see mpirun options to change).\n",broadcas
 
       cp->hw_bcast_enabled = QSNET_COLL ;
       cp->bcaster          = bcaster;
-      busy_broadcasters[bcaster_id] = 1;
-      bcaster->inuse = 1;
     }
     else
     {
@@ -138,8 +185,6 @@ barrier_and_exit:
   /* Synchronize all processes within the old communicator */
   ulm_barrier(new_comm);
 
-  if (useThreads)
-    broadcasters_locks.unlock();
 
   END_MARK;
   return errorcode;

@@ -58,15 +58,15 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
         return;
     }
 
-  if (!quadricsHW) // quadrics hardware bcast disabled by user
-      return;
-
     if (s->error) {
         return;
     }
     if (s->verbose) {
         lampi_init_print("lampi_init_postfork_coll_setup");
     }
+
+    if (!quadricsHW) // quadrics hardware bcast disabled by user or previous error
+      return;
 
     Broadcaster   * bcaster;
     maddr_vm_t  main_base = quadrics_Glob_Mem_Info->globMainMem;
@@ -126,7 +126,8 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
     /* Enable the hardware multicast */
     returnCode = bcaster->hardware_coll_init();
 
-    busy_broadcasters[0] = 1;
+    busy_broadcasters[0].cid = ULM_COMM_WORLD;
+    busy_broadcasters[0].pid = 0;
     bcaster->inuse = 1;
 
     if ( returnCode == ULM_SUCCESS)
@@ -137,8 +138,6 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
       cp->bcaster          = bcaster;
     }
 
-    /* initialize the lock */
-    broadcasters_locks.init();
 
     if (usethreads())
         communicatorsLock.unlock();
