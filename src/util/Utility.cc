@@ -263,7 +263,7 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     /* send heart beat time stamp to each host */
     if (RetVal > 0) {
         for (i = 0; i < NHosts; i++) {
-            if ((ClientSocketFDList[i] > 0)
+            if ((ClientSocketFDList[i] >= 0)
                 && (FD_ISSET(ClientSocketFDList[i], &WriteSet))) {
                 IOReturn =
                     _ulm_Send_Socket(ClientSocketFDList[i], 1, IOVec);

@@ -247,14 +247,14 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
     if ((*ServerSocketFD) == -1)
         return 0;
     FD_ZERO(&ReadSet);
-    if (*ServerSocketFD > 0)
+    if (*ServerSocketFD >= 0)
         FD_SET(*ServerSocketFD, &ReadSet);
 
     RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
     if (RetVal < 0)
         return RetVal;
     if (RetVal > 0) {
-        if (((*ServerSocketFD) > 0)
+        if (((*ServerSocketFD) >= 0)
             && (FD_ISSET(*ServerSocketFD, &ReadSet))) {
             /* Read tag value */
             Tag = 0;
