@@ -277,7 +277,7 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     return true;
 }
 
-void TCPPeer::sendStart(SendDesc_t* message, int sd)
+void TCPPeer::sendStart(SendDesc_t* message)
 {
     // find unused sockets and start send for first fragments
     size_t numSockets = tcpSockets.size();
@@ -286,7 +286,7 @@ void TCPPeer::sendStart(SendDesc_t* message, int sd)
         i++) {
 
         TCPSocket& tcpSocket = tcpSockets[i];
-        if(usethreads() && tcpSocket.sd != sd) 
+        if(usethreads())
             tcpSocket.lock.lock();
  
         if(tcpSocket.isConnected() && tcpSocket.sendFrag == 0) {
@@ -300,13 +300,13 @@ void TCPPeer::sendStart(SendDesc_t* message, int sd)
             TCPSendFrag *sendFrag = (TCPSendFrag*)message->FragsToSend.GetfirstElement();
             tcpSocket.sendFrag = sendFrag;
             sendFrag->WhichQueue = 0;
-            if(usethreads() && tcpSocket.sd != sd) 
+            if(usethreads())
                 tcpSocket.lock.unlock();
 
             // start send, if it doesn't complete add to the select mask
             sendFrag->sendEventHandler(tcpSocket.sd);
             if(tcpSocket.sendFrag == sendFrag) {
-                if(usethreads() && tcpSocket.sd != sd) {
+                if(usethreads()) {
                     ScopedLock lock(tcpSocket.lock);
                     if(tcpSocket.sendFrag == sendFrag) { // double-checked lock
                         tcpSocket.flags |= Reactor::NotifySend;
@@ -318,7 +318,7 @@ void TCPPeer::sendStart(SendDesc_t* message, int sd)
                 }
             }
 
-        } else if (usethreads() && tcpSocket.sd != sd)
+        } else if (usethreads()) 
             tcpSocket.lock.unlock();
     }
 }
@@ -469,13 +469,16 @@ void TCPPeer::recvEventHandler(int sd)
     for(size_t i=0; i<tcpSockets.size(); i++) {
         TCPSocket& tcpSocket = tcpSockets[i];
         if(tcpSocket.sd == sd) {
-            ScopedLock lock(tcpSocket.lock);
-            if(tcpSocket.sd != sd) // double-checked lock
+            tcpSocket.lock.lock();
+            if(tcpSocket.sd != sd) { // double-checked lock
+                tcpSocket.lock.unlock();
                 continue;
+            }
 
             switch(tcpSocket.state) {
             case S_CONNECT_ACK:
                 recvConnectAck(tcpSocket);
+                tcpSocket.lock.unlock();
                 break;
             case S_CONNECTED:
                 {
@@ -488,6 +491,7 @@ void TCPPeer::recvEventHandler(int sd)
                     recvFrag->init(this);
                 }
                 tcpSocket.recvFrag = recvFrag;
+                tcpSocket.lock.unlock();
                 recvFrag->recvEventHandler(sd);
                 break;
                 }
@@ -495,7 +499,8 @@ void TCPPeer::recvEventHandler(int sd)
                 ulm_err(("TCPPeer[%d,%d]::recvEventHandler(%d): invalid socket state(%d).\n", 
                     thisProc, peerProc, sd, tcpSocket.state));
                 tcpPath->removeListener(tcpSocket.sd, this, Reactor::NotifyAll);
-                tcpSocket.close();
+                tcpSocket.close(); 
+                tcpSocket.lock.unlock();
                 break;
             }
             break;
@@ -726,12 +731,12 @@ void TCPPeer::recvFailed(TCPRecvFrag* recvFrag)
 //  socket is available.
 //
 
-bool TCPPeer::send(int sd, TCPRecvFrag* recvFrag)
+bool TCPPeer::send(TCPRecvFrag* recvFrag)
 {
     for(size_t i=0; i<tcpSockets.size(); i++) {
         TCPSocket& tcpSocket = tcpSockets[i];
         if(tcpSocket.isConnected() && tcpSocket.sendFrag == 0) {
-            if(usethreads() && tcpSocket.sd != sd) {
+            if(usethreads()) {
                 ScopedLock lock(tcpSocket.lock);
                 if(tcpSocket.sendFrag != 0)
                     continue;
@@ -743,12 +748,11 @@ bool TCPPeer::send(int sd, TCPRecvFrag* recvFrag)
             // start the send, if it doesn't complete add to the select mask
             recvFrag->sendEventHandler(tcpSocket.sd);
             if(tcpSocket.sendFrag == recvFrag) {
-                if(usethreads() && tcpSocket.sd != sd) tcpSocket.lock.lock();
+                ScopedLock lock(tcpSocket.lock);
                 if(tcpSocket.sendFrag == recvFrag) {
                     tcpSocket.flags |= Reactor::NotifySend;
                     tcpPath->insertListener(tcpSocket.sd, recvFrag, Reactor::NotifySend);
                 }
-                if(usethreads() && tcpSocket.sd != sd) tcpSocket.lock.unlock();
             }
             return true;
         }

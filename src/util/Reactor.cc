@@ -143,6 +143,7 @@ bool Reactor::removeListener(int sd, Listener* listener, int flags)
 void Reactor::poll()
 {
     struct timeval tm;
+    ScopedLock lock(sd_progress);
     tm.tv_sec = 0;
     tm.tv_usec = 1;
     ulm_fd_set_t rset = sd_recv_set;
@@ -160,6 +161,7 @@ void Reactor::poll()
 
 void Reactor::run()
 {
+    ScopedLock lock(sd_progress);
     while(sd_run == true) {
         ulm_fd_set_t rset = sd_recv_set;
         ulm_fd_set_t sset = sd_send_set;

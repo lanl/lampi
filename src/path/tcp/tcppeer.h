@@ -89,10 +89,10 @@ public:
     bool acceptConnection(int sd);
     bool canReach();
     bool send(SendDesc_t* message, bool* incomplete, int *errorCode);
-    void sendStart(SendDesc_t* message, int sd = -1);
+    void sendStart(SendDesc_t* message);
     void sendComplete(TCPSendFrag*);
 
-    bool send(int sd, TCPRecvFrag*);
+    bool send(TCPRecvFrag*);
     void sendComplete(TCPRecvFrag*);
     void sendFailed(TCPRecvFrag*);
     void recvComplete(TCPRecvFrag*);
