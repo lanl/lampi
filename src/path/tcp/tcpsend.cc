@@ -241,7 +241,7 @@ void TCPSendFrag::sendEventHandler(int sd)
 {
     int cnt=-1;
     while(cnt < 0) {
-        cnt = writev(sd, fragVecPtr, fragVecCnt);
+        cnt = ulm_writev(sd, fragVecPtr, fragVecCnt);
         if(cnt < 0) {
             switch(errno) {
             case EINTR:

@@ -78,8 +78,8 @@ private:
     double                fragTimeStarted;
     int                   fragTmapIndex;
     tcp_msg_header        fragHdr;
-    Vector<struct iovec>  fragVecs;
-    struct iovec*         fragVecPtr;
+    Vector<ulm_iovec_t>   fragVecs;
+    ulm_iovec_t*          fragVecPtr;
     int                   fragVecCnt;
 
     void packData(SendDesc_t*);
