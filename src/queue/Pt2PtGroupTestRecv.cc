@@ -70,10 +70,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 // Get the list of frags from the given processor.
                 //
 
-                // lock list for thread safety, since we need to make it through
-                //   the full list
-                if (usethreads())
-                    privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
+                // hold big receive lock for thread safety...
+                if (usethreads()) {
+                    recvLock[SrcIndex].lock();
+                }
 
                 for (SMPFragDesc_t *
                      rfd = (SMPFragDesc_t *) privateQueues.
@@ -99,10 +99,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                     break;
                 }
 
-                // unlock list
-                if (usethreads())
-                    privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.
-                        unlock();
+                // unlock big receive list
+                if (usethreads()) {
+                    recvLock[SrcIndex].unlock();
+                }
 
                 if (*found)
                     break;
@@ -116,9 +116,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 // Get the list of frags from the given processor.
                 //
 
-                // lock list for thread safety, since we need to make it through
-                //   the full list
-                privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
+                // hold big receive lock for thread safety
+                if (usethreads()) {
+                    recvLock[SrcIndex].lock();
+                }
 
                 for (BaseRecvFragDesc_t *
                      rfd =
@@ -146,8 +147,11 @@ int Communicator::iprobe(int sourceProc, int tag,
                     break;
                 }
 
-                // unlock list
-                privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
+                // unlock big receive lock
+                if (usethreads()) {
+                    recvLock[SrcIndex].unlock();
+                }
+
                 if (*found)
                     break;
 #ifdef ENABLE_SHARED_MEMORY
@@ -176,9 +180,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 // Get the list of frags from the given processor.
                 //
 
-                // lock list for thread safety
-                if (usethreads())
-                    privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
+                // lock big receive lock for thread safety
+                if (usethreads()) {
+                    recvLock[SrcIndex].lock();
+                }
 
                 for (SMPFragDesc_t *
                      rfd = (SMPFragDesc_t *) privateQueues.
@@ -201,10 +206,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                     }
                 }
 
-                // lock list for thread safety
-                if (usethreads())
-                    privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.
-                        unlock();
+                // unlock big receive lock 
+                if (usethreads()) {
+                    recvLock[SrcIndex].unlock();
+                }
 
                 if (*found)
                     break;
@@ -218,8 +223,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 // Get the list of frags from the given processor.
                 //
 
-                // lock list for thread safety
-                privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
+                // hold big receive lock for thread safety
+                if (usethreads()) {
+                    recvLock[SrcIndex].lock();
+                }
 
                 for (BaseRecvFragDesc_t *
                      rfd =
@@ -244,8 +251,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                     }
                 }
 
-                // lock list for thread safety
-                privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
+                // unlock big receive lock
+                if (usethreads()) {
+                    recvLock[SrcIndex].unlock();
+                }
 
                 if (*found)
                     break;
@@ -274,10 +283,10 @@ int Communicator::iprobe(int sourceProc, int tag,
         if (lampiState.map_global_rank_to_host
             [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
             myhost()) {
-            // lock list for thread safety, since we need to make it through
-            //   the full list
-            if (usethreads())
-                privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
+            // lock big receive lock for thread safety
+            if (usethreads()) {
+                recvLock[SrcIndex].lock();
+            }
 
             for (SMPFragDesc_t *
                  rfd = (SMPFragDesc_t *) privateQueues.
@@ -303,14 +312,16 @@ int Communicator::iprobe(int sourceProc, int tag,
                 //
                 break;
             }
-            // unlock list
-            if (usethreads())
-                privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.unlock();
+            // unlock big receive lock
+            if (usethreads()) {
+                recvLock[SrcIndex].unlock();
+            }
         } else {
 #endif                          // SHARED_MEMORY
-            // lock list for thread safety, since we need to make it through
-            //   the full list
-            privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
+            // lock big receive lock for thread safety
+            if (usethreads()) {
+                recvLock[SrcIndex].lock();
+            }
 
             for (BaseRecvFragDesc_t *
                  rfd =
@@ -338,8 +349,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 //
                 break;
             }
-            // unlock list
-            privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
+            // unlock big receive lock
+            if (usethreads()) {
+                recvLock[SrcIndex].unlock();
+            }
 
 #ifdef ENABLE_SHARED_MEMORY
         }                       // end on-host/off-host
@@ -360,10 +373,10 @@ int Communicator::iprobe(int sourceProc, int tag,
         if (lampiState.map_global_rank_to_host
             [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
             myhost()) {
-            // lock list for thread safety, since we need to make it through
-            //   the full list
-            if (usethreads())
-                privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.lock();
+            // lock big receive lock for thread safety
+            if (usethreads()) {
+                recvLock[SrcIndex].lock();
+            }
 
             for (SMPFragDesc_t *
                  rfd = (SMPFragDesc_t *) privateQueues.
@@ -392,14 +405,16 @@ int Communicator::iprobe(int sourceProc, int tag,
                 }
             }
 
-            // unlock list
-            if (usethreads())
-                privateQueues.OkToMatchSMPFrags[SrcIndex]->Lock.unlock();
+            // unlock big receive lock
+            if (usethreads()) {
+                recvLock[SrcIndex].unlock();
+            }
         } else {
 #endif                          // SHARED_MEMORY
-            // lock list for thread safety, since we need to make it through
-            //   the full list
-            privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.lock();
+            // lock big receive lock for thread safety
+            if (usethreads()) {
+                recvLock[SrcIndex].lock();
+            }
 
             for (BaseRecvFragDesc_t *
                  rfd =
@@ -430,8 +445,10 @@ int Communicator::iprobe(int sourceProc, int tag,
                 }
             }
 
-            // unlock list
-            privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
+            // unlock big receive lock
+            if (usethreads()) {
+                recvLock[SrcIndex].unlock();
+            }
 
 #ifdef ENABLE_SHARED_MEMORY
         }                       // end on-host/off-host

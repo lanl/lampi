@@ -693,7 +693,7 @@ public:
     bool checkSpecifiedFragListsForMatch(RecvDesc_t *IRDesc, int ProcWithData);
 
 #ifdef ENABLE_SHARED_MEMORY
-    bool matchAgainstSMPFramentList(RecvDesc_t *receiver, int sourceProcess);
+    bool matchAgainstSMPFragList(RecvDesc_t *receiver, int sourceProcess);
 #endif                          // SHARED_MEMORY
 
     //

@@ -149,7 +149,7 @@ int push_frags_into_network(double timeNow)
                     nAcked = SendDesc->pathInfo.sharedmem.sharedData->NumAcked;
                 }
                 if ( ( nAcked >= SendDesc->numfrags) &&
-                	 (SendDesc->NumSent >= SendDesc->numfrags) ) {
+                	 (SendDesc->NumSent >= (int)SendDesc->numfrags) ) {
                     // message has been acked
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         IncompletePostedSends.RemoveLinkNoLock(SendDesc);

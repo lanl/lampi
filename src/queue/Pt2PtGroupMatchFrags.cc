@@ -94,12 +94,9 @@ RecvDesc_t *Communicator::isThisMissingFrag(BaseRecvFragDesc_t *rec)
 //  been made, and this is just a check of the list to see if any
 //  more frags are present.
 //   Note:  The built in assumption is that the only time this routine
-//          will be called is after a match has been found while pulling
-//          frags off the _ulm_SortedPt2PtRecvFrags, so that the only process
-//          trying to find the remaining frag in the privateQueues.OkToMatchRecvFrags
-//          list is the SAME one that pulled it off the _ulm_SortedPt2PtRecvFrags
-//          list ==> there is no chance for it to be moved to another list
-//          by some other thread of the same process.
+//          will be called is after a match has been found while processing
+//          an incoming fragment -- recvLock[SendingProc] must be held for
+//          multi-threaded code!
 //
 
 void Communicator::SearchForFragsWithSpecifiedISendSeqNum
@@ -109,13 +106,8 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
     /* get sequence number */
     unsigned long SendingSequenceNumber =
         MatchedPostedRecvHeader->isendSeq_m;
+
     // loop over list of frags
-    //
-
-    // lock list for thread safety
-    if( usethreads() )
-	    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.lock();
-
     for (BaseRecvFragDesc_t *
              RecDesc =
              (BaseRecvFragDesc_t *) privateQueues.
@@ -129,7 +121,6 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
 
         if (RecDesc->isendSeq_m == SendingSequenceNumber) {
 
-//          RecDesc->WhichQueue=FRAGSTOACK;
             // remove frag from privateQueues.OkToMatchRecvFrags list
             BaseRecvFragDesc_t *TmpDesc = RecDesc;
             RecDesc = (BaseRecvFragDesc_t *)
@@ -143,10 +134,6 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
 
         }                       // done processing  RecDesc
     }                           // done looping over privateQueues.OkToMatchRecvFrags
-
-    // unlock list
-    if( usethreads() )
-	    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.unlock();
 
     return;
 }
@@ -271,7 +258,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
                     // if match not found, place on privateQueues.OkToMatchRecvFrags list
                     RecvDesc->WhichQueue = UNMATCHEDFRAGS;
                     privateQueues.OkToMatchRecvFrags[proc]->
-                        Append(RecvDesc);
+                        AppendNoLock(RecvDesc);
 
                 }
 
@@ -311,7 +298,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
                             // if match not found, place on privateQueues.OkToMatchRecvFrags list
                             RDesc->WhichQueue = UNMATCHEDFRAGS;
                             privateQueues.OkToMatchRecvFrags[proc]->
-                                Append(RDesc);
+                                AppendNoLock(RDesc);
 
                         }
 
@@ -435,8 +422,8 @@ checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec)
             // remove this irecv from the postd wild ireceive list
             privateQueues.PostedWildRecv.RemoveLinkNoLock(WildDesc);
 
-            //  add this descriptor to the matched wild ireceive list
-            WildDesc->WhichQueue = WILDMATCHEDIRECV;
+            //  add this descriptor to the matched ireceive list
+            WildDesc->WhichQueue = MATCHEDIRECV;
             privateQueues.MatchedRecv[rec->srcProcID_m]->
                 Append(WildDesc);
 
@@ -551,11 +538,11 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
                     // Mark it and process it.
                     //
                     ReturnValue = WildDesc;
-                    WildDesc->WhichQueue = WILDMATCHEDIRECV;
+                    WildDesc->WhichQueue = MATCHEDIRECV;
                     // remove this irecv from the postd wild ireceive list
                     privateQueues.PostedWildRecv.
                         RemoveLinkNoLock(WildDesc);
-                    //  add this descriptor to the matched wild ireceive list
+                    //  add this descriptor to the matched ireceive list
                     privateQueues.MatchedRecv[SrcProc]->Append(WildDesc);
 
                     return ReturnValue;

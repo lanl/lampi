@@ -79,7 +79,7 @@ void Communicator::checkFragListsForWildMatch(RecvDesc_t * IRDesc)
             return;
         }
 #ifdef ENABLE_SHARED_MEMORY
-        if (matchAgainstSMPFramentList(IRDesc, ProcWithData)) {
+        if (matchAgainstSMPFragList(IRDesc, ProcWithData)) {
             // match found
             return;
         }
@@ -140,7 +140,7 @@ void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
         return;
     }
 #ifdef ENABLE_SHARED_MEMORY
-    if (matchAgainstSMPFramentList(IRDesc, SourceProc)) {
+    if (matchAgainstSMPFragList(IRDesc, SourceProc)) {
         // match found
         return;
     }
@@ -155,8 +155,9 @@ void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
 
 //
 // this routine tries to match the posted IRecv.  If a match is found,
-//  it places the IRDesc in the appropriate matched receive list.  It also
-//  moves Recv descriptors among appropriate lists
+// it places the IRDesc in the appropriate matched receive list.  It also
+// moves Recv descriptors among appropriate lists...recvLock[ProcWithData]
+// must be held for multi-threaded operation!
 //
 
 bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
@@ -168,10 +169,6 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
     int tag = IRDesc->posted_m.tag_m;
     RequestDesc_t *requestDesc = (RequestDesc_t *) IRDesc;
     // loop over list of frags - upper level manages thread safety
-
-    // lock for thread safety
-    if (usethreads())
-        privateQueues.OkToMatchRecvFrags[ProcWithData]->Lock.lock();
 
     for (BaseRecvFragDesc_t *
          RecDesc =
@@ -293,10 +290,6 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
         }
     }
 
-    // unlock
-    if (usethreads())
-        privateQueues.OkToMatchRecvFrags[ProcWithData]->Lock.unlock();
-
     return FragFound;
 }
 
@@ -309,12 +302,13 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
 // also moves Recv descriptors among appropriate lists
 //
 
-bool Communicator::matchAgainstSMPFramentList(RecvDesc_t * receiver,
+bool Communicator::matchAgainstSMPFragList(RecvDesc_t * receiver,
                                               int sourceProcess)
 {
     bool FragFound = false;
     int errorCode;
     sharedmemPath sharedMemObject;
+
     // return if nothing to get
     if (privateQueues.OkToMatchSMPFrags[sourceProcess]->size() == 0) {
         return FragFound;
@@ -322,83 +316,31 @@ bool Communicator::matchAgainstSMPFramentList(RecvDesc_t * receiver,
     int tag = receiver->posted_m.tag_m;
     // loop over list of frags - upper level manages thread safety
 
-    if (usethreads()) {
-        // lock for thread safety
-        privateQueues.OkToMatchSMPFrags[sourceProcess]->Lock.lock();
-        SMPFragDesc_t *Next = (SMPFragDesc_t *)
-            privateQueues.OkToMatchSMPFrags[sourceProcess]->begin();
-        Next = (SMPFragDesc_t *) Next->next;
-        for (SMPFragDesc_t *frag =
-                 (SMPFragDesc_t *)privateQueues.
-                 OkToMatchSMPFrags[sourceProcess]->begin();
-             frag !=
-                 (SMPFragDesc_t *) privateQueues.
-                 OkToMatchSMPFrags[sourceProcess]->end();
-             frag = (SMPFragDesc_t *) frag->next) {
 
-            // pull off first frag, only 0th frag will be present if
-            //   match has not yet been made.
-            if ((tag == ULM_ANY_TAG) || (tag == frag->tag_m)) {
-                if (tag == ULM_ANY_TAG && frag->tag_m < 0) {
-                    continue;
-                }
+    for (SMPFragDesc_t *frag = (SMPFragDesc_t *)privateQueues.
+         OkToMatchSMPFrags[sourceProcess]->begin();
+         frag != (SMPFragDesc_t *) privateQueues.
+         OkToMatchSMPFrags[sourceProcess]->end();
+        frag = (SMPFragDesc_t *) frag->next) {
 
-                // remove frag from list
-                privateQueues.OkToMatchSMPFrags[sourceProcess]->
-                    RemoveLinkNoLock(frag);
+        // pull off first frag, only 0th frag will be present if
+        //   match has not yet been made.
+        if ((tag == ULM_ANY_TAG) || (tag == frag->tag_m)) {
+            if (tag == ULM_ANY_TAG && frag->tag_m < 0) {
+                continue;
+            }
 
-                FragFound = true;
+            // remove frag from list
+            privateQueues.OkToMatchSMPFrags[sourceProcess]->
+                RemoveLinkNoLock(frag);
 
-		// process the fragment
-		/* this is a wider lock than really needed, but
-		 *   in when request and send objects are combined,
-		 *   this can be eliminated all together.
-		 */
-		receiver->Lock.lock();
-		errorCode=sharedMemObject.processMatch(frag,receiver);
-		receiver->Lock.unlock();
+            FragFound = true;
+		    errorCode=sharedMemObject.processMatch(frag,receiver);
 
-                // break - match found
-                break;
+            // break - match found
+            break;
 
-            }                   // end of matched region
-        }
-
-        // unlock
-        privateQueues.OkToMatchSMPFrags[sourceProcess]->Lock.unlock();
-    } else {
-
-        SMPFragDesc_t *Next = (SMPFragDesc_t *)
-            privateQueues.OkToMatchSMPFrags[sourceProcess]->begin();
-        Next = (SMPFragDesc_t *) Next->next;
-        for (SMPFragDesc_t *frag =
-                 (SMPFragDesc_t *)privateQueues.
-                 OkToMatchSMPFrags[sourceProcess]->begin();
-             frag !=
-                 (SMPFragDesc_t *) privateQueues.
-                 OkToMatchSMPFrags[sourceProcess]->end();
-             frag = (SMPFragDesc_t *) frag->next) {
-
-            // pull off first frag, only 0th frag will be present if
-            //   match has not yet been made.
-            if ((tag == ULM_ANY_TAG) || (tag == frag->tag_m)) {
-                if (tag == ULM_ANY_TAG && frag->tag_m < 0) {
-                    continue;
-                }
-
-                // remove frag from list
-                privateQueues.OkToMatchSMPFrags[sourceProcess]->
-                    RemoveLinkNoLock(frag);
-
-                FragFound = true;
-
-		errorCode=sharedMemObject.processMatch(frag,receiver);
-
-                // break - match found
-                break;
-
-            }                   // end of matched region
-        }
+        }                   // end of matched region
     }
 
     return FragFound;

@@ -523,7 +523,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     //   read the list in probe
 
                     Comm->privateQueues.OkToMatchSMPFrags[sourceRank]->
-                        Append(incomingFrag);
+                        AppendNoLock(incomingFrag);
                     // unlock triplet
                 }
                 if (usethreads())
@@ -569,8 +569,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
             receiver->messageDone = REQUEST_COMPLETE;
             wmb();
             Comm = communicators[receiver->ctx_m];
-            Comm->privateQueues.MatchedRecv[receiver->reslts_m.peer_m]->
+            if (receiver->WhichQueue == MATCHEDIRECV) {
+                Comm->privateQueues.MatchedRecv[receiver->reslts_m.peer_m]->
                 RemoveLink(receiver);
+            }
             // if ulm_request_free() has already been called, then
             // we free the recv/request obj. here...
             if (receiver->freeCalled)
@@ -632,9 +634,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
-                        Comm->privateQueues.MatchedRecv[matchedRecv->
-				reslts_m.peer_m]->RemoveLink
-				(matchedRecv);
+                        if (matchedRecv->WhichQueue == MATCHEDIRECV) {
+                            Comm->privateQueues.MatchedRecv[matchedRecv->
+				                reslts_m.peer_m]->RemoveLink(matchedRecv);
+                        }
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here
                         if (matchedRecv->freeCalled)
@@ -688,9 +691,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
-                        Comm->privateQueues.MatchedRecv[matchedRecv->
-				reslts_m.peer_m]->RemoveLink
-				(matchedRecv);
+                        if (matchedRecv->WhichQueue == MATCHEDIRECV) {
+                            Comm->privateQueues.MatchedRecv[matchedRecv->
+				                reslts_m.peer_m]->RemoveLink(matchedRecv);
+                        }
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here...
                         if (matchedRecv->freeCalled)
