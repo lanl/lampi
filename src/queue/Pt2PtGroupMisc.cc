@@ -38,6 +38,7 @@
 
 #ifdef  ENABLE_QSNET
 #include <elan3/elan3.h>
+#include <elan/version.h>
 #include "path/quadrics/state.h"
 #include "path/quadrics/dmaThrottle_new.h"
 #endif
@@ -615,8 +616,13 @@ int Communicator::getMcastVpid(int rail, int *vp)
     // for use in ulm_bcast_quadrics.
     myVp = localGroup->mapGroupProcIDToGlobalProcID[localGroup->ProcID];
     for (i = 0; i < localGroup->groupSize; i++) {
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+        loc = elan_vp2location(vpids[i],  &quadricsCap);
+        _hw_ctx[loc.loc_context]++;
+#else
         loc = elan3_vp2location(vpids[i],  &quadricsCap);
         _hw_ctx[loc.Context]++;
+#endif
     }
     for (i = 0; i < 4; i++) {
         if (_hw_ctx[i] == localGroup->numberOfHostsInGroup) {
@@ -635,8 +641,13 @@ int Communicator::getMcastVpid(int rail, int *vp)
     lowvp = localGroup->groupSize - 1; 
     highvp = 0;
     for (i = 0; i < localGroup->groupSize; i++) {
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+        loc = elan_vp2location(vpids[i],  &quadricsCap);
+        if (loc.loc_context == hw_ctx_stripe) {
+#else
         loc = elan3_vp2location(vpids[i],  &quadricsCap);
         if (loc.Context == hw_ctx_stripe) {
+#endif
             if (vpids[i] < lowvp) {
                 lowvp = vpids[i];
             }
