@@ -221,6 +221,7 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
 int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               double *HeartBeatTime, int *ProcessCount,
                               int hostIndex, pid_t *ChildPIDs,
+                              int *STDINfdToChild,
                               int *STDOUTfdsFromChildren,
                               int *STDERRfdsFromChildren, int StdoutFD,
                               int StderrFD, size_t *StderrBytesWritten,
@@ -359,6 +360,11 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                 *lampiState.sync.AllHostsDone = 1;
                 // ok, the client daemon can now exit...
                 exit(0);
+                break;
+
+            case STDIOMSG:
+                if(*STDINfdToChild >= 0)
+                    ClientSendStdin(ServerSocketFD, STDINfdToChild);
                 break;
             default:
                 ulm_exit((-1, "Error: Unrecognized control message (%u)\n", Tag));

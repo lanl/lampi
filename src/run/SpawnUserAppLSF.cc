@@ -225,6 +225,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     strncpy(LocalHostName, RunParameters->mpirunName,
             ULM_MAX_HOSTNAME_LEN);
 
+    RunParameters->STDINsrc = dup(STDIN_FILENO);
     RunParameters->STDERRfds = ulm_new(int, RunParameters->NHosts);
     RunParameters->STDOUTfds = ulm_new(int, RunParameters->NHosts);
     for (host = 0; host < RunParameters->NHosts; host++) {
@@ -254,6 +255,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 
     fflush(stdout);
     fflush(stderr);
+    close(STDIN_FILENO);
 
     /*
      * Loop through the NHosts and spawn remote job by using ls_rtask().

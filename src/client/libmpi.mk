@@ -3,6 +3,7 @@ SRC_LIBMPI += \
 	src/client/CheckForControlMsgs.cc \
 	src/client/CheckIfChildrenAlive.cc \
 	src/client/ClientHandshakeWithServer.cc \
+	src/client/ClientSendStdin.cc \
 	src/client/DrainSTDIO.cc \
 	src/client/InstallSigHandler.cc \
 	src/client/OrderlyShutdown.cc \

@@ -93,8 +93,10 @@ int nCpPNode = 2;
  */
 
 static int initialized = 0;
+static int dupSTDINfd;
 static int dupSTDERRfd;
 static int dupSTDOUTfd;
+static int  StdinPipe[2];
 static int *StderrPipes;
 static int *StdoutPipes;
 
@@ -1969,6 +1971,10 @@ void lampi_init_prefork_stdio(lampiState_t *s)
      * stdout can be restored to those before exiting this routines.
      */
 
+    dupSTDINfd = dup(STDIN_FILENO);
+    if (dupSTDINfd <= 0) {
+        ulm_exit((-1, "Error: duping STDIN_FILENO.\n"));
+    }
     dupSTDERRfd = dup(STDERR_FILENO);
     if (dupSTDERRfd <= 0) {
         ulm_exit((-1, "Error: duping STDERR_FILENO.\n"));
@@ -1984,7 +1990,11 @@ void lampi_init_prefork_stdio(lampiState_t *s)
      */
     NChildren = s->local_size;
 
-    /* setup stdio/stderr redirection */
+    /* setup stdin/stdout/stderr redirection */
+    if(pipe(StdinPipe) < 0) {
+        ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
+    }
+
     StderrPipes = ulm_new(int, 2 * NChildren);
     for (i = 0; i < NChildren; i++) {
         if (pipe(StderrPipes + (2 * i)) < 0) {
@@ -2080,6 +2090,16 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
         }
         
+        /* setup stdin */
+        if(s->hostid != 0) {
+            s->STDINfdToChild = -1;
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        } else {
+            s->STDINfdToChild = StdinPipe[1];
+            close(StdinPipe[0]);
+        }
+
         /* close all write stderr/stdout pipe fd's ) */
         for (i = 0; i < NChildren; i++) {
             close(StderrPipes[2 * i + 1]);
@@ -2103,6 +2123,17 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         }
         /* end of daemon code */
     } else {
+
+        /* setup stdin handling */
+        if(s->global_rank == 0) {
+            dup2(StdinPipe[0], STDIN_FILENO);
+            close(StdinPipe[1]);
+        } else {
+            close(STDIN_FILENO);
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        }
+
         /* setup "application process" handling of stdout/stderr */
         dup2(StderrPipes[2 * lampiState.local_rank + 1],
              STDERR_FILENO);

@@ -67,6 +67,7 @@ void lampi_daemon_loop(lampiState_t *s)
     int hostIndex = s->hostid;
     int ServerSocketFD = s->client->socketToServer_m;
     pid_t *ChildPIDs = (pid_t *) s->local_pids;
+    int *STDINfdToChild = &s->STDINfdToChild;
     int *STDOUTfdsFromChildren = s->STDOUTfdsFromChildren;
     int *STDERRfdsFromChildren = s->STDERRfdsFromChildren;
     int StdoutFD = s->STDOUTfdToMPIrun;
@@ -190,6 +191,7 @@ void lampi_daemon_loop(lampiState_t *s)
         ClientCheckForControlMsgs(ServerSocketFD + 1, &ServerSocketFD,
                                   &HeartBeatTime, ProcessCount,
                                   hostIndex, ChildPIDs,
+                                  STDINfdToChild,
                                   STDOUTfdsFromChildren,
                                   STDERRfdsFromChildren, StdoutFD,
                                   StderrFD, StderrBytesWritten,

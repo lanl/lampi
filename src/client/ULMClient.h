@@ -68,12 +68,14 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
 int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               double *HeartBeatTime, int *ProcessCount,
                               int _ulm_HostID, pid_t *ChildPIDs,
+                              int *STDINfdToChild,
                               int *STDOUTfdsFromChildren,
                               int *STDERRfdsFromChildren, int StdoutFD,
                               int StderrFD, size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state);
+int ClientSendStdin(int *ServerFD, int* ClientFD);
 int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            int ToServerStdoutFD, int ToServerStderrFD,
                            int NFDs, int MaxDescriptor,

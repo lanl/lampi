@@ -94,6 +94,38 @@ int mpirunScanStdIn(int fdin, int fdout)
 }
 
 
+/*
+ * Read from stdin and create an admin message to host rank 0.
+ */
+int mpirunScanStdIn(int fdin)
+{
+    char buff[512];
+    int rc = read(fdin, buff, sizeof(buff));
+    if(rc == 0)
+        return ULM_SUCCESS;
+    if(rc < 0) {
+        switch(errno) {
+        case EINTR:
+        case EAGAIN:
+            return ULM_SUCCESS;
+        default:
+            return ULM_ERROR;
+        }
+    }
+
+    adminMessage *server = RunParameters.server;
+    server->reset(adminMessage::SEND);
+    server->pack(&rc, adminMessage::INTEGER, 1);
+    server->pack(buff, adminMessage::BYTE, rc);
+
+    if (false == server->send(0, STDIOMSG, &rc)) {
+	ulm_err(("Error: sending STDIOMSG.  RetVal: %d\n", rc));
+        return ULM_ERROR;
+    }
+    return ULM_SUCCESS;
+}
+
+
 void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                      ULMRunParams_t *RunParameters)
 {
@@ -234,6 +266,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                             close(RunParameters->STDINdst);
                             RunParameters->STDINdst = -1;
                         }
+                    } else if (RunParameters->UseBproc == 0) {
+                        mpirunScanStdIn(RunParameters->STDINsrc);
                     }
 		    RetVal = mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, NHosts,
 			     	    MaxDescriptorSTDIO, StderrBytesRead, StdoutBytesRead);
