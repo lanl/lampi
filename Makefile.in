@@ -186,7 +186,7 @@ ifeq "$(enable_static)" "yes"
 endif
 ifeq "$(with_romio)" "yes"
 	umask 002 ; \
-	(cd $(ROMIODIR)/include ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
+	(for f in $(ROMIODIR)/include/*.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
 	test -f $(includedir)/mpio.h && mv $(includedir)/mpiandio.h $(includedir)/mpi.h
 endif
 
