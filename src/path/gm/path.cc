@@ -500,8 +500,8 @@ void gmPath::callback(struct gm_port *port,
         case GM_BUSY:
         case GM_SEND_TIMED_OUT:
             // try again if the receiver is busy 
-            ulm_err(("Warning: Myrinet/GM: Retrying send: %d -> %d\n",
-                     myproc(), sfd->globalDestProc_m));
+            ulm_err(("Warning: Myrinet/GM: Retrying send: %d -> %d (status = %d)\n",
+                     myproc(), sfd->globalDestProc_m, status));
             bsd->FragsToSend.Append(sfd);
             return;
         case GM_SUCCESS:
