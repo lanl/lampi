@@ -86,28 +86,39 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
 
     } else {
 
-        rc = ulm_send(buf, count, mtype, dest, sendtag, comm, ULM_SEND_STANDARD);
-        if (rc != ULM_SUCCESS) {
-            rc = _mpi_error(rc);
-            goto ERRHANDLER;
+        ULMType_t *type = mtype;
+        size_t type_index = 0;
+        size_t map_index = 0;
+        size_t map_offset = 0;
+        size_t recv_offset = 0;
+        size_t recv_size = count * type->packed_size;
+        unsigned char recv_block[BLOCK_SIZE];
+        unsigned char *recv_buf = recv_block;
+ 
+        /* if required - allocate a buffer for the receive */
+        if(recv_size > BLOCK_SIZE) {
+            recv_buf = ulm_malloc(recv_size);
+            if(recv_buf == NULL) {
+                rc = MPI_ERR_NO_MEM;
+                goto ERRHANDLER;
+            }
         }
-    
-        ULMStatus_t stat;
-        rc = ulm_recv(buf, count, mtype, source, recvtag, comm, &stat);
-        if (rc != ULM_SUCCESS) {
-            rc = _mpi_error(rc);
+
+        rc = MPI_Sendrecv(buf, count, mtype, dest, sendtag,
+                          recv_buf, recv_size, MPI_BYTE, source, recvtag,
+                          comm, status);
+        if (rc != MPI_SUCCESS) {
             goto ERRHANDLER;
         }
 
-        /* fill out status object */
-        if (status) {
-            status->MPI_ERROR = _mpi_error(stat.error_m);
-            status->MPI_SOURCE = stat.peer_m;
-            status->MPI_TAG = stat.tag_m;
-            status->_count = stat.length_m;
-            status->_persistent = stat.persistent_m;
-        }
-
+        /* unpack the recv buffer into original buffer */
+        rc = type_pack(TYPE_PACK_UNPACK,
+                       recv_buf, status->_count, &recv_offset,
+                       buf, count, mtype,
+                       &type_index,
+                       &map_index,
+                       &map_offset);
+        return MPI_SUCCESS;
     }
 
 ERRHANDLER:
