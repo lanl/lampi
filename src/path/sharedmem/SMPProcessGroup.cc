@@ -95,6 +95,14 @@ checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag)
     // Loop over the wild irecvs.
     //
     int FragUserTag = incomingFrag->tag_m;
+
+    // must use list thread lock instead of recvLock[src]
+    // since multiple threads may be processing incoming 
+    // fragments (from different sources) simultaneously
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.lock();
+    }
+
     for (RecvDesc_t *
          WildRecvDesc =
          (RecvDesc_t *) privateQueues.PostedWildRecv.begin();
@@ -117,8 +125,16 @@ checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag)
             //   this list
             privateQueues.PostedWildRecv.RemoveLinkNoLock(WildRecvDesc);
 
+            if (usethreads()) {
+                privateQueues.PostedWildRecv.Lock.unlock();
+            }
+
             return WildRecvDesc;
         }
+    }
+
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.unlock();
     }
 
     return ReturnValue;
@@ -176,6 +192,14 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
     // We know that when this is called, both specific and wild irecvs
     //  have been posted.
     //
+
+    // must use list thread lock instead of recvLock[src]
+    // since multiple incoming fragments (from different
+    // sources) may be processed simultaneously...
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.lock();
+    }
+
     int SrcProc = incomingFrag->srcProcID_m;
     RecvDesc_t *SpecificDesc =
         (RecvDesc_t *) privateQueues.PostedSpecificRecv[SrcProc]->
@@ -207,6 +231,10 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
                         RemoveLinkNoLock(WildRecvDesc);
                     *queueMatched = Communicator::WILD_RECV_QUEUE;
 
+                    if (usethreads()) {
+                        privateQueues.PostedWildRecv.Lock.unlock();
+                    }
+
                     return WildRecvDesc;
                 }
             }
@@ -223,6 +251,11 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
                 ReturnValue =
                     checkSMPSpecificRecvListForMatch(incomingFrag);
                 *queueMatched = Communicator::SPECIFIC_RECV_QUEUE;
+
+                if (usethreads()) {
+                    privateQueues.PostedWildRecv.Lock.unlock();
+                }
+
                 return ReturnValue;
             }
             //
@@ -247,6 +280,9 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
                         RemoveLinkNoLock(SpecificDesc);
                     *queueMatched = Communicator::SPECIFIC_RECV_QUEUE;
 
+                    if (usethreads()) {
+                        privateQueues.PostedWildRecv.Lock.unlock();
+                    }
 
                     return SpecificDesc;
                 }
@@ -262,8 +298,14 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
             //
             if (SpecificDesc ==
                 privateQueues.PostedSpecificRecv[SrcProc]->end()) {
+
+                if (usethreads()) {
+                    privateQueues.PostedWildRecv.Lock.unlock();
+                }
+
                 ReturnValue = checkSMPWildRecvListForMatch(incomingFrag);
                 *queueMatched = Communicator::WILD_RECV_QUEUE;
+
                 return ReturnValue;
             }
             //

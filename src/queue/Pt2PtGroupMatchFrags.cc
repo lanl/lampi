@@ -388,6 +388,14 @@ checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec)
     //
     // Loop over the wild irecvs.
     //
+
+    // must use list thread lock instead of recvLock[src]
+    // since multiple incoming fragments (from different
+    // sources could be processed simultaneously
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.lock();
+    }
+
     int FragUserTag = rec->tag_m;
     for (RecvDesc_t *
              WildDesc =
@@ -434,6 +442,9 @@ checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec)
     }
     //
 
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.unlock();
+    }
 
     return ReturnValue;
 }
@@ -502,6 +513,14 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
     // We know that when this is called, both specific and wild irecvs
     //  have been posted.
     //
+
+    // must use list thread lock instead of recvLock[src] since
+    // multiple incoming fragments (from different sources) may 
+    // be processed simultaneously
+    if (usethreads()) {
+        privateQueues.PostedWildRecv.Lock.lock();
+    }
+
     int SrcProc = rec->srcProcID_m;
     RecvDesc_t *SpecificDesc =
         (RecvDesc_t *) privateQueues.PostedSpecificRecv[SrcProc]->
@@ -545,6 +564,11 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
                         RemoveLinkNoLock(WildDesc);
                     //  add this descriptor to the matched wild ireceive list
                     privateQueues.MatchedRecv[SrcProc]->Append(WildDesc);
+
+                    if (usethreads()) {
+                        privateQueues.PostedWildRecv.Lock.unlock();
+                    }
+
                     return ReturnValue;
                 }
             }
@@ -559,6 +583,11 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
             //
             if (WildDesc ==
                 (RecvDesc_t *) privateQueues.PostedWildRecv.end()) {
+                
+                if (usethreads()) {
+                    privateQueues.PostedWildRecv.Lock.unlock();
+                }
+
                 ReturnValue = checkSpecificPostedRecvListForMatch(rec);
                 return ReturnValue;
             }
@@ -597,6 +626,11 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
                     // append to match ireceive list
                     privateQueues.MatchedRecv[SrcProc]->
                         Append(SpecificDesc);
+
+                    if (usethreads()) {
+                        privateQueues.PostedWildRecv.Lock.unlock();
+                    }
+
                     return ReturnValue;
                 }
             }
@@ -612,6 +646,11 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
             if (SpecificDesc ==
                 (RecvDesc_t *) privateQueues.
                 PostedSpecificRecv[SrcProc]->end()) {
+
+                if (usethreads()) {
+                    privateQueues.PostedWildRecv.Lock.unlock();
+                }
+
                 ReturnValue = checkWildPostedRecvListForMatch(rec);
                 return ReturnValue;
             }

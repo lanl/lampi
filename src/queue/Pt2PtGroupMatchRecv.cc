@@ -91,7 +91,16 @@ void Communicator::checkFragListsForWildMatch(RecvDesc_t * IRDesc)
     // it when the message comes in.
     //
     IRDesc->WhichQueue = POSTEDWILDIRECV;
-    privateQueues.PostedWildRecv.AppendNoLock(IRDesc);
+    if (usethreads()) {
+        // must use list thread lock instead of recvLock[src]
+        // since we must protect the list when multiple
+        // incoming fragments (from different sources) are
+        // being processed simultaneously
+        privateQueues.PostedWildRecv.Append(IRDesc);
+    }
+    else {
+        privateQueues.PostedWildRecv.AppendNoLock(IRDesc);
+    }
 
     //
     return;
