@@ -431,7 +431,12 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
             got_tokens = true;
         } 
         if (got_tokens) {
-            vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            if (length_m <= ib_state.hca[hca_index_m].ud.prop.cap.max_inline_data_sq) {
+                vapi_result = EVAPI_post_inline_sr(h->handle, h->ud.handle, &sr_desc_m);
+            }
+            else {
+                vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
+            }
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m | POSTED);
                 if (locked_here) {
@@ -459,6 +464,22 @@ bool ibSendFragDesc::post(double timeNow, int *errorCode, bool already_locked)
             vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
             if (vapi_result == VAPI_OK) {
                 state_m = (state)(state_m & ~LOCALACKED);
+/* DEBUG */
+/*
+                ibData2KMsg *p = (ibData2KMsg *)((unsigned long)sg_m[0].addr);
+                ibDataAck_t *q = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+                if (p->header.common.type == MESSAGE_DATA)
+                    ulm_warn(("repost data: %d->%d tag %d comm %d msg len %lld offset %lld\n", 
+                    p->header.senderID,
+                    p->header.destID, p->header.tag_m, 
+                    EXTRACT_CTX(p->header.ctxAndMsgType),
+                    p->header.msgLength, p->header.dataSeqOffset));
+                else 
+                    ulm_warn(("repost ack: %d->%d comm %d ackstatus %d seq %lld/%lld/%lld\n",
+                    q->src_proc, q->dest_proc, EXTRACT_CTX(q->ctxAndMsgType),
+                    q->ackStatus, q->thisFragSeq, q->receivedFragSeq, q->deliveredFragSeq));
+*/
+/* DEBUG */
                 if (locked_here) {
                     ib_state.lock.unlock();
                 }
