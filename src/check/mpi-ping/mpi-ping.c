@@ -97,13 +97,6 @@ int main(int argc, char *argv[])
     int max_bytes = 0;
     int min_bytes = 0;
 
-#if 0
-    printf("sizeof(fd_set) = %d\n", sizeof(fd_set));
-#undef FD_SETSIZE
-#define FD_SETSIZE 4096
-    printf("sizeof(fd_set) = %d\n", sizeof(fd_set));
-#endif
-
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &proc);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
