@@ -1108,6 +1108,12 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      1);
             break;
 
+        case adminMessage::ISATTY:
+            s->client->unpackMessage(&(s->isatty),
+                                     (adminMessage::packType) sizeof(int),
+                                     1);
+            break;
+
 #if ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
@@ -1361,6 +1367,11 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
 
         case adminMessage::QUIET:
             s->client->unpack(&(s->quiet),
+                              (adminMessage::packType) sizeof(int), 1);
+            break;
+
+        case adminMessage::ISATTY:
+            s->client->unpack(&(s->isatty),
                               (adminMessage::packType) sizeof(int), 1);
             break;
 
@@ -1825,13 +1836,20 @@ void lampi_init_prefork_check_stdio(lampiState_t *s)
 void lampi_init_prefork_stdio(lampiState_t *s)
 {
     int fd[2];
-    int enable_pty_stdio = ENABLE_PTY_STDIO;
+    int enable_pty_stdio;
 
     if (s->error) {
         return;
     }
     if (s->verbose) {
         lampi_init_print("lampi_init_prefork_stdio");
+    }
+
+    /* only need to use pty's if mpirun is a tty */
+    if (s->isatty) {
+        enable_pty_stdio = ENABLE_PTY_STDIO;
+    } else {
+        enable_pty_stdio = 0;
     }
 
     /* allocate pipe for determining when all processes have exited... */
@@ -2022,7 +2040,7 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             s->STDINfdToChild = stdin_parent;
             close(stdin_child);
             if (isatty(stdin_parent)) {
-                tty_noecho(stdin_parent);
+                tty_raw(stdin_parent);
             }
         }
 

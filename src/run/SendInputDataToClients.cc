@@ -141,6 +141,13 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&(RunParameters->Quiet), (adminMessage::packType)sizeof(int), 1))
 		    DataError("Quiet");
 
+	    // isatty
+	    tag = adminMessage::ISATTY;
+	    if(!server->pack(&tag, (adminMessage::packType)sizeof(int), 1))
+		    TagError("ISATTY");
+	    if(!server->pack(&(RunParameters->isatty), (adminMessage::packType)sizeof(int), 1))
+		    DataError("isatty");
+
 #if ENABLE_NUMA
 	    /* cpu list */
 	    if (RunParameters->CpuListLen != 0) {

@@ -494,6 +494,8 @@ int mpirun(int argc, char **argv)
      */
     lampi_environ_init();
 
+    RunParameters.isatty = isatty(fileno(stdin));
+
     /*
      * Read in mpirun arguments
      */
