@@ -71,11 +71,29 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
             MPIR_proctable[cnt].executable_name =
                 (char *) (RunParameters.ExeList[HostID]);
             MPIR_proctable[cnt].pid = PIDsOfAppProcs[HostID][ProcID];
+#ifdef ENABLE_BPROC
+            /* spawn xterm/gdb session to attach to remote process -- works in bproc env. only! */
+            if (RunParameters.GDBDebug) {
+                char title[64];
+                char command[256];
+                sprintf(title, "rank: %d (pid: %ld host: %s)", cnt, (long)MPIR_proctable[cnt].pid,
+                        MPIR_proctable[cnt].host_name);
+                sprintf(command, "xterm -title \"%s\" -e gdb %s %ld &", title, MPIR_proctable[cnt].executable_name,
+                        (long)MPIR_proctable[cnt].pid);
+                ulm_warn(("spawning: \"%s\"\n",command));
+                system(command);
+            }
+#endif
             cnt++;
         }
     }
 
-
+#ifdef ENABLE_BPROC
+    /* if debugging with xterm/gdb in bproc env., then continue on... */
+    if (RunParameters.GDBDebug) {
+        return;
+    }
+#endif
 
     /*  set flag indicating TotalView is going to be used */
     MPIR_acquired_pre_main = 1;

@@ -193,6 +193,9 @@ typedef struct ULMRunParams {
      */
     int TVDebugApp;
 
+    /* mpirun should spawn xterm/gdb sessions for each process */
+    int GDBDebug;
+
     /* list of Debug hosts - in xxx.xxx.xxx.xxx format */
     HostName_t *TVHostList;
 

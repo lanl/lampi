@@ -78,3 +78,19 @@ void GetTVAll(const char *InfoStream)
     /* shut off heartbeat - so won't time out while debugging */
     RunParameters.HeartBeatTimeOut = -1;
 }
+
+void GetGDB(const char *InfoStream)
+{
+    /* find GDBDebugStartup index in option list */
+    int OptionIndex = MatchOption("GDBDebugStartup", ULMInputOptions,
+                                  SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option GDBDebugStartup not found in Input parameter database\n"));
+        Abort();
+    }
+    RunParameters.TVDebug = 1;
+    RunParameters.TVDebugApp = 1;
+    RunParameters.GDBDebug = 1;
+    /* shut off heartbeat - so won't time out while debugging */
+    RunParameters.HeartBeatTimeOut = -1;
+}

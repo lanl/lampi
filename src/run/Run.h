@@ -149,6 +149,7 @@ void GetLSFResource();
 void GetNetworkDevListNoInput(const char *InfoStream);
 void GetNetworkDevList(const char *InfoStream);
 void GetTVAll(const char *InfoStream);
+void GetGDB(const char *InfoStream);
 void GetTVDaemon(const char *InfoStream);
 void ScanInput(int argc, char **argv);
 void TerminateClients(int NClientsAccepted, int *ListClientsAccepted,

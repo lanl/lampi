@@ -165,6 +165,13 @@ InputParameters_t ULMInputOptions[] =
      GetTVDaemon,
      "Debug the ULM library", 0, "\0"
     },
+    {"-gdb",
+     "GDBDebugStartup",
+     NO_ARGS,
+     NoOpFunction,
+     GetGDB,
+     "Debug LA-MPI library with gdb and xterm", 0, "\0"
+    },
     {"-mh",
      "MasterHost",
      STRING_ARGS,
