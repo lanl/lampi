@@ -263,7 +263,7 @@ public:
     enum {
         MAXHOSTNAMESIZE = 512,
         DEFAULTBUFFERSIZE = 8192,
-        MAXSOCKETS = 1024
+        MAXSOCKETS = 4096
     };
 
 
