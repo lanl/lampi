@@ -85,7 +85,6 @@ static double t[7] = { 0, 0, 0, 0, 0, 0, 0};
 extern "C" int ulm_make_progress(void)
 {
     int returnValue = ULM_SUCCESS;
-    long mp = local_myproc();
     int i;
 
     enum {
