@@ -61,26 +61,28 @@ int ClientSendStdin(int* src, int* dst)
 
     char *buff = new char[size];
     if(buff == 0) {
-        ulm_exit((-1, "Error: unable to allocate buffer for STDIOMSG\n"));
+        ulm_exit((-1, "ClientSendStdin: unable to allocate buffer for STDIOMSG\n"));
     }
 
     IOReturn = _ulm_Recv_Socket(*src, buff, size, &error);
     /* socket connection closed */
-    if (IOReturn == 0) {
+    if (IOReturn == 0 || size == 0) {
         close(*src);
-        *src = -1;
+        close(*dst);
+        *src = *dst = -1;
+        delete[] buff;
         return -1;
     }
 
     if (IOReturn < 0 || error != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: reading STDIOMSG.  RetVal = %ld, error = %d\n", IOReturn, error));
+        ulm_exit((-1, "ClientSendStdin: error reading STDIOMSG, error = %d\n", error));
     }
 
     IOReturn = write(*dst, buff, size);
     if(IOReturn < 0) {
+        close(*src);
         close(*dst);
-        *dst = -1;
-        return -1;
+        *src = *dst = -1;
     }
     delete[] buff;
     return 0;
