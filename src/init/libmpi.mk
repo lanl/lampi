@@ -1,4 +1,5 @@
 SRC_LIBMPI += \
+	src/init/pty.c \
 	src/init/environ.cc \
 	src/init/fork_many.cc \
 	src/init/init.cc \

@@ -1960,6 +1960,18 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     if (!s->interceptSTDio)
         return;
 
+    /* set up pipes to redirect stderr/stdout so that even the daemon's
+     * output is directed through the admin network.
+     */
+    if ((pipe(s->daemonSTDERR) < 0) || (pipe(s->daemonSTDOUT) < 0)) {
+        ulm_err(("Host %s (pid = %d): Unable to create pipes for daemon.\n", _ulm_host(), getpid()));
+    } else {
+        if ( (dup2(s->daemonSTDERR[1], STDERR_FILENO) < 0) ||
+             (dup2(s->daemonSTDOUT[1], STDOUT_FILENO) < 0) ) {
+             ulm_err(("Host %s (pid = %d): Unable to redirect stdio for daemon.\n", _ulm_host(), getpid()));
+        }
+    }
+
     /*
      * dup current stderr and stdout so that Client's stderr and
      * stdout can be restored to those before exiting this routines.
