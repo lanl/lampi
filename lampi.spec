@@ -29,6 +29,7 @@ The current API supported being MPI 1.2 (C and Fortran bindings).
 
 %build
 
+%configure
 %{__make}
 
 %install
@@ -36,19 +37,14 @@ The current API supported being MPI 1.2 (C and Fortran bindings).
 %{__rm} -rf %{buildroot}
 %makeinstall
 
-# mv /usr/etc/* /etc
-%{__mkdir} %{buildroot}%{_sysconfdir}
-%{__install} %{buildroot}/usr/etc/* %{buildroot}%{_sysconfdir}
-%{__rm} -rf %{buildroot}/usr/etc
-
-# rm -f /usr/man
+# rm -f /usr/man (useless symlink)
 %{__rm} -f %{buildroot}/man
 
-# populate /usr/share/doc/lampi-1.2.0/ by hand
+# populate /usr/share/doc/lampi-1.3.X/ by hand
 %define mydocdir /usr/share/doc/%{name}-%{version}
 %define mydocroot %{buildroot}%{mydocdir}
 %{__mkdir} -p %{mydocroot}
-%{__install} COPYRIGHT INSTALL LICENSE README %{mydocroot}
+%{__install} COPYRIGHT INSTALL LICENSE README README.RPM %{mydocroot}
 %{__install} %{buildroot}%{_datadir}/lampi/* %{mydocroot}
 %{__rm} -rf %{buildroot}%{_datadir}/lampi
 
@@ -67,6 +63,9 @@ The current API supported being MPI 1.2 (C and Fortran bindings).
 %config /etc
 
 %changelog
+
+* Wed Jun 18 2003 Jason R. Mastaler <jasonrm@lanl.gov>
+  - LA-MPI now uses autoconf.
 
 * Thu Apr 10 2003 Jason R. Mastaler <jasonrm@lanl.gov>
   - First cut.
