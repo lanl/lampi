@@ -178,6 +178,9 @@ i?86-pc-linux*)
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
 
+        #default ROMIO filesystems:
+        ROMIO_FS="ufs nfs panfs"
+
 	;;
 
 i?86-pc-cygwin*)
@@ -217,9 +220,6 @@ i?86-pc-cygwin*)
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
-
-        #default ROMIO filesystems:
-        ROMIO_FS="ufs nfs cfs"
 
 	;;
 
@@ -264,7 +264,7 @@ ia64-unknown-linux*)
         RMS_PREFIX=""
 
         #default ROMIO filesystems:
-        ROMIO_FS="ufs nfs cfs"
+        ROMIO_FS="ufs nfs panfs"
 
 	;;
 
@@ -299,7 +299,7 @@ x86_64-unknown-linux*)
         RMS_PREFIX=""
 
         #default ROMIO filesystems:
-        ROMIO_FS="ufs nfs cfs"
+        ROMIO_FS="ufs nfs panfs"
 
 	;;
 
