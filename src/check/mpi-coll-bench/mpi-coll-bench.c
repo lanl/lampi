@@ -336,7 +336,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (operations & SCATTER || operations & SCATTERV) {
+    if (operations & SCATTER || operations & SCATTERV ||
+        operations & ALLTOALL || operations & ALLTOALLV) {
         if ((sbuf = (int *) malloc(nproc * max_bytes ? nproc * max_bytes
                                    : 8)) == NULL) {
             perror("malloc");
