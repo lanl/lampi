@@ -61,7 +61,7 @@ public:
     }
 
     // default destructor
-    ~quadricsSendFragDesc() {
+    virtual ~quadricsSendFragDesc() {
         if (srcEnvelope) {
             quadricsHdrs.free(srcEnvelope);
             srcEnvelope = 0;
@@ -698,7 +698,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         p->msgLength = parentSendDesc->PostedLength;
         p->frag_seq = frag_seq;
         p->isendSeq_m = parentSendDesc->isendSeq_m;
-        p->sendFragDescPtr = (ulm_uint64_t)this;
+        p->sendFragDescPtr.ptr = this;
         p->dataSeqOffset = sequential_offset;
         p->dataLength = fragLength;
         // we send E3_Addr 32-bit addresses
@@ -723,12 +723,12 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     {
         quadricsMemReq_t *p = &(fragEnvelope->memRequest);
         p->msgLength = parentSendDesc->PostedLength;
-        p->sendMessagePtr = (ulm_uint64_t)parentSendDesc;
+        p->sendMessagePtr.ptr = parentSendDesc;
         p->tag_m = parentSendDesc->tag_m;
         p->senderID = myproc();
         p->destID = globalDestID;
         p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-			MSGTYPE_PT2PT);
+                                                    MSGTYPE_PT2PT);
     }
     break;
     case MEMORY_REQUEST_ACK:
