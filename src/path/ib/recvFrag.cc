@@ -48,6 +48,9 @@ bool ibRecvFragDesc::AckData(double timeNow)
     int i, hca_index, port_index, errorCode;
     ProcessPrivateMemDblLinkList *list;
     bool locked_here = false;
+    Communicator *pg = communicators[ctx_m];
+    unsigned int glSourceProcess =  pg->remoteGroup->
+        mapGroupProcIDToGlobalProcID[srcProcID_m];
 
     /* only send an ACK if ib_state.ack is false, if
      * the message is a synchronous send, and this is the
@@ -126,81 +129,18 @@ bool ibRecvFragDesc::AckData(double timeNow)
     p = (ibDataAck_t *)((unsigned long)(sfd->sg_m[0].addr));
     p->thisFragSeq = seq_m;
 
-#ifdef ENABLE_RELIABILITY
-    Communicator *pg = communicators[ctx_m];
-    unsigned int glSourceProcess =  pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
-
-    if (isDuplicate_m) {
-        p->ackStatus = ACKSTATUS_DATAGOOD;
-    } else {
-        p->ackStatus = (DataOK_m) ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
-    }
-#else
-    p->ackStatus = (DataOK_m) ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
-#endif
-
-#ifdef ENABLE_RELIABILITY
-    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
-        // grab lock for sequence tracking lists
-        if (usethreads())
-            reliabilityInfo->dataSeqsLock[glSourceProcess].lock();
-
-        // do we send a specific ACK...recordIfNotRecorded returns record status before attempting record
-        bool recorded;
-        bool send_specific_ack = reliabilityInfo->
-            deliveredDataSeqs[glSourceProcess].recordIfNotRecorded(seq_m, &recorded);
-
-        // record this frag as successfully delivered or not even received, as appropriate...
-        if (!(isDuplicate_m)) {
-            if (DataOK_m) {
-                if (!recorded) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "ibRecvFragDesc::AckData(pt2pt) unable "
-                              "to record deliv'd sequence number\n"));
-                }
-            } else {
-                if (!(reliabilityInfo->receivedDataSeqs[glSourceProcess].erase(seq_m))) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "ibRecvFragDesc::AckData(pt2pt) unable "
-                              "to erase rcv'd sequence number\n"));
-                }
-                if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                    reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                    ulm_exit((-1, "ibRecvFragDesc::AckData(pt2pt) unable "
-                              "to erase deliv'd sequence number\n"));
-                }
-            }
+    returnValue = processRecvDataSeqs(p, glSourceProcess, reliabilityInfo);
+    if (returnValue != ULM_SUCCESS) {
+        int dummyCode;
+        sfd->hca_index_m = hca_index;
+        sfd->free(false);
+        if (locked_here) {
+            ib_state.locked = false;
+            ib_state.lock.unlock();
         }
-        else if (!send_specific_ack) {
-            // if the frag is a duplicate but has not been delivered to the user process,
-            // then set the field to 0 so the other side doesn't interpret
-            // these fields (it will only use the receivedFragSeq and deliveredFragSeq fields
-            p->thisFragSeq = 0;
-            p->ackStatus = ACKSTATUS_AGGINFO_ONLY;
-            if (!(reliabilityInfo->deliveredDataSeqs[glSourceProcess].erase(seq_m))) {
-                reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-                ulm_exit((-1, "ibRecvFragDesc::AckData(pt2pt) unable to erase "
-                    "duplicate deliv'd sequence number\n"));
-            }
-        }
-
-        p->receivedFragSeq = reliabilityInfo->
-            receivedDataSeqs[glSourceProcess].largestInOrder();
-        p->deliveredFragSeq = reliabilityInfo->
-            deliveredDataSeqs[glSourceProcess].largestInOrder();
-
-        // unlock sequence tracking lists
-        if (usethreads())
-            reliabilityInfo->dataSeqsLock[glSourceProcess].unlock();
-    } else {
-        // unknown communication type
-        ulm_exit((-1, "ibRecvFragDesc::AckData() unknown communication "
-                  "type %d\n", msgType_m));
+        path->cleanCtlMsgs(hca_index_m, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
+        return false;
     }
-#else
-    p->receivedFragSeq = 0;
-    p->deliveredFragSeq = 0;
-#endif
 
     // fill in other fields
     p->type = MESSAGE_DATA_ACK;
@@ -276,11 +216,11 @@ unsigned long ibRecvFragDesc::nonContigCopyFunction(void *appAddr,
 bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
 {
     if (!length || !ib_state.checksum) {
-        DataOK_m = true;
+        DataOK = true;
     } else if (checkSum == msg_m->header.dataChecksum) {
-        DataOK_m = true;
+        DataOK = true;
     } else {
-        DataOK_m = false;
+        DataOK = false;
         if (!ib_state.ack) {
             ulm_exit((-1, "ibRecvFragDesc::CheckData: - corrupt data received "
                       "(%s 0x%x calculated 0x%x)\n",
@@ -288,7 +228,7 @@ bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
                       msg_m->header.dataChecksum, checkSum));
         }
     }
-    return DataOK_m;
+    return DataOK;
 }
 
 void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
@@ -335,6 +275,10 @@ void ibRecvFragDesc::msgData(double timeNow)
     seqOffset_m = msg_m->header.dataSeqOffset;
     msgLength_m = msg_m->header.msgLength;
     length_m = msg_m->header.dataLength;
+
+#ifdef ENABLE_RELIABILITY
+    isDuplicate_m = UNIQUE_FRAG;
+#endif
 
     // remap process IDs from global to group ProcID
     dstProcID_m = communicators[ctx_m]->

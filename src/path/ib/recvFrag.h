@@ -48,7 +48,6 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
             OTHER_QP
         };
 
-        bool DataOK_m;
         int hca_index_m;
         unsigned long ib_bytes_recvd_m;
         qp_type qp_type_m;
@@ -58,8 +57,8 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
         ibPath *path;
 
 
-        ibRecvFragDesc() { DataOK_m = false; }
-        ibRecvFragDesc(int poolIndex): BaseRecvFragDesc_t(poolIndex) { DataOK_m = false; }
+        ibRecvFragDesc() { }
+        ibRecvFragDesc(int poolIndex): BaseRecvFragDesc_t(poolIndex) { }
 
         void msgData(double timeNow);
         void msgDataAck(double timeNow);
@@ -77,7 +76,7 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
         bool CheckData(unsigned int checkSum, ssize_t length);
 
         void MarkDataOK(bool okay) {
-            DataOK_m = okay;
+            DataOK = okay;
         }
 
         unsigned long dataOffset(void) {

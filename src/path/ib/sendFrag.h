@@ -101,7 +101,7 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
             }
 
             // reclaim tokens if we haven't already done so...
-            if ((state_m & LOCALACKED) == 0) {
+            if (((state_m & LOCALACKED) == 0) && ((state_m & POSTED) != 0)) {
                 (ib_state.hca[hca_index_m].send_cq_tokens)++;
                 (ib_state.hca[hca_index_m].ud.sq_tokens)++;
             }

@@ -697,7 +697,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             // now process the received data
             if (!ib_state.checksum || (computed_chksum == recvd_chksum)) {
                 // checksum OK (or irrelevant), process ibRecvFragDesc...
-                rd->DataOK_m = false;
+                rd->DataOK = false;
                 rd->path = this;
                 rd->ib_bytes_recvd_m = wc_desc.byte_len - IB_GRH_LEN;
 
