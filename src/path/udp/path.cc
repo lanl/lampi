@@ -375,12 +375,13 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
 #ifdef ENABLE_RELIABILITY
 	sendFragDesc->timeSent = dclock();
-	(sendFragDesc->numTransmits)++;
 	unsigned long long max_multiple =
 	    (sendFragDesc->numTransmits <
 	     MAXRETRANS_POWEROFTWO_MULTIPLE) ? (1 << sendFragDesc->
 						numTransmits) : (1 <<
 								 MAXRETRANS_POWEROFTWO_MULTIPLE);
+	(sendFragDesc->numTransmits)++;
+
 	double timeToResend = sendFragDesc->timeSent + (RETRANS_TIME * max_multiple);
 	if (message->earliestTimeToResend == -1) {
 	    message->earliestTimeToResend = timeToResend;
@@ -477,7 +478,14 @@ bool udpPath::resend(SendDesc_t *message, int *errorCode)
                 (message->NumSent)--;
                 FragDesc=TmpDesc;
 		continue;
-	    }
+            } else {
+                double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
+                if (message->earliestTimeToResend == -1) {
+                    message->earliestTimeToResend = timeToResend;
+                } else if (timeToResend < message->earliestTimeToResend) {
+                    message->earliestTimeToResend = timeToResend;
+                } 
+            }
 	} else {
 	    // simply recalculate the next time to look at this send descriptor for retransmission
 	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
