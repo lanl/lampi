@@ -412,6 +412,11 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         goto CLEANUP_ABNORMAL;
     }
 
+    /* Running mpirun within a debug environment, e.g. Totalview, can cause a SIGSTOP
+        to be generated, which causes bproc_vexecmove_io to exit early and not
+        launch all procs.  So ugly fix is to add sleep() to catch the SIGSTOP.
+    */
+    sleep(1);
     if (bproc_vexecmove_io
 	(nHosts, nodes, pids, io, 2, exec_args[EXEC_NAME],
 	 argv + (FirstAppArgument - 1), environ) < 0) {
