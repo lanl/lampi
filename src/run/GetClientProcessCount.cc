@@ -53,14 +53,38 @@ static bool gotClientProcessCount = false;
 #include "init/environ.h"
 #endif
 
+#ifdef ENABLE_BPROC
+int nodestatus(int node, char *status, int len) {
+// return 1 if a BPROC node is up, 0 otherwise.
+// string describing status is written to char status[len] 
+#ifdef BPROC_NODE_NSTATES
+    // obsolete!
+    bproc_nodestatus(node);
+    if (bproc_nodestatus(node) != bproc_node_up) {
+      strncpy(status,"unknown",len);
+      return 0;
+    }
+    strncpy(status,"up",len);
+    return 1;
+#else
+    bproc_nodestatus(node,status,len);
+    return (0==strncmp(status,"up",2));
+#endif
+}
+#endif
+
+
+
+
 void getBJSNodes(void) 
 {
 #ifdef ENABLE_BPROC
     int *nodes = 0;
     int nNodes = 0;
-    char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
     char *node_str = 0, *p;
     char *tmp_str;
+#define NODE_STATUS_LEN 10
+    char node_status[NODE_STATUS_LEN+1];  // add 1 for terminating 0
     int i, j, tmp_node;
 
     lampi_environ_find_string("NODES", &node_str);
@@ -73,17 +97,16 @@ void getBJSNodes(void)
         strncpy(tmp_str, node_str, strlen(node_str));
         p = tmp_str;
         while (p && *p != '\0') {
-            tmp_node = bproc_getnodebyname(strsep(&p, ","));
-            if (bproc_nodestatus(tmp_node) != bproc_node_up) {
-		        ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
-			        tmp_node, bproc_states[bproc_nodestatus(tmp_node)]));
-                Abort();
-            }
-            if (bproc_access(tmp_node, BPROC_X_OK) != 0) {
-                ulm_err(("Error: can not execute on a BJS reserved node (%i)\n", tmp_node));
-                Abort();
-            }
-            nodes[nNodes++] = tmp_node;
+	  tmp_node = bproc_getnodebyname(strsep(&p, ","));
+	  if (!nodestatus(tmp_node,node_status,NODE_STATUS_LEN)) {
+	    ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",tmp_node, node_status ));
+	    Abort();
+	  }
+	  if (bproc_access(tmp_node, BPROC_X_OK) != 0) {
+	    ulm_err(("Error: can not execute on a BJS reserved node (%i) stat=%i\n", tmp_node,bproc_access(tmp_node, BPROC_X_OK) ));
+	    Abort();
+	  }
+	  nodes[nNodes++] = tmp_node;
         }
 	ulm_free(tmp_str);
     }
@@ -98,8 +121,15 @@ void getBJSNodes(void)
                    if (tmp_node == nodes[j])
                        found = true;
                }
-               if (!found)
-                   strcpy(RunParameters.HostList[i], "");
+               if (!found) {
+		 ulm_err(("Error: requested node (%s) is not a BJS reserved node.\nTry running without the -H option when using BJS.\n",RunParameters.HostList[i]));
+		 // we do not have to abort here - then app will run on
+		 // subset of requested nodes.  But this seems not what
+		 // the user would expect
+		 Abort();
+		 strcpy(RunParameters.HostList[i], "");
+	       }
+
            }
            nNodes = 0;
            j = 0;
@@ -118,6 +148,10 @@ void getBJSNodes(void)
                RunParameters.HostList = 0;
            }
            RunParameters.HostListSize = j;
+	   if (j==0) {
+	     ulm_err(("Error: no valid BJS hosts specified.  Try running without the -H option\n",j));
+	     Abort();
+	   }
        }
        else {
            /* store each host entry of nodes list */
@@ -140,12 +174,13 @@ void pickNodesFromList(int cnt)
 {
 #ifdef ENABLE_BPROC
     int i, j = 0, tmp_node;
+    char node_status[NODE_STATUS_LEN+1];  // add 1 for terminating 0
 
     if (RunParameters.HostListSize > 0) {
         /* find cnt nodes among the already listed nodes */
         for (i = 0; i < RunParameters.HostListSize; i++) {
             tmp_node = bproc_getnodebyname(RunParameters.HostList[i]);
-            if ((bproc_nodestatus(tmp_node) == bproc_node_up) && 
+            if ((nodestatus(tmp_node,node_status,NODE_STATUS_LEN)) && 
                 (bproc_access(tmp_node, BPROC_X_OK) == 0)) {
                     if (i == j) {
                         j++;
@@ -163,7 +198,7 @@ void pickNodesFromList(int cnt)
         RunParameters.HostList = ulm_new(HostName_t, cnt);
         RunParameters.HostListSize = cnt;
         for (i = 0; i < bproc_numnodes(); i++) {
-            if ((bproc_nodestatus(i) == bproc_node_up) && 
+            if ((nodestatus(i,node_status,NODE_STATUS_LEN)) && 
                 (bproc_access(i, BPROC_X_OK) == 0)) {
                 sprintf(RunParameters.HostList[j++], "%d", i);
             }
@@ -171,7 +206,7 @@ void pickNodesFromList(int cnt)
                 break;
         }
         /* use the master node as a last resort */
-        if ((j == (cnt - 1)) && (bproc_nodestatus(BPROC_NODE_MASTER) == bproc_node_up) && 
+        if ((j == (cnt - 1)) && (nodestatus(BPROC_NODE_MASTER,node_status,NODE_STATUS_LEN)) && 
             (bproc_access(BPROC_NODE_MASTER, BPROC_X_OK) == 0))
                 sprintf(RunParameters.HostList[j++], "%d", BPROC_NODE_MASTER);
     }

@@ -296,10 +296,13 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 	CHECK_FOR_ERROR(pids =
 			(int *) ulm_malloc(sizeof(int) * nHosts));
 
+
+
     for (i = 0; i < nHosts; i++) {
         nodes[i] = bproc_getnodebyname(RunParameters->HostList[i]);
         pids[i] = -1;
     }
+
 
 #ifndef ENABLE_CT
     // allocate space for stdio file handles
@@ -364,6 +367,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
+
+
 #ifdef ENABLE_CT
     if (bproc_vexecmove
 	(nHosts, nodes, pids, exec_args[EXEC_NAME],
@@ -381,7 +386,11 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     for (int iofd = 0; iofd < 2; iofd++) {
 	io[iofd].fd = iofd + 1;
 	io[iofd].type = BPROC_IO_SOCKET;
-	io[iofd].send_info = 1;
+#ifdef BPROC_IO_SEND_INFO  
+	io[iofd].flags = BPROC_IO_SEND_INFO;
+#else
+	io[iofd].send_info = 1;  // obsolete
+#endif
 	((struct sockaddr_in *) &io[iofd].d.addr)->sin_family = AF_INET;
 	((struct sockaddr_in *) &io[iofd].d.addr)->sin_addr.s_addr = 0;
 	iosock_fd[iofd] = setup_socket(&addr);
