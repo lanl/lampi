@@ -1976,6 +1976,7 @@ bool adminMessage::getMessageFromQueue(int *rank, int *tag, int routingType, int
             if ( recvBufferSize_m < msg->dataLength() )
             {
                 recvBuffer_m = (unsigned char *)realloc(recvBuffer_m, msg->dataLength());
+                recvBufferSize_m = msg->dataLength();
                 if ( NULL == recvBuffer_m )
                 {
                     ulm_err(("Unable to alloc memory for recv buffer.\n"));
