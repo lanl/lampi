@@ -1,3 +1,75 @@
+2004-04-14 16:15  ddd
+
+	* src/init/: init_proc.cc, init.cc: changes for tracing
+	  initialization
+
+2004-04-14 16:14  ddd
+
+	* src/init/environ.cc: cleaning up environment dump function
+
+2004-04-14 16:13  ddd
+
+	* src/: client/CheckForControlMsgs.cc, mem/ZeroAlloc.cc,
+	  path/ib/memory.cc, path/ib/recvFrag.cc,
+	  run/CheckForControlMsgs.cc, run/spawn_lsf.cc, util/Reactor.cc:
+	  Merging changes from the trunk on to BRANCH_1_5
+
+2004-04-14 14:29  ddd
+
+	* src/: run/CmdLineArgs.h, run/GetAppHostData.cc, run/Input.cc,
+	  run/JobParams.h, run/ProcessInput.cc, run/Run.h,
+	  client/adminMessage.cc, run/spawn.cc, run/spawn_exec.cc: Adding a
+	  -local option for mpirun (ad cleaning up some messages).
+
+2004-04-14 14:24  ddd
+
+	* configure, configure.ac: Changes for ROMIO on MacOS X
+
+2004-04-14 14:11  ddd
+
+	* romio-1.2.5.1/adio/ad_panfs/: ad_panfs_hints.c, ad_panfs_open.c,
+	  pan_fs_client_cw_mode.h, pan_fs_client_cw_mode.h.1.2.3,
+	  pan_fs_client_cw_mode.h_R1.2.2: Adding PANFS updates
+
+2004-04-14 09:59  twoodall
+
+	* src/queue/Pt2PtGroupMatchRecv.cc: merged in mitches changes from
+	  main branch
+
+2004-04-13 15:49  twoodall
+
+	* src/util/: Reactor.cc, Reactor.h: fixed threading issue
+
+2004-04-13 15:49  twoodall
+
+	* src/path/tcp/: tcppeer.cc, tcppeer.h, tcprecv.cc, tcprecv.h:
+	  fixed threading issues
+
+2004-04-13 10:16  twoodall
+
+	* src/run/spawn_lsf.cc: don't do anything to stdout/stderr --
+	  otherwise, when apps generate output before MPI_Init, LSF
+	  terminates them
+
+2004-04-12 09:31  twoodall
+
+	* src/path/sharedmem/path.cc: fixed race condition when setting
+	  messageDone flag
+
+2004-04-08 10:43  ddd
+
+	* src/init/init.cc: Grrr.  Need to make stdin a pty too.  Lahey 6.2
+	  needs this, though not Lahey 6.1.  Seems to make gcc more
+	  predictable too.
+
+2004-04-08 10:43  ddd
+
+	* src/run/Input.cc: Adding -ssh option to "mpirun -h" output.
+
+2004-04-07 13:33  ddd
+
+	* ChangeLog: Updating change log
+
 2004-04-07 12:50  ddd
 
 	* RELEASE_NOTES, configure, configure.ac: Updating for version

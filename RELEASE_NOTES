@@ -310,7 +310,7 @@ Version 1.4.18
 
 ========================= Minor Release 1.5 =========================
 
-1.5.0
+Version 1.5.0
 
 - InfiniBand support.
 
@@ -320,3 +320,15 @@ Version 1.4.18
 - Thread safety improved.
 
 - General code clean-up.
+
+Version 1.5.1
+
+- Fixes for shared memory (/dev/zero) allocations, and various file
+  descriptors problems with LSF and Bproc.
+
+- More pty changes.
+
+- Added -local option to mpirun.
+
+- Improved error messages
+
