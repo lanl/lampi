@@ -170,7 +170,7 @@ void TCPRecvFrag::recvEventHandler(int sd)
         }
 
         // do we need to send an ack?
-        if(sendAck(sd))
+        if(sendAck())
             ReturnDescToPool(getMemPoolIndex());
         else  {
             WhichQueue = FRAGSTOACK;
@@ -251,7 +251,7 @@ bool TCPRecvFrag::recvHeader(int sd)
                      fragLen = appLength;
                 addr_m = ((unsigned char*)fragRequest->addr_m + offset);
             }
-            sendAck(sd); // start an ack now as a match has already been made
+            sendAck(); // start an ack now as a match has already been made
         }
 
         // allocate a buffer for the receive
@@ -278,7 +278,7 @@ bool TCPRecvFrag::recvHeader(int sd)
         }
         message->NumAcked++;
         message->clearToSend_m = true;
-        tcpPeer->sendStart(message,sd);
+        tcpPeer->sendStart(message);
         tcpPeer->recvComplete(this);
         ReturnDescToPool(getMemPoolIndex());
         return false;
@@ -372,7 +372,7 @@ bool TCPRecvFrag::recvDiscard(int sd)
 //  data to be received directly into the users buffer.
 //
 
-bool TCPRecvFrag::sendAck(int sd)
+bool TCPRecvFrag::sendAck()
 {
     // send an ack for the first fragment of a multi-fragment message,
     // or if the message type is synchronous
@@ -390,7 +390,7 @@ bool TCPRecvFrag::sendAck(int sd)
         fragAck.recv_desc.ptr = fragRequest;
 
         // attempt to send the ack
-        fragAcked = tcpPeer->send(sd, this);
+        fragAcked = tcpPeer->send(this);
     }
     return (fragAckCnt >= sizeof(fragAck));
 }

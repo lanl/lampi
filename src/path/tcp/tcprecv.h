@@ -50,7 +50,7 @@ public:
     // BaseRecvFragDesc_t
     virtual void ReturnDescToPool(int localRank);
     virtual bool AckData(double timeNow = -1.0) { 
-        return sendAck(-1); 
+        return sendAck(); 
     }
     virtual unsigned int CopyFunction(void* fragAddr, void *appAddr, ssize_t length) {
         MEMCOPY_FUNC(fragAddr, appAddr, length); 
@@ -82,7 +82,7 @@ private:
     bool recvHeader(int sd);
     bool recvData(int sd);
     bool recvDiscard(int sd);
-    bool sendAck(int sd);
+    bool sendAck();
 };
 
 
