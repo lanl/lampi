@@ -94,8 +94,6 @@ extern "C" int ulm_reduce_interhost(const void *s_buf,
     void *arg;
     void *buf;
 
-    ulm_dbg(("ulm_reduce_interhost\n"));
-
     /*
      * Fast return for trivial data
      */

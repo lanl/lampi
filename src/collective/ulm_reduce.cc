@@ -97,8 +97,6 @@ extern "C" int ulm_reduce(const void *s_buf,
     extern ulm_reduce_t ulm_reduce_linear;
     extern ulm_reduce_t ulm_reduce_p2p;
 
-    ulm_dbg(("ulm_reduce\n"));
-
     rc = ULM_SUCCESS;
 
     communicator = communicators[comm];

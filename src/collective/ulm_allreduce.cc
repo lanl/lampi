@@ -91,8 +91,6 @@ extern "C" int ulm_allreduce(const void *s_buf,
     extern ulm_allreduce_t ulm_allreduce_linear;
     extern ulm_allreduce_t ulm_allreduce_p2p;
 
-    ulm_dbg(("ulm_allreduce\n"));
-
     communicator = communicators[comm];
     group = communicator->localGroup;
 

@@ -104,8 +104,6 @@ extern "C" int ulm_reduce_intrahost(const void *s_buf,
     volatile int *peer_flag;
     volatile int *self_flag;
 
-    ulm_dbg(("ulm_reduce_intrahost\n"));
-
     /*
      * Fast return for trivial data
      */
