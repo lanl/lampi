@@ -70,8 +70,6 @@ extern "C" int ulm_barrier_interhost(int comm)
     int self_host;
     int tag;
 
-    ulm_dbg(("ulm_barrier_interhost\n"));
-
     /*
      * Algorithm
      *
