@@ -1757,7 +1757,6 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
         if(nprocesses != UNKNOWN_N_PROCS )
         {
             processCount[hostrank]=nprocesses;
-            procList[hostrank] = nprocesses;
         }
         else {
             processCount[hostrank]=procList[hostrank];
@@ -2881,8 +2880,6 @@ unsigned int adminMessage::channelID()
 #endif
     return 0;
 }
-
-int adminMessage::daemonPIDForHostRank(int rank) {return daemonPIDs_m[rank];}
 
 unsigned int adminMessage::nodeLabel()
 {

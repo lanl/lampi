@@ -68,8 +68,8 @@ void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts)
         tmpNProc = ulm_new(int, nhosts);
         tmpPIDs = ulm_new(pid_t,  nhosts);
 	for( h=0 ; h < nhosts ; h++ ){
-		tmpNProc[h]=RunParameters->ProcessCount[h];
-		tmpPIDs[h]=RunParameters->DaemonPIDs[h];
+		tmpNProc[h]= server->processCountForHostRank(h);
+		tmpPIDs[h]= server->daemonPIDForHostRank(h);
 	}
 
         ulm_delete(RunParameters->ProcessCount);

@@ -1047,7 +1047,9 @@ public:
 
     unsigned int channelID();
 
-    int daemonPIDForHostRank(int rank);
+    pid_t daemonPIDForHostRank(int rank) {return daemonPIDs_m[rank];}
+
+    int processCountForHostRank(int rank) {return processCount[rank];} 
 
     unsigned int nodeLabel();
 
