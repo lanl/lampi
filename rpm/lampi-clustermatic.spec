@@ -80,9 +80,11 @@ export PATH CC CFLAGS CXX CXXFLAGS FC F77 FFLAGS F90 F90FLAGS
 %{?_with_lsf:		--enable-lsf}		%{?_without_lsf:	--disable-lsf} \
 %{?_with_rms:		--enable-rms}		%{?_without_rms:	--disable-rms} \
 %{?_with_bproc:		--enable-bproc}		%{?_without_bproc:	--disable-bproc} \
+%{?_with_tcp:		--enable-tcp}		%{?_without_tcp:	--disable-tcp} \
 %{?_with_udp:		--enable-udp}		%{?_without_udp:	--disable-udp} \
 %{?_with_qsnet:		--enable-qsnet}		%{?_without_qsnet:	--disable-qsnet} \
 %{?_with_gm:		--enable-gm}		%{?_without_gm:		--disable-gm} \
+%{?_with_ib:		--enable-ib}		%{?_without_ib:		--disable-ib} \
 %{?_with_shared-memory:	--enable-shared-memory}	%{?_without_shared-memory:--disable-shared-memory} \
 %{?_with_reliability:	--enable-reliability}	%{?_without_reliability:--disable-reliability} \
 %{?_with_ct:		--enable-ct}		%{?_without_ct:		--disable-ct} \
