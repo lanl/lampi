@@ -235,7 +235,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 #ifdef BPROC
     /*     Strings with pre-assigned values  */
     char *execName = NULL;
-    char *exec_args[END];
+    char *exec_args[END+1];
     char *tmp_args = NULL;
     char hostList[MAXHOSTNAMELEN];
     int *nodes = 0;
