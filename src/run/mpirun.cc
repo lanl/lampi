@@ -656,7 +656,7 @@ int main(int argc, char **argv)
 
     /* UDP port information exchange - postfork */
     if (!exchangeUDPPorts(&ErrorReturn, server)) {
-        ulm_err(("Error: While exchangind UDP ports (%d)\n", ErrorReturn));
+        ulm_err(("Error: While exchanging UDP ports (%d)\n", ErrorReturn));
         Abort();
     }
 
