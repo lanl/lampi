@@ -86,58 +86,27 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
 
     } else {
 
-        /*
-         * Call MPI_Sendrecv blockwise, packing and unpacking into
-         * temporary buffers
-         */
+        rc = ulm_send(buf, count, mtype, dest, sendtag, comm, ULM_SEND_STANDARD);
+        if (rc != ULM_SUCCESS) {
+            rc = _mpi_error(rc);
+            goto ERRHANDLER;
+        }
+    
+        ULMStatus_t stat;
+        rc = ulm_recv(buf, count, mtype, source, recvtag, comm, &stat);
+        if (rc != ULM_SUCCESS) {
+            rc = _mpi_error(rc);
+            goto ERRHANDLER;
+        }
 
-        int byte_count;
-        int pack_status;
-        size_t recv_map_index;
-        size_t recv_map_offset;
-        size_t recv_offset;
-        size_t recv_type_index;
-        size_t send_map_index;
-        size_t send_map_offset;
-        size_t send_offset;
-        size_t send_type_index;
-        unsigned char recv_block[BLOCK_SIZE];
-        unsigned char send_block[BLOCK_SIZE];
-
-        byte_count = 0;
-        send_type_index = 0;
-        send_map_index = 0;
-        send_map_offset = 0;
-        recv_type_index = 0;
-        recv_map_index = 0;
-        recv_map_offset = 0;
-        do {
-            send_offset = 0;
-            pack_status = type_pack(TYPE_PACK_PACK,
-                                    send_block, BLOCK_SIZE, &send_offset,
-                                    buf, count, mtype,
-                                    &send_type_index,
-                                    &send_map_index,
-                                    &send_map_offset);
-        
-            rc = MPI_Sendrecv(send_block, send_offset, MPI_BYTE, dest, sendtag,
-                              recv_block, send_offset, MPI_BYTE, source, 
-                              recvtag, comm, status);
-            if (rc != MPI_SUCCESS) {
-                goto ERRHANDLER;
-            }
-            byte_count += status->_count;
-        
-            recv_offset = 0;
-            pack_status = type_pack(TYPE_PACK_UNPACK,
-                                    recv_block, BLOCK_SIZE, &recv_offset,
-                                    buf, count, mtype,
-                                    &recv_type_index,
-                                    &recv_map_index,
-                                    &recv_map_offset);
-
-        } while (pack_status != TYPE_PACK_COMPLETE);
-        status->_count = byte_count;
+        /* fill out status object */
+        if (status) {
+            status->MPI_ERROR = _mpi_error(stat.error_m);
+            status->MPI_SOURCE = stat.peer_m;
+            status->MPI_TAG = stat.tag_m;
+            status->_count = stat.length_m;
+            status->_persistent = stat.persistent_m;
+        }
 
     }
 
