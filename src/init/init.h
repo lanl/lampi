@@ -83,6 +83,7 @@ enum {
     ERROR_LAMPI_INIT_POSTFORK_RMS,
     ERROR_LAMPI_INIT_POSTFORK_GM,
     ERROR_LAMPI_INIT_POSTFORK_IB,
+    ERROR_LAMPI_INIT_POSTFORK_PIDS,
     ERROR_LAMPI_INIT_PATH_CONTAINER,
     ERROR_LAMPI_INIT_WAIT_FOR_START_MESSAGE,
     ERROR_LAMPI_INIT_MAX
@@ -118,6 +119,7 @@ void lampi_init_prefork_stdio_pipe(lampiState_t *);
 void lampi_init_prefork_stdio_pty(lampiState_t *);
 
 void lampi_init_postfork_communicators(lampiState_t *s);
+void lampi_init_postfork_pids(lampiState_t *);
 void lampi_init_postfork_debugger(lampiState_t *);
 void lampi_init_postfork_globals(lampiState_t *);
 void lampi_init_postfork_ip_addresses(lampiState_t *);

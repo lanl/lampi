@@ -44,37 +44,74 @@
 #include "run/Run.h"
 
 /*
- * This routine is used to kill the application processes on a given
- * host.  This is intended to clean-up after Client on that host
- * terminates abnormally and can no longer clean up it's child
- * processes.
+ * Kill the application processes on a given host.  This is intended
+ * to clean-up after client on that host terminates abnormally and can
+ * no longer clean up it's child processes.
  */
 
-void KillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs)
+void KillAppProcs(ULMRunParams_t *RunParameters, int host)
 {
-    int RetStat, i;
-    char CommandString[ULM_MAX_COMMAND_STRING];
+    if (RunParameters->UseRMS) {
 
-    /* 
-     * check to see if host can be reached - if not, assume host is
-     * unreachable.
-     */
-    sprintf(CommandString, "/usr/etc/ping -c 1 %s > /dev/null  2>&1\n",
-            Host);
-    RetStat = system(CommandString);
+      /* Let RMS handle clean-up (should never get here) */
 
-    /* if host can't be reached - return */
-    if (RetStat != 0)
         return;
 
-    /* loop over list of pid's */
-    for (i = 0; i < NProcs; i++) {
+    } else if (RunParameters->Local) {
 
-        /* setup kill command string */
-        sprintf(CommandString, "rsh %s kill -9 %u  > /dev/null 2>&1\n",
-                Host, AppPIDs[i]);
+      /* kill local processes */
 
-        /* send kill command */
-        system(CommandString);
+        for (int i = 0; i < RunParameters->ProcessCount[host]; i++) {
+            pid_t pid = RunParameters->AppPIDs[host][i];
+            ulm_err(("Executing \"kill -9 %d\"\n", pid));
+            if (kill(pid, 9) < 0) {
+                ulm_dbg(("kill: %d - No such process\n", pid));
+            }
+        }
+
+    } else if (RunParameters->UseBproc) {
+
+        /*
+	 * Be aggressive: Send kill to any process we can
+	 * (local PIDs are the same as remote PIDs)
+	 */
+
+        ulm_err(("Killing processes\n"));
+        for (int h = 0; h < RunParameters->NHosts; h++) {
+            for (int p = 0; p < RunParameters->ProcessCount[h]; p++) {
+                pid_t pid = RunParameters->AppPIDs[h][p];
+		ulm_dbg(("Executing \"kill -9 %d\"\n", pid));
+		if (kill(pid, 9) < 0) {
+		    ulm_dbg(("kill: %d - No such process\n", pid));
+		}
+	    }
+	}
+
+	ulm_dbg(("Killing process group\n"));
+        kill(0, 9);
+
+    } else {
+
+      /* try to kill using rsh */
+
+        char cmd[ULM_MAX_COMMAND_STRING];
+
+        /* is host reachable? */
+        sprintf(cmd,
+                "/usr/etc/ping -c 1 %s > /dev/null  2>&1\n",
+                RunParameters->HostList[host]);
+        if (system(cmd) != 0) {
+	  /* host can't be reached - return */
+            return;
+        }
+
+        /* kill remote processes */
+        for (int i = 0; i < RunParameters->ProcessCount[host]; i++) {
+            sprintf(cmd,
+                    "rsh %s kill -9 %u  > /dev/null 2>&1\n",
+                    RunParameters->HostList[host],
+                    RunParameters->AppPIDs[host][i]);
+            system(cmd);
+        }
     }
 }

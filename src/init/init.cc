@@ -120,8 +120,10 @@ extern "C" void ClientTVSetup();
  */
 void lampi_init_print(const char *string)
 {
-    fprintf(stderr, "%s\n", string);
-    fflush(stderr);
+    FILE *fp = fopen("/tmp/ddd/log", "a+");
+    fprintf(fp, "%s\n", string);
+    fflush(fp);
+    fclose(fp);
 }
 
 
@@ -153,6 +155,7 @@ void lampi_init(void)
 
     lampi_init_fork(&_ulm);     /* all la-mpi procs created here */
 
+    lampi_init_postfork_pids(&_ulm);
     lampi_init_postfork_debugger(&_ulm);
     lampi_init_postfork_stdio(&_ulm);
     lampi_init_postfork_resource_management(&_ulm);
@@ -249,6 +252,8 @@ void lampi_init_check_for_error(lampiState_t *s)
           "Initialization failed setting up GM after fork" },
         { ERROR_LAMPI_INIT_POSTFORK_IB,
           "Initialization failed setting up IB after fork" },
+        { ERROR_LAMPI_INIT_POSTFORK_PIDS,
+          "Initialization failed reporting application PIDs after fork" },
         { ERROR_LAMPI_INIT_PATH_CONTAINER,
           "Initialization failed setting up path in global path container" },
         { ERROR_LAMPI_INIT_WAIT_FOR_START_MESSAGE,
@@ -1759,10 +1764,46 @@ void lampi_init_prefork_debugger(lampiState_t *s)
 }
 
 
+void lampi_init_postfork_pids(lampiState_t *s)
+{
+    if (s->error) {
+        return;
+    }
+
+    if (s->verbose) {
+        lampi_init_print("lampi_init_postfork_pids");
+    }
+
+    if ((s->useDaemon && s->iAmDaemon) ||
+        (!s->useDaemon && (s->local_rank == 0))) {
+
+        int errorCode;
+        int tag;
+        int goahead;
+
+        s->client->reset(adminMessage::SEND);
+        s->client->pack((void *) s->local_pids,
+                        (adminMessage::packType) sizeof(pid_t),
+                        s->local_size);
+        s->client->send(-1, adminMessage::CLIENTPIDS, &errorCode);
+
+        /* wait for goahead from mpirun */
+
+        if (!(s->client->receive(-1, &tag, &errorCode) == adminMessage::OK
+              && tag == adminMessage::BARRIER
+              && s->client->unpack(&goahead,
+                                   (adminMessage::packType) sizeof(int), 1)
+              && goahead)) {
+            s->error = ERROR_LAMPI_INIT_POSTFORK_PIDS;
+        }
+    }
+
+    s->client->localBarrier();
+}
+
+
 void lampi_init_postfork_debugger(lampiState_t *s)
 {
-    int errorCode;
-
     if (s->error) {
         return;
     }
@@ -1775,20 +1816,12 @@ void lampi_init_postfork_debugger(lampiState_t *s)
     }
 
     if (s->debug_location == 1) {
-        if ((s->useDaemon && s->iAmDaemon) ||
-            (!s->useDaemon && (s->local_rank == 0))) {
-            // CLIENTPIDS exchange from local rank 0 process
-            s->client->reset(adminMessage::SEND);
-            s->client->pack((void *) s->local_pids,
-                            (adminMessage::packType) sizeof(pid_t),
-                            s->local_size);
-            s->client->send(-1, adminMessage::CLIENTPIDS, &errorCode);
-        }
-
-        if (!s->iAmDaemon)
+        if (!s->iAmDaemon) {
             ClientTVSetup();
+	}
     }
 }
+
 
 void lampi_init_prefork_check_stdio(lampiState_t *s)
 {

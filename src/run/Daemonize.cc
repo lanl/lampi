@@ -281,8 +281,7 @@ void Daemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                 /* send TERMINATENOW message to remaining hosts */
                 ulm_err(("Error: Host %d is no longer participating in the job\n", RetVal));
                 ClientSocketFDList[RetVal] = -1;
-                KillAppProcs(HostList[RetVal], ProcessCnt[RetVal],
-                             PIDsOfAppProcs[RetVal]);
+                KillAppProcs(RunParameters, RetVal);
                 HostsAbNormalTerminated++;
                 HostsAbNormalTerminated +=
                     AbortAllHosts(ClientSocketFDList, NHosts, server);

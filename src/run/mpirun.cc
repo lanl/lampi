@@ -106,7 +106,7 @@ static int use_connect_thread = 1;
 #endif  /* ENABLE_BPROC */
 
 
-bool getClientPids(pid_t ** hostarray, int *errorCode)
+bool getClientPids(pid_t **hostarray, int *errorCode)
 {
     bool returnValue = true;
     int rank, tag, contacted = 0;
@@ -134,6 +134,27 @@ bool getClientPids(pid_t ** hostarray, int *errorCode)
         if (!returnValue) {
             break;
         }
+    }
+
+    if (0) { /* debug */
+        for (int h = 0 ; h < RunParameters.NHosts; h++) {
+	    fprintf(stderr, "Host %d (%s) has PIDs", h, RunParameters.HostList[h]);
+	    for (int p = 0 ; p < RunParameters.ProcessCount[h]; p++) {
+	       fprintf(stderr, " %d", hostarray[h][p]);
+	    }
+	    fprintf(stderr, "\n");
+	}
+    }
+
+    /* release clients */
+
+    if (returnValue) {
+        int goahead = (returnValue) ? 1 : 0;
+
+        server->reset(adminMessage::SEND);
+        server->pack(&goahead, (adminMessage::packType) sizeof(int), 1);
+	returnValue = server->broadcast(adminMessage::BARRIER, errorCode);
+	returnValue = (returnValue && goahead) ? true : false;
     }
 
     return returnValue;
@@ -659,28 +680,22 @@ int mpirun(int argc, char **argv)
 
     /*
      * at this stage we assume that all app processes have been
-     *   created on the remote hosts
-     * */
+     * created on the remote hosts
+     */
+
+    /* collect PIDs of client applications */
+    RunParameters.AppPIDs = ulm_new(pid_t *, RunParameters.NHosts);
+    for (int i = 0; i < RunParameters.NHosts; i++) {
+        RunParameters.AppPIDs[i] = ulm_new(pid_t, RunParameters.ProcessCount[i]);
+    }
+    if (!getClientPids(RunParameters.AppPIDs, &errorCode)) {
+        ulm_err(("Error: Can't get client process IDs (%d)\n", errorCode));
+	Abort();
+    }
 
     /* totalview debugging of all client processes */
     if (RunParameters.TVDebug && RunParameters.TVDebugApp) {
-        /* allocate private memory to hold client process ids */
-        pid_t **clientpids = ulm_new(pid_t *, RunParameters.NHosts);
-        for (int i = 0; i < RunParameters.NHosts; i++) {
-            clientpids[i] = ulm_new(pid_t, RunParameters.ProcessCount[i]);
-        }
-
-        if (!getClientPids(clientpids, &errorCode)) {
-            ulm_err(("Error: Can't get client process IDs (%d)\n", errorCode));
-            Abort();
-        }
-        MPIrunTVSetUpApp(clientpids);
-
-        /* free memory */
-        for (int i = 0; i < RunParameters.NHosts; i++) {
-            ulm_delete(clientpids[i]);
-        }
-        ulm_delete(clientpids);
+        MPIrunTVSetUpApp(RunParameters.AppPIDs);
     }
 
     /* IP address information exchange - postfork */
@@ -715,6 +730,20 @@ int mpirun(int argc, char **argv)
         Abort();
     }
 
+    /* more banner info: print out process distribution */
+    if (RunParameters.Quiet == 0) {
+        fprintf(stderr, "LA-MPI: *** %d processes on %d hosts:", nprocs, RunParameters.NHosts);
+	for (int h = 0 ; h < RunParameters.NHosts; h++) {
+	    struct hostent *hostent;
+	    hostent = gethostbyname(RunParameters.HostList[h]);
+	    hostent = gethostbyaddr(hostent->h_addr, sizeof(hostent->h_addr), AF_INET);
+	    fprintf(stderr, " %d*%s",
+		    RunParameters.ProcessCount[h],
+		    hostent->h_name);
+	}
+	fprintf(stderr, "\n");
+    }
+
     /* release all processes explicitly with barrier admin. message */
     if (!releaseClients(&ErrorReturn)) {
         ulm_err(("Error: Timed out while waiting to release clients (%d)\n",
@@ -729,6 +758,12 @@ int mpirun(int argc, char **argv)
     } else {
         Daemonize(StderrBytesRead, StdoutBytesRead, &RunParameters);
     }
+
+    /* free memory */
+    for (int i = 0; i < RunParameters.NHosts; i++) {
+        ulm_delete(RunParameters.AppPIDs[i]);
+    }
+    ulm_delete(RunParameters.AppPIDs);
 
     return EXIT_SUCCESS;
 }

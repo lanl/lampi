@@ -89,7 +89,7 @@ void GetTVAll(const char *InfoStream);
 void GetTVDaemon(const char *InfoStream);
 int InstallSigHandler(void);
 int IsTVDebug(void);
-void KillAppProcs(HostName_t Host, int NProcs, pid_t *AppPIDs);
+void KillAppProcs(ULMRunParams_t *RunParameters, int hostrank);
 int ProcessInput(int argc, char **argv, int *NULMArgs, int **IndexULMArgs,
                  ULMRunParams_t *RunParameters, int *FirstAppArgument);
 void RearrangeHostList(const char *InfoStream);

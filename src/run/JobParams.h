@@ -198,8 +198,11 @@ typedef struct ULMRunParams {
     /* list of Debug hosts - in xxx.xxx.xxx.xxx format */
     HostName_t *TVHostList;
 
-    /* list of Client daemon process pid's */
+    /* list of client daemon process pid's */
     pid_t *DaemonPIDs;
+
+    /* list of client application process pid's (per host) */
+    pid_t **AppPIDs;
 
     /* server instance. */
     adminMessage *server;
