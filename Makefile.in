@@ -86,6 +86,7 @@ endif
 ROMIOCONFIGURE	+= -mpi=lampi
 ROMIOCONFIGURE	+= -mpiolib=$(ROMIOLIB)
 ROMIOCONFIGURE	+= -mpiincdir=$(abs_srcdir)/src/include
+ROMIOCONFIGURE	+=-with-file-system="ufs nfs"
 ROMIOCONFIGURE	+= -mpilib=$(PWD)/lampi.$(DLLEXT)
 ROMIOCONFIGURE	+= -make=$(MAKE) 
 endif

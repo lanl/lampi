@@ -102,6 +102,16 @@ public:
 
     /* set up by init() once (context dependent) */
     quadricsCtlHdr_t *fragEnvelope;     //!< ptr to 64-byte aligned memory for frag envelope info
+#define ELAN3_PAGE_BUG_WORKAROUND
+#ifdef ELAN3_PAGE_BUG_WORKAROUND
+    // in rare cases, we need to allocate extra memory and then
+    // increment fragEnvelope.  In fragEnvelop_orig we store the original
+    // pointer, which is needed to properly free the memory
+    // Whenever fragEnvelope is allocated, fragEnvelope_orig is also set
+    // (even if we do not need to shift the fragEnvelope pointer)
+    // so we always free fragEnvelope_orig 
+    quadricsCtlHdr_t *fragEnvelope_orig;  
+#endif
     E3_Addr elanFragEnvelope;           //!< Elan address of fragEnvelope
     sdramaddr_t elanEnvelope;           //!< SDRAM frag envelope info copy (for performance)
     E3_Addr elanElanEnvelope;           //!< Elan address of elanEnvelope
@@ -445,53 +455,41 @@ private:
         if (!mainDMADesc) {
             mainDMADesc = (E3_DMA_MAIN *)elan3_allocMain(ctx, E3_DMA_ALIGN, sizeof(E3_DMA_MAIN));
         }
+
+        while (!fragEnvelope) { // dummy loop to break out of
+            unsigned long mask = ~(ctx->pageSize - 1);
+            fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
+                                                                   sizeof(quadricsCtlHdr_t));
+            if (!fragEnvelope) break;
+#ifdef ELAN3_PAGE_BUG_WORKAROUND
+            fragEnvelope_orig=fragEnvelope;
+
+            if (((unsigned long)fragEnvelope & mask) !=
+                ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
+                // due to elan3 bug, we cannot allow fragEnvelope in last 64 bytes
+                // of a page.  Try again, but allocate 64 extra bytes:
+                // Note: trying to allocate with 128 byte alignment (using 2*E3_BLK_ALIGN) 
+                // causes segfaults later.  
+                elan3_free(ctx, fragEnvelope);
+                fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
+                                     sizeof(quadricsCtlHdr_t)+64);
+                if (!fragEnvelope) break;
+                fragEnvelope_orig=fragEnvelope;  // save original address
+
+                if (((unsigned long)fragEnvelope & mask) !=
+                    ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
+                    // we are still near page boundary, so shift pointer to next page:
+                    fragEnvelope=(quadricsCtlHdr_t *) ( ((char *) fragEnvelope) + 64);
+                    // because of this trick, be sure not to free fragEnvelope
+                    // use fragEnvelope_orig instead
+                }
+            }
+#endif
+            elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
+        }
         if ( usethreads() )
             quadricsState.quadricsLock.unlock();
 
-        if (!fragEnvelope) {
-            unsigned long mask = ~(ctx->pageSize - 1);
-            void *bad_addresses[10];
-            int bad_addrcnt = 0;
-            if ( usethreads() )
-                quadricsState.quadricsLock.lock();
-
-            for (int i = 0; i < 10; i++) {
-                fragEnvelope = (quadricsCtlHdr_t *)elan3_allocMain(ctx, E3_BLK_ALIGN,
-                                                                   sizeof(quadricsCtlHdr_t));
-                if (fragEnvelope) {
-                    if (((unsigned long)fragEnvelope & mask) !=
-                        ((unsigned long)((unsigned char *)fragEnvelope + 64) & mask)) {
-                        bad_addresses[i] = fragEnvelope;
-                        bad_addrcnt++;
-                        fragEnvelope = 0;
-                    }
-                    else {
-                        elanFragEnvelope = elan3_main2elan(ctx, fragEnvelope);
-                        break;
-                    }
-                }
-            }
-            if ( usethreads() )
-                quadricsState.quadricsLock.unlock();
-
-            if (bad_addrcnt) {
-                if (bad_addrcnt == 10) {
-                    ulm_dbg(("quadricsSendFragDesc::initInitOnceResources: exceeded 10"
-                             " memory allocations tries for fragEnvelope!\n"));
-                    freeInitOnceResources();
-                    return false;
-                }
-                else {
-                    if ( usethreads() )
-                        quadricsState.quadricsLock.lock();                    
-                    for (int i = 0; i < bad_addrcnt; i++) {
-                        elan3_free(ctx, bad_addresses[i]);
-                    }
-                    if ( usethreads() )
-                        quadricsState.quadricsLock.unlock();                    
-                }
-            }
-        }
         /* PERFORMANCE is worse!
            if (elanEnvelope == (sdramaddr_t)NULL) {
            elanEnvelope = elan3_allocElan(ctx, E3_BLK_ALIGN, sizeof(quadricsCtlHdr_t));
@@ -522,7 +520,14 @@ private:
             mainDMADesc = 0;
         }
         if (fragEnvelope) {
+#ifdef ELAN3_PAGE_BUG_WORKAROUND
+            // in this case, whenever fragEnvelope!=NULL, we have also 
+            // set fragEnvelope_orig, which is the original address of 
+            // the block of memory and must be used to free it.
+            elan3_free(ctx, fragEnvelope_orig);
+#else
             elan3_free(ctx, fragEnvelope);
+#endif
             fragEnvelope = 0;
         }
         if (elanEnvelope != (sdramaddr_t)NULL) {
