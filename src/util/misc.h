@@ -55,7 +55,7 @@ unsigned int ulm_log2(unsigned int n);
 unsigned int bit_string_to_uint(const char *bstr);
 char *uint_to_bit_string(unsigned int num, int pad);
 
-//unsigned int hostToIPAddress(const char *host);
+/*  unsigned int hostToIPAddress(const char *host); */
 
 #ifdef __cplusplus
 }

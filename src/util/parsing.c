@@ -82,7 +82,7 @@ int _ulm_parse_string(char ***ArgList, const char *InputBuffer,
        Guess that the worst case is all substrings are of length 3.
      */
     substrCnt = strlen(InputBuffer) / 3;
-    substrCnt = (!substrCnt) ? 1 : substrCnt;   // alloc at least 1 string
+    substrCnt = (!substrCnt) ? 1 : substrCnt;   /*  alloc at least 1 string */
     *ArgList = (char **) ulm_malloc(sizeof(char *) * substrCnt);
     if (NULL == *ArgList) {
         printf("Error: can't allocate memory in parser. Len %ld\n",
