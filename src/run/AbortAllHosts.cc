@@ -72,16 +72,18 @@ int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *serve
 
     IOVec.iov_base = (char *) &Tag;
     IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-    for (i = 0; i < NHosts; i++) {
-        /* send only to hosts that are still assumed to be alive */
-        if (ClientSocketFDList[i] > 0) {
-            IOReturn = _ulm_Send_Socket(ClientSocketFDList[i], 1, &IOVec);
-            /*  With failed send, register host as down !!!! */
-            if (IOReturn <= 0) {
-                close(ClientSocketFDList[i]);
-                ClientSocketFDList[i] = -1;
-                NFailed++;
-                HostsAbNormalTerminated++;
+    if (ClientSocketFDList) {
+        for (i = 0; i < NHosts; i++) {
+            /* send only to hosts that are still assumed to be alive */
+            if (ClientSocketFDList[i] > 0) {
+                IOReturn = _ulm_Send_Socket(ClientSocketFDList[i], 1, &IOVec);
+                /*  With failed send, register host as down !!!! */
+                if (IOReturn <= 0) {
+                    close(ClientSocketFDList[i]);
+                    ClientSocketFDList[i] = -1;
+                    NFailed++;
+                    HostsAbNormalTerminated++;
+                }
             }
         }
     }
