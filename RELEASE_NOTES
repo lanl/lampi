@@ -173,3 +173,8 @@ Version 1.3.3
   pending messages.
 - Minor fixes for BJS and ROMIO.
 - Some code rationalization.
+
+Version 1.3.4
+
+- Minor fixes for resource cleanup at finalize.
+- Support for newer BPROC releases.
