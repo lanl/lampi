@@ -106,7 +106,6 @@ int Communicator::isend_start(BaseSendDesc_t **SendDesc)
                 return ULM_ERR_FATAL;
             }
         }
-        tmpRequest->messageDone = REQUEST_COMPLETE;
     }
 
     // set the destination process ID, communicator ID, user tag, and length of the message
@@ -115,7 +114,7 @@ int Communicator::isend_start(BaseSendDesc_t **SendDesc)
     SendDescriptor->NumSent = 0;
     SendDescriptor->NumFragDescAllocated = 0;
     SendDescriptor->messageDone =
-        (SendDescriptor->sendType == ULM_SEND_BUFFERED) ? 
+        (( SendDescriptor->sendType == ULM_SEND_BUFFERED) && !(SendDescriptor->persistent) )? 
 	REQUEST_COMPLETE : REQUEST_INCOMPLETE;
 #ifdef ENABLE_RELIABILITY
     SendDescriptor->earliestTimeToResend = -1.0;
@@ -172,7 +171,9 @@ int Communicator::isend_start(BaseSendDesc_t **SendDesc)
 // revisit            }
 // revisit            // initialize the descriptor for this path
 // revisit            SendDescriptor->path_m->init(SendDescriptor);
-		return ULM_ERROR;
+            if (usethreads())
+                SendDescriptor->Lock.unlock();
+            return ULM_ERROR;
         } else {
             // unbind should empty SendDescriptor of frag descriptors...
             SendDescriptor->path_m->unbind(SendDescriptor, (int *) 0, 0);
