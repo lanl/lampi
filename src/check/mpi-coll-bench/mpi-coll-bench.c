@@ -177,8 +177,8 @@ static double second(void)
            "  tmin = %e secs\n"                                    \
            "  tmax = %e secs\n"                                    \
 	   "  tave = %e secs\n\n",                                 \
-           # CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
-    if (self == 0 || allprint)                                     \
+           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
+    if ((self == 0 || allprint) && outFile)                                    \
         fprintf(outFile,                                           \
            "Code:\n"                                               \
            "  %-s\n"                                               \
@@ -189,7 +189,7 @@ static double second(void)
            "  tmin = %e secs\n"                                    \
            "  tmax = %e secs\n"                                    \
 	   "  tave = %e secs\n\n",                                 \
-           # CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
+           #CODE, NSAMPLE, SAMPLE_SIZE, trms, tmin, tmax, tave);  \
 }
 
 int main(int argc, char *argv[])
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     int bytes;
     int nproc;
     int self;
-    FILE *outFile;
+    FILE *outFile = 0;
     char FileName[10];
 
     /*
