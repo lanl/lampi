@@ -108,6 +108,7 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
 
             WhichQueue = IBFRAGFREELIST;
             ib_state.hca[hca_index_m].send_frag_list.returnElementNoLock(this, 0);
+            (ib_state.hca[hca_index_m].send_frag_avail)++;
 
             if (needToLock && usethreads()) {
                 ib_state.lock.unlock();

@@ -413,7 +413,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             j = i + ib_state.next_send_hca;
             j = (j >= ib_state.num_active_hcas) ? j - ib_state.num_active_hcas : j; 
             hca = ib_state.active_hcas[j];
-            if ((ib_state.hca[hca].ud.sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1)) {
+            if ((ib_state.hca[hca].ud.sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1) &&
+                (ib_state.hca[hca].send_frag_avail >= 1)) {
                 k = ib_state.next_send_port;
                 k = (k >= ib_state.hca[hca].num_active_ports) ? k - ib_state.hca[hca].num_active_ports : k;
                 // set port and hca index values...
@@ -445,6 +446,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             *errorCode = returnValue;
             return false;
         }
+        (ib_state.hca[hca_index].send_frag_avail)--;
 
         // initialize descriptor...does almost everything if it can...
         sfd->init(message, hca_index, port_index);
@@ -837,6 +839,8 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
     return returnValue;
 }
 
+#endif
+
 void ibPath::finalize(void)
 {
     VAPI_ret_t vapi_result;
@@ -923,5 +927,3 @@ void ibPath::finalize(void)
         ib_state.lock.unlock();
     }
 }
-
-#endif

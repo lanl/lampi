@@ -500,10 +500,12 @@ void ibSetup(lampiState_t *s)
             dlist.AppendNoLock(sfrag);
         }
 
+        h->send_frag_avail = 0;
         // store the send descriptors on the freelist
         while (dlist.size()) {
             sfrag = (ibSendFragDesc *)dlist.GetLastElementNoLock();
             h->send_frag_list.returnElementNoLock(sfrag, 0);;
+            (h->send_frag_avail)++;
         }
     }
 

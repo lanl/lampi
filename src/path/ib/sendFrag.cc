@@ -349,8 +349,9 @@ bool ibSendFragDesc::init(void)
         case RC_QP:
         case NOTASSIGNED_QP:
         default:
-            ulm_warn(("ibSendFragDesc::init() qp_type_m "
+            ulm_exit((-1, "ibSendFragDesc::init() qp_type_m "
             "is %d (not supported UD_QP %d)\n", qp_type_m, UD_QP));
+            // to quiet compilers..
             return false;
     }
 }
@@ -375,6 +376,9 @@ bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
         case RC_QP:
         case NOTASSIGNED_QP:
         default:
+            ulm_exit((-1, "ibSendFragDesc::init() qp_type_m "
+            "is %d (not supported UD_QP %d)\n", qp_type_m, UD_QP));
+            // to quiet compilers..
             return false;
     }
 }
