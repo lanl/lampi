@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
+ * Copyright 2002.  The Regents of the University of California. This material 
  * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
  * National Laboratory, which is operated by the University of California for 
  * the U.S. Department of Energy. The Government is granted for itself and 
@@ -493,8 +493,8 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         }
         enoughMemory = ((bufCounts[smallBufType] >= smallBufs) &&
 			(bufCounts[largeBufType] >= largeBufs));
-    }
-
+   }        
+   
     /* NO, send memory request over any rail */
 
     if (!enoughMemory && message->sendType != ULM_SEND_MULTICAST) {
@@ -537,13 +537,20 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
 
         // get ctx and rail for each frag to allow load-balancing over
         // all Quadrics rails, if desired...
+        bool needsDest;
+        if (message->sendType == ULM_SEND_MULTICAST) {
+            needsDest = (message->PostedLength <= CTLHDR_DATABYTES) ? false : true;
+        }
+        else {
+            needsDest = smallBufs || largeBufs;
+        }
         if (!getCtxRailAndDest(message,
                                gldestProc,
                                &ctx,
                                &rail,
                                &dest,
                                (smallBufs) ? smallBufType : largeBufType,
-                               (smallBufs || largeBufs),
+                               needsDest,
                                errorCode)) {
             if (*errorCode == ULM_ERR_BAD_PATH)
                 return false;
@@ -566,8 +573,8 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         }
 
         if (message->sendType == ULM_SEND_MULTICAST) {
-            fragLength = leftToSend < ELAN_BCAST_BUF_SZ ? leftToSend 
-                : ELAN_BCAST_BUF_SZ;
+            // currently, must fit within mcast bufs which are of fixed size
+            fragLength = message->PostedLength;
         }
         else if (smallBufs || largeBufs) {
             if (smallBufs) {

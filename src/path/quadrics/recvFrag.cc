@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
+ * Copyright 2002.  The Regents of the University of California. This material
  * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
  * National Laboratory, which is operated by the University of California for
  * the U.S. Department of Energy. The Government is granted for itself and
@@ -35,7 +35,6 @@
 #include "internal/state.h"
 #include "client/ULMClient.h"
 #include "queue/globals.h"	// for getMemPoolIndex()
-#include "queue/globals.h"	// for communicators and reliabilityInfo...
 #include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
 #include "path/quadrics/recvFrag.h"
 #include "path/quadrics/sendFrag.h"
@@ -53,6 +52,10 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
      * the message is a synchronous send, and this is the
      * first message frag...
      */
+
+    if (refCnt_m > 0) { // multicast message 
+        return true;
+    }
 
     if (!quadricsDoAck) {
         /* free Elan-addressable memory now */
@@ -611,6 +614,17 @@ void quadricsRecvFragDesc::msgData(double timeNow)
                          SHARED_LARGE_BUFFERS : PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
 
+    if (refCnt_m > 0) { // multicast message
+        // remap process IDs from global to group ProcID
+        dstProcID_m = communicators[ctx_m]->
+            localGroup->mapGlobalProcIDToGroupProcID[myproc()];
+        srcProcID_m = communicators[ctx_m]->
+            remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m];
+
+        // what do we do if the return value is not ULM_SUCCESS?
+        communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
+    }
+
 #ifdef RELIABILITY_ON
     isDuplicate_m = false;
 #endif
@@ -646,6 +660,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 
         // what do we do if the return value is not ULM_SUCCESS?
         communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
+
     }
     else {
         ulm_exit((-1, "Quadrics data envelope with invalid message "
@@ -653,7 +668,6 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     }
     return;
 }
-
 
 void quadricsRecvFragDesc::msgDataAck(double timeNow)
 {

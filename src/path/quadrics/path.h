@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
+ * Copyright 2002.  The Regents of the University of California. This material 
  * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
  * National Laboratory, which is operated by the University of California for 
  * the U.S. Department of Energy. The Government is granted for itself and 
@@ -104,7 +104,7 @@ public:
 
     bool sendDone(BaseSendDesc_t *message, double timeNow, int *errorCode) {
 
-        if (!quadricsDoAck) {
+        if (!quadricsDoAck || (message->sendType == ULM_SEND_MULTICAST)) {
             quadricsSendFragDesc *sfd, *afd;
 
             if ((message->sendType != ULM_SEND_SYNCHRONOUS) || (message->NumSent > 1)) {
@@ -162,7 +162,6 @@ public:
                 return false;
             }
         }
-        
         else {
             if (message->NumAcked >= message->numfrags) {
                 return true;
@@ -240,7 +239,10 @@ public:
             if (quadricsQueue[r].railOK) {
                 railAvail = true;
                 if (message->sendType == ULM_SEND_MULTICAST) {
-                    *dest = communicators[message->ctx_m]->getMcastBuf(r, &sz);
+                    if (needDest) {
+                        *dest = communicators[message->ctx_m]->getMcastBuf(r, &sz);
+                        *dest = (void *)elan3_main2elan(quadricsQueue[r].ctx, *dest);
+                    }
                     *rail = r;
                     *ctx = quadricsQueue[r].ctx;
                     quadricsLastRail = r;
