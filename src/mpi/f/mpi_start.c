@@ -47,66 +47,60 @@
 void mpi_start_f(MPI_Fint *req, MPI_Fint *rc)
 {
     MPI_Request c_req = MPI_Request_f2c(*req);
-
+    MPI_Request	tmp_req = c_req;
+    
     *rc = MPI_Start(&c_req);
+
+    if (*rc == MPI_SUCCESS) {
+        /* For a persistent request, the underlying request descriptor could
+           change (i.e. the old descriptor has not completed and cannot be reused).
+           So commit new descriptor.
+        */
+        if ( tmp_req != c_req )
+            *req = MPI_Request_c2f(c_req);
+    }
 }
 
 #else
 
 void PMPI_START(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void pmpi_start(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void pmpi_start_(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void pmpi_start__(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void MPI_START(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void mpi_start(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void mpi_start_(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 void mpi_start__(MPI_Fint *req, MPI_Fint *rc)
 {
-    MPI_Request c_req = MPI_Request_f2c(*req);
-
-    *rc = MPI_Start(&c_req);
+    mpi_start_f(req, rc);
 }
 
 #endif

@@ -74,7 +74,7 @@ int Communicator::isend_start(BaseSendDesc_t **SendDesc)
         int offset = 0;
         errorCode = PMPI_Pack(SendDescriptor->appBufferPointer,
                        SendDescriptor->bsendDtypeCount, 
-		       (MPI_Datatype)SendDescriptor->datatype,
+		       (MPI_Datatype)SendDescriptor->bsendDatatype,
                        SendDescriptor->AppAddr,SendDescriptor->bsendBufferSize,
 		       &offset, contextID);
         if (errorCode != MPI_SUCCESS) {
@@ -95,12 +95,16 @@ int Communicator::isend_start(BaseSendDesc_t **SendDesc)
     // in the buffered region by this stage; also we need to find our buffer
     // allocation and increment the reference count for this send descriptor
     if (SendDescriptor->sendType == ULM_SEND_BUFFERED) {
+        ULMRequestHandle_t request = (ULMRequestHandle_t *) (SendDescriptor);
+
         SendDescriptor->bsendOffset = (ssize_t)((long)SendDescriptor->AppAddr - (long)lampiState.bsendData->buffer);
-	ULMRequestHandle_t request = (ULMRequestHandle_t *) (SendDescriptor);
-        if ((SendDescriptor->posted_m.length_m > 0) && !ulm_bsend_increment_refcount(request, 
-                SendDescriptor->bsendOffset)) {
-            SendDescriptor->path_m->ReturnDesc(SendDescriptor);
-            return ULM_ERR_FATAL;
+        if ( !(SendDescriptor->persistent) )
+        {
+            if ((SendDescriptor->posted_m.length_m > 0) &&
+                    !ulm_bsend_increment_refcount(request, SendDescriptor->bsendOffset)) {
+                SendDescriptor->path_m->ReturnDesc(SendDescriptor);
+                return ULM_ERR_FATAL;
+            }
         }
         tmpRequest->messageDone = REQUEST_COMPLETE;
     }

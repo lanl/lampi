@@ -54,6 +54,7 @@ extern "C" void ulm_bsend_info_set(ULMRequestHandle_t request, void *originalBuf
     }
     sendDesc->bsendBufferSize = bufferSize;
     sendDesc->bsendDtypeCount = count;
+    sendDesc->bsendDatatype = datatype;
 }
 
 extern "C" void ulm_bsend_info_get(ULMRequestHandle_t request, void **originalBuffer,
@@ -66,10 +67,19 @@ extern "C" void ulm_bsend_info_get(ULMRequestHandle_t request, void **originalBu
     *bufferSize = sendDesc->bsendBufferSize;
     *count = sendDesc->bsendDtypeCount;
     *comm = sendDesc->ctx_m;
+    *datatype = sendDesc->bsendDatatype;
 }
 
 extern "C" ULMBufferRange_t *ulm_bsend_alloc(ssize_t size, int freeAtZero)
 {
+    /*
+        At any given time, only one buffer is in use as pointed to by lampiState.bsendData->buffer.  This is
+        set up with the MPI_Buffer_attach.  lampiState.bsendData->allocations is a linked list that contains
+        blocks of allocations from the buffer.  This routine attempts to grab another chunk of memory from
+        the buffer and records the chunk with a new ULMBufferRange_t struct and adds it to the allocations
+        linked list.
+     */
+    
     /* make sure there is at least a possibility of satisfying this allocation request */
     if ((lampiState.bsendData->bufferLength - lampiState.bsendData->bytesInUse) < size) 
         return NULL;

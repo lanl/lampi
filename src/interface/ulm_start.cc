@@ -50,46 +50,100 @@ extern "C" int ulm_start(ULMRequestHandle_t *request)
     int errorCode;
     int comm = tmpRequest->ctx_m;
     Communicator *commPtr = communicators[comm];
-
+    
     if (tmpRequest->requestType == REQUEST_TYPE_SEND) {
         /* send */
 	    BaseSendDesc_t *SendDescriptor = (BaseSendDesc_t *) tmpRequest;
 	/* for persistant send, may need to reset request */
 	if ( tmpRequest->persistent ) {
 		/* check to see if the SendDescriptor can be reused,
-		 *   or if we need to allocate a new one
+		 *   or if we need to allocate a new one. If 0 == SendDescriptor->numfrag, then the
+         *	 send descriptor was initialized but a send was never started, so we can reuse
+         *	 its resources.
 		 */
-		int reuseDesc=0;
-		if( (SendDescriptor->numfrags <= SendDescriptor->NumAcked) && 
-				SendDescriptor->messageDone == REQUEST_COMPLETE
-				) {
-			reuseDesc=1;
+		int reuseDesc = 0;
+		if( ( (SendDescriptor->numfrags <= SendDescriptor->NumAcked) && 
+				(SendDescriptor->messageDone == REQUEST_COMPLETE) ) ||
+            (ULM_STATUS_INITED == SendDescriptor->status) ){
+			reuseDesc = 1;
 		}
 		if( !reuseDesc ) {
 			/* allocate new descriptor */
-			int dest=SendDescriptor->posted_m.proc.destination_m;
+			int dest = SendDescriptor->posted_m.proc.destination_m;
 			BaseSendDesc_t *tmpSendDesc = SendDescriptor;
-			errorCode= communicators[comm]->
-				pt2ptPathSelectionFunction((void **) 
-						(&SendDescriptor),comm,dest);
+			errorCode = communicators[comm]->pt2ptPathSelectionFunction((void **) (&SendDescriptor), comm, dest);
 			if (errorCode != ULM_SUCCESS) {
 				return errorCode;
 		    	}
 
 			/* fill in new descriptor information */
-			*SendDescriptor=*tmpSendDesc;
+            tmpSendDesc->shallowCopyTo((RequestDesc_t *)SendDescriptor);
+            SendDescriptor->status = ULM_STATUS_INITED;
 
 			/* reset the old descriptor */
-			tmpSendDesc->persistent=false;
+			tmpSendDesc->persistent = false;
 
 			/* wait/test can't be called on the descriptor
 			 *   any more, since we change the handle that
 			 *   is returned to the app
 			 */
-			tmpSendDesc->messageDone=REQUEST_RELEASED;
+			tmpSendDesc->messageDone = REQUEST_RELEASED;
 
+            if ( tmpSendDesc->sendType == ULM_SEND_BUFFERED )
+            {
+                size_t        size;
+                void           *buf, *sendBuffer;
+                int            count, commctx, rc;
+                ULMBufferRange_t       *newAlloc = NULL;
+                ULMType_t      *dtype;
+
+                if ( usethreads() )
+                    lock(&(lampiState.bsendData->Lock));
+
+                // grab a new alloc block for new descriptor using same info
+                // as current descriptor
+                /* get the allocation */
+                ulm_bsend_info_get(tmpSendDesc, &buf, &size, &count, &dtype, &commctx);
+                newAlloc = ulm_bsend_alloc(size, 0);
+
+                if (newAlloc == NULL) {
+                    /* not enough buffer space - check progress, clean prev. alloc. and try again */
+                    if (lampiState.usethreads)
+                        unlock(&(lampiState.bsendData->Lock));
+                    ulm_make_progress();
+                    if (lampiState.usethreads)
+                        lock(&(lampiState.bsendData->Lock));
+                    ulm_bsend_clean_alloc(0);
+                    newAlloc = ulm_bsend_alloc(size, 1);
+
+                    if (newAlloc == NULL) {
+                        /* unlock buffer pool */
+                        unlock(&(lampiState.bsendData->Lock));
+                        rc = MPI_ERR_BUFFER;
+                        _mpi_errhandler(comm, rc, __FILE__, __LINE__);
+
+                        /* return error code */
+                        return rc;
+                    }
+                }
+                ulm_bsend_info_set(SendDescriptor, buf, size, count, dtype);
+                sendBuffer = (void *)((unsigned char *)lampiState.bsendData->buffer +
+                                      newAlloc->offset);
+                if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
+                    SendDescriptor->AppAddr = (void *)((char *)sendBuffer + dtype->type_map[0].offset);
+                }
+                else
+                    SendDescriptor->AppAddr = sendBuffer;
+                SendDescriptor->bsendOffset = newAlloc->offset;
+
+                newAlloc->request = SendDescriptor;
+
+                if ( usethreads() )
+                    unlock(&(lampiState.bsendData->Lock));
+            }	/* if ( tmpSendDesc->sendType == ULM_SEND_BUFFERED ) */
+        
 			/* reset local parameters */
-			*request=&SendDescriptor;
+			*request = SendDescriptor;
 			tmpRequest = (RequestDesc_t *) (*request);
 		}
 	}
