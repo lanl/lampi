@@ -130,6 +130,9 @@ public:
     /* GM "size" of a fragment (i.e. log2 size) */
     unsigned int log2Size;
 
+    /* maximum outandinging fragments on a send */
+    int maxOutstandingFrags;
+
     /* flag on whether to do ACK protocol */
     bool doAck;
 

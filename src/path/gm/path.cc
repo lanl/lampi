@@ -63,8 +63,6 @@ inline bool gmPath::canReach(int globalDestProcessID)
 }
 
 
-int maxOutstandingGmFrags = 5;
-
 bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     Group *group;
@@ -104,9 +102,9 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
         // slow down the send -- always initialize and send the first frag
         if (message->NumFragDescAllocated != 0) {
-            if ((maxOutstandingGmFrags != -1) &&
+            if ((gmState.maxOutstandingFrags != -1) &&
                 (message->NumFragDescAllocated -
-                 message->NumAcked >= (unsigned int) maxOutstandingGmFrags)) {
+                 message->NumAcked >= (unsigned int) gmState.maxOutstandingFrags)) {
                 message->clearToSend_m = false;
             }
 

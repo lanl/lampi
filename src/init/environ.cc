@@ -99,6 +99,9 @@ static struct {
     /* flag whether procs are running in LSF environ. */
     { "LAMPI_WITH_LSF", 0 },
 	
+    /* GM parameters */
+    { "LAMPI_GM_MAX_OUTSTANDING_FRAGS", 5 },
+
     /* config info for RMS environ. */
     { "RMS_NNODES", 0 },
     { "RMS_NODEID", 0 },

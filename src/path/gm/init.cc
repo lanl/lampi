@@ -38,9 +38,11 @@
 #include <gm.h>
 
 #include "init/init.h"
+#include "init/environ.h"
 #include "path/gm/state.h"
 #include "path/gm/recvFrag.h"
 #include "path/gm/sendFrag.h"
+
 
 // Initialize GM with a receive buffer for every receive token
 
@@ -223,8 +225,12 @@ void gmSetup(lampiState_t *s)
             s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
             return;
         }
-        // open local devices
 
+        // parameters from the environment
+        lampi_environ_find_integer("LAMPI_GM_MAX_OUTSTANDING_FRAGS",
+                                   &(gmState.maxOutstandingFrags));
+
+        // open local devices
         gmState.nDevsAllocated = 0;
         /* loop over devices */
         for (dev = 0; dev < gmState_t::MAX_GM_DEVICES; dev++) {
