@@ -56,6 +56,7 @@
 
 #ifdef USE_ELAN_COLL
 #include "path/quadrics/coll.h"
+#define BCAST_DESC_POOL_SZ		32
 #endif
 
 enum { MCAST_BUF_SZ = 16384 };
@@ -491,21 +492,24 @@ public:
         bcast_request_t* first_free;
     } bcast_queue;
 
-    void               init_bcast_queue()
+    void init_bcast_queue()
     {
         bcast_queue.first = bcast_queue.last = (bcast_request_t*)NULL;
         bcast_queue.first_free =
-            (bcast_request_t*) ulm_new(bcast_request_t, 32);
+            (bcast_request_t*) ulm_new(bcast_request_t, BCAST_DESC_POOL_SZ);
 
         if (! bcast_queue.first_free)
             ulm_err(("Error in allocating memory for bcast requests\n"));
         else
         {
-            bcast_request_t * temp_req = bcast_queue.first_free;
-            for ( int k = 1 ; k < 32; k++)
+            bcast_request_t *temp_req;
+
+            bzero(bcast_queue.first_free, sizeof(bcast_request_t)*BCAST_DESC_POOL_SZ);
+            temp_req = bcast_queue.first_free;
+            for ( int k = 1 ; k < BCAST_DESC_POOL_SZ; k++)
             {
-                temp_req->next = bcast_queue.first_free + k;
-                (bcast_queue.first_free + k)->prev = temp_req;
+                temp_req->next = bcast_queue.first_free+k;
+                (bcast_queue.first_free+k)->prev = temp_req;
                 /* Point to the new element */
                 temp_req = (bcast_request_t*)temp_req->next;
             }
@@ -515,7 +519,7 @@ public:
         }
     }
 
-    bcast_request_t *  commit_bcast_req(bcast_request_t* bcast_desc)
+    bcast_request_t *commit_bcast_req(bcast_request_t* bcast_desc)
     {
         assert (bcast_desc == bcast_queue.first_free);
 
@@ -540,7 +544,7 @@ public:
         bcast_desc->prev = (bcast_request_t *) NULL;
     }
 
-    void               free_bcast_req(bcast_request_t* bcast_desc)
+    void free_bcast_req(bcast_request_t* bcast_desc)
     {
         assert ( bcast_queue.first == bcast_desc);
 

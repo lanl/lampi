@@ -285,7 +285,7 @@ bcast_size : shared_buffer_size;
     while (cnt > 0) {
 
         /* Consider using a pool of descriptors and reuse them */
-        bcast_request_t * bcast_desc= comm_ptr->bcast_queue.first_free;
+        bcast_request_t * bcast_desc = comm_ptr->bcast_queue.first_free;
 
         n = (block_count < cnt) ? block_count : cnt;
         tag = comm_ptr->get_base_tag(1);
@@ -314,7 +314,7 @@ bcast_size : shared_buffer_size;
          */
         rc = comm_ptr->bcast_wait(bcast_desc);
 
-#ifdef  RELIABILITY_ON
+#ifdef  ENABLE_RELIABILITY
         /* Fail-over if not completed. Incorrect implementation */
         if ( rc )
         {

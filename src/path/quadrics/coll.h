@@ -272,9 +272,10 @@ typedef struct quadrics_channel
     int	               index;          /* index in the queue */
     int	               send_mode;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     /* Retransmission Stuff */
-    uint64_t           time_started;   /* Use elan_clock */
+    double             time_started;
+    double             time_resend;   
     int                repeats;        /* Number of repeats */
 #endif
 
