@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.4.6,lampi-support@lanl.gov)
+AC_INIT(lampi,1.4.7,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -178,6 +178,9 @@ i?86-pc-linux*)
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
 
+        #default ROMIO filesystems:
+        ROMIO_FS="ufs nfs panfs"
+
 	;;
 
 i?86-pc-cygwin*)
@@ -260,6 +263,9 @@ ia64-unknown-linux*)
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
 
+        #default ROMIO filesystems:
+        ROMIO_FS="ufs nfs panfs"
+
 	;;
 
 x86_64-unknown-linux*)
@@ -291,6 +297,9 @@ x86_64-unknown-linux*)
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""
+
+        #default ROMIO filesystems:
+        ROMIO_FS="ufs nfs panfs"
 
 	;;
 

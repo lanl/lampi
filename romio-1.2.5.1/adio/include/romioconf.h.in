@@ -54,6 +54,7 @@
 #undef NEEDS_MPI_TEST
 #undef NFS
 #undef CFS
+#undef PANFS
 #undef NO_AIO
 #undef NO_FD_IN_AIOCB
 #undef NO_MPI_SGI_type_is_contig

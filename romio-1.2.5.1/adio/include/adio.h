@@ -260,6 +260,7 @@ typedef struct {
 #define ADIO_NTFS                158   /* NTFS for Windows NT */
 #define ADIO_TESTFS              159   /* fake file system for testing */
 #define ADIO_CFS                 160   /* HP/Compaq PFS */
+#define ADIO_PANFS               161   /* Panasas */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR

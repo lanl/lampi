@@ -136,6 +136,73 @@ ADIO_Offset ADIOI_CFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 void ADIOI_CFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif
 
+
+#ifdef PANFS
+extern struct ADIOI_Fns_struct ADIO_PANFS_operations;
+
+void ADIOI_PANFS_Open(ADIO_File fd, int *error_code);
+void ADIOI_PANFS_Close(ADIO_File fd, int *error_code);
+void ADIOI_PANFS_ReadContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                     ADIO_Offset offset, ADIO_Status *status, int
+		     *error_code);
+void ADIOI_PANFS_WriteContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Status *status, int
+		      *error_code);   
+void ADIOI_PANFS_IwriteContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+void ADIOI_PANFS_IreadContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, ADIO_Request *request, int
+		      *error_code);   
+int ADIOI_PANFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+int ADIOI_PANFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PANFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int
+		       *error_code); 
+void ADIOI_PANFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
+			int *error_code); 
+void ADIOI_PANFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
+		*error_code); 
+void ADIOI_PANFS_WriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PANFS_ReadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PANFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PANFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Status *status, int
+		       *error_code);
+void ADIOI_PANFS_IreadStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_PANFS_IwriteStrided(ADIO_File fd, void *buf, int count,
+		       MPI_Datatype datatype, int file_ptr_type,
+		       ADIO_Offset offset, ADIO_Request *request, int
+		       *error_code);
+void ADIOI_PANFS_Flush(ADIO_File fd, int *error_code);
+void ADIOI_PANFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
+ADIO_Offset ADIOI_PANFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
+                       int whence, int *error_code);
+void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+#endif
+
+
+
+
+
 #ifdef PFS
 extern struct ADIOI_Fns_struct ADIO_PFS_operations;
 
