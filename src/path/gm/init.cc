@@ -310,9 +310,6 @@ void gmSetup(lampiState_t *s)
         }                           /* end dev loop */
     }
 
-    if ( 0 == gmState.nDevsAllocated )
-        ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n"));
-
     /*
      * gather hostID, nodeID, portID, and MAC address for
      *   all remote NIC's used in the job
