@@ -44,6 +44,7 @@
 #include "internal/log.h"
 #include "internal/state.h"
 #include "path/common/BaseDesc.h"
+#include "path/common/path.h"
 #include "path/common/InitSendDescriptors.h"
 #include "ulm/ulm.h"
 
@@ -59,6 +60,7 @@ extern int sendCount;
 extern bool startCount;
 extern double tt0;
 #endif
+
 
 // copied frag data to processor address space using a non-contiguous
 // datatype as a format
@@ -183,7 +185,6 @@ int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr,
 		/* 
 		 * this is called after a fragment's data has been processed 
 		 */
-	
 		if ((msgType_m == MSGTYPE_PT2PT) || 
 				(msgType_m == MSGTYPE_PT2PT_SYNC)) {
 			/* fill in delivered data status */
@@ -542,3 +543,87 @@ void RecvDesc_t::requestFree(void)
 
     return;
 }
+
+
+#ifdef ENABLE_RELIABILITY
+
+
+bool BaseRecvFragDesc_t::checkForDuplicateAndNonSpecificAck(BaseSendFragDesc_t *sfd)
+{
+    sender_ackinfo_control_t *sptr;
+    sender_ackinfo_t *tptr;
+    
+    // update sender ACK info -- largest in-order delivered and received frag sequence
+    // numbers received by our peers (or peer box, in the case of collective communication)
+    // from ourself or another local process
+    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
+        sptr = &(reliabilityInfo->sender_ackinfo[local_myproc()]);
+        tptr = &(sptr->process_array[ackSourceProc()]);
+    } else {
+        ulm_err(("gmRecvFragDesc::check...Ack received ack of unknown "
+                 "message type %d\n", msgType_m));
+        return true;
+    }
+    
+    sptr->Lock.lock();
+    if ( ackDeliveredFragSeq() > tptr->delivered_largest_inorder_seq) {
+        tptr->delivered_largest_inorder_seq = ackDeliveredFragSeq();
+    }
+    // received is not guaranteed to be a strictly increasing series...
+    tptr->received_largest_inorder_seq = ackReceivedFragSeq();
+    sptr->Lock.unlock();
+    
+    // check to see if this ACK is for a specific frag or not
+    // if not, then we don't need to do anything else...
+    if (ackStatus() == ACKSTATUS_AGGINFO_ONLY) {
+        return true;
+    } else if ( sfd->fragSequence() != ackFragSequence() ) {
+        // this ACK is a duplicate...or just screwed up...just ignore it...
+        return true;
+    }
+    
+    return false;
+}
+
+#endif      /* ENABLE_RELIABILITY */
+
+void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
+                                   BaseSendFragDesc_t *sfd)
+{
+    short whichQueue = sfd->WhichQueue;
+    
+    if (ackStatus() == ACKSTATUS_DATAGOOD) {
+        (bsd->NumAcked)++;
+        if ( sfd->sendDidComplete() )
+            sfd->freeResources(timeNow, bsd);
+    } else {
+        /*
+         * only process negative acknowledgements if we are
+         * the process that sent the original message; otherwise,
+         * just rely on sender side retransmission
+         */
+        // reset WhichQueue flag
+        sfd->WhichQueue = sfd->parentSendDesc_m->path_m->fragSendQueue();
+        // move Frag from FragsToAck list to FragsToSend list
+        if ( whichQueue == sfd->parentSendDesc_m->path_m->toAckQueue() ) {
+            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
+            bsd->FragsToSend.Append((Links_t *)sfd);
+        }
+        // move message to incomplete queue
+        if (bsd->NumSent == bsd->numfrags) {
+            // sanity check, is frag really in UnackedPostedSends queue
+            if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
+                ulm_exit((-1, "Error: :: Send descriptor not "
+                          "in UnackedPostedSends"
+                          " list, where it was expected.\n"));
+            }
+            bsd->WhichQueue = INCOMPLETEISENDQUEUE;
+            UnackedPostedSends.RemoveLink(bsd);
+            IncompletePostedSends.Append(bsd);
+        }
+        // reset send desc. NumSent as though this frag has not been sent
+        sfd->setSendDidComplete(false);
+        (bsd->NumSent)--;
+    } // end NACK/ACK processing
+}
+

@@ -36,6 +36,8 @@
 #include "ulm/ulm.h"
 #include "path/common/BaseDesc.h"
 #include "util/DblLinkList.h"
+#include "util/dclock.h"
+#include "queue/globals.h"
 
 enum pathType {
     UDPPATH,
@@ -194,10 +196,10 @@ public:
     virtual bool sendDone(SendDesc_t *message, double timeNow, int *errorCode) {
 	    unsigned int nAcked;
 	    if ( message->path_m->pathType_m == SHAREDMEM ){
-		    nAcked=message->pathInfo.sharedmem.sharedData->NumAcked;
+		    nAcked = message->pathInfo.sharedmem.sharedData->NumAcked;
 	    }
 	    else
-		    nAcked=message->NumAcked;
+		    nAcked = message->NumAcked;
         if ( (nAcked >= message->numfrags) && (message->NumSent >= message->numfrags) ){
             return true;
         }
@@ -234,15 +236,118 @@ public:
     // deactivate this path
     virtual void deactivate() { pathActive = false; }
 
-#ifdef ENABLE_RELIABILITY
-    virtual bool retransmitP(SendDesc_t *message) { return false; }
+    virtual bool doAck() { return false; }
+    
+    virtual int fragSendQueue() {
+        // return the queue identifier for the fragsToSend queue, e.g. GMFRAGSTOSEND
+        return ONNOLIST;
+    }
+    
+    virtual int toAckQueue() {
+        // return the queue identifier for the fragsToAck queue, e.g. GMFRAGSTOACK
+        return ONNOLIST;
+    }
+    
+#ifdef ENABLE_RELIABILITY    
+    
+    virtual void initFragSeq(BaseSendFragDesc_t *frag)
+    {
+        /* the first frag of a synchronous send needs a valid frag_seq
+        * if ENABLE_RELIABILITY is defined -- since it is recorded and ACK'ed...
+        */
+        int     globalDestProc;
+        
+        if ( !doAck() ) {
+            if ((frag->parentSendDesc_m->sendType != ULM_SEND_SYNCHRONOUS) ||
+                (frag->seqOffset_m != 0)) {
+                frag->setFragSequence(0);
+                return;
+            }
+        }
+        
+        // thread-safe allocation of frag sequence number in header
+        globalDestProc = frag->globalDestProc();
+        if (usethreads())
+            reliabilityInfo->next_frag_seqsLock[globalDestProc].lock();
+        frag->setFragSequence(reliabilityInfo->next_frag_seqs[globalDestProc]++);
+        if (usethreads())
+            reliabilityInfo->next_frag_seqsLock[globalDestProc].unlock();
+    }
+    
+    
+    
+    static unsigned int headerChecksum(const void *header, unsigned long crclen,
+                                        int word_count)
+    {
+        unsigned int csum;
+        int         i;
+        ulm_uint32_t    *ptr;
+        
+#if BYTE_ORDER == LITTLE_ENDIAN
+        unsigned char *tmpp, *csump;
+        unsigned int tmp;
+#endif
+        
+        if ( usecrc() )
+        {
+            csum = uicrc(header, crclen);
+#if BYTE_ORDER == LITTLE_ENDIAN
+            /* byte swap if little endian - so CRC of header + CRC yields 0 */
+            csump = (unsigned char *)&csum;
+            tmpp = (unsigned char *)&tmp;
+            tmpp[0] = csump[3];
+            tmpp[1] = csump[2];
+            tmpp[2] = csump[1];
+            tmpp[3] = csump[0];
+            csum = tmp;
+#endif
+        }
+        else {
+            csum = 0;
+            ptr = (ulm_uint32_t *)header;
+            for (i = 0; i < word_count; i++) {
+                csum += ptr[i];
+            }
+        }
+        return csum;
+    }
+    
+    
+    virtual void freeResources(SendDesc_t *message, BaseSendFragDesc_t *frag)
+    {
+        message->clearToSend_m = true;
+        (message->NumAcked)++;
+        
+        // This must be done before setting fragSeq_m and parentSendDesc_m to 0
+        frag->freeResources(dclock(), frag->parentSendDesc_m);
+
+        // set fragSeq_m value to 0/null/invalid to detect duplicate ACKs
+        frag->setFragSequence(0);
+        
+        // reset send descriptor pointer
+        frag->parentSendDesc_m = 0;
+    }
+    
+    
+    virtual bool retransmitP(SendDesc_t *message)
+    {
+        if (!doAck() || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
+            || (message->FragsToAck.size() == 0))
+            return false;
+        else if (dclock() >= message->earliestTimeToResend) {
+            return true;
+        } else {
+            return false;
+        }
+        
+    }
 
     // returns true if message needs to be moved to a an incomplete list for further
     // send processing; returns false with errorCode = ULM_SUCCESS, if there is
     // no need to move the descriptor -- and with errorCode = ULM_ERR_BAD_PATH, if
     // the message must be rebound to a new path
-    virtual bool resend(SendDesc_t *message, int *errorCode) { *errorCode = ULM_SUCCESS; return false; }
-#endif
+    virtual bool resend(SendDesc_t *message, int *errorCode);
+#endif      /* ENABLE_RELIABILITY */
 };
 
 #endif
