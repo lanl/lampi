@@ -515,6 +515,15 @@ static void *connectThread(void *arg)
     int rc = 0;
     sigset_t signals;
 
+    if (RunParams.ConnectTimeout > 0) {
+        connectTimeOut = RunParams.ConnectTimeout;
+        if (RunParams.Quiet == 0) {
+            fprintf(stderr,
+                    "LA-MPI: *** connection timeout = %d seconds\n",
+                    connectTimeOut);
+        }
+    }
+
     /* enable SIGALRM for this thread */
     sigemptyset(&signals);
     sigaddset(&signals, SIGALRM);

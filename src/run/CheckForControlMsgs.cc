@@ -218,7 +218,10 @@ int CheckForControlMsgs(int MaxDesc,
                         char name[128];
                         snprintf(name, sizeof(name), "host %d, process %d",
                                  host, proc);
-                        PrintRusage(name, ru + proc);
+                        UpdateTotalRusage(ru + proc);
+                        if (RunParams.Verbose) {
+                            PrintRusage(name, ru + proc);
+                        }
                     }
                 }
 

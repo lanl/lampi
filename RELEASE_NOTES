@@ -391,3 +391,10 @@ Version 1.5.7
 - Fixed memory leak in MPI_Reduce for large buffers.
 
 - Added version compatibility checking.
+
+- Added optional syslog option (currently hardwired for LANL customers).
+
+- Added resource usage collection on daemon-based platforms.
+
+- Added command line option to specify connect timeout.
+

@@ -182,7 +182,7 @@ static void sigchld_handler(int signo)
          */
         do {
             errno = 0;
-#ifdef HAVE_SYS_RESOURCE_H
+#if defined(HAVE_WAIT3) && ! defined(__osf__)
             pid = wait3(&status, WNOHANG, &ru);
 #else
             pid = waitpid(-1, &status, WNOHANG);
@@ -220,7 +220,7 @@ static void sigchld_handler(int signo)
                 /*
                  * Copy rusage info into shared memory
                  */
-#ifdef HAVE_SYS_RESOURCE_H
+#if defined(HAVE_WAIT3) && ! defined(__osf__)
                 if (lampiState.useDaemon) {
                     /* p->rank is local_rank + 1 (daemon is 0) */
                     memcpy(&(lampiState.rusage[p->rank - 1]),

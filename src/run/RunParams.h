@@ -231,8 +231,11 @@ struct RunParams_t {
     /* server instance. */
     adminMessage *server;
 	
-    /* Heartbeat Time out period - in seconds */
+    /* Heartbeat timeout period - in seconds */
     int HeartBeatTimeOut;
+
+    /* Connect timeout period - in seconds */
+    int ConnectTimeout;
 
     // list of environment variables to set on each host
     int nEnvVarsToSet;

@@ -137,7 +137,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor,
 
         case ALLHOSTSDONE:
             /* set flag indicating app process can terminate */
-            ulm_err(("client ALLHOSTSDONE arrived on host %d\n", hostIndex));
+            ulm_dbg(("client ALLHOSTSDONE arrived on host %d\n", hostIndex));
             tag = ACKALLHOSTSDONE;
             iovec.iov_base = (char *) &tag;
             iovec.iov_len = (ssize_t) sizeof(unsigned int);

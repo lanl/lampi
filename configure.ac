@@ -82,6 +82,7 @@ AC_CHECK_FUNCS([gethostbyaddr])
 AC_CHECK_FUNCS([gethostbyname])
 AC_CHECK_FUNCS([gethostname])
 AC_CHECK_FUNCS([getpagesize])
+AC_CHECK_FUNCS([getrusage])
 AC_CHECK_FUNCS([gettimeofday])
 AC_CHECK_FUNCS([inet_ntoa])
 AC_CHECK_FUNCS([memmove])
@@ -100,6 +101,8 @@ AC_CHECK_FUNCS([strerror])
 AC_CHECK_FUNCS([strrchr])
 AC_CHECK_FUNCS([strtol])
 AC_CHECK_FUNCS([strtoul])
+AC_CHECK_FUNCS([waitpid])
+AC_CHECK_FUNCS([wait3])
 
 # Default modules (subdirectories) to compile for libmpi.
 

@@ -78,6 +78,7 @@ void FatalNoInput(const char *ErrorString);
 void NoOpFunction(const char *ErrorString);
 void NotImplementedFunction(const char *ErrorString);
 void SetCheckArgsFalse(const char *ErrorString);
+void SetConnectTimeout(const char *ErrorString);
 void SetOutputPrefixTrue(const char *ErrorString);
 void SetQuietTrue(const char *ErrorString);
 void SetVerboseTrue(const char *ErrorString);

@@ -89,24 +89,28 @@ static double seconds(struct timeval *tv)
 
 void PrintRusage(const char *name, struct rusage *ru)
 {
-    fprintf(stderr,
+    int full_printout = 0;
+
+    if (RunParams.Verbose) {
+        fprintf(
+            stderr,
             "LA-MPI: *** Resource usage (%s):\n"
-            "LA-MPI: ***   utime:    %lf sec\n"
-            "LA-MPI: ***   stime:    %lf sec\n"
-            "LA-MPI: ***   maxrss:   %ld\n"
-            "LA-MPI: ***   ixrss:    %ld\n"
-            "LA-MPI: ***   idrss:    %ld\n"
-            "LA-MPI: ***   isrss:    %ld\n"
-            "LA-MPI: ***   minflt:   %ld\n"
-            "LA-MPI: ***   majflt:   %ld\n"
-            "LA-MPI: ***   nswap:    %ld\n"
-            "LA-MPI: ***   inblock:  %ld\n"
-            "LA-MPI: ***   oublock:  %ld\n"
-            "LA-MPI: ***   msgsnd:   %ld\n"
-            "LA-MPI: ***   msgrcv:   %ld\n"
-            "LA-MPI: ***   nsignals: %ld\n"
-            "LA-MPI: ***   nvcsw:    %ld\n"
-            "LA-MPI: ***   nivcsw:   %ld\n",
+            "LA-MPI: ***   utime (user time used):                   %lf sec\n"
+            "LA-MPI: ***   stime (system time used):                 %lf sec\n"
+            "LA-MPI: ***   maxrss (integral max resident set size):  %ld\n"
+            "LA-MPI: ***   ixrss (integral shared text memory size): %ld\n"
+            "LA-MPI: ***   idrss (integral unshared data size):      %ld\n"
+            "LA-MPI: ***   isrss (integral unshared stack size):     %ld\n"
+            "LA-MPI: ***   minflt (page reclaims):                   %ld\n"
+            "LA-MPI: ***   majflt (page faults):                     %ld\n"
+            "LA-MPI: ***   nswap (swaps):                            %ld\n"
+            "LA-MPI: ***   inblock (block input operations):         %ld\n"
+            "LA-MPI: ***   oublock (block output operations):        %ld\n"
+            "LA-MPI: ***   msgsnd (messages sent):                   %ld\n"
+            "LA-MPI: ***   msgrcv (messages received):               %ld\n"
+            "LA-MPI: ***   nsignals (signals received):              %ld\n"
+            "LA-MPI: ***   nvcsw (voluntary context switches):       %ld\n"
+            "LA-MPI: ***   nivcsw (involuntary context switches):    %ld\n",
             name,
             seconds(&(ru->ru_utime)),  /* user time used */
             seconds(&(ru->ru_stime)),  /* system time used */
@@ -125,22 +129,21 @@ void PrintRusage(const char *name, struct rusage *ru)
             ru->ru_nvcsw,              /* voluntary context switches */
             ru->ru_nivcsw);            /* involuntary context switches */
 
-    TV_ADD(&(total_ru.ru_utime), &(total_ru.ru_utime), &(ru->ru_utime));
-    TV_ADD(&(total_ru.ru_stime), &(total_ru.ru_stime), &(ru->ru_stime));
-    total_ru.ru_maxrss += ru->ru_maxrss;       
-    total_ru.ru_ixrss += ru->ru_ixrss;        
-    total_ru.ru_idrss += ru->ru_idrss;        
-    total_ru.ru_isrss += ru->ru_isrss;        
-    total_ru.ru_minflt += ru->ru_minflt;       
-    total_ru.ru_majflt += ru->ru_majflt;       
-    total_ru.ru_nswap += ru->ru_nswap;        
-    total_ru.ru_inblock += ru->ru_inblock;      
-    total_ru.ru_oublock += ru->ru_oublock;      
-    total_ru.ru_msgsnd += ru->ru_msgsnd;       
-    total_ru.ru_msgrcv += ru->ru_msgrcv;       
-    total_ru.ru_nsignals += ru->ru_nsignals;     
-    total_ru.ru_nvcsw += ru->ru_nvcsw;        
-    total_ru.ru_nivcsw += ru->ru_nivcsw;      
+    } else {
+        /* only these seem useful on linux */
+        fprintf(stderr,
+                "LA-MPI: *** Resource usage (%s):\n"
+                "LA-MPI: ***   utime (user time used):   %lf sec\n"
+                "LA-MPI: ***   stime (system time used): %lf sec\n"
+                "LA-MPI: ***   minflt (page reclaims):   %ld\n"
+                "LA-MPI: ***   majflt (page faults):     %ld\n",
+                name,
+                seconds(&(ru->ru_utime)),  /* user time used */
+                seconds(&(ru->ru_stime)),  /* system time used */
+                ru->ru_minflt,             /* page reclaims */
+                ru->ru_majflt);            /* page faults */
+
+    }
 }
 
 void PrintTotalRusage(void)
@@ -148,6 +151,27 @@ void PrintTotalRusage(void)
     if (RunParams.PrintRusage) {
         PrintRusage("total of all application processes", &total_ru);
     }
+}
+
+
+void UpdateTotalRusage(struct rusage *ru)
+{
+    TV_ADD(&(total_ru.ru_utime), &(total_ru.ru_utime), &(ru->ru_utime));
+    TV_ADD(&(total_ru.ru_stime), &(total_ru.ru_stime), &(ru->ru_stime));
+    total_ru.ru_maxrss += ru->ru_maxrss;
+    total_ru.ru_ixrss += ru->ru_ixrss;
+    total_ru.ru_idrss += ru->ru_idrss;
+    total_ru.ru_isrss += ru->ru_isrss;
+    total_ru.ru_minflt += ru->ru_minflt;
+    total_ru.ru_majflt += ru->ru_majflt;
+    total_ru.ru_nswap += ru->ru_nswap;
+    total_ru.ru_inblock += ru->ru_inblock;
+    total_ru.ru_oublock += ru->ru_oublock;
+    total_ru.ru_msgsnd += ru->ru_msgsnd;
+    total_ru.ru_msgrcv += ru->ru_msgrcv;
+    total_ru.ru_nsignals += ru->ru_nsignals;
+    total_ru.ru_nvcsw += ru->ru_nvcsw;
+    total_ru.ru_nivcsw += ru->ru_nivcsw;
 }
 
 

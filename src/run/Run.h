@@ -93,6 +93,7 @@ void LogJobExit(void);
 void LogJobAbort(void);
 void PrintRusage(const char *label, struct rusage *ru);
 void PrintTotalRusage(void);
+void UpdateTotalRusage(struct rusage *ru);
 int ProcessInput(int argc, char **argv, int *FirstAppArg);
 void RearrangeHostList(const char *InfoStream);
 void ScanInput(int argc, char **argv, int *FirstAppArg);

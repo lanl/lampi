@@ -281,6 +281,13 @@ Options_t Options[] =
      parseMinSMPRecvDescPages,
      "Min shared memory recv descriptor pages", 0, "\0"
     },
+    {"-timeout",
+     "ConnectTimeout",
+     STRING_ARGS,
+     NoOpFunction,
+     SetConnectTimeout,
+     "Time in seconds to wait for client applications to connect back", 0, "\0"
+    },
     {"-maxsmprecvdesc",
      "MaxSMPrecvdescpages",
      STRING_ARGS,
@@ -468,6 +475,7 @@ void Usage(FILE *stream)
             "-ssh              Use ssh rather than the default rsh if no other start-up\n"
             "                  mechanism is available.\n"
             "-t                Tag standard output/error with source information.\n"
+            "-timeout TIMEOUT  Specify a timeout in seconds for application start-up.\n"
             "-v                Verbose start-up information.\n"
             "-w                Enable warning messages.\n"
             "-threads          Enable thread safety.\n"
@@ -1691,6 +1699,23 @@ void SetCheckArgsFalse(const char *InfoStream)
     putenv("LAMPI_NO_CHECK_ARGS=1");
 }
 
+void SetConnectTimeout(const char *InfoStream)
+{
+    int OptionIndex = MatchOption("ConnectTimeout");
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option ConnectTimeout not found\n"));
+        Abort();
+    }
+
+    errno = 0;
+    RunParams.ConnectTimeout = strtol(Options[OptionIndex].InputData,
+                                      (char **) NULL, 10);
+    if (errno) {
+        ulm_err(("Error: Parsing timeout (%s)\n", Options[OptionIndex].InputData));
+        Usage(stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 #if ENABLE_NUMA
 
