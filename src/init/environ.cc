@@ -182,7 +182,6 @@ static struct {
 	/* ??? */
     { "LSB_MCPU_HOSTS", "" },
 	/* BPROC info. */
-    { "SOB_SOCKET", "" },
     { "NODES", "" },
 	
     { NULL }
