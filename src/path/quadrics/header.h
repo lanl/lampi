@@ -73,13 +73,13 @@ struct quadricsDataHdr {
     struct quadricsCommon common;
     ulm_uint32_t ctxAndMsgType;		//!< context ID and message type (pt-to-pt v. multicast)
     ulm_int32_t tag_m;			//!< user tag value for this message
-    ulm_uint32_t senderID;			//!< global process id of the data sender
-    ulm_uint32_t destID;			//!< global process id of the data receiver
+    ulm_int32_t senderID;			//!< global process id of the data sender
+    ulm_int32_t destID;			//!< global process id of the data receiver
     ulm_uint32_t dataLength;		//!< the length in bytes of this frag's data
     ulm_uint64_t msgLength;			//!< the length in bytes of the total message data
     ulm_uint64_t frag_seq;		//!< unique frag sequence for retrans. (0 if RELIABILITY_ON is not defined)
     ulm_uint64_t isendSeq_m;			//!< unique msg. sequence number for matching
-    ulm_uint64_t sendFragDescPtr;		//!< a pointer to this frag's quadricsSendFragDesc (valid for sender only)
+    ulm_ptr_t sendFragDescPtr;		//!< a pointer to this frag's quadricsSendFragDesc (valid for sender only)
     ulm_uint64_t dataSeqOffset;		//!< the sequential offset in bytes of this frag's data
     ulm_uint32_t dataChecksum;		//!< additive checksum or CRC for this frag's data
     ulm_uint32_t dataElanAddr;		//!< E3_Addr destination address of this frag's data
@@ -96,10 +96,10 @@ struct quadricsDataAck {
     struct quadricsCommon common;
     ulm_uint32_t ctxAndMsgType;		//!< context ID and message type (pt-to-pt v. multicast)
     ulm_int32_t tag_m;			//!< user tag value for this message
-    ulm_uint32_t senderID;			//!< global process id of the ACK sender
-    ulm_uint32_t destID;			//!< global process id of the ACK receiver
-    ulm_uint32_t ackStatus;			//!< ACK flags (see above definitions)
-    ulm_uint64_t sendFragDescPtr;		//!< a pointer to this frag's quadricsSendFragDesc (valid for receiver only)
+    ulm_int32_t senderID;		//!< global process id of the ACK sender
+    ulm_int32_t destID;			//!< global process id of the ACK receiver
+    ulm_uint32_t ackStatus;		//!< ACK flags (see above definitions)
+    ulm_ptr_t sendFragDescPtr;		//!< a pointer to this frag's quadricsSendFragDesc (valid for receiver only)
     ulm_uint64_t thisFragSeq;		//!< the frag sequence value of the received frag being ACKed
     ulm_uint64_t deliveredFragSeq;	//!< the largest in-order frag seq. value of frags delivered to the app
     ulm_uint64_t receivedFragSeq;		//!< the largest in-order frag seq. vallue of frags received
@@ -115,9 +115,9 @@ struct quadricsDataAck {
 struct quadricsMemRls {
     struct quadricsCommon common;
     ulm_uint32_t memType;			//!< type and size of memory that is being released (see bufTrackingTypes)
-    ulm_uint32_t memBufCount;		//!< number of buffer pointers being released
-    ulm_uint32_t senderID;			//!< global process id of the release request sender
-    ulm_uint32_t destID;			//!< global process id of the release request receiver
+    ulm_int32_t memBufCount;		//!< number of buffer pointers being released
+    ulm_int32_t senderID;			//!< global process id of the release request sender
+    ulm_int32_t destID;			//!< global process id of the release request receiver
     ulm_uint32_t padding;
     ulm_uint64_t releaseSeq;		//!< unique release request serial number
     union {
@@ -136,15 +136,15 @@ struct quadricsMemRls {
 struct quadricsMemReq {
     struct quadricsCommon common;
     ulm_int32_t tag_m;			//!< user tag value for this message
-    ulm_uint64_t msgLength;			//!< message length in bytes
-    ulm_uint64_t sendMessagePtr;		//!< a pointer to this message's BaseSendDesc_t (valid for sender only)
+    ulm_uint64_t msgLength;		//!< message length in bytes
+    ulm_ptr_t sendMessagePtr;		//!< a pointer to this message's BaseSendDesc_t (valid for sender only)
     ulm_uint64_t memNeededSeqOffset;	//!< sequential offset in bytes of msg. where memory is needed
-    ulm_uint64_t memNeededBytes;		//!< number of bytes of memory buffer needed
-    ulm_uint32_t senderID;			//!< global process id of the request sender
-    ulm_uint32_t destID;			//!< global process id of the request receiver
+    ulm_uint64_t memNeededBytes;	//!< number of bytes of memory buffer needed
+    ulm_uint32_t senderID;		//!< global process id of the request sender
+    ulm_uint32_t destID;		//!< global process id of the request receiver
     ulm_uint32_t ctxAndMsgType;		//!< context ID and message type (pt-to-pt v. multicast)
     ulm_uint32_t padding[MEMREQ_PADDING];
-    ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
+    ulm_uint32_t checksum;		//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
 /* values used by requestStatus below */
@@ -152,27 +152,27 @@ struct quadricsMemReq {
 #define MEMREQ_FAILURE_TMP 0x1
 #define MEMREQ_FAILURE_FATAL 0x2
 
-#define MEMREQ_MAX_WORDPTRS 19			//!< number of 32-bit pointers that can be obtained in one message
-#define MEMREQ_MAX_LWORDPTRS 9 			//!< number of 64-bit pointers that can be obtained in one message
+#define MEMREQ_MAX_WORDPTRS 19		//!< number of 32-bit pointers that can be obtained in one message
+#define MEMREQ_MAX_LWORDPTRS 9 		//!< number of 64-bit pointers that can be obtained in one message
 
 struct quadricsMemReqAck {
     struct quadricsCommon common;
     ulm_uint32_t requestStatus;		//!< request status success or failure code
-    ulm_uint32_t memBufCount;		//!< number of memory buffers returned
+    ulm_int32_t memBufCount;		//!< number of memory buffers returned
     ulm_uint32_t memBufSize;		//!< size in bytes of the memory buffers obtained
-    ulm_uint32_t memType;			//!< type and size of memory that has been obtained
-    ulm_uint32_t senderID;			//!< global process id of request ACK sender
-    ulm_uint32_t destID;			//!< global process id of request ACK receiver
+    ulm_uint32_t memType;		//!< type and size of memory that has been obtained
+    ulm_uint32_t senderID;		//!< global process id of request ACK sender
+    ulm_uint32_t destID;		//!< global process id of request ACK receiver
     ulm_uint32_t padding;	
     ulm_uint64_t memNeededSeqOffset;	//!< echoed value of sequential offset of needed memory
-    ulm_uint64_t sendMessagePtr;		//!< a pointer to this message's BaseSendDesc_t (valid for receiver only)
+    ulm_ptr_t sendMessagePtr;	        //!< a pointer to this message's BaseSendDesc_t (valid for receiver only)
     union {
         ulm_uint32_t wordPtrs[MEMREQ_MAX_WORDPTRS];
         /*
         ulm_uint64_t lwordPtrs[MEMREQ_MAX_LWORDPTRS];
         */
     } memBufPtrs;
-    ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
+    ulm_uint32_t checksum;		//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
 #define CTLHDR_LWORDS 16

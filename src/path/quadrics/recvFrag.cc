@@ -553,7 +553,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 void quadricsRecvFragDesc::msgDataAck(double timeNow)
 {
     quadricsDataAck_t *p = &(envelope.msgDataAck);
-    quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->sendFragDescPtr;
+    quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->sendFragDescPtr.ptr;
     volatile BaseSendDesc_t *bsd = (volatile BaseSendDesc_t *)sfd->parentSendDesc;
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
@@ -650,7 +650,7 @@ void quadricsRecvFragDesc::memReq(double timeNow)
     int bufType;
     int status = MEMREQ_SUCCESS;
     int errorCode;
-    unsigned long long neededBytes = p->memNeededBytes;
+    long long neededBytes = p->memNeededBytes;
 
     // grab a send descriptor for the request ACK
     // and a malloc'ed quadricsCtlHdr_t
@@ -751,7 +751,7 @@ void quadricsRecvFragDesc::memReq(double timeNow)
     hdr->memRequestAck.memBufSize = quadricsBufSizes[bufType] * naddrs;
     hdr->memRequestAck.memType = bufType;
     hdr->memRequestAck.memNeededSeqOffset = p->memNeededSeqOffset;
-    hdr->memRequestAck.sendMessagePtr = p->sendMessagePtr;
+    hdr->memRequestAck.sendMessagePtr.ptr = p->sendMessagePtr.ptr;
     for (int i = 0; i < naddrs; i++) {
         // this translation works because all process/Elan combos
         // have the same virtual memory mappings
