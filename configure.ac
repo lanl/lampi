@@ -562,7 +562,7 @@ if test "$enable_ib" = "yes" ; then
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/ib"
    test "$IB_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$IB_PREFIX/include"
    test "$IB_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$IB_PREFIX/lib"
-   LIBS="$LIBS -lvapi -lmosal -lmpga -lmtl_common"
+   LIBS="$LIBS -Wl,--allow-multiple-definition -Wl,-Bstatic -lvapi -lmosal -lmpga -lmtl_common -Wl,-Bdynamic"
 fi
 
 AC_ARG_ENABLE(shared_memory,
