@@ -297,7 +297,7 @@ bool broadcastUDPAddresses(int *errorCode)
     for (int i = 0; i < RunParameters.NHosts; i++) {
         HostName_t tmp;
         returnValue = returnValue
-            && server->peerName(i, tmp, ULM_MAX_HOSTNAME_LEN);
+            && server->peerName(i, tmp, ULM_MAX_HOSTNAME_LEN, true);
         returnValue = returnValue
             && server->pack(tmp, adminMessage::BYTE, ULM_MAX_HOSTNAME_LEN);
     }

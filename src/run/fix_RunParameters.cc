@@ -44,6 +44,7 @@ void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts)
 	pid_t 			*tmpPIDs;
 	adminMessage	*server;
 	admin_host_info_t *	groupHostData;
+    bool			useDottedIP;
     
 	server = RunParameters->server;
     // free and reallocate memory for HostList if needed
@@ -54,10 +55,14 @@ void fix_RunParameters(ULMRunParams_t *RunParameters, int nhosts)
         RunParameters->HostList = ulm_new(HostName_t,  nhosts);
     }
     // get the new HostList info from the server adminMessage object
+
+    // Totalview has trouble if given a dotted IP address as the host name when
+    // using Bulk Launch to launch the tvdsvr process on the remote hosts.
+    useDottedIP = ( RunParameters->TVDebug ) ? false : true;
     for (int i = 0; i < nhosts; i++) {
         if (!server->
             peerName(i, RunParameters->HostList[i],
-                     ULM_MAX_HOSTNAME_LEN)) {
+                     ULM_MAX_HOSTNAME_LEN, useDottedIP)) {
             ulm_err(("server could not get remote IP hostname/address for hostrank %d\n", i));
             Abort();
         }

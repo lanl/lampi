@@ -961,7 +961,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             {
                 char    hostn[50];
                 
-                if ( true == peerName(i, hostn, 50))
+                if ( true == peerName(i, hostn, 50, true))
                 {
                     ulm_err(("\thostrank %d peer info: IP %s process count %d PID %ld\n", i,
                              hostn, processCount[i], (long)daemonPIDs_m[i]));
@@ -2930,7 +2930,7 @@ int adminMessage::allgatherv(void *sendbuf, void *recvbuf, ssize_t *bytesPerProc
 }
 
 /* return true if the name or IP address in dot notation of the peer to be stored at dst, or false if there is an error */
-bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
+bool adminMessage::peerName(int hostrank, char *dst, int bytes, bool useDottedIP) {
 
 #ifdef ENABLE_CT
     int     cnt;
@@ -2957,7 +2957,7 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
     char	*dotted;
     int sockfd = (hostrank == -1) ? socketToServer_m : clientRank2FD(hostrank);
     struct sockaddr_in addr;
-    //struct hostent *h;
+    struct hostent *h;
 #ifdef __linux__
     socklen_t addrlen = sizeof(struct sockaddr_in);
 #else
@@ -2971,40 +2971,44 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
         return false;
     }
 
-    dotted = inet_ntoa(addr.sin_addr);
-    len = strlen(dotted);
-    bzero(dst, bytes);
-    if (len <= (ssize_t)(bytes - 1)) {
-        strcpy(dst, dotted);
+    if ( useDottedIP )
+    {
+        // return the peerName using the dotted IP address.
+        dotted = inet_ntoa(addr.sin_addr);
+        len = strlen(dotted);
+        bzero(dst, bytes);
+        if (len <= (ssize_t)(bytes - 1)) {
+            strcpy(dst, dotted);
+        }
+        else
+        {
+            return false;
+        }
     }
     else
     {
-        return false;
-    }
-    
-    /*
-    h = gethostbyaddr((char *)(&addr.sin_addr.s_addr), 4, AF_INET);
-    dst[0] = '\0';
-    if (h != (struct hostent *)NULL) {
-        if (strlen(h->h_name) <= (size_t)(bytes - 1)) {
-            strncpy(dst, h->h_name, bytes - 1);
-        }
-        else if (strlen(inet_ntoa(addr.sin_addr)) <= (size_t)(bytes - 1)) {
-            strncpy(dst, inet_ntoa(addr.sin_addr), bytes - 1);
-        }
-        else {
-            return false;
-        }
-    }
-    else {
-        if (strlen(inet_ntoa(addr.sin_addr)) <= (size_t)(bytes - 1)) {
-            strncpy(dst, inet_ntoa(addr.sin_addr), bytes - 1);
+        h = gethostbyaddr((char *)(&addr.sin_addr.s_addr), 4, AF_INET);
+        dst[0] = '\0';
+        if (h != (struct hostent *)NULL) {
+            if (strlen(h->h_name) <= (size_t)(bytes - 1)) {
+                strcpy(dst, h->h_name);
+            }
+            else if (strlen(inet_ntoa(addr.sin_addr)) <= (size_t)(bytes - 1)) {
+                strcpy(dst, inet_ntoa(addr.sin_addr));
+            }
+            else {
+                return false;
+            }
         }
         else {
-            return false;
+            if (strlen(inet_ntoa(addr.sin_addr)) <= (size_t)(bytes - 1)) {
+                strcpy(dst, inet_ntoa(addr.sin_addr));
+            }
+            else {
+                return false;
+            }
         }
-    }
-    */
+    }		// if ( useDottedIP )
     
     return true;
 }
