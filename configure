@@ -6864,7 +6864,7 @@ int fake(int i);
 int real(int i) { return i; }
 
 _ACEOF
-$CC $CFLAGS -c conftest.c
+$CC $CFLAGS -c conftest.c 2>/dev/null
 if nm conftest.o | grep fake > /dev/null ; then
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -12611,8 +12611,20 @@ powerpc-apple-darwin*)
         else
            CFLAGS="-g -O"
         fi
-        CFLAGS="$CFLAGS -finline-functions -fno-common -no-cpp-precomp"
-        CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double"
+        CFLAGS="$CFLAGS -finline-functions -fno-common -Wall"
+        echo "$as_me:$LINENO: checking for -Wno-long-double" >&5
+echo $ECHO_N "checking for -Wno-long-double... $ECHO_C" >&6
+        cat >conftest.$ac_ext <<_ACEOF
+ int a(void) { return 0; }
+_ACEOF
+        if $CC -Wno-long-double -c conftest.c 2>/dev/null ; then
+           CFLAGS="$CFLAGS -Wno-long-double -no-cpp-precomp"
+           echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+        else
+           echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+        fi
         DLLEXT="dylib"
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"

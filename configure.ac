@@ -54,7 +54,7 @@ AC_LANG_CONFTEST([[
 int fake(int i);
 int real(int i) { return i; }
 ]])
-$CC $CFLAGS -c conftest.c
+$CC $CFLAGS -c conftest.c 2>/dev/null
 if nm conftest.o | grep fake > /dev/null ; then
     AC_MSG_RESULT([yes])
     AC_DEFINE(HAVE_PRAGMA_WEAK, 1)
@@ -396,8 +396,15 @@ powerpc-apple-darwin*)
         else
            CFLAGS="-g -O"
         fi
-        CFLAGS="$CFLAGS -finline-functions -fno-common -no-cpp-precomp"
-        CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double"
+        CFLAGS="$CFLAGS -finline-functions -fno-common -Wall"
+        AC_MSG_CHECKING([for -Wno-long-double])
+        AC_LANG_CONFTEST([[ int a(void) { return 0; } ]])
+        if $CC -Wno-long-double -c conftest.c 2>/dev/null ; then
+           CFLAGS="$CFLAGS -Wno-long-double -no-cpp-precomp"
+           AC_MSG_RESULT([yes])
+        else
+           AC_MSG_RESULT([no])
+        fi
         DLLEXT="dylib"
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"
