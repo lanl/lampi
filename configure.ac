@@ -246,7 +246,7 @@ alpha*-dec*)
            else
               # benchmarks seems to do better with -O3 than -O4 and -O5
               CFLAGS="$CFLAGS -g3 -O3"
-              CPPFLAGS="-DNDEBUG"
+              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CXXFLAGS="$CFLAGS -model ansi"
 
@@ -272,8 +272,8 @@ alpha*-dec*)
 
         # default paths for this host
         GM_PREFIX=""
-        LSF_LIB=""
-        LSF_INC=""
+        LSF_LIB="/lsf/lib"
+        LSF_INC="/lsf/share/include"
         RMS_PREFIX="/usr/opt/rms"
 
 	;;
