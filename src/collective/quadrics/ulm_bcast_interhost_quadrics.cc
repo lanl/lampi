@@ -46,6 +46,8 @@
 #include "queue/globals.h"
 #include "include/internal/type_copy.h"
 
+#ifdef USE_ELAN_COLL
+
 /* For now, just put a dummy checksum/crc into the header */
 #define  DEFAULT_CHECKSUM     (0xABCDDCBA)
 #define  DEFAULT_CRC_32       (0xFEDCCDFE)
@@ -2216,3 +2218,6 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
   return ULM_SUCCESS;
 
 }
+
+#endif	/* USE_ELAN_COLL */
+
