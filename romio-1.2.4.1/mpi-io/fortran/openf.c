@@ -31,7 +31,7 @@ void MPI_FILE_OPEN(void);
 #pragma weak pmpi_file_open__ = pmpi_file_open_
 #pragma weak MPI_FILE_OPEN = pmpi_file_open_     
 #pragma weak mpi_file_open = pmpi_file_open_
-/* #pragma weak mpi_file_open_ = pmpi_file_open_    ROMIO does this one */
+#pragma weak mpi_file_open_ = pmpi_file_open_  
 #pragma weak mpi_file_open__ = pmpi_file_open_
 #endif
 
@@ -63,7 +63,7 @@ void MPI_FILE_OPEN(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_open = pmpi_file_open
 #else
-#pragma weak mpi_file_open_ = pmpi_file_open_
+//#pragma weak mpi_file_open_ = pmpi_file_open_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

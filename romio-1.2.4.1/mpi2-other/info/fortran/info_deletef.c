@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_delete(void);
+void mpi_info_delete(void);
+/*  void pmpi_info_delete_(void);   this is the real function, below */
+void mpi_info_delete_(void);   
+void pmpi_info_delete__(void);
+void mpi_info_delete__(void);
+void PMPI_INFO_DELETE(void);
+void MPI_INFO_DELETE(void);
+
+#pragma weak PMPI_INFO_DELETE = pmpi_info_delete_     
+#pragma weak pmpi_info_delete = pmpi_info_delete_
+#pragma weak pmpi_info_delete__ = pmpi_info_delete_
+#pragma weak MPI_INFO_DELETE = pmpi_info_delete_     
+#pragma weak mpi_info_delete = pmpi_info_delete_
+#pragma weak mpi_info_delete_ = pmpi_info_delete_  
+#pragma weak mpi_info_delete__ = pmpi_info_delete_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_delete_ PMPI_INFO_DELETE
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_delete = pmpi_info_delete
 #else
-#pragma weak mpi_info_delete_ = pmpi_info_delete_
+//#pragma weak mpi_info_delete_ = pmpi_info_delete_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

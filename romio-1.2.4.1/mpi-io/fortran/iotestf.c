@@ -27,7 +27,7 @@ void MPIO_TEST(void);
 #pragma weak pmpio_test__ = pmpio_test_
 #pragma weak MPIO_TEST = pmpio_test_     
 #pragma weak mpio_test = pmpio_test_
-/* #pragma weak mpio_test_ = pmpio_test_    ROMIO does this one */
+#pragma weak mpio_test_ = pmpio_test_  
 #pragma weak mpio_test__ = pmpio_test_
 #endif
 
@@ -59,7 +59,7 @@ void MPIO_TEST(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpio_test = pmpio_test
 #else
-#pragma weak mpio_test_ = pmpio_test_
+//#pragma weak mpio_test_ = pmpio_test_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

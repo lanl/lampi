@@ -28,7 +28,7 @@ void MPI_FILE_GET_ERRHANDLER(void);
 #pragma weak pmpi_file_get_errhandler__ = pmpi_file_get_errhandler_
 #pragma weak MPI_FILE_GET_ERRHANDLER = pmpi_file_get_errhandler_     
 #pragma weak mpi_file_get_errhandler = pmpi_file_get_errhandler_
-/* #pragma weak mpi_file_get_errhandler_ = pmpi_file_get_errhandler_    ROMIO does this one */
+#pragma weak mpi_file_get_errhandler_ = pmpi_file_get_errhandler_   
 #pragma weak mpi_file_get_errhandler__ = pmpi_file_get_errhandler_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_ERRHANDLER(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_errhandler = pmpi_file_get_errhandler
 #else
-#pragma weak mpi_file_get_errhandler_ = pmpi_file_get_errhandler_
+//#pragma weak mpi_file_get_errhandler_ = pmpi_file_get_errhandler_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_SET_INFO(void);
 #pragma weak pmpi_file_set_info__ = pmpi_file_set_info_
 #pragma weak MPI_FILE_SET_INFO = pmpi_file_set_info_     
 #pragma weak mpi_file_set_info = pmpi_file_set_info_
-/* #pragma weak mpi_file_set_info_ = pmpi_file_set_info_    ROMIO does this one */
+#pragma weak mpi_file_set_info_ = pmpi_file_set_info_  
 #pragma weak mpi_file_set_info__ = pmpi_file_set_info_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_SET_INFO(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_set_info = pmpi_file_set_info
 #else
-#pragma weak mpi_file_set_info_ = pmpi_file_set_info_
+//#pragma weak mpi_file_set_info_ = pmpi_file_set_info_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

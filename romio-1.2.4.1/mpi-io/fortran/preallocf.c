@@ -28,7 +28,7 @@ void MPI_FILE_PREALLOCATE(void);
 #pragma weak pmpi_file_preallocate__ = pmpi_file_preallocate_
 #pragma weak MPI_FILE_PREALLOCATE = pmpi_file_preallocate_     
 #pragma weak mpi_file_preallocate = pmpi_file_preallocate_
-/* #pragma weak mpi_file_preallocate_ = pmpi_file_preallocate_    ROMIO does this one */
+#pragma weak mpi_file_preallocate_ = pmpi_file_preallocate_ 
 #pragma weak mpi_file_preallocate__ = pmpi_file_preallocate_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_PREALLOCATE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_preallocate = pmpi_file_preallocate
 #else
-#pragma weak mpi_file_preallocate_ = pmpi_file_preallocate_
+//#pragma weak mpi_file_preallocate_ = pmpi_file_preallocate_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

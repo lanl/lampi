@@ -1,11 +1,10 @@
 CC = @TEST_CC@
+#note: lf95, on some versions of linux should be lf95 --staticlink
+#      ifc:  use ifc -Vaxlib 
 F77 = @TEST_F77@
-#INCLUDE_DIR = @ROMIO_INCLUDE@
-INCLUDE_DIR = -I../include -I../../include
-#LIBS = @TEST_LIBNAME@ @MPI_LIB@
-LIBS = ../libmpio.a @MPI_LIB@
-#INCLUDE_DIR = -I$(HOME)/liblampi/include
-#LIBS= -L$(HOME)/liblampi/lib -lmpi
+INCLUDE_DIR = @ROMIO_INCLUDE@
+LIBS = ../../libmpi.so
+#LIBS = @MPI_LIB@
 USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
 USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
 srcdir=@srcdir@

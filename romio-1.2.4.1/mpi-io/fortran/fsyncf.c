@@ -28,7 +28,7 @@ void MPI_FILE_SYNC(void);
 #pragma weak pmpi_file_sync__ = pmpi_file_sync_
 #pragma weak MPI_FILE_SYNC = pmpi_file_sync_     
 #pragma weak mpi_file_sync = pmpi_file_sync_
-/* #pragma weak mpi_file_sync_ = pmpi_file_sync_    ROMIO does this one */
+#pragma weak mpi_file_sync_ = pmpi_file_sync_   
 #pragma weak mpi_file_sync__ = pmpi_file_sync_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_SYNC(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_sync = pmpi_file_sync
 #else
-#pragma weak mpi_file_sync_ = pmpi_file_sync_
+//#pragma weak mpi_file_sync_ = pmpi_file_sync_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

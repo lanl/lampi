@@ -28,7 +28,7 @@ void MPI_FILE_CLOSE(void);
 #pragma weak pmpi_file_close__ = pmpi_file_close_
 #pragma weak MPI_FILE_CLOSE = pmpi_file_close_     
 #pragma weak mpi_file_close = pmpi_file_close_
-/* #pragma weak mpi_file_close_ = pmpi_file_close_    ROMIO does this one */
+#pragma weak mpi_file_close_ = pmpi_file_close_  
 #pragma weak mpi_file_close__ = pmpi_file_close_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_CLOSE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_close = pmpi_file_close
 #else
-#pragma weak mpi_file_close_ = pmpi_file_close_
+//#pragma weak mpi_file_close_ = pmpi_file_close_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

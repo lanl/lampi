@@ -28,7 +28,7 @@ void MPI_FILE_GET_BYTE_OFFSET(void);
 #pragma weak pmpi_file_get_byte_offset__ = pmpi_file_get_byte_offset_
 #pragma weak MPI_FILE_GET_BYTE_OFFSET = pmpi_file_get_byte_offset_     
 #pragma weak mpi_file_get_byte_offset = pmpi_file_get_byte_offset_
-/* #pragma weak mpi_file_get_byte_offset_ = pmpi_file_get_byte_offset_    ROMIO does this one */
+#pragma weak mpi_file_get_byte_offset_ = pmpi_file_get_byte_offset_   
 #pragma weak mpi_file_get_byte_offset__ = pmpi_file_get_byte_offset_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_BYTE_OFFSET(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_byte_offset = pmpi_file_get_byte_offset
 #else
-#pragma weak mpi_file_get_byte_offset_ = pmpi_file_get_byte_offset_
+//#pragma weak mpi_file_get_byte_offset_ = pmpi_file_get_byte_offset_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

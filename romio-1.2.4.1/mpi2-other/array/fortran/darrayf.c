@@ -28,7 +28,7 @@ void MPI_TYPE_CREATE_DARRAY(void);
 #pragma weak pmpi_type_create_darray__ = pmpi_type_create_darray_
 #pragma weak MPI_TYPE_CREATE_DARRAY = pmpi_type_create_darray_     
 #pragma weak mpi_type_create_darray = pmpi_type_create_darray_
-/* #pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_    ROMIO does this one */
+#pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_   
 #pragma weak mpi_type_create_darray__ = pmpi_type_create_darray_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_TYPE_CREATE_DARRAY(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_type_create_darray = pmpi_type_create_darray
 #else
-#pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_
+//#pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

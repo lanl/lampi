@@ -28,7 +28,7 @@ void MPI_FILE_WRITE_SHARED(void);
 #pragma weak pmpi_file_write_shared__ = pmpi_file_write_shared_
 #pragma weak MPI_FILE_WRITE_SHARED = pmpi_file_write_shared_     
 #pragma weak mpi_file_write_shared = pmpi_file_write_shared_
-/* #pragma weak mpi_file_write_shared_ = pmpi_file_write_shared_    ROMIO does this one */
+#pragma weak mpi_file_write_shared_ = pmpi_file_write_shared_   
 #pragma weak mpi_file_write_shared__ = pmpi_file_write_shared_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_WRITE_SHARED(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_write_shared = pmpi_file_write_shared
 #else
-#pragma weak mpi_file_write_shared_ = pmpi_file_write_shared_
+//#pragma weak mpi_file_write_shared_ = pmpi_file_write_shared_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -31,7 +31,7 @@ void MPI_FILE_SET_VIEW(void);
 #pragma weak pmpi_file_set_view__ = pmpi_file_set_view_
 #pragma weak MPI_FILE_SET_VIEW = pmpi_file_set_view_     
 #pragma weak mpi_file_set_view = pmpi_file_set_view_
-/* #pragma weak mpi_file_set_view_ = pmpi_file_set_view_    ROMIO does this one */
+#pragma weak mpi_file_set_view_ = pmpi_file_set_view_ 
 #pragma weak mpi_file_set_view__ = pmpi_file_set_view_
 #endif
 
@@ -63,7 +63,7 @@ void MPI_FILE_SET_VIEW(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_set_view = pmpi_file_set_view
 #else
-#pragma weak mpi_file_set_view_ = pmpi_file_set_view_
+//#pragma weak mpi_file_set_view_ = pmpi_file_set_view_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

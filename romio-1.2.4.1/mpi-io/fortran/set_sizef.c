@@ -28,7 +28,7 @@ void MPI_FILE_SET_SIZE(void);
 #pragma weak pmpi_file_set_size__ = pmpi_file_set_size_
 #pragma weak MPI_FILE_SET_SIZE = pmpi_file_set_size_     
 #pragma weak mpi_file_set_size = pmpi_file_set_size_
-/* #pragma weak mpi_file_set_size_ = pmpi_file_set_size_    ROMIO does this one */
+#pragma weak mpi_file_set_size_ = pmpi_file_set_size_ 
 #pragma weak mpi_file_set_size__ = pmpi_file_set_size_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_SET_SIZE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_set_size = pmpi_file_set_size
 #else
-#pragma weak mpi_file_set_size_ = pmpi_file_set_size_
+//#pragma weak mpi_file_set_size_ = pmpi_file_set_size_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_get_nkeys(void);
+void mpi_info_get_nkeys(void);
+/*  void pmpi_info_get_nkeys_(void);   this is the real function, below */
+void mpi_info_get_nkeys_(void);   
+void pmpi_info_get_nkeys__(void);
+void mpi_info_get_nkeys__(void);
+void PMPI_INFO_GET_NKEYS(void);
+void MPI_INFO_GET_NKEYS(void);
+
+#pragma weak PMPI_INFO_GET_NKEYS = pmpi_info_get_nkeys_     
+#pragma weak pmpi_info_get_nkeys = pmpi_info_get_nkeys_
+#pragma weak pmpi_info_get_nkeys__ = pmpi_info_get_nkeys_
+#pragma weak MPI_INFO_GET_NKEYS = pmpi_info_get_nkeys_     
+#pragma weak mpi_info_get_nkeys = pmpi_info_get_nkeys_
+#pragma weak mpi_info_get_nkeys_ = pmpi_info_get_nkeys_  
+#pragma weak mpi_info_get_nkeys__ = pmpi_info_get_nkeys_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_nkeys_ PMPI_INFO_GET_NKEYS
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_get_nkeys = pmpi_info_get_nkeys
 #else
-#pragma weak mpi_info_get_nkeys_ = pmpi_info_get_nkeys_
+//#pragma weak mpi_info_get_nkeys_ = pmpi_info_get_nkeys_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

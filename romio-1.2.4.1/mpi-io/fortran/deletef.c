@@ -31,7 +31,7 @@ void MPI_FILE_DELETE(void);
 #pragma weak pmpi_file_delete__ = pmpi_file_delete_
 #pragma weak MPI_FILE_DELETE = pmpi_file_delete_     
 #pragma weak mpi_file_delete = pmpi_file_delete_
-/* #pragma weak mpi_file_delete_ = pmpi_file_delete_    ROMIO does this one */
+#pragma weak mpi_file_delete_ = pmpi_file_delete_  
 #pragma weak mpi_file_delete__ = pmpi_file_delete_
 #endif
 
@@ -63,7 +63,7 @@ void MPI_FILE_DELETE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_delete = pmpi_file_delete
 #else
-#pragma weak mpi_file_delete_ = pmpi_file_delete_
+//#pragma weak mpi_file_delete_ = pmpi_file_delete_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

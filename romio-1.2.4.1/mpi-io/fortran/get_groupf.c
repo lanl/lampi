@@ -28,7 +28,7 @@ void MPI_FILE_GET_GROUP(void);
 #pragma weak pmpi_file_get_group__ = pmpi_file_get_group_
 #pragma weak MPI_FILE_GET_GROUP = pmpi_file_get_group_     
 #pragma weak mpi_file_get_group = pmpi_file_get_group_
-/* #pragma weak mpi_file_get_group_ = pmpi_file_get_group_    ROMIO does this one */
+#pragma weak mpi_file_get_group_ = pmpi_file_get_group_
 #pragma weak mpi_file_get_group__ = pmpi_file_get_group_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_GROUP(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_group = pmpi_file_get_group
 #else
-#pragma weak mpi_file_get_group_ = pmpi_file_get_group_
+//#pragma weak mpi_file_get_group_ = pmpi_file_get_group_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -173,6 +173,7 @@ F77IARGC="iargc()"
 FTESTDEFINE=""
 FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
+
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
 F90=""
@@ -3204,10 +3205,15 @@ fi
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=$KINDVAL)"
 else
+   MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
+   MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""unavailable"
+echo "        Using default MPI_OFFSET_KIND=8"
 else
 echo "$ac_t""unavailable" 1>&1
+echo "        Using default MPI_OFFSET_KIND=8" 1>&1
 fi
 fi
 

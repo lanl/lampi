@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_get_valuelen(void);
+void mpi_info_get_valuelen(void);
+/*  void pmpi_info_get_valuelen_(void);   this is the real function, below */
+void mpi_info_get_valuelen_(void);   
+void pmpi_info_get_valuelen__(void);
+void mpi_info_get_valuelen__(void);
+void PMPI_INFO_GET_VALUELEN(void);
+void MPI_INFO_GET_VALUELEN(void);
+
+#pragma weak PMPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen_     
+#pragma weak pmpi_info_get_valuelen = pmpi_info_get_valuelen_
+#pragma weak pmpi_info_get_valuelen__ = pmpi_info_get_valuelen_
+#pragma weak MPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen_     
+#pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen_  
+#pragma weak mpi_info_get_valuelen__ = pmpi_info_get_valuelen_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_valuelen_ PMPI_INFO_GET_VALUELEN
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen
 #else
-#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen_
+//#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

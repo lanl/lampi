@@ -28,7 +28,7 @@ void MPI_FILE_WRITE_ALL(void);
 #pragma weak pmpi_file_write_all__ = pmpi_file_write_all_
 #pragma weak MPI_FILE_WRITE_ALL = pmpi_file_write_all_     
 #pragma weak mpi_file_write_all = pmpi_file_write_all_
-/* #pragma weak mpi_file_write_all_ = pmpi_file_write_all_    ROMIO does this one */
+#pragma weak mpi_file_write_all_ = pmpi_file_write_all_ 
 #pragma weak mpi_file_write_all__ = pmpi_file_write_all_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_WRITE_ALL(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_write_all = pmpi_file_write_all
 #else
-#pragma weak mpi_file_write_all_ = pmpi_file_write_all_
+//#pragma weak mpi_file_write_all_ = pmpi_file_write_all_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_READ_SHARED(void);
 #pragma weak pmpi_file_read_shared__ = pmpi_file_read_shared_
 #pragma weak MPI_FILE_READ_SHARED = pmpi_file_read_shared_     
 #pragma weak mpi_file_read_shared = pmpi_file_read_shared_
-/* #pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_    ROMIO does this one */
+#pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_  
 #pragma weak mpi_file_read_shared__ = pmpi_file_read_shared_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_READ_SHARED(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_read_shared = pmpi_file_read_shared
 #else
-#pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_
+//#pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

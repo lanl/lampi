@@ -28,7 +28,7 @@ void MPI_FILE_READ_AT_ALL_BEGIN(void);
 #pragma weak pmpi_file_read_at_all_begin__ = pmpi_file_read_at_all_begin_
 #pragma weak MPI_FILE_READ_AT_ALL_BEGIN = pmpi_file_read_at_all_begin_     
 #pragma weak mpi_file_read_at_all_begin = pmpi_file_read_at_all_begin_
-/* #pragma weak mpi_file_read_at_all_begin_ = pmpi_file_read_at_all_begin_    ROMIO does this one */
+#pragma weak mpi_file_read_at_all_begin_ = pmpi_file_read_at_all_begin_ 
 #pragma weak mpi_file_read_at_all_begin__ = pmpi_file_read_at_all_begin_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_READ_AT_ALL_BEGIN(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_read_at_all_begin = pmpi_file_read_at_all_begin
 #else
-#pragma weak mpi_file_read_at_all_begin_ = pmpi_file_read_at_all_begin_
+//#pragma weak mpi_file_read_at_all_begin_ = pmpi_file_read_at_all_begin_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

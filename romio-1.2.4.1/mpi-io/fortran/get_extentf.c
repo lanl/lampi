@@ -28,7 +28,7 @@ void MPI_FILE_GET_TYPE_EXTENT(void);
 #pragma weak pmpi_file_get_type_extent__ = pmpi_file_get_type_extent_
 #pragma weak MPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent_     
 #pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent_
-/* #pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_    ROMIO does this one */
+#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_  
 #pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_TYPE_EXTENT(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent
 #else
-#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_
+//#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

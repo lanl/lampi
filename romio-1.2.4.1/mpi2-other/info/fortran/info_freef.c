@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_free(void);
+void mpi_info_free(void);
+/*  void pmpi_info_free_(void);   this is the real function, below */
+void mpi_info_free_(void);   
+void pmpi_info_free__(void);
+void mpi_info_free__(void);
+void PMPI_INFO_FREE(void);
+void MPI_INFO_FREE(void);
+
+#pragma weak PMPI_INFO_FREE = pmpi_info_free_     
+#pragma weak pmpi_info_free = pmpi_info_free_
+#pragma weak pmpi_info_free__ = pmpi_info_free_
+#pragma weak MPI_INFO_FREE = pmpi_info_free_     
+#pragma weak mpi_info_free = pmpi_info_free_
+#pragma weak mpi_info_free_ = pmpi_info_free_  
+#pragma weak mpi_info_free__ = pmpi_info_free_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_free_ PMPI_INFO_FREE
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_free = pmpi_info_free
 #else
-#pragma weak mpi_info_free_ = pmpi_info_free_
+//#pragma weak mpi_info_free_ = pmpi_info_free_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

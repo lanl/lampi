@@ -27,7 +27,7 @@ void MPIO_WAIT(void);
 #pragma weak pmpio_wait__ = pmpio_wait_
 #pragma weak MPIO_WAIT = pmpio_wait_     
 #pragma weak mpio_wait = pmpio_wait_
-/* #pragma weak mpio_wait_ = pmpio_wait_    ROMIO does this one */
+#pragma weak mpio_wait_ = pmpio_wait_   
 #pragma weak mpio_wait__ = pmpio_wait_
 #endif
 
@@ -59,7 +59,7 @@ void MPIO_WAIT(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpio_wait = pmpio_wait
 #else
-#pragma weak mpio_wait_ = pmpio_wait_
+//#pragma weak mpio_wait_ = pmpio_wait_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

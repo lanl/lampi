@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_get_nthkey(void);
+void mpi_info_get_nthkey(void);
+/*  void pmpi_info_get_nthkey_(void);   this is the real function, below */
+void mpi_info_get_nthkey_(void);   
+void pmpi_info_get_nthkey__(void);
+void mpi_info_get_nthkey__(void);
+void PMPI_INFO_GET_NTHKEY(void);
+void MPI_INFO_GET_NTHKEY(void);
+
+#pragma weak PMPI_INFO_GET_NTHKEY = pmpi_info_get_nthkey_     
+#pragma weak pmpi_info_get_nthkey = pmpi_info_get_nthkey_
+#pragma weak pmpi_info_get_nthkey__ = pmpi_info_get_nthkey_
+#pragma weak MPI_INFO_GET_NTHKEY = pmpi_info_get_nthkey_     
+#pragma weak mpi_info_get_nthkey = pmpi_info_get_nthkey_
+#pragma weak mpi_info_get_nthkey_ = pmpi_info_get_nthkey_  
+#pragma weak mpi_info_get_nthkey__ = pmpi_info_get_nthkey_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_nthkey_ PMPI_INFO_GET_NTHKEY
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_get_nthkey = pmpi_info_get_nthkey
 #else
-#pragma weak mpi_info_get_nthkey_ = pmpi_info_get_nthkey_
+//#pragma weak mpi_info_get_nthkey_ = pmpi_info_get_nthkey_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_READ(void);
 #pragma weak pmpi_file_read__ = pmpi_file_read_
 #pragma weak MPI_FILE_READ = pmpi_file_read_     
 #pragma weak mpi_file_read = pmpi_file_read_
-/* #pragma weak mpi_file_read_ = pmpi_file_read_    ROMIO does this one */
+#pragma weak mpi_file_read_ = pmpi_file_read_ 
 #pragma weak mpi_file_read__ = pmpi_file_read_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_READ(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_read = pmpi_file_read
 #else
-#pragma weak mpi_file_read_ = pmpi_file_read_
+//#pragma weak mpi_file_read_ = pmpi_file_read_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_WRITE(void);
 #pragma weak pmpi_file_write__ = pmpi_file_write_
 #pragma weak MPI_FILE_WRITE = pmpi_file_write_     
 #pragma weak mpi_file_write = pmpi_file_write_
-/* #pragma weak mpi_file_write_ = pmpi_file_write_    ROMIO does this one */
+#pragma weak mpi_file_write_ = pmpi_file_write_   
 #pragma weak mpi_file_write__ = pmpi_file_write_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_WRITE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_write = pmpi_file_write
 #else
-#pragma weak mpi_file_write_ = pmpi_file_write_
+//#pragma weak mpi_file_write_ = pmpi_file_write_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

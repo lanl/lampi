@@ -28,7 +28,7 @@ void MPI_FILE_GET_AMODE(void);
 #pragma weak pmpi_file_get_amode__ = pmpi_file_get_amode_
 #pragma weak MPI_FILE_GET_AMODE = pmpi_file_get_amode_     
 #pragma weak mpi_file_get_amode = pmpi_file_get_amode_
-/* #pragma weak mpi_file_get_amode_ = pmpi_file_get_amode_    ROMIO does this one */
+#pragma weak mpi_file_get_amode_ = pmpi_file_get_amode_ 
 #pragma weak mpi_file_get_amode__ = pmpi_file_get_amode_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_AMODE(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_amode = pmpi_file_get_amode
 #else
-#pragma weak mpi_file_get_amode_ = pmpi_file_get_amode_
+//#pragma weak mpi_file_get_amode_ = pmpi_file_get_amode_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_info_dup(void);
+void mpi_info_dup(void);
+/*  void pmpi_info_dup_(void);   this is the real function, below */
+void mpi_info_dup_(void);   
+void pmpi_info_dup__(void);
+void mpi_info_dup__(void);
+void PMPI_INFO_DUP(void);
+void MPI_INFO_DUP(void);
+
+#pragma weak PMPI_INFO_DUP = pmpi_info_dup_     
+#pragma weak pmpi_info_dup = pmpi_info_dup_
+#pragma weak pmpi_info_dup__ = pmpi_info_dup_
+#pragma weak MPI_INFO_DUP = pmpi_info_dup_     
+#pragma weak mpi_info_dup = pmpi_info_dup_
+#pragma weak mpi_info_dup_ = pmpi_info_dup_  
+#pragma weak mpi_info_dup__ = pmpi_info_dup_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_dup_ PMPI_INFO_DUP
@@ -35,7 +60,7 @@
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_info_dup = pmpi_info_dup
 #else
-#pragma weak mpi_info_dup_ = pmpi_info_dup_
+//#pragma weak mpi_info_dup_ = pmpi_info_dup_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

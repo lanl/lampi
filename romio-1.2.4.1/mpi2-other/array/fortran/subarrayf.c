@@ -28,7 +28,7 @@ void MPI_TYPE_CREATE_SUBARRAY(void);
 #pragma weak pmpi_type_create_subarray__ = pmpi_type_create_subarray_
 #pragma weak MPI_TYPE_CREATE_SUBARRAY = pmpi_type_create_subarray_     
 #pragma weak mpi_type_create_subarray = pmpi_type_create_subarray_
-/* #pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_    ROMIO does this one */
+#pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_   
 #pragma weak mpi_type_create_subarray__ = pmpi_type_create_subarray_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_TYPE_CREATE_SUBARRAY(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_type_create_subarray = pmpi_type_create_subarray
 #else
-#pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_
+//#pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_GET_ATOMICITY(void);
 #pragma weak pmpi_file_get_atomicity__ = pmpi_file_get_atomicity_
 #pragma weak MPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity_     
 #pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity_
-/* #pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_    ROMIO does this one */
+#pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_  
 #pragma weak mpi_file_get_atomicity__ = pmpi_file_get_atomicity_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_ATOMICITY(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity
 #else
-#pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_
+//#pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

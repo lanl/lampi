@@ -28,7 +28,7 @@ void MPI_FILE_GET_POSITION(void);
 #pragma weak pmpi_file_get_position__ = pmpi_file_get_position_
 #pragma weak MPI_FILE_GET_POSITION = pmpi_file_get_position_     
 #pragma weak mpi_file_get_position = pmpi_file_get_position_
-/* #pragma weak mpi_file_get_position_ = pmpi_file_get_position_    ROMIO does this one */
+#pragma weak mpi_file_get_position_ = pmpi_file_get_position_ 
 #pragma weak mpi_file_get_position__ = pmpi_file_get_position_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_GET_POSITION(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_get_position = pmpi_file_get_position
 #else
-#pragma weak mpi_file_get_position_ = pmpi_file_get_position_
+//#pragma weak mpi_file_get_position_ = pmpi_file_get_position_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

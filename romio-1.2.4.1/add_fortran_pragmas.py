@@ -21,7 +21,7 @@ import os, commands, getopt, sys
 #    Except for fortran under linux with gcc 3:  weak MPI_ symbols will 
 #    be missing because function prototypes are missing.
 #
-# Step 2:  mpi-io/fortran/*.c:
+# Step 2:  */fortran/*.c:
 #     add the following to the beginning of every file, before any 
 #     #defines can change the names of the routines.  This will fix the 
 #     linux/pragma/fortran problem
@@ -30,7 +30,13 @@ import os, commands, getopt, sys
 #     to do this, run this python script on each fortran file:
 #     % ./add_fortran_pragmas.py  mpi-io/fortran/*.c
 #     % ./add_fortran_pragmas.py  mpi2-other/array/fortran/*.c
+#     % ./add_fortran_pragmas.py  mpi2-other/info/fortran/*.c
 #
+#     Then remove the ROMIO's original
+#     #pragma weak mpi_file_open_ pmpi_file_open_
+#     This pragma is broken under some versions of gcc because it appears after
+#     #define mpi_file_open_ pmpi_file_open_, and thus becomes
+#     #pragma weak pmpi_file_open_ pmip_file_open_
 #
 # Step 3: testing
 #     the test code directory will be be "configured" into the lampi
@@ -78,7 +84,7 @@ void MPI_FILE_OPEN(void);
 #pragma weak pmpi_file_open__ = pmpi_file_open_
 #pragma weak MPI_FILE_OPEN = pmpi_file_open_     
 #pragma weak mpi_file_open = pmpi_file_open_
-/* #pragma weak mpi_file_open_ = pmpi_file_open_    ROMIO does this one */
+#pragma weak mpi_file_open_ = pmpi_file_open_  
 #pragma weak mpi_file_open__ = pmpi_file_open_
 #endif
 

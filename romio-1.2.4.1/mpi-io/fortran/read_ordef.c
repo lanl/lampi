@@ -28,7 +28,7 @@ void MPI_FILE_READ_ORDERED_END(void);
 #pragma weak pmpi_file_read_ordered_end__ = pmpi_file_read_ordered_end_
 #pragma weak MPI_FILE_READ_ORDERED_END = pmpi_file_read_ordered_end_     
 #pragma weak mpi_file_read_ordered_end = pmpi_file_read_ordered_end_
-/* #pragma weak mpi_file_read_ordered_end_ = pmpi_file_read_ordered_end_    ROMIO does this one */
+#pragma weak mpi_file_read_ordered_end_ = pmpi_file_read_ordered_end_   
 #pragma weak mpi_file_read_ordered_end__ = pmpi_file_read_ordered_end_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_READ_ORDERED_END(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_read_ordered_end = pmpi_file_read_ordered_end
 #else
-#pragma weak mpi_file_read_ordered_end_ = pmpi_file_read_ordered_end_
+//#pragma weak mpi_file_read_ordered_end_ = pmpi_file_read_ordered_end_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)

@@ -28,7 +28,7 @@ void MPI_FILE_SEEK(void);
 #pragma weak pmpi_file_seek__ = pmpi_file_seek_
 #pragma weak MPI_FILE_SEEK = pmpi_file_seek_     
 #pragma weak mpi_file_seek = pmpi_file_seek_
-/* #pragma weak mpi_file_seek_ = pmpi_file_seek_    ROMIO does this one */
+#pragma weak mpi_file_seek_ = pmpi_file_seek_ 
 #pragma weak mpi_file_seek__ = pmpi_file_seek_
 #endif
 
@@ -60,7 +60,7 @@ void MPI_FILE_SEEK(void);
 #elif !defined(FORTRANUNDERSCORE)
 #pragma weak mpi_file_seek = pmpi_file_seek
 #else
-#pragma weak mpi_file_seek_ = pmpi_file_seek_
+//#pragma weak mpi_file_seek_ = pmpi_file_seek_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
