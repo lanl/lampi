@@ -1265,6 +1265,12 @@ void setThreads(const char *InfoStream)
 }
 
 
+void setUseSSH(const char *InfoStream)
+{
+    RunParameters.UseSSH = 1;
+}
+
+
 #ifdef ENABLE_NUMA
 
 /*

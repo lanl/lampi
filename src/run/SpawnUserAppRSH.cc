@@ -283,7 +283,10 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         int AppEntry = CDEntry + 3;
         int AppArgs = AppEntry + 1;
 
-        sprintf(ExecArgs[0], "rsh");
+        if ( RunParameters->UseSSH )
+            sprintf(ExecArgs[0], "ssh");
+        else
+            sprintf(ExecArgs[0], "rsh");
         sprintf(ExecArgs[1], "-n");
         /* entry 2 is the host name - will be filled in loop */
         sprintf(ExecArgs[3], "csh");

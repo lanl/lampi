@@ -192,6 +192,13 @@ InputParameters_t ULMInputOptions[] =
      parseMaxRetries,
      "Number of times to retry for resources", 0, "0"
     },
+    {"-ssh",
+     "UseSSH",
+     NO_ARGS,
+     NoOpFunction,
+     setUseSSH,
+     "use SSH instead of RSH to create remote processes", 0, "0"
+    },
     {"-threads",
      "NoThreads",
      NO_ARGS,
