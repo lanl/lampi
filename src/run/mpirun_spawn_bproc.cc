@@ -160,7 +160,7 @@ void *accept_thread(void *arg) {
 	int nHosts = RunParameters->NHosts;
     int connectCount = 0, i, hostID = 0;
     fd_set rset;
-    struct timeval tmo = { 300, 0 };
+    struct timeval tmo = { 0, 10000 };
 
     /* enable asynchronous cancel mode for this thread */
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *)NULL);
