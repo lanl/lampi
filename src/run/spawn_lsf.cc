@@ -175,6 +175,7 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
     struct sigaction action;
     int NHostsStarted=0;
 #if ENABLE_LSF
+    int RetVal;
     struct stat rstat;
 
     if (ls_initrex(RunParameters->NHosts, 0) < 0) {

@@ -12007,6 +12007,8 @@ powerpc-apple-darwin*)
         CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double"
         DLLEXT="dylib"
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace"
+        ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"
+        ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='$CFLAGS $CPPFLAGS'"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"

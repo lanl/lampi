@@ -52,6 +52,21 @@
 
 #define MAX_RETRY		100
 
+#define TIMEOUT_HELP_STRING \
+"\n\n" \
+"LA-MPI was unable to start your application.  This may be because:\n" \
+"- The application may not exist or not be executable on the remote node.\n" \
+"- The application may not be executable on the remote node.\n" \
+"- The loader may not be able to find the dynamic libraries needed to run\n" \
+"  run the application.\n" \
+"\n" \
+"Please verify:\n" \
+"- The existence and permissions of the remote application.\n" \
+"- That your LD_LIBRARY_PATH on the remote node includes the directory\n" \
+"  containing the correct version of the LA-MPI library, and similarly\n" \
+"  for other dynamic libraries your application needs.\n" \
+"- The mpirun executable is the same version as the LA-MPI library.\n" \
+"\n"
 
 /*
  * This routine scans through the list of hosts in hostList, and return
@@ -969,20 +984,11 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
         if (setjmp(savedEnv) != 0) {
             struct sockaddr_in addr;
             struct hostent *h;
+
             ulm_err(("adminMessage::serverConnect timeout %d exceeded --"
-                     " %d client sockets account for %d processes!\n",
+                     " %d client sockets account for %d processes!\n"
+                     TIMEOUT_HELP_STRING,
                      timeout, clientSocketCount(), clientProcessCount()));
-            ulm_err(("\n\nmpirun was unable to start you application.\n"
-                     "This may be caused by several things \n"
-                     "- the application may not exist on the remote node\n"
-                     "- the application may not be executable on the remote node\n"
-                     "- the loader may not be able to find the dynamic libraries \n"
-                     "  needed to run the application.\n"
-                     "- check to see that your remote LD_LIBRARY_PATH points to the \n"
-                     "  correct MPI library, and to any other dynamic libraries your \n"
-                     "  application needs. \n"
-                     "- make sure that the mpirun you are using goes with the MPI \n"
-                     "  library you are trying to use.\n\n"));
 
             for (int i = 0; i < largestClientSocket_m; i++) {
                 if (clientSocketActive_m[i]) {

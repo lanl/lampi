@@ -143,6 +143,7 @@ void parseTotalSMPDataPages(const char *InfoStream);
 void parseTotalSMPISendDescPages(const char *InfoStream);
 void parseTotalSMPRecvDescPages(const char *InfoStream);
 void parseUseCRC(const char *InfoStream);
+void setLocal(const char *InfoStream);
 void setNoLSF(const char *InfoStream);
 void setThreads(const char *InfoStream);
 void setUseSSH(const char *InfoStream);

@@ -223,7 +223,10 @@ typedef struct ULMRunParams {
     /* whether to print Usage info in Abort() */
     int CmdLineOK;
 
-    /* use SSH instead of RSH for spawning processes. */
+    /* run on the local host using fork/exec to spawn processes */
+    int Local;
+    
+    /* use SSH instead of RSH for spawning processes */
     int UseSSH;
     
     /* should we use CRCs instead of checksums -- where supported */
