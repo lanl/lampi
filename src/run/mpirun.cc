@@ -468,9 +468,6 @@ int main(int argc, char **argv)
     pthread_t sc_thread;
     void *sc_thread_return;
     sigset_t newsignals, oldsignals;
-#ifdef USE_CT
-    FILE	*fp;
-#endif
     
     /* setup process characteristics */
     lampirun_init_proc();

@@ -68,7 +68,7 @@ int MPIrunProcessInput(int argc, char **argv,
                        ULMRunParams_t *RunParameters,
                        int *FirstAppArgument)
 {
-    int 	i,j, ival;
+    int 	i,j;
     char	*val;
 	
     RunParameters->UserAppDirList = NULL;
