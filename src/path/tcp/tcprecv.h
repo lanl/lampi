@@ -81,7 +81,7 @@ private:
 
 
 
-inline bool TCPRecvFrag::AckData(double timeNow =- 1.0) { 
+inline bool TCPRecvFrag::AckData(double timeNow) { 
     return sendAck(-1); 
 }
 
