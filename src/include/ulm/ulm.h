@@ -744,18 +744,6 @@ int ulm_comm_free(int comm);
  */
 int ulm_communicator_really_free(int comm);
 
-/*
- * API for ULM multicast nonblocking sends and receives
- */
-int ulm_utsend(int groupID, int tag, void *data,
-	       size_t length, ULMType_t *dtype,
-	       ULMMcastInfo_t *mcastInfo, int mcastInfoSize,
-	       ULMRequestHandle_t *request);
-
-int ulm_utrecv(int groupID, int tag, void *data,
-	       size_t dataLength, ULMType_t *dtype,
-	       ULMRequestHandle_t *request);
-
 /*!
  * Barrier for all on-host processes in a communicator
  */

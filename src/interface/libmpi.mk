@@ -54,8 +54,6 @@ SRC_LIBMPI += \
 	interface/ulm_keyval_free.cc \
 	interface/ulm_log.cc \
 	interface/ulm_make_progress.cc \
-	interface/ulm_utrecv.cc \
-	interface/ulm_utsend.cc \
 	interface/ulm_pending_messages.cc \
 	interface/ulm_recv.cc \
 	interface/ulm_recv_vec.cc \
