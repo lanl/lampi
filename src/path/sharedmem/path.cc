@@ -1085,9 +1085,7 @@ bool sharedmemPath::push(double timeNow, int *errorCode)
     int SortedRecvFragsIndex;
     SMPFragDesc_t *TmpDesc;
     Communicator *commPtr;
-    //
-    if (SMPSendsToPost[local_myproc()]->size() == 0)
-        return ULM_SUCCESS;
+    
     // lock list to make sure reads are atomic
     SMPSendsToPost[local_myproc()]->Lock.lock();
     for (SMPFragDesc_t *
@@ -1134,5 +1132,6 @@ bool sharedmemPath::push(double timeNow, int *errorCode)
     if (retVal > 0)
         retVal = ULM_SUCCESS;
 
-    return retVal;
+    *errorCode = retVal;
+    return ((retVal == ULM_SUCCESS) ? true : false);
 }
