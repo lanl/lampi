@@ -76,3 +76,7 @@ lampi_init_func_t lampi_init_prefork_udp = noop;
 lampi_init_func_t lampi_init_postfork_udp = noop;
 lampi_init_func_t lampi_init_allforked_udp = noop;
 #endif
+
+#ifndef ENABLE_INFINIBAND
+lampi_init_func_t lampi_init_postfork_ib = noop;
+#endif

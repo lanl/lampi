@@ -43,6 +43,8 @@ typedef struct availablePaths{
 	int useQuadrics_m;
 	/* gm */
 	int useGM_m;
+    /* ib - infiniband */
+    int useIB_m;
 }availablePaths_t;
 
 #ifdef ULM_INSTANTIATE_GLOBALS

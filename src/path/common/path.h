@@ -41,7 +41,8 @@ enum pathType {
     UDPPATH,
     QUADRICSPATH,
     GMPATH,
-    SHAREDMEM
+    SHAREDMEM,
+    IBPATH
 };
 
 // enumeration used for getInfo/setInfo for paths

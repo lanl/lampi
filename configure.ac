@@ -548,6 +548,17 @@ if test "$enable_gm" = "yes" ; then
    LIBS="$LIBS -lgm"
 fi
 
+AC_ARG_ENABLE(ib,
+              AC_HELP_STRING([--enable-ib], [enable InfiniBand path]))
+echo "feature InfiniBand... ${enable_ib:-no}"
+if test "$enable_ib" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_INFINIBAND"
+   MODULES_LIBMPI="$MODULES_LIBMPI src/path/ib"
+   test "$IB_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$IB_PREFIX/include"
+   test "$IB_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$IB_PREFIX/lib"
+   LIBS="$LIBS -lvapi"
+fi
+
 AC_ARG_ENABLE(shared_memory,
               AC_HELP_STRING([--enable-shared-memory], [enable shared memory path (probably required)]))
 echo "feature SHARED_MEMORY... ${enable_shared_memory:-no}"

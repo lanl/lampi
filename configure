@@ -871,6 +871,7 @@ Optional Features:
   --enable-udp            enable UDP path
   --enable-qsnet          enable QSNET path
   --enable-gm             enable Myrinet GM path
+  --enable-ib             enable InfiniBand path
   --enable-shared-memory  enable shared memory path (probably required)
   --enable-reliability    enable reliablity
   --enable-ct             enable control topology
@@ -2910,7 +2911,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2913:" \
+echo "$as_me:2914:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -10882,6 +10883,20 @@ if test "$enable_gm" = "yes" ; then
    test "$GM_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$GM_PREFIX/include"
    test "$GM_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$GM_PREFIX/lib"
    LIBS="$LIBS -lgm"
+fi
+
+# Check whether --enable-ib or --disable-ib was given.
+if test "${enable_ib+set}" = set; then
+  enableval="$enable_ib"
+
+fi;
+echo "feature InfiniBand... ${enable_ib:-no}"
+if test "$enable_ib" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_INFINIBAND"
+   MODULES_LIBMPI="$MODULES_LIBMPI src/path/ib"
+   test "$IB_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$IB_PREFIX/include"
+   test "$IB_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$IB_PREFIX/lib"
+   LIBS="$LIBS -lvapi"
 fi
 
 # Check whether --enable-shared_memory or --disable-shared_memory was given.

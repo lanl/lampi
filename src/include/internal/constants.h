@@ -83,6 +83,7 @@ enum PathType_t {
     	PATH_GM = 1,
     	PATH_UDP,
     	PATH_QUADRICS,
+        PATH_IB,
     	PATH_SHAREDMEM
 };
 

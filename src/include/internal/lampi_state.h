@@ -94,6 +94,7 @@ typedef struct {
     int quadrics;
     int gm;
     int udp;
+    int ib;
 
     int usethreads;
     int usecrc;

@@ -189,4 +189,10 @@ void lampi_init_postfork_udp(lampiState_t *);
 extern lampi_init_func_t lampi_init_prefork_udp;
 extern lampi_init_func_t lampi_init_postfork_udp;
 #endif
+
+#ifdef ENABLE_INFINIBAND
+void lampi_init_postfork_ib(lampiState_t *);
+#else
+extern lampi_init_func_t lampi_init_postfork_ib;
+#endif
 #endif /* _LAMPI_INIT_H_ */

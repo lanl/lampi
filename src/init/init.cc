@@ -1241,6 +1241,9 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                     case PATH_QUADRICS:
                         s->quadrics = 1;
                         break;
+                    case PATH_IB:
+                        s->ib = 1;
+                        break;
                     default:
                         break;
                     }
@@ -1585,6 +1588,9 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
                     case PATH_QUADRICS:
                         s->quadrics = 1;
                         break;
+                    case PATH_IB:
+                        s->ib = 1;
+                        break;
                     default:
                         break;
                     }
@@ -1738,6 +1744,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
     lampi_init_postfork_udp(s);
     lampi_init_postfork_quadrics(s);
     lampi_init_postfork_gm(s);
+    lampi_init_postfork_ib(s);
 
     /*
      * setup global array of available paths
@@ -1756,6 +1763,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
 	    pathList[proc].useUDP_m=-1;
 	    pathList[proc].useQuadrics_m=-1;
 	    pathList[proc].useGM_m=-1;
+        pathList[proc].useIB_m=-1;
 
 	    for (int i = 0; i < pathCount; i++) {
 		    if( ! (lampiState.pathContainer->canUsePath(proc,i))  )
@@ -1781,6 +1789,11 @@ void lampi_init_postfork_paths(lampiState_t *s)
 					    && (pathList[proc].useGM_m < 0))
 			    {
 				    pathList[proc].useGM_m = i;
+			    }
+			    else if ((ptype == IBPATH) 
+					    && (pathList[proc].useIB_m < 0))
+			    {
+				    pathList[proc].useIB_m = i;
 			    }
 		    }
 	    }
@@ -2090,6 +2103,7 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->quadrics = false;
     s->gm = 0;
     s->udp = 0;
+    s->ib = 0;
 
 #ifdef ENABLE_CT
     /* decide if a daemon will be used */
