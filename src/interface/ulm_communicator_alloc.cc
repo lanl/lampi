@@ -53,6 +53,10 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
   if (communicators[new_comm]->localGroup->numberOfHostsInGroup <=1)
     return errorcode;
 
+  if (!quadricsHW) // quadrics hardware bcast disabled by user
+      return errorcode;
+
+
   if (useThreads)
     broadcasters_locks.lock();
 
@@ -61,6 +65,10 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
   /* leave ULM_COMM_WORLD and ULM_COMM_SELF after postfork_path */
   if ( new_comm == ULM_COMM_SELF || new_comm == ULM_COMM_WORLD )
     goto barrier_and_exit;
+
+  /* make sure only the processes in the new communicator 
+   * are allocated with the broadcaster */
+  if ( new_comm == MPI_COMM_NULL ) goto barrier_and_exit;
 
   ulm_allreduce(busy_broadcasters, busy_bcasters, MAX_BROADCASTERS, 
       (ULMType_t *) MPI_CHAR, (ULMOp_t *) MPI_BOR, new_comm );
@@ -71,23 +79,26 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
     if ( busy_bcasters[bcaster_id] == 0) break;
   }
 
-  /* make sure only the processes in the new communicator 
-   * are allocated with the broadcaster */
-  if ( new_comm != MPI_COMM_NULL )
+  /* Make sure the available communicator is still within range,
+   * otherwise, output a prompt message and quit */
+  if ( bcaster_id >= broadcasters_array_len )  {
+      Communicator       *cp = communicators[new_comm]; 
+      if (cp->localGroup->ProcID==0) {
+          ulm_err((
+"Warning: exhausted Quadrics hardware broadcasters. New communicator will use \
+software based broadcast.  Limit: %d (see mpirun options to change).\n",broadcasters_array_len));
+      }
+      goto barrier_and_exit;
+  }
+
+
+
   {
     Broadcaster        *bcaster;
     Communicator       *cp ; 
 
-    /* Make sure the available communicator is still within range,
-     * otherwise, output a prompt message and quit */
-    if ( bcaster_id >= broadcasters_array_len )
-    {
-      /* Prompt message to change the environmental variable */
-      ulm_exit((-1, "Broadcasters not enough : requesting %d "
-	    "out of %d. Please change the environmental variable" 
-	    "LAMPI_NUM_BCASTERS, Maximum 64.\n", 
-	    bcaster_id, broadcasters_array_len));
-    }
+
+
 
     /* Assign the first available broadcaster to the communicator*/
     bcaster = quadrics_broadcasters[bcaster_id];
@@ -104,6 +115,9 @@ extern "C" int ulm_alloc_bcaster(int new_comm, int useThreads)
 
     if ( errorcode == ULM_SUCCESS)
     {
+        if (cp->localGroup->ProcID==0)  
+           ulm_err(("%i Enabling hw bcast on comm=%i\n",myproc(),new_comm ));
+
       cp->hw_bcast_enabled = QSNET_COLL ;
       cp->bcaster          = bcaster;
       busy_broadcasters[bcaster_id] = 1;

@@ -233,6 +233,9 @@ typedef struct ULMRunParams {
     /* should we use local send completion notification or not on Quadrics */
     int quadricsDoAck;
 
+    /* should we use quadrics hardware optimizations */
+    int quadricsHW;
+
     /* should we do any checksumming/CRC on Quadrics */
     int quadricsDoChecksum;
     

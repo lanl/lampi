@@ -663,6 +663,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    Abort();
     }
 
+
     /* Myrinet GM input parameters */
     returnValue = SendGMInputToClients(RunParameters, server);
     if (returnValue != ULM_SUCCESS) {
@@ -693,6 +694,8 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 
     /* return */
     return returnValue;
+
+
 }
 
 int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
@@ -987,9 +990,12 @@ int SendQuadricsInputToClients(ULMRunParams_t *RunParameters,
         return returnValue;
 
     ulm_dbg( ("mpirun: Bcasting quadrics input...\n") );
+
     server->reset(adminMessage::SEND);
+    server->pack(&(RunParameters->quadricsHW), 
+           (adminMessage::packType)sizeof(int), 1);
     server->pack(&(RunParameters->quadricsDoAck), 
-		    (adminMessage::packType)sizeof(int), 1);
+    	    (adminMessage::packType)sizeof(int), 1);
     server->pack(&(RunParameters->quadricsDoChecksum), 
 		    (adminMessage::packType)sizeof(int), 1);
     tag = dev_type_params::END_QUADRICS_INPUT;

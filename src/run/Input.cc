@@ -1489,15 +1489,22 @@ void parseQuadricsFlags(const char *InfoStream)
 
     for (ParseString::iterator i = QuadricsFlags.begin();
          i != QuadricsFlags.end(); i++) {
-        if ((strlen(*i) >= 3) && (strncmp(*i, "noack", 3) == 0)) {
+        if ((strlen(*i) == 5) && (strncmp(*i, "noack", 5) == 0)) {
             RunParameters.quadricsDoAck = false;
-        } else if ((strlen(*i) >= 3)
-                   && (strncmp(*i, "nochecksum", 3) == 0)) {
+        } else if ((strlen(*i) == 10)
+                   && (strncmp(*i, "nochecksum", 10) == 0)) {
             RunParameters.quadricsDoChecksum = false;
-        } else if ((strlen(*i) >= 1) && (strncmp(*i, "ack", 1) == 0)) {
+        } else if ((strlen(*i) == 4) && (strncmp(*i, "nohw", 4) == 0)) {
+            RunParameters.quadricsHW = 0;
+        } else if ((strlen(*i) == 2) && (strncmp(*i, "hw", 2) == 0)) {
+            RunParameters.quadricsHW = 1;
+        } else if ((strlen(*i) == 3) && (strncmp(*i, "ack", 3) == 0)) {
             RunParameters.quadricsDoAck = true;
-        } else if ((strlen(*i) >= 1) && (strncmp(*i, "checksum", 1) == 0)) {
+        } else if ((strlen(*i) == 8) && (strncmp(*i, "checksum", 8) == 0)) {
             RunParameters.quadricsDoChecksum = true;
+        } else {
+            ulm_err(("Error: unrecognized -qf argument: %s \n",*i));
+            Abort();
         }
     }
 }

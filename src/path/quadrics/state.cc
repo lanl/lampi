@@ -53,6 +53,7 @@ int quadricsNRails = 0;
 int quadricsLastRail = -1;
 int quadricsDoChecksum = 1;
 int quadricsDoAck = 1;
+int quadricsHW = 0;
 quadricsQueueInfo_t *quadricsQueue = 0;
 
 FreeListPrivate_t <quadricsSendFragDesc> quadricsSendFragDescs;

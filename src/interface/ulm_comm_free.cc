@@ -62,16 +62,17 @@ static inline void ulm_free_bcaster(int comm, int useThreads)
       if ( comm == MPI_COMM_NULL )
 	goto unlock_and_exit;
 
-      /* reinitialize the transmission structures, not really 
-       * free the broadcaster's memory */
-      errorcode = bcaster->broadcaster_free();
-
       /* In case of error, use point-to-point */
       if (errorcode != ULM_SUCCESS)
       {
-	/*bcast_request_t * last = communicators[comm]->bcast_queue.last;*/
-	/*communicators[comm]->fail_over(last);*/
+	bcast_request_t * last = communicators[comm]->bcast_queue.last;
+	if (last)
+	  communicators[comm]->fail_over(last);
       }
+
+      /* reinitialize the transmission structures, not really 
+       * free the broadcaster's memory */
+      errorcode = bcaster->broadcaster_free();
 
       /* Mark the broadcaster as not busy */
       busy_broadcasters[bcaster->id] = 0;
@@ -116,11 +117,6 @@ int ulm_communicator_really_free(int comm)
     if (!okToDelete) {
         return MPI_SUCCESS;
     }
-
-#ifdef USE_ELAN_COLL
-    /* To Free the bcaster */
-    ulm_free_bcaster(comm, communicators[comm]->useThreads);
-#endif
 
     // reset activeCommunicators
     for (commInUse = 0; commInUse < nCommunicatorInstancesInUse;
@@ -206,6 +202,11 @@ extern "C" int ulm_comm_free(int comm)
     // check to see if the standard allows this communicator to be deleted
     //   Whether of not the queues are empty will be checked later.
     //
+
+#ifdef USE_ELAN_COLL
+    /* To Free the bcaster */
+    ulm_free_bcaster(comm, communicators[comm]->useThreads);
+#endif
 
     //
     // decrement refCount for localGroupsComm - if INTER_COMMUNICATOR

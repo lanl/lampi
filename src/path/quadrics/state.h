@@ -93,6 +93,7 @@ extern int quadricsNRails;
 extern int quadricsLastRail;
 extern int quadricsDoChecksum;
 extern int quadricsDoAck;
+extern int quadricsHW;
 extern quadricsQueueInfo_t *quadricsQueue;
 #ifdef USE_ELAN_COLL
 extern quadricsGlobInfo_t  *quadrics_Glob_Mem_Info ;

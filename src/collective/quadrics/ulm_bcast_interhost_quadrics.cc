@@ -460,7 +460,7 @@ Broadcaster::init_segment_dma(bcast_segment_t *temp)
   END_MARK;
 }
 
-void Broadcaster::segment_create()
+void Broadcaster::segment_create(void)
 {
   int            vp;
   int            nvp;
@@ -602,7 +602,6 @@ void Broadcaster::segment_create()
 	    segment->min    = location.Node;
 	    segment->max    = location.Node;
 	    segment->ctx    = first_ctx;
-
 	    location.Context = segment->ctx;
 	    vp = elan3_location2vp(location,cap);
           } 
@@ -684,10 +683,13 @@ void Broadcaster::segment_create()
     CHECK_MALLOC(segment->dma_elan = 
       elan3_allocElan(ctx, E3_DMA_ALIGN, 
         (total_channels * MAX_BCAST_FRAGS + 1)*sizeof(E3_DMA)));
+    // using E3_EVENT_ALIGN (8) seems to cause problems on QSC
+    // If the elan3_allocElan() is called, then (many elan calls later)
+    // the quadrics NIC will gt confused and issue a SEGV.   
+    // useing the more resctrive DMA_ALIGN (64) seems to fix the problem
     CHECK_MALLOC(segment->event =  
-      elan3_allocElan(ctx, E3_EVENT_ALIGN, 
+         elan3_allocElan(ctx, /*E3_EVENT_ALIGN*/ E3_DMA_ALIGN, 
         (total_channels * MAX_BCAST_FRAGS + 1)*sizeof(E3_Event)));
-
     segment = segment->next;
   }
 
@@ -791,12 +793,13 @@ int Broadcaster::broadcaster_free( )
     first = first->next;
 
     /* Free the elan structures */
-    elan3_freeElan(ctx, temp->dma_elan);
     elan3_freeElan(ctx, temp->event);
+    elan3_freeElan(ctx, temp->dma_elan);
 
     /* Free the segment */
     ulm_free(temp);
   }
+
  
   /* Reset the fields, I do not want to take the risk of resetting sync */
   bzero((void*)&comm_index, ((int) &segment - (int) &comm_index )); 
@@ -809,10 +812,11 @@ int Broadcaster::broadcaster_free( )
 }
 
 /* Hardware based collectives initialization function. --Weikuan */
-int Broadcaster::hardware_coll_init( )
+int Broadcaster::hardware_coll_init(void)
 {
     Group *localGroup; 
     bcast_segment_t *first;
+    int nseg;
 
     START_MARK;
 
@@ -849,6 +853,26 @@ int Broadcaster::hardware_coll_init( )
 
     /* Create the segment for noncontiguous vps */
     segment_create();
+
+    /* count number of segments: */
+    nseg=0;
+    first = segment;
+    while(first)
+    {
+      first = first->next;
+      ++nseg;
+    }
+    if (nseg>1)
+        if (localGroup->ProcID==0)  
+            ulm_err(("comm=%i number of segments: %i\n",comm_index,nseg ));
+
+    if (nseg>8) {
+        if (localGroup->ProcID==0)  
+            ulm_err(("Warning: comm=%i process distribution non-contigious (%i segments). Disabling hardware bcast\n",
+                     comm_index,nseg ));
+        return ULM_ERR_BCAST_INIT;
+    }
+
 
     /* Make sure the number of host is greater than 1 */
     if ( nhosts <=1 )

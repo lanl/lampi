@@ -456,12 +456,12 @@ public:
 
     /* The initianization functions */
     int                init_bcaster(maddr_vm_t, sdramaddr_t);
-    void               segment_create();
+    void               segment_create(void);
     void               init_segment_dma(bcast_segment_t *temp);
     int 	       create_syncup_tree();
     int                reset_coll_events();
     int                init_coll_events(int, int, int);
-    int                hardware_coll_init();
+    int                hardware_coll_init(void);
 
     /* The reset function, not really free the broadcaster, 
      * but reset it for any other communicator */

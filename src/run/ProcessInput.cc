@@ -76,6 +76,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->OutputPrefix = 0;
     RunParameters->HeartBeatTimeOut = int (HEARTBEATTIMEOUT);
     RunParameters->quadricsRailMask = 0;
+    RunParameters->quadricsHW = 0;
     RunParameters->GDBDebug = 0;
 
     /* schedulers to try (determined at compile time) */
