@@ -45,8 +45,11 @@
 
 #ifdef ENABLE_GM
 #include <gm.h>
-#endif
+#endif 
 
+#ifdef ENABLE_INFINIBAND
+extern bool ib_register_chunk(int hca_index, void *addr, size_t size);
+#endif
 
 // Class used to manage a memory pool that is anonymously mmap-ed 
 // so that it can be both process private or process shared 
@@ -75,6 +78,9 @@ public:
 #ifdef ENABLE_GM
     struct gm_port *gmPort;     // for mlocking Myrinet memory buffers
 #endif
+#ifdef ENABLE_INFINIBAND
+    int hca_index;              // true index into ib_state.hca array for IB state
+#endif
 
     // --METHODS--
 
@@ -82,6 +88,9 @@ public:
         {
 #ifdef ENABLE_GM
             gmPort = 0;
+#endif
+#ifdef ENABLE_INFINIBAND
+            hca_index = -1;
 #endif
         }
 
@@ -144,6 +153,13 @@ public:
                                  (int) returnValue));
                         return ReturnPtr;
                     }
+                }
+#endif
+#ifdef ENABLE_INFINIBAND
+                if ((hca_index >= 0) && 
+                    (!ib_register_chunk(hca_index, ChunkDesc[NPoolChunks].BasePtr, ChunkSize))) {
+                    ulm_err(("Error: Unable to register memory for IB (HCA real index %d)\n", hca_index));
+                    return ReturnPtr;
                 }
 #endif
 
