@@ -28,6 +28,7 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <pthread.h>
 #include <assert.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -87,10 +88,30 @@ static int match_msg(void *arg, void *ctx)
 #endif
 
 /*
+ * This routine scans through the list of hosts in hostList, and return
+ * the index of the entry that matches nodeid
+ */
+int nodeIDToHostRank(int numHosts, HostName_t *hostList, int nodeid)
+{
+    int hostIndex = numHosts;
+#ifdef BPROC
+    int j;
+
+    for (j = 0; j < numHosts; j++) {
+        if (bproc_getnodebyname(hostList[j]) == nodeid) {
+            hostIndex = j;
+            break;
+        }
+    }
+#endif
+    return hostIndex;
+}
+
+/*
  * This routine scans through the list of hosts in hostList, and
  *   tries to find a match to client
  */
-int socketToNodeId(int numHosts, HostName_t* hostList,
+int socketToHostRank(int numHosts, HostName_t* hostList,
                    struct sockaddr_in *client, int assignNewId,
                    int *hostsAssigned)
 {
@@ -665,7 +686,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     int             np = 0, tag, hostrank, nprocesses, recvAuthData[3], authOK;
     int             cnt, hostcnt, *ranks;
     ulm_iovec_t iovecs[6], riov[1];
-    int             *hostsAssigned = 0,assignNewId, daemon_to;
+    int             *hostsAssigned = 0, daemon_to;
     long int        rcvdlen, sent;
     pid_t           daemonPid;
     char            buffer[100];
@@ -673,6 +694,10 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     CTChannelStatus status;
     CTTCPChannel            *daemon;
     struct timeval          endtime, curtime;
+
+#ifndef BPROC
+    int assignNewId;
+#endif
         
     /* initialization "stuff" */
     hostsAssigned = NULL;
@@ -799,17 +824,26 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             }                       
             continue;
         }
-                
+               
+#ifdef BPROC
+        /* BPROC node id from remote bproc_currnode() call must be translated */
+        hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
+        if (hostrank == numHosts) {
+            ulm_err(("Error: adminMessage::serverConnect nodeIDToHostRank failed!\n"));
+            success = false;
+        }
+#else
         // set hostrank. For RMS/Q hostrank should not be UNKNOWN_HOST_ID.
         if( hostrank == UNKNOWN_HOST_ID ) {
             assignNewId = 1;
-            hostrank = socketToNodeId(numHosts,hostList, daemon->socketAddress(),
+            hostrank = socketToHostRank(numHosts,hostList, daemon->socketAddress(),
                                       assignNewId,hostsAssigned);
             if( hostrank == UNKNOWN_HOST_ID ){
                 ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID\n"));
                 success = false;
             }
         }
+#endif
 
         if ( true == success )
         {
@@ -1392,9 +1426,9 @@ ServerCode:
 
                 /* error */
                 if( recvReturnCode == ERROR ) {
-                    returnCode=ULM_ERROR;
                     ulm_err(("Error: from receive in adminMessage::allgather (%d)\n",
                              returnCode));
+                    returnCode=ULM_ERROR;
                     return recvReturnCode;
                 }
 
@@ -1643,6 +1677,58 @@ int adminMessage::setupCollectives(int myLocalRank, int myHostRank,
 
     return ULM_SUCCESS;
 }
+
+void *server_connect_accept(void *arg) 
+{
+    adminMessage *server = (adminMessage *)arg;
+    sigset_t signals;
+#ifdef __linux__
+    socklen_t addrlen;
+#else
+    int addrlen;
+#endif
+    struct sockaddr_in addr;
+    fd_set fds;
+    struct timeval t;
+
+    t.tv_sec = 0;
+    t.tv_usec = 10000;
+
+    /* disable SIGALRM for this thread */
+    sigemptyset(&signals);
+    sigaddset(&signals, SIGALRM);
+    pthread_sigmask(SIG_BLOCK, &signals, (sigset_t *)NULL);
+
+    /* enable deferred cancel mode for this thread */
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, (int *)NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *)NULL);
+
+    while (1) {
+        FD_ZERO(&fds);
+        FD_SET(server->serverSocket_m, &fds);
+        if (select(server->serverSocket_m + 1, &fds, (fd_set *)NULL, (fd_set *)NULL, &t) <= 0)  {
+            pthread_testcancel();
+            continue;
+        }
+
+        addrlen = sizeof(addr);
+        int sockfd = accept(server->serverSocket_m, (struct sockaddr *)&addr, &addrlen);
+        if (sockfd < 0) {
+            continue;
+        }
+
+        if (sockfd >= adminMessage::MAXSOCKETS) {
+            ulm_err(("server_connect_accept(%p) client socket fd, %d, greater than "
+                     "allowed MAXSOCKETS, %d\n", server, sockfd, adminMessage::MAXSOCKETS));
+            close(sockfd);
+            pthread_exit((void *)0);
+        }
+
+        server->socketsToProcess_m[sockfd] = true;
+        pthread_testcancel();
+    }
+}
+
 /* (server) initialize socket and wait for all connections from clients
  * timeout (in): time in seconds to wait for all connections from clients
  * returns: true if successful, false if unsuccessful (requiring program exit)
@@ -1653,14 +1739,19 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     int np = 0, tag, hostrank, nprocesses, recvAuthData[3], ok;
     int oldLCS = largestClientSocket_m,cnt;
     ulm_iovec_t iovecs[5];
-    int size,*hostsAssigned = 0,assignNewId;
+    int size, *hostsAssigned = 0;
     pid_t daemonPid;
+    pthread_t sca_thread;
+
+#ifndef BPROC
+    int assignNewId;
 #ifdef __linux__
     socklen_t addrlen;
 #else
     int addrlen;
 #endif
     struct sockaddr_in addr;
+#endif
 
 #ifdef USE_CT
     return collectDaemonInfo(procList, hostList, numHosts, timeout);
@@ -1714,25 +1805,42 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     for(cnt=0 ; cnt < MAXSOCKETS ; cnt++){
         processCount[cnt]=(int)0;
         daemonPIDs_m[cnt]=(size_t)0;
+        socketsToProcess_m[cnt] = false;
+    }
+
+    // spawn thread to do accept processing only
+    if (pthread_create(&sca_thread, (pthread_attr_t *)NULL, server_connect_accept, (void *)this) != 0) {
+        ulm_err(("Error: can't create serverConnect() accept thread!\n"));
+        if (timeout > 0) {
+            alarm(0);
+            sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+        }
+        return false;
     }
 
     while (np != totalNProcesses_m) {
-        addrlen = sizeof(addr);
-        int sockfd = accept(serverSocket_m, (struct sockaddr *)&addr, &addrlen);
-        if (sockfd < 0) {
-            continue;
-        }
+        int sockfd = -1;
+        int offset = (largestClientSocket_m >= 0) ? largestClientSocket_m : 0;
 
-        if (sockfd >= MAXSOCKETS) {
-            ulm_err(("adminMessage::serverConnect client socket fd, %d, greater than "
-                     "allowed MAXSOCKETS, %d\n", sockfd, MAXSOCKETS));
+        if (cancelConnect_m) {
             if (timeout > 0) {
-                alarm(0);
-                sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+             alarm(0);
+             sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
             }
-            close(sockfd);
+            pthread_cancel(sca_thread);
+            cancelConnect_m = false;
             return false;
         }
+
+        for (cnt = 0; cnt < MAXSOCKETS; cnt++) {
+            if (socketsToProcess_m[(offset + cnt) % MAXSOCKETS]) {
+                sockfd = (offset + cnt) % MAXSOCKETS;
+                socketsToProcess_m[sockfd] = false;
+                break;
+            }
+        }
+        if (sockfd < 0)
+            continue;
 
         // now do the authorization handshake...receive info
         iovecs[0].iov_base = &tag;
@@ -1752,13 +1860,52 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             close(sockfd);
             continue;
         }
+
+#ifdef BPROC
+        /* BPROC node id from remote bproc_currnode() call must be translated */
+        hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
+        if (hostrank == numHosts) {
+            ulm_err(("Error: adminMessage::serverConnect nodeIDToHostRank failed (sockfd = %d)!\n", sockfd));
+            if (timeout > 0) {
+                alarm(0);
+                sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+            }
+            pthread_cancel(sca_thread);
+            return false;
+        }
+#else
         // set hostrank
         if( hostrank == UNKNOWN_HOST_ID ) {
             assignNewId=1;
-            hostrank=socketToNodeId(numHosts,hostList,&addr,
+            addrlen = sizeof(addr);
+            getpeername(sockfd, (struct sockaddr *)&addr, &addrlen);
+            hostrank=socketToHostRank(numHosts,hostList,&addr,
                                     assignNewId,hostsAssigned);
             if( hostrank == UNKNOWN_HOST_ID ){
-                ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID\n"));
+                ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID (sockfd = %d)\n", sockfd));
+                if (timeout > 0) {
+                    alarm(0);
+                    sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+                }
+                pthread_cancel(sca_thread);
+                return false;
+            }
+        }
+#endif
+
+        // cache process count
+        if(nprocesses != UNKNOWN_N_PROCS )
+        {
+            processCount[hostrank]=nprocesses;
+        }
+        else {
+            if( hostrank == UNKNOWN_HOST_ID ){
+                ulm_err(("Error: adminMessage::serverConnect UNKNOWN_HOST_ID (sockfd = %d)\n", sockfd));
+                if (timeout > 0) {
+                    alarm(0);
+                    sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+                }
+                pthread_cancel(sca_thread);
                 return false;
             }
         }
@@ -1845,6 +1992,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     if( numHosts > 0 )
         ulm_free(hostsAssigned);
 
+    pthread_cancel(sca_thread);
     return true;
 }
 
