@@ -376,7 +376,8 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
      /*
       * clear process mask
       */
-     sigfillset(&signals);
+     sigemptyset(&signals);
+     sigaddset(&signals, SIGCHLD);
      if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
          perror("sigprocmask failed");
          abort();
@@ -562,7 +563,8 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         /*
          * clear process mask
          */
-        sigfillset(&signals);
+        sigemptyset(&signals);
+        sigaddset(&signals, SIGCHLD);
         if (sigprocmask(SIG_UNBLOCK, &signals, NULL) < 0) {
             perror("sigprocmask failed");
             abort();
