@@ -97,6 +97,14 @@ ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
 
 static adminMessage *server = NULL;
 
+/* bproc_vexecmove_* does not work properly with debuggers if more
+ * than one thread is created before the bproc_vexecmove_* call.
+ */
+#ifdef ENABLE_BPROC
+static int use_connect_thread = 0;
+#else
+static int use_connect_thread = 1;
+#endif  /* ENABLE_BPROC */
 
 bool getClientPidsMsg(pid_t ** hostarray, int *errorCode)
 {
@@ -516,9 +524,15 @@ void *server_connect(void *arg)
                                RunParameters.HostList,
                                RunParameters.NHosts, connectTimeOut)) {
         ulm_err(("Error: Server/client connection failed.\n"));
-        pthread_exit((void *)0);
+        if ( use_connect_thread )
+        {
+            pthread_exit((void *)0);            
+        }
     }
-    pthread_exit((void *)1);
+    if ( use_connect_thread )
+    {
+        pthread_exit((void *)1);
+    }
 
     return NULL;
 }
@@ -598,11 +612,14 @@ int main(int argc, char **argv)
 
     /* spawn thread to do adminMessage::serverConnect() processing */
     server->cancelConnect_m = false;
-    if (pthread_create(&sc_thread, (pthread_attr_t *)NULL, server_connect, (void *)&nprocs) != 0) {
-        ulm_err(("Error: can't create serverConnect() thread!\n"));
-        Abort();
+    if ( use_connect_thread )
+    {
+        if (pthread_create(&sc_thread, (pthread_attr_t *)NULL, server_connect, (void *)&nprocs) != 0) {
+            ulm_err(("Error: can't create serverConnect() thread!\n"));
+            Abort();
+        }        
     }
-
+    
     /*
      * Spawn user app
      */
@@ -620,8 +637,22 @@ int main(int argc, char **argv)
         ulm_warn(("Are PATH and LD_LIBRARY_PATH correct?\n"));
 
         server->cancelConnect_m = true;
-        pthread_join(sc_thread, (void **)NULL);
+        if ( use_connect_thread )
+        {
+            pthread_join(sc_thread, (void **)NULL);
+        }
         Abort();
+    }
+
+    /* 2/4/04 RTA:
+     * It appears that creating more than one thread before a bproc call
+     * causes the bproc_vexecmove_* to only spawn one remote process.
+     * So until bproc is fixed, move the server_connect() call to after
+     * spawning user app.
+     */
+    if ( 0 == use_connect_thread )
+    {
+        server_connect((void *)&nprocs);        
     }
     
     /* at this stage all remote process have been spawned, but their state
@@ -633,21 +664,22 @@ int main(int argc, char **argv)
      *   to number of processes (not number of hosts, since we don't always 
      *   know the number of hosts)...with minimum connect timeout 
      */
-    ulm_dbg(("\nmpirun: collecting daemon info...\n"));
-
-    /* join with serverConnect() processing thread */
-    if (pthread_join(sc_thread, &sc_thread_return) == 0) {
-        int return_value = (int)sc_thread_return;
-        if (return_value == 0) {
-            ulm_err(("Error: serverConnect() thread failed!\n"));
-            Abort();
+    if ( use_connect_thread )
+    {
+        /* join with serverConnect() processing thread */
+        if (pthread_join(sc_thread, &sc_thread_return) == 0) {
+            int return_value = (int)sc_thread_return;
+            if (return_value == 0) {
+                ulm_err(("Error: serverConnect() thread failed!\n"));
+                Abort();
+            }
         }
+        else {
+            ulm_err(("Error: pthread_join() with serverConnect() thread failed!\n"));
+            Abort();
+        }        
     }
-    else {
-        ulm_err(("Error: pthread_join() with serverConnect() thread failed!\n"));
-        Abort();
-    }
-
+        
     /* set signal mask to unblock SIGALRM */
     sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *)NULL);
 

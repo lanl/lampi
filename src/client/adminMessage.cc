@@ -49,6 +49,8 @@
 #include "util/misc.h"
 #include "util/parsing.h"
 
+#define MAX_RETRY		10
+
 typedef struct {
     int                 tag;
     CTMessage   *msg;
@@ -407,7 +409,7 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
 
 bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout) 
 {
-    int sockbuf = 1, tag = INITMSG;
+    int sockbuf = 1, tag = INITMSG, connect_retry;
     int ok, recvAuthData[3];
     struct sockaddr_in server;
     ulm_iovec_t iovecs[5];
@@ -468,15 +470,30 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     }
 
     // attempt to connect
-    if (connect(socketToServer_m, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) < 0) {
-        if (timeout > 0) {
-            alarm(0);
-            sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+    for ( connect_retry = 0; connect_retry < MAX_RETRY ; connect_retry++ )
+    {
+        if (connect(socketToServer_m, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) < 0)
+        {
+            if ( (ETIMEDOUT == errno) || (ECONNREFUSED == errno) )
+            {
+                usleep(10);
+            }
+            else
+            {
+                if (timeout > 0) {
+                    alarm(0);
+                    sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
+                }
+                ulm_err(("adminMessage::clientConnect connect to server %s TCP port %d failed!\n", hostname_m, port_m));
+                close(socketToServer_m);
+                socketToServer_m = -1;
+                return false;                
+            }
         }
-        ulm_err(("adminMessage::clientConnect connect to server %s TCP port %d failed!\n", hostname_m, port_m));
-        close(socketToServer_m);
-        socketToServer_m = -1;
-        return false;
+        else
+        {
+            break;
+        }
     }
 
     // now do the authorization handshake...send info
