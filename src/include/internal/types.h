@@ -119,6 +119,25 @@ static inline double ulm_time(void)
 #endif
 
 /*
+ * Conversion functions for 32- to 64-bit correctness
+ */
+static inline void *int_to_ptr(int i)
+{
+    union { void *p; int i; } u;
+    u.p = NULL;
+    u.i = i;
+    return u.p;
+}
+
+static inline int ptr_to_int(void *p)
+{
+    union { void *p; int i; } u;
+    u.i = 0;
+    u.p = p;
+    return u.i;
+}
+
+/*
  * For Apple/darwin, we have to explicitly define the iovec since the
  * base field is type char *.
  */

@@ -33,6 +33,7 @@
 #endif
 
 #include "internal/mpif.h"
+#include "internal/types.h"
 
 #ifdef HAVE_PRAGMA_WEAK
 
@@ -49,7 +50,7 @@
 void mpi_attr_put_f(MPI_Comm *comm, MPI_Fint *keyval,
                     MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 #else
@@ -57,49 +58,49 @@ void mpi_attr_put_f(MPI_Comm *comm, MPI_Fint *keyval,
 void PMPI_ATTR_PUT(MPI_Comm *comm, MPI_Fint *keyval,
                    MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void pmpi_attr_put(MPI_Comm *comm, MPI_Fint *keyval,
                    MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void pmpi_attr_put_(MPI_Comm *comm, MPI_Fint *keyval,
                     MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void pmpi_attr_put__(MPI_Comm *comm, MPI_Fint *keyval,
                      MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void MPI_ATTR_PUT(MPI_Comm *comm, MPI_Fint *keyval,
                    MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void mpi_attr_put(MPI_Comm *comm, MPI_Fint *keyval,
                    MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void mpi_attr_put_(MPI_Comm *comm, MPI_Fint *keyval,
                     MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 void mpi_attr_put__(MPI_Comm *comm, MPI_Fint *keyval,
                      MPI_Fint *attribute_val, MPI_Fint *rc)
 {
-    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+    *rc = MPI_Attr_put(*comm, *keyval, int_to_ptr(*attribute_val));
 }
 
 

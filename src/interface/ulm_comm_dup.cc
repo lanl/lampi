@@ -255,7 +255,7 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
                 if (setAttrib) {
                     communicators[*outputContextID]->
                         attributeList[nAttribs].attributeValue =
-                        (void *) newAttribute;
+                        int_to_ptr(newAttribute);
                     /* inctement count */
                     nAttribs++;
                 } else {
