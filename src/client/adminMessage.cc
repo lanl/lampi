@@ -900,7 +900,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
 
 #if ENABLE_BPROC == 0
     int assignNewId;
-    struct sockaddr_in addr;
 #else
     int use_random_mapping = 0;
 #endif
