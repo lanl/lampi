@@ -40,15 +40,35 @@
 
 #include "internal/lampi_state.h"
 
-extern lampiState_t lampiState;
+extern lampiState_t _ulm;
 
+#define lampiState _ulm
 
 /*
  * Accessor methods for state information
  */
 
-#define STATE(X)        lampiState.(X)
+#define STATE(X)        (lampiState.(X))
 #define SETSTATE(X,Y)  (lampiState.(X) = (Y))
+
+/*
+ * State dependent locking (for threads)
+ */
+
+#define ATOMIC_LOCK_THREAD(LOCKPTR)   \
+do {                                  \
+    if (lampiState.usethreads) {      \
+        spinlock(LOCKPTR);            \
+    }                                 \
+} while (0)
+
+#define ATOMIC_UNLOCK_THREAD(LOCKPTR) \
+do {                                  \
+    if (lampiState.usethreads) {      \
+        spinunlock(LOCKPTR);          \
+    }                                 \
+} while (0)
+
 
 #ifdef __cplusplus
 
@@ -92,7 +112,7 @@ inline long global_proc_to_host(long x)
     return lampiState.map_global_rank_to_host[x];
 }
 
-	inline int usethreads()
+inline int usethreads()
 {
     return lampiState.usethreads;
 }

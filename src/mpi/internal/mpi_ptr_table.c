@@ -36,6 +36,8 @@
  */
 
 #include "internal/mpif.h"
+#include "internal/state.h"
+#include "os/atomic.h"
 
 /*
  * add a pointer to dynamic pointer table
@@ -46,9 +48,17 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
     int	index, i;
     enum { TABLE_INIT = 1, TABLE_GROW = 2 };	/* ??? increase these after debug ??? */
 
+    if (_MPI_DEBUG) {
+	_mpi_dbg("_mpi_ptr_table_add:  IN:  "
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " ptr = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 ptr);
+    }
+
     assert(table != NULL);
 
-    _mpi_lock(&(table->lock));
+    ATOMIC_LOCK_THREAD(table->lock);
 
     if (table->addr == NULL) {
 
@@ -57,7 +67,7 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
 	 */
 
         if (_MPI_DEBUG) {
-	    _mpi_dbg("_mpi_ptr_table_add: initializing table (0x%p)\n", table);
+	    _mpi_dbg("_mpi_ptr_table_add:  INIT: table %p\n", table);
         }
 
 	p = ulm_malloc(TABLE_INIT * sizeof(void *));
@@ -79,13 +89,13 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
 	 */
 
         if (_MPI_DEBUG) {
-	    _mpi_dbg("_mpi_ptr_table_add: growing table (0x%p): %d -> %d\n",
+	    _mpi_dbg("_mpi_ptr_table_add:  GROW: table %p growing %d -> %d\n",
 		     table, table->size, table->size * TABLE_GROW);
         }
 
 	p = realloc(table->addr, TABLE_GROW * table->size * sizeof(void *));
 	if (p == NULL) {
-        _mpi_unlock(&(table->lock));
+            ATOMIC_UNLOCK_THREAD(table->lock);
 	    return -1;
 	}
 	table->lowest_free = table->size;
@@ -125,11 +135,14 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
     }
 
     if (_MPI_DEBUG) {
-        _mpi_dbg("_mpi_ptr_table_add: adding 0x%p at index %d in table 0x%p\n",
-		 ptr, index, table);
+	_mpi_dbg("_mpi_ptr_table_add:  OUT: "
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " addr[%d] = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 index, ptr);
     }
 
-    _mpi_unlock(&(table->lock));
+    ATOMIC_UNLOCK_THREAD(table->lock);
 
     return index;
 }
@@ -139,21 +152,20 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
  */
 int _mpi_ptr_table_free(ptr_table_t *table, int index)
 {
-    /* Fortran MPI_REQUEST_NULL is -1 */
-    if (index == -1)
-        return 0;
-
     assert(table != NULL);
     assert(table->addr != NULL);
     assert(index >= 0);
     assert(index < table->size);
 
     if (_MPI_DEBUG) {
-	_mpi_dbg("_mpi_ptr_table_free: freeing %d (former contents 0x%p)\n",
-		 index, table->addr[index]);
+	_mpi_dbg("_mpi_ptr_table_free: IN:  "
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " addr[%d] = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 index, table->addr[index]);
     }
 
-    _mpi_lock(&(table->lock));
+    ATOMIC_LOCK_THREAD(table->lock);
 
     table->addr[index] = NULL;
     if (index < table->lowest_free) {
@@ -162,12 +174,14 @@ int _mpi_ptr_table_free(ptr_table_t *table, int index)
     table->number_free++;
 
     if (_MPI_DEBUG) {
-	_mpi_dbg("_mpi_ptr_table_free: "
-		 "table size %ld, lowest free %ld, number free %ld\n",
-		 table->size, table->lowest_free, table->number_free);
+	_mpi_dbg("_mpi_ptr_table_free: OUT: "
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " addr[%d] = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 index, table->addr[index]);
     }
 
-    _mpi_unlock(&(table->lock));
+    ATOMIC_UNLOCK_THREAD(table->lock);
 
     return 0;
 }
@@ -180,10 +194,14 @@ void *_mpi_ptr_table_lookup(ptr_table_t *table, int index)
     void *p;
 
     if (_MPI_DEBUG) {
-	_mpi_dbg("_mpi_ptr_table_lookup:\n");
+	_mpi_dbg("_mpi_ptr_table_free: IN: "
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " addr[%d] = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 index, table->addr[index]);
     }
 
-    _mpi_lock(&(table->lock));
+    ATOMIC_LOCK_THREAD(table->lock);
 
     assert(table != NULL);
     assert(table->addr != NULL);
@@ -192,7 +210,15 @@ void *_mpi_ptr_table_lookup(ptr_table_t *table, int index)
 
     p = table->addr[index];
 
-    _mpi_unlock(&(table->lock));
+    ATOMIC_UNLOCK_THREAD(table->lock);
+
+    if (_MPI_DEBUG) {
+	_mpi_dbg("_mpi_ptr_table_free: OUT:"
+                 " table %p (size %ld, lowest free %ld, number free %ld)"
+                 " addr[%d] = %p\n",
+		 table, table->size, table->lowest_free, table->number_free,
+                 index, table->addr[index]);
+    }
 
     return p;
 }

@@ -54,37 +54,16 @@
  * lampi_environ_integer, real in lampi_environ_real, etc.
  */
 
-#include <unistd.h>
-#include <string.h>
-
-#include "internal/linkage.h"
-#include "internal/malloc.h"
-#include "environ.h"
-
-/*  this is a special version of getenv that will return
- *  the last variable=value string if variable is not unique
- *  which is needed to fix an RMS loader bug
- */
-//extern "C" char *getenv(const char *var) {
-/*char *getenv(const char *var) {
-    int len = strlen(var);
-    char *value = 0;
-	char **envp;
-	
-    for (envp = environ; *envp; envp++) {
-        if ((strncmp(*envp, var, len) == 0) &&
-            (*(*envp + len) == '=')) {
-            value = *envp + len + 1;
-        }
-    }
-    return value;
-}*/
-
-#undef NDEBUG
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "init/environ.h"
+#include "internal/linkage.h"
+#include "internal/log.h"
+#include "internal/malloc.h"
 
 extern int errno;
 
@@ -114,6 +93,10 @@ static struct {
 	
     { "LAMPI_NOECHOAPPSTARTED", 0 },
     { "LAMPI_NO_CHECK_ARGS", 0 },
+
+    /* flag for disabling fortran layer */
+    { "LAMPI_FORTRAN", 1 },
+
     /* flag to indicate whether to spawn locally; for debug purposes. */
     { "LAMPI_LOCAL", 0 },
 
@@ -199,9 +182,6 @@ static struct  {
     { NULL }
 };
 
-
-#include "internal/log.h"
-
 /*
  * Utility function:
  *
@@ -211,8 +191,8 @@ static struct  {
  */
 static int getenv_int(const char *name, int default_value)
 {
-    int 	value;
-    char 	*tail;
+    int value;
+    char *tail;
 
     if (getenv(name) == NULL) {
         return default_value;
@@ -300,7 +280,8 @@ static char *getenv_string(const char *name, const char *default_value)
  *   }
  *   free(array);
  */
-static char **getenv_string_array(const char *name, const char *default_value)
+static char **getenv_string_array(const char *name,
+                                  const char *default_value)
 {
     char **array;
     char *value;
@@ -376,7 +357,8 @@ void lampi_environ_init(void)
     for (i = 0; lampi_environ_string_array[i].name; i++) {
         lampi_environ_string_array[i].value =
             getenv_string_array(lampi_environ_string_array[i].name,
-                                lampi_environ_string_array[i].default_value);
+                                lampi_environ_string_array[i].
+                                default_value);
     }
 }
 
@@ -386,11 +368,12 @@ void lampi_environ_init(void)
  */
 int lampi_environ_find_integer(const char *name, int *eval)
 {
-    int 	i;
-    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int i;
+    int ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
-	
+    if (NULL == name)
+        return LAMPI_ENV_ERR_NULL_NAME;
+
     *eval = 0;
     for (i = 0; lampi_environ_integer[i].name; i++) {
         if (strcmp(name, lampi_environ_integer[i].name) == 0) {
@@ -409,10 +392,11 @@ int lampi_environ_find_integer(const char *name, int *eval)
  */
 int lampi_environ_find_real(const char *name, double *eval)
 {
-    int 	i;
-    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int i;
+    int ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if (NULL == name)
+        return LAMPI_ENV_ERR_NULL_NAME;
 
     *eval = 0.0;
     for (i = 0; lampi_environ_real[i].name; i++) {
@@ -432,10 +416,11 @@ int lampi_environ_find_real(const char *name, double *eval)
  */
 int lampi_environ_find_string(const char *name, char **eval)
 {
-    int 	i;
-    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int i;
+    int ret = LAMPI_ENV_ERR_NOT_FOUND;
 
-    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if (NULL == name)
+        return LAMPI_ENV_ERR_NULL_NAME;
 
     *eval = NULL;
     for (i = 0; lampi_environ_string[i].name; i++) {
@@ -453,12 +438,13 @@ int lampi_environ_find_string(const char *name, char **eval)
 /*
  * Find a string array value in the LAMPI environment.
  */
-int lampi_environ_find_string_array(const char *name,  char ***eval)
+int lampi_environ_find_string_array(const char *name, char ***eval)
 {
-    int		ret = LAMPI_ENV_ERR_NOT_FOUND;
-    int 	i;
+    int ret = LAMPI_ENV_ERR_NOT_FOUND;
+    int i;
 
-    if ( NULL == name ) return LAMPI_ENV_ERR_NULL_NAME;
+    if (NULL == name)
+        return LAMPI_ENV_ERR_NULL_NAME;
 
     *eval = NULL;
     for (i = 0; lampi_environ_string_array[i].name; i++) {
@@ -504,7 +490,8 @@ void lampi_environ_dump(void)
     }
 
     for (i = 0; lampi_environ_string_array[i].name; i++) {
-        fprintf(stdout, "lampi_environ_dump: %s=\"", lampi_environ_string_array[i].name);
+        fprintf(stdout, "lampi_environ_dump: %s=\"",
+                lampi_environ_string_array[i].name);
         if (lampi_environ_string_array[i].value) {
             for (p = lampi_environ_string_array[i].value; *p != NULL; p++) {
                 printf("%s:", *p);
@@ -513,14 +500,14 @@ void lampi_environ_dump(void)
         } else {
             printf("NULL");
         }
-        printf(" [default=\"%s\"]\n", lampi_environ_string_array[i].default_value);
+        printf(" [default=\"%s\"]\n",
+               lampi_environ_string_array[i].default_value);
     }
 }
 
 CDECL_END
 
 #ifdef TEST_PROGRAM
-
 int main(int argc, char *argv[])
 {
     int i;
@@ -551,9 +538,10 @@ int main(int argc, char *argv[])
 
     for (i = 0; lampi_environ_string_array[i].name; i++) {
         printf("%s = \"", lampi_environ_string_array[i].name);
-        p = lampi_environ_find_string_array(lampi_environ_string_array[i].name);
+        p = lampi_environ_find_string_array(lampi_environ_string_array[i].
+                                            name);
         if (p) {
-            for ( ; *p != NULL; p++) {
+            for (; *p != NULL; p++) {
                 printf("%s:", *p);
             }
             printf("\b\"\n");

@@ -37,7 +37,6 @@
 #include "init/environ.h"
 #include "internal/mpi.h"
 #include "internal/buffer.h"
-#include "internal/cLock.h"
 #include "internal/state.h"
 
 /*
@@ -76,9 +75,9 @@ int _mpi_init(void)
      */
     if (!called) {
         called = 1;
-        cLockInit(&(_mpi.lock));
+        ATOMIC_LOCK_INIT(_mpi.lock);
     }
-    _mpi_lock(&(_mpi.lock));
+    ATOMIC_LOCK(_mpi.lock);
 
     if (_mpi.initialized == 0) {
 
@@ -86,6 +85,12 @@ int _mpi_init(void)
             _mpi_dbg("_mpi_init: initializing\n");
         }
 
+        if (_MPI_FORTRAN) { 
+            lampi_environ_find_integer("LAMPI_FORTRAN", &(_mpi.fortran_layer_enabled));
+        } else {
+            _mpi.fortran_layer_enabled = 0;
+        }
+            
         _mpi.initialized = 1;
         _mpi.finalized = 0;
         _mpi.proc_null_request = &dummy_proc_null_request;
@@ -122,10 +127,10 @@ int _mpi_init(void)
             return -1;
         }
         memset(_mpi.free_table, 0, sizeof(ptr_table_t));
-        cLockInit(&(_mpi.free_table->lock));
+        ATOMIC_LOCK_INIT(_mpi.free_table->lock);
     }
 
-    _mpi_unlock(&(_mpi.lock));
+    ATOMIC_UNLOCK(_mpi.lock);
 
     /*
      * initialize the control structure of buffered sends
@@ -135,7 +140,7 @@ int _mpi_init(void)
     lampiState.bsendData->bytesInUse = 0;
     lampiState.bsendData->buffer = 0;
     lampiState.bsendData->allocations = NULL;
-    cLockInit(&(lampiState.bsendData->Lock));
+    ATOMIC_LOCK_INIT(lampiState.bsendData->lock);
 
     return MPI_SUCCESS;
 }
@@ -147,9 +152,16 @@ int _mpi_init(void)
  */
 int _mpi_finalize(void)
 {
-    _mpi_lock(&(_mpi.lock));
+    int i;
+    int rc;
+
+    rc = ulm_barrier(ULM_COMM_WORLD);
+    if (rc != ULM_SUCCESS) {
+        return _mpi_error(rc);
+    }
+
+    ATOMIC_LOCK(_mpi.lock);
     if (_mpi.finalized == 0) {
-        int i;
 
         _mpi.finalized = 1;
 
@@ -173,7 +185,7 @@ int _mpi_finalize(void)
         }
         ulm_free(_mpi.free_table);
     }
-    _mpi_unlock(&(_mpi.lock));
+    ATOMIC_UNLOCK(_mpi.lock);
 
-    return 0;
+    return MPI_SUCCESS;
 }

@@ -73,7 +73,7 @@ int PMPI_Op_free(MPI_Op *mop)
 
     ulm_pending_messages(&messages_pending);
     if (!messages_pending) {
-        _mpi_lock(&(table->lock));
+        ATOMIC_LOCK(table->lock);
         for (i = 0; i < table->size; i++) {
             if (table->addr[i]) {
                 ulm_free(table->addr[i]);
@@ -82,7 +82,7 @@ int PMPI_Op_free(MPI_Op *mop)
         }
         table->lowest_free = 0;
         table->number_free = table->size;
-        _mpi_unlock(&(table->lock));
+        ATOMIC_UNLOCK(table->lock);
     }
 
 

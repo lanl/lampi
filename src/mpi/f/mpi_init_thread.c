@@ -46,76 +46,49 @@
 
 void mpi_init_thread_f(MPI_Fint *required, MPI_Fint *provided, MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    *rc = MPI_Init_thread(NULL, NULL, *required, provided);
 }
 
 #else
 
 void PMPI_INIT_THREAD(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void pmpi_init_thread(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void pmpi_init_thread_(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void pmpi_init_thread__(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void MPI_INIT_THREAD(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void mpi_init_thread(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void mpi_init_thread_(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 void mpi_init_thread__(MPI_Fint *required, MPI_Fint *provided,MPI_Fint *rc)
 {
-	int provided_c=*provided;
-	int required_c;
-	*rc = MPI_Init_thread(NULL, NULL,provided,&required_c);
-	*required=required_c;
+    mpi_init_thread_f(required, provided, rc);
 }
 
 #endif

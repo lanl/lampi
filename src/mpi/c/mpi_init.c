@@ -34,8 +34,6 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
-#include "internal/cLock.h"
-
 #pragma weak MPI_Init = PMPI_Init
 int PMPI_Init(int *argc, char ***argv)
 {
@@ -63,7 +61,7 @@ int PMPI_Init(int *argc, char ***argv)
         return MPI_ERR_INTERN;
     }
 
-    if (_MPI_FORTRAN) {
+    if (_mpi.fortran_layer_enabled) {
         rc = _mpif_init();
         if (rc) {
             return MPI_ERR_INTERN;

@@ -94,7 +94,7 @@ int PMPI_Type_struct(int count,
         newtype->envelope.darray = NULL;
         newtype->envelope.iarray[0] = count;
 
-        if (_MPI_FORTRAN) {
+        if (_mpi.fortran_layer_enabled) {
             newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
         }
 
@@ -338,7 +338,7 @@ int PMPI_Type_struct(int count,
 
     *newdatatype = newtype;
 
-    if (_MPI_FORTRAN) {
+    if (_mpi.fortran_layer_enabled) {
         newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
     }
 

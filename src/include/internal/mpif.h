@@ -56,7 +56,7 @@ CDECL_BEGIN
 
 typedef struct mpif_state_t mpif_state_t;
 struct mpif_state_t {
-    lockStructure_t lock;
+    lockStructure_t lock[1];
     int initialized;
     int finalized;
     ptr_table_t	*op_table;
@@ -75,7 +75,7 @@ extern mpif_state_t _mpif;
  */
 
 int _mpif_init(void);
-int _mpi_finalize(void);
+int _mpif_finalize(void);
 ptr_table_t *_mpif_create_op_table(void);
 ptr_table_t *_mpif_create_request_table(void);
 ptr_table_t *_mpif_create_type_table(void);

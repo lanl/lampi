@@ -35,7 +35,6 @@
 
 #include <sys/types.h>
 
-#include "internal/cLock.h"
 #include "internal/linkage.h"
 #include "ulm/types.h"
 
@@ -85,7 +84,7 @@ struct bsendData_t {
     ULMBufferRange_t *allocations;
 
     /* management lock */
-    lockStructure_t Lock;
+    lockStructure_t lock[1];
 };
 
 typedef struct bsendData_t  bsendData_t;

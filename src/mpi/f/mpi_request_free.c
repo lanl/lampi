@@ -38,9 +38,12 @@ void mpi_request_free_f(MPI_Fint *req, MPI_Fint *rc)
     *rc = MPI_Request_free(&c_req);
 
     if (*rc == MPI_SUCCESS) {
-        _mpi_ptr_table_free(_mpif.request_table, *req);
-        /* reset request handle to MPI_REQUEST_NULL */
-        *req = -1;
+        /* Fortran MPI_REQUEST_NULL is -1 */
+        if (*req != -1) {
+            _mpi_ptr_table_free(_mpif.request_table, *req);
+            /* reset request handle to MPI_REQUEST_NULL */
+            *req = -1;
+        }
     }
 }
 

@@ -63,6 +63,7 @@ SRC_LIBMPI += \
 	src/interface/ulm_send_vec.cc \
 	src/interface/ulm_set_errhandler_index.cc \
 	src/interface/ulm_set_path_selection_functions.cc \
+	src/interface/ulm_set_thread_usage.cc \
 	src/interface/ulm_set_topology.cc \
 	src/interface/ulm_start.cc \
 	src/interface/ulm_type_free.cc \

@@ -31,20 +31,23 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#include "internal/cLock.h"
+#include "internal/state.h"
+#include "ulm/errors.h"
 
-// lock function
-void lock(lockStructure_t *lockData)
-{spinlock(lockData);}
+/*!
+ * User abort function
+ *
+ * \param use	Flag to toggle thread safety
+ * \return	Always returns success
+ */
+extern "C" int ulm_set_thread_usage(int use)
+{
+    if (use) {
+        lampiState.usethreads = 1;
+    } else {
+        lampiState.usethreads = 0;
+    }
 
-// try-lock function
-int try_lock(lockStructure_t *lockData)
-{return spintrylock(lockData); }
+    return ULM_SUCCESS;
+}
 
-//  unlock function
-void unlock(lockStructure_t *lockData)
-{ spinunlock(lockData); }
-
-/* initialization function */
-void cLockInit(lockStructure_t *lockData)
-{ lockData->data.lockData_m = LOCK_UNLOCKED; }

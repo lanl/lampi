@@ -424,10 +424,10 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
 
         if ( 0 == msg->sourceNode() )
         {
-                // We have received the aggregate data.
-                // Copy data to buffer.
-                // Since node 0 also receives this msg, do not bother with the copy.
-                spinlock(&coll_lock_m);
+            // We have received the aggregate data.
+            // Copy data to buffer.
+            // Since node 0 also receives this msg, do not bother with the copy.
+            spinlock(&coll_lock_m);
             if ( NULL == buffer_m[COLL_IDX(cmd)] )
             {
                 buffer_m[COLL_IDX(cmd)] = (char *)ulm_malloc(datalen);
@@ -443,12 +443,12 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
             // Now set flag to continue.
             collOK_m[COLL_IDX(cmd)] = true;
 
-                // distribute msg to CTClients
-                apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
-                freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
-                collClients_m[COLL_IDX(cmd)] = NULL;
+            // distribute msg to CTClients
+            apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
+            freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
+            collClients_m[COLL_IDX(cmd)] = NULL;
 
-                spinunlock(&coll_lock_m);
+            spinunlock(&coll_lock_m);
         }
         else
         {

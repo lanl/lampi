@@ -32,7 +32,6 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "internal/mpi.h"
-#include "internal/cLock.h"
 #include "os/atomic.h"
 
 /*
@@ -85,22 +84,4 @@ void _mpi_dbg(const char *format, ...)
     vfprintf(stderr, format, ap);
     fflush(stderr);
     va_end(ap);
-}
-
-
-/*
- * locks
- */
-void _mpi_lock(lockStructure_t *lockData)
-{
-    if (_mpi.threadsafe) {
-        lock(lockData);
-    }
-}
-
-void _mpi_unlock(lockStructure_t *lockData)
-{
-    if (_mpi.threadsafe) {
-        unlock(lockData);
-    }
 }

@@ -40,7 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal/cLock.h"
 #include "internal/linkage.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
@@ -94,8 +93,9 @@ struct mpi_state_t {
         ulm_scatterv_t *scatterv;
     } collective;
     MPI_Request proc_null_request;
+    int fortran_layer_enabled;
     int threadsafe;
-    lockStructure_t lock;
+    lockStructure_t lock[1];
     int initialized;
     int finalized;
     int check_args;
@@ -231,7 +231,7 @@ struct pair_longdouble_longdouble_t {
 
 struct errhandler_t {
     MPI_Handler_function *func;
-    lockStructure_t lock;
+    lockStructure_t lock[1];
     int isbasic;
     int freed;
     int refcount;
@@ -257,8 +257,6 @@ ptr_table_t *_mpi_create_errhandler_table(void);
 void *_mpi_ptr_table_lookup(ptr_table_t *table, int index);
 void _mpi_dbg(const char *format, ...);
 void _mpi_errhandler(MPI_Comm comm, int rc, char *file, int line);
-void _mpi_lock(lockStructure_t *lockData);
-void _mpi_unlock(lockStructure_t *lockData);
 
 CDECL_END
 

@@ -228,22 +228,19 @@ extern "C" int ulm_bsend_increment_refcount(ULMRequest_t request,
 {
     ULMBufferRange_t *allocation;
 
-    if (usethreads())
-        lock(&(lampiState.bsendData->Lock));
+    ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
     allocation = ulm_bsend_find_alloc(offset, request);
 
     if (allocation == NULL) {
-        if (usethreads())
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
         return 0;
     }
 
     allocation->request = request;
     allocation->refCount += ((allocation->refCount == -1) ? 2 : 1);
 
-    if (usethreads())
-        unlock(&(lampiState.bsendData->Lock));
+    ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
     return 1;
 }
@@ -253,14 +250,12 @@ extern "C" int ulm_bsend_decrement_refcount(ULMRequest_t request,
 {
     ULMBufferRange_t *allocation;
 
-    if (usethreads())
-        lock(&(lampiState.bsendData->Lock));
+    ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
     allocation = ulm_bsend_find_alloc(offset, request);
 
     if (allocation == NULL) {
-        if (usethreads())
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
         return 0;
     }
 
@@ -269,8 +264,7 @@ extern "C" int ulm_bsend_decrement_refcount(ULMRequest_t request,
         ulm_bsend_clean_alloc(0);
     }
 
-    if (usethreads())
-        unlock(&(lampiState.bsendData->Lock));
+    ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
     return 1;
 }

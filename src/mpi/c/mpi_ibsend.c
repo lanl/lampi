@@ -80,25 +80,22 @@ int PMPI_Ibsend(void *buf, int count, MPI_Datatype type, int dest,
 
     if (size > 0) {
         /* lock buffer pool */
-        if (lampiState.usethreads)
-            lock(&(lampiState.bsendData->Lock));
+        ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
 
         /* get the allocation */
         allocation = ulm_bsend_alloc(size, 1);
 
         if (allocation == NULL) {
             /* not enough buffer space - check progress, clean prev. alloc. and try again */
-            if (lampiState.usethreads)
-                unlock(&(lampiState.bsendData->Lock));
+            ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
             ulm_make_progress();
-            if (lampiState.usethreads)
-                lock(&(lampiState.bsendData->Lock));
+            ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
             ulm_bsend_clean_alloc(0);
             allocation = ulm_bsend_alloc(size, 1);
 
             if (allocation == NULL) {
                 /* unlock buffer pool */
-                unlock(&(lampiState.bsendData->Lock));
+                ATOMIC_UNLOCK(lampiState.bsendData->lock);
                 rc = MPI_ERR_BUFFER;
                 _mpi_errhandler(comm, rc, __FILE__, __LINE__);
 
@@ -111,8 +108,7 @@ int PMPI_Ibsend(void *buf, int count, MPI_Datatype type, int dest,
                               allocation->offset);
 
         /* unlock pool */
-        if (lampiState.usethreads)
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
 
         /* fill in sendBuffer */
         position = 0;
@@ -127,14 +123,12 @@ int PMPI_Ibsend(void *buf, int count, MPI_Datatype type, int dest,
         rc = PMPI_Pack(tbuf, count, datatype, sendBuffer, size, &position,
                        comm);
         if (rc != MPI_SUCCESS) {
-            if (lampiState.usethreads)
-                lock(&(lampiState.bsendData->Lock));
+            ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
             if (allocation->refCount == -1) {
                 allocation->refCount = 0;
                 ulm_bsend_clean_alloc(0);
             }
-            if (lampiState.usethreads)
-                unlock(&(lampiState.bsendData->Lock));
+            ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
             goto ERRHANDLER;
         }
     }
@@ -148,14 +142,12 @@ int PMPI_Ibsend(void *buf, int count, MPI_Datatype type, int dest,
 
     /* clean up allocation if ulm_isend failed */
     if ((size > 0) && (rc != ULM_SUCCESS)) {
-        if (lampiState.usethreads)
-            lock(&(lampiState.bsendData->Lock));
+        ATOMIC_LOCK_THREAD(lampiState.bsendData->lock);
         if (allocation->refCount == -1) {
             allocation->refCount = 0;
             ulm_bsend_clean_alloc(0);
         }
-        if (lampiState.usethreads)
-            unlock(&(lampiState.bsendData->Lock));
+        ATOMIC_UNLOCK_THREAD(lampiState.bsendData->lock);
     }
 
     *request = (MPI_Request) req;
