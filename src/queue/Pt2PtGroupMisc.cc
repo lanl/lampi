@@ -492,6 +492,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // initialize multicast members
     multicast_vpid = 0;
     elan_mcast_buf = 0;
+    hw_ctx_stripe = -1;
 
     return ULM_SUCCESS;
 }
@@ -562,10 +563,13 @@ int Communicator::getMcastVpid(int rail, int *vp)
 
 #else
 
+    ELAN_LOCATION loc;
     ELAN3_CTX *ctx;
     int *vpids;
+    int i, rc;
+    int myVp, mcast_vp;
     int lowvp, highvp;
-    int i;
+    int _hw_ctx[4] = {0, 0, 0, 0};
 
     // see if we've already computed this value...
     if (multicast_vpid) {
@@ -579,39 +583,66 @@ int Communicator::getMcastVpid(int rail, int *vp)
         multicast_vpid[i] = -1;
     }
 
-    /* No inter-communicators yet */
+    // No inter-communicators yet
     if (communicatorType == INTER_COMMUNICATOR) {
         *vp = -1;
         return ULM_SUCCESS;
     }
 
-    /* fill out array of vpids and sort */
+    // fill out array of vpids
     vpids = (int *) ulm_malloc(localGroup->groupSize * sizeof(int));
     for (i = 0; i < localGroup->groupSize; i++) {
         vpids[i] = localGroup->mapGroupProcIDToGlobalProcID[i];
     }
-    qsort(vpids, localGroup->groupSize, sizeof(int), cmp);
 
-    // make sure we have a contiguous range of vpids */
-    for (i = 1; i < localGroup->groupSize; i++) {
-        if (vpids[i-1] != vpids[i] - 1) {
-            *vp = -1;
-            return ULM_SUCCESS;
+    // make sure we have a stripe across all nodes
+    myVp = localGroup->mapGroupProcIDToGlobalProcID[localGroup->ProcID];
+    for (i = 0; i < localGroup->groupSize; i++) {
+        loc = elan3_vp2location(vpids[i],  &quadricsCap);
+        _hw_ctx[loc.Context]++;
+    }
+    for (i = 0; i < 4; i++) {
+        if (_hw_ctx[i] == localGroup->numberOfHostsInGroup) {
+            hw_ctx_stripe = i;
         }
     }
-    lowvp = vpids[0];
-    highvp = vpids[localGroup->groupSize-1];
+    if (hw_ctx_stripe == -1) { // no stripe exists
+        *vp = -1;
+        return ULM_SUCCESS;
+    }
 
+    // find low, high vp
+    lowvp = localGroup->groupSize - 1; 
+    highvp = 0;
+    for (i = 0; i < localGroup->groupSize; i++) {
+        loc = elan3_vp2location(vpids[i],  &quadricsCap);
+        if (loc.Context == hw_ctx_stripe) {
+            if (vpids[i] < lowvp) {
+                lowvp = vpids[i];
+            }
+            if (vpids[i] > highvp) {
+                highvp = vpids[i];
+            }
+        }
+    }
+
+    // try to allocate, add the bcast vp
     for (i = 0; i < quadricsNRails; i++) {
         ctx = getElan3Ctx(i);
-        if ((multicast_vpid[i] = elan3_allocatebcastvp(ctx)) == -1) {
+        multicast_vpid[i] = elan3_allocatebcastvp(ctx);
+        if (multicast_vpid[i] == -1) {
+            perror("elan3_allocatebcastvp returned -1 \n");
             return ULM_ERROR;
         }
-        if ((elan3_addbcastvp(ctx, multicast_vpid[i], lowvp, highvp)) < 0) {
+        rc = elan3_addbcastvp(ctx, multicast_vpid[i], lowvp, highvp);
+        if (rc < 0) {
+            ulm_err(("mcast_vp=%d, lowvp=%d, highvp=%d \n",
+                     mcast_vp, lowvp, highvp));
+            perror("elan3_addbcastvp returned -1");
             return ULM_ERROR;
         }
     }
-     
+
     ulm_free(vpids);
     *vp = multicast_vpid[rail];
     return ULM_SUCCESS;

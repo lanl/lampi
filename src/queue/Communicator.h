@@ -234,6 +234,9 @@ public:
     // topology
     ULMTopology_t *topology;
 
+    // hardware quadrics context for multicast
+    int hw_ctx_stripe;
+
     // attributes
     int attributeCount;
     int sizeOfAttributeArray;

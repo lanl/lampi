@@ -57,6 +57,51 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
     //! get frag source (group ProcID ID)
     int fragSrc = DataHeader->srcProcID_m;
 
+    // handle multicast fragments
+    if (DataHeader->refCnt_m > 0 && fragSendSeqID == 0) {
+	// lock point-to-point receive to prevent any new receives
+	// from being posted before this frag is processed
+        if(usethreads()) {
+	    recvLock[fragSrc].lock();
+        }
+
+	//! see if receive has already been posted
+	MatchedPostedRecvHeader = checkPostedRecvListForMatch(DataHeader);
+
+	//! if match found, process data
+	if (MatchedPostedRecvHeader) {
+            /* process received data */
+            request=MatchedPostedRecvHeader->requestDesc;
+            ProcessMatchedData(MatchedPostedRecvHeader,DataHeader, 
+                               timeNow, &recvDone);
+
+            // Match just completed - scan privateQueues.OkToMatchRecvFrags list
+            //  to see if any fragements have arrived between the
+            //  irecv being posted (at which time no frags
+            //  for that message had arrived, and when this frag
+            //  is picked up. Need to search the list in any case
+            //  just in case duplicate frags have arrived.
+            //if (!recvDone) {
+            //  SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,
+            //                                         timeNow);
+            //}
+	} else {
+	    //! if match not found, place on privateQueues.OkToMatchRecvFrags list
+	    DataHeader->WhichQueue = UNMATCHEDFRAGS;
+	    privateQueues.OkToMatchRecvFrags[fragSrc]->AppendNoLock(DataHeader);
+	}
+
+        if (usethreads()) {
+            recvLock[fragSrc].unlock();
+        }
+        
+        if( recvDone ){
+            request->messageDone = true;
+	}
+
+        return ULM_SUCCESS;
+    }
+
 #ifdef RELIABILITY_ON
     // duplicate/dropped message frag support
     // only for those communication paths that overwrite
@@ -137,7 +182,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
     }
 #endif				/* _DEBUGQUEUES */
 
-    if (fragSendSeqID == nextSeqIDToProcess) {
+    if (fragSendSeqID == nextSeqIDToProcess || fragSendSeqID == 0) {
 
 	//!
 	//! This is the sequence number we were expecting,
