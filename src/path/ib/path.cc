@@ -88,7 +88,7 @@ inline void ibPath::checkSendCQs(void)
                 break;
             }
             else if (vapi_result != VAPI_OK) {
-                ulm_exit((-1, "ibPath::checkSendCQs VAPI_poll_cq() for HCA %d returned %s\n",
+                ulm_exit(("ibPath::checkSendCQs VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
 
@@ -619,7 +619,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 break;
             } 
             else if (vapi_result != VAPI_OK) {
-                ulm_exit((-1, "ibPath::receive VAPI_poll_cq() for HCA %d returned %s\n",
+                ulm_exit(("ibPath::receive VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
 
@@ -720,21 +720,21 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 }
                 else {
                     if (usecrc()) {
-                        ulm_exit((-1, "ibPath::receive - bad envelope CRC %u (computed %u)\n",
+                        ulm_exit(("ibPath::receive - bad envelope CRC %u (computed %u)\n",
                             recvd_chksum, computed_chksum));
                     }
                     else {
-                        ulm_exit((-1, "ibPath::receive - bad envelope checksum %u "
+                        ulm_exit(("ibPath::receive - bad envelope checksum %u "
                             "(computed %u)\n", recvd_chksum, computed_chksum));
                     }
                 }
 #else
                 if (usecrc()) {
-                    ulm_exit((-1, "ibPath::receive - bad envelope CRC %u (computed %u)\n",
+                    ulm_exit(("ibPath::receive - bad envelope CRC %u (computed %u)\n",
                         recvd_chksum, computed_chksum));
                 }
                 else {
-                    ulm_exit((-1, "ibPath::receive - bad envelope checksum %u "
+                    ulm_exit(("ibPath::receive - bad envelope checksum %u "
                           "(computed %u)\n", recvd_chksum, computed_chksum));
                 }
 #endif

@@ -145,7 +145,7 @@ public:
     // abort function
     int AbortFunction(char *ErrorString)
         {
-            ulm_exit((-1, ErrorString));
+            ulm_exit((ErrorString));
             // this line is never called
             return 1;
         }
@@ -190,7 +190,7 @@ public:
             // set string describing the class
             description_m = strdup(description);
             if (!description_m) {
-                ulm_exit((-1, "Error: Out of memory\n"));
+                ulm_exit(("Error: Out of memory\n"));
             }
 
             // Initialize number of contexts
@@ -206,7 +206,7 @@ public:
                 chunksReturned = (int *) ulm_malloc(nLists_m * sizeof(int));
                 if (!elementsOut || !elementsMax || !elementsSum
                     || !numEvents || !chunksRequested || !chunksReturned) {
-                    ulm_exit((-1, "Error: Out of memory\n"));
+                    ulm_exit(("Error: Out of memory\n"));
                 }
                 for (int i = 0; i < nLists_m; i++) {
                     elementsOut[i] = 0;
@@ -280,7 +280,7 @@ public:
                 ulm_malloc(sizeof(ListOfMemorySegments_t < ContainerType > *) *
                            nLists_m);
             if (!freeLists_m) {
-                ulm_exit((-1, "Error: Out of memory\n"));
+                ulm_exit(("Error: Out of memory\n"));
             }
             // run constructors
             for (int list = 0; list < nLists_m; list++) {
@@ -301,7 +301,7 @@ public:
                                    (ListOfMemorySegments_t < ContainerType >));
                 }
                 if (!freeLists_m[list]) {
-                    ulm_exit((-1, "Error: Out of memory\n"));
+                    ulm_exit(("Error: Out of memory\n"));
                 }
                 new(freeLists_m[list]) ListOfMemorySegments_t <
                     ContainerType >;
@@ -320,7 +320,7 @@ public:
             if (enforceMemAffinity_m) {
                 affinity_m = new affinity_t[nLists_m];
                 if (!affinity_m) {
-                    ulm_exit((-1, "Error: Out of memory\n"));
+                    ulm_exit(("Error: Out of memory\n"));
                 }
                 // copy policies in
                 for (int pool = 0; pool < nLists_m; pool++) {
@@ -336,7 +336,7 @@ public:
                     while (freeLists_m[i]->bytesPushedOnFreeList_m
                            < freeLists_m[i]->minBytesPushedOnFreeList_m) {
                         if (createMoreElements(i) != ULM_SUCCESS) {
-                            ulm_exit((-1, "Error: Setting up initial private "
+                            ulm_exit(("Error: Setting up initial private "
                                       "free list for %s.\n", description_m));
                         }
                     }               // end while loop
@@ -345,7 +345,7 @@ public:
 
                 } else {
                     // only 1 process should be initializing the list
-                    ulm_exit((-1, "Error: Setting up initial private free "
+                    ulm_exit(("Error: Setting up initial private free "
                               "list %d for %s.\n", i, description_m));
                 }
             }                       // end freeList loop
@@ -728,7 +728,7 @@ private:
                     ulm_malloc(lenToAlloc);
             }
             if (!memoryPool_m) {
-                ulm_exit((-1, "Error: Out of memory\n"));
+                ulm_exit(("Error: Out of memory\n"));
             }
             // run constructor
             new(memoryPool_m) MemoryPool_t < MemProt, MemFlags, SharedMemFlag >;

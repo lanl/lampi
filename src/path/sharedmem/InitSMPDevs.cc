@@ -131,7 +131,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
     memAffinityPool = (int *) ulm_malloc(sizeof(int) * NumLocalProcs);
 
     if (!memAffinityPool) {
-        ulm_exit((-1, "Out of memory\n"));
+        ulm_exit(("Out of memory\n"));
     }
     // fill in memory affinity index
     for (int i = 0; i < nFreeLists; i++) {
@@ -150,7 +150,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
                           SMPISendDescAbortWhenNoResource,
                           threshToGrowList);
     if (retVal) {
-        ulm_exit((-1, "Error: Initialization of SMP descriptor pool\n"));
+        ulm_exit(("Error: Initialization of SMP descriptor pool\n"));
     }
     //
     // initialize pool of SMP frag descriptors
@@ -188,7 +188,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
     ulm_free(memAffinityPool);
 
     if (retVal) {
-        ulm_exit((-1, "Error: Initialization of SMP frag pool\n"));
+        ulm_exit(("Error: Initialization of SMP frag pool\n"));
     }
 }
 
@@ -215,7 +215,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
         ulm_malloc(nLocalProcs * sizeofcbQueue);
 
     if (!(SharedMemIncomingFrags)) {
-        ulm_exit((-1, "Error: Out of memory\n"));
+        ulm_exit(("Error: Out of memory\n"));
     }
     //
     // setting up  of cbQueue**
@@ -229,7 +229,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
              MMAP_SHARED_FLAGS > **)
             ulm_malloc(nLocalProcs * sizeofcbQueue);
         if (!(SharedMemIncomingFrags[srcProc])) {
-            ulm_exit((-1, "Error: Out of memory\n"));
+            ulm_exit(("Error: Out of memory\n"));
         }
 
 
@@ -246,7 +246,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
                                                           destProc);
 
             if (!(SharedMemIncomingFrags[srcProc][destProc])) {
-                ulm_exit((-1, "Error: Out of memory\n"));
+                ulm_exit(("Error: Out of memory\n"));
             }
 
             /* !!! locking for thread safety */
@@ -258,7 +258,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
                      destProc, (SMPFragDesc_t *) (1),
                      (SMPFragDesc_t *) (2), (SMPFragDesc_t *) (3));
             if (retVal != ULM_SUCCESS) {
-                ulm_exit((-1, "Error: Initializing frag queue\n"));
+                ulm_exit(("Error: Initializing frag queue\n"));
             }
 
         }                       // end of destProc loop
@@ -269,7 +269,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
     SMPSendsToPost = (SharedMemDblLinkList **)
         ulm_malloc(sizeof(DoubleLinkList *) * local_nprocs());
     if (SMPSendsToPost == NULL) {
-        ulm_exit((-1, "Error: Out of memory\n"));
+        ulm_exit(("Error: Out of memory\n"));
     }
     createDoubleLinkList(SMPSendsToPost);
 
@@ -279,7 +279,7 @@ void SetUpSharedMemoryQueues(int nLocalProcs)
     SMPMatchedFrags = (SharedMemDblLinkList **)
         ulm_malloc(sizeof(DoubleLinkList *) * local_nprocs());
     if (SMPMatchedFrags == NULL) {
-        ulm_exit((-1, "Error: Out of memory\n"));
+        ulm_exit(("Error: Out of memory\n"));
     }
     createDoubleLinkList(SMPMatchedFrags);
 

@@ -57,7 +57,7 @@
 #define NBOXES()        1
 #define global_proc_to_host(X)  X
 #else
-#define ABORT()         ulm_exit((-1, "Aborting"));
+#define ABORT()         ulm_exit(("Aborting"));
 #define MYBOX()         myhost()
 #define NBOXES()        lampiState.nhosts
 #define global_proc_to_host(X)  global_proc_to_host(X)
@@ -576,8 +576,7 @@ int getGroupElement(int *slotIndex)
         newLength = grpPool.poolSize + nIncreaseGroupArray;
         Group **tmpGroups = ulm_new(Group *, newLength);
         if (!tmpGroups) {
-            ulm_exit((-1,
-                      "Error: Out of memory. "
+            ulm_exit(("Error: Out of memory. "
                       "Unable to allocate space for group objects\n"));
         }
         // copy information from old groupPool to new copy

@@ -40,32 +40,11 @@
 #include "internal/types.h"
 #include "init/init.h" /* for lampiState_t */
 
-int ClientInstallSigHandler(void);
-void Clientsig_child(int Signal);
-void ClientAbnormalChildTermination(pid_t PIDofChild, int NChildren,
-                                    pid_t *ChildPIDs, int *IAmAlive,
-                                    int SocketToULMRun);
-void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
-                    pid_t *ChildPIDs, unsigned int MessageType,
-                    int Notify);
-void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount,
-                            int _ulm_HostID, pid_t *ChildPIDs,
-                            unsigned int MessageType, int Notify,
-                            int *ClientStdoutFDs, int *ClientStderrFDs,
-                            PrefixName_t * IOPrefix, int *LenIOPreFix,
-                            size_t *StderrBytesWritten,
-                            size_t *StdoutBytesWritten, int *NewLineLast,
-                            lampiState_t * state);
-int CheckIfChildrenAlive(int *ProcessCount, int _ulm_HostID,
+void ClientAbort(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
+                 pid_t *ChildPIDs, unsigned int MessageType,
+                 int Notify);
+int ClientCheckIfChildrenAlive(int *ProcessCount, int _ulm_HostID,
                          int *IAmAlive);
-int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount,
-                           int *numberDaemonChildren, int hostIndex,
-                           pid_t *ChildPIDs, int *STDOUTfdsFromChildren,
-                           int *STDERRfdsFromChildren,
-                           size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten, int *NewLineLast,
-                           PrefixName_t * IOPreFix, int *LenIOPreFix,
-                           lampiState_t * state);
 int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               double *HeartBeatTime, int *ProcessCount,
                               int _ulm_HostID, pid_t *ChildPIDs,
@@ -85,21 +64,15 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            size_t *StderrBytesWritten,
                            size_t *StdoutBytesWritten, int *NewLineLast,
                            lampiState_t * state);
-void ClientOrderlyShutdown(size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten,
-                           int ControlSocketToULMRunFD,
-                           lampiState_t * state);
+void ClientOrderlyShutdown(int ControlSocketToULMRunFD);
 void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
                       int ServerFD, int NFDs, int MaxDescriptor,
                       PrefixName_t * IOPreFix, int *LenIOPreFix,
                       size_t *StderrBytesWritten,
                       size_t *StdoutBytesWritten, int *NewLineLast,
                       lampiState_t * state);
-void ClientWaitForSetUpToComplete(volatile int *HostDoneWithSetup,
-                                  volatile int *Wait, int NHosts,
-                                  int IAmDaemon, int ServerSocketFD);
-void setupMemoryPools();
-int setupCore();
+void setupMemoryPools(void);
+int setupCore(void);
 int setupPerProcSharedMemPools(int nPools);
 
 #endif                          /* _ULMCLIENT */

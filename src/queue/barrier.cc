@@ -105,7 +105,7 @@ int allocSWSMPBarrierPools()
     //
     swBarrier.nElementsInPool = (int *) ulm_malloc(sizeof(int) * swBarrier.nPools);
     if (!(swBarrier.nElementsInPool)) {
-        ulm_exit((-1, "swBarrier.nElementsInPool is invalid\n"));
+        ulm_exit(("swBarrier.nElementsInPool is invalid\n"));
     }
     //
     // allocate lastPoolUsed
@@ -113,7 +113,7 @@ int allocSWSMPBarrierPools()
     swBarrier.lastPoolUsed = (int *) SharedMemoryPools.getMemorySegment
         (sizeof(int), CACHE_ALIGNMENT);
     if (!(swBarrier.lastPoolUsed)) {
-        ulm_exit((-1, "swBarrier.lastPoolUsed is invalid\n"));
+        ulm_exit(("swBarrier.lastPoolUsed is invalid\n"));
     }
     *(swBarrier.lastPoolUsed) = 0;
 
@@ -123,7 +123,7 @@ int allocSWSMPBarrierPools()
     swBarrier.Lock = (Locks *) SharedMemoryPools.getMemorySegment
         (sizeof(Locks), CACHE_ALIGNMENT);
     if (!(swBarrier.Lock)) {
-        ulm_exit((-1, "swBarrier.Lock is invalid\n"));
+        ulm_exit(("swBarrier.Lock is invalid\n"));
     }
     swBarrier.Lock->init();
     //
@@ -132,7 +132,7 @@ int allocSWSMPBarrierPools()
     swBarrier.pool = (swBarrierCtlData **)
         ulm_malloc(sizeof(swBarrierCtlData *) * swBarrier.nPools);
     if (!(swBarrier.pool)) {
-        ulm_exit((-1, "swBarrier.pool is invalid\n"));
+        ulm_exit(("swBarrier.pool is invalid\n"));
     }
     // allocate shared memory
     long long memory = nPages * getpagesize();
@@ -161,7 +161,7 @@ int allocSWSMPBarrierPools()
 	    SharedMemoryPools.getMemorySegment(nElements * sizeof(swBarrierCtlData),
                                                CACHE_ALIGNMENT);
         if (!(swBarrier.pool[pl])) {
-            ulm_exit((-1, "swBarrier.pool[%i] is invalid\n", pl));
+            ulm_exit(("swBarrier.pool[%i] is invalid\n", pl));
         }
         char *counter = (char *) memPtr + pl * nPages * getpagesize();
         for (int ele = 0; ele < nElements; ele++) {
@@ -173,8 +173,7 @@ int allocSWSMPBarrierPools()
             // allocate the barrierData element out of process private memory
             (swBarrier.pool[pl][ele]).barrierData = (swBarrierData *) ulm_malloc(sizeof(swBarrierData));
             if (!(swBarrier.pool[pl][ele].barrierData)) {
-                ulm_exit((-1,
-                          "swBarrier.pool[%i][%i].barrierData is "
+                ulm_exit(("swBarrier.pool[%i][%i].barrierData is "
                           "invalid\n", pl, ele));
             }
             // set the pointer to the fetchop variable

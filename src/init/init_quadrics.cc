@@ -88,12 +88,12 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
 
     if ( !(broadcasters_array_len >= 8 && broadcasters_array_len <= 64))
     {
-      ulm_exit((-1, "Please set LAMPI_NUM_BCASTERS between 8 and 64.\n"));
+      ulm_exit(("Please set LAMPI_NUM_BCASTERS between 8 and 64.\n"));
     }
 
     quadrics_broadcasters = ulm_new(Broadcaster *, broadcasters_array_len);
     if (!quadrics_broadcasters) {
-        ulm_exit((-1, "Unable to allocate space for broadcasters\n"));
+        ulm_exit(("Unable to allocate space for broadcasters\n"));
     }
 
     /* Need to link the broadcaster to the quadrics path,
@@ -101,7 +101,7 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
     for (int i = 0; i < broadcasters_array_len; i++) {
         quadrics_broadcasters[i] = (Broadcaster*) ulm_new(Broadcaster, 1);
 	if (!quadrics_broadcasters[i])
-	  ulm_exit((-1, "Unable to allocate space for Broadcaster \n"));
+	  ulm_exit(("Unable to allocate space for Broadcaster \n"));
 	else
 	{
 	  quadrics_broadcasters[i]->id = i;
@@ -109,7 +109,7 @@ void lampi_init_postfork_coll_setup(lampiState_t *s)
 	  returnCode = quadrics_broadcasters[i]->init_bcaster(
 	      main_base, elan_base);
 	  if ( returnCode != ULM_SUCCESS)
-	    ulm_exit((-1, "Unable to allocate resource for Broadcaster \n"));
+	    ulm_exit(("Unable to allocate resource for Broadcaster \n"));
 	}
 	main_base = (char *)main_base + 
 	  (COMM_BCAST_MEM_SIZE + BCAST_CTRL_SIZE);

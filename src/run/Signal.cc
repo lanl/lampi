@@ -36,49 +36,50 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <sys/uio.h>
+#include <signal.h>
 
-#include "internal/constants.h"
 #include "internal/profiler.h"
-#include "internal/types.h"
-#include "client/SocketGeneric.h"
 #include "run/Run.h"
 
-/*
- * This routine is used to send an abort message to all hosts
- * participating in the job.
- */
 
-int AbortAllHosts(int *ClientSocketFDList, int NHosts)
+static void handler(int signal)
 {
-    int NFailed = 0;
-#if ENABLE_RMS == 0
-    int Tag;
-    int i;
-    ulm_iovec_t IOVec;
-    ssize_t IOReturn;
+    switch (signal) {
 
-    /* send abort message to each host */
-    NFailed = 0;
-    Tag = TERMINATENOW;
-    IOVec.iov_base = (char *) &Tag;
-    IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-    if (ClientSocketFDList) {
-        for (i = 0; i < NHosts; i++) {
-            /* send only to hosts that are still assumed to be alive */
-            if (ClientSocketFDList[i] > 0) {
-                IOReturn = SendSocket(ClientSocketFDList[i], 1, &IOVec);
-                /*  With failed send, register host as down !!!! */
-                if (IOReturn <= 0) {
-                    close(ClientSocketFDList[i]);
-                    ClientSocketFDList[i] = -1;
-                    NFailed++;
-                    RunParams.HostsAbNormalTerminated++;
-                }
-            }
-        }
+    case SIGALRM:
+        /* return to correct location in mpirun */
+        break;
+
+    case SIGINT:
+        Abort();
+        break;
     }
-#endif
-    return NFailed;
+}
+
+
+int InstallSigHandler(void)
+{
+    struct sigaction sa;
+
+    /*
+     * Setup signal handling for specific signals.  This will include
+     * specific signals, and which signals to block while the signal
+     * handler is executing.
+     */
+
+    /*
+     * SIGALRM - all signals will be blocked while execution is
+     *            proceeding.
+     */
+    sa.sa_handler = handler;
+    sigfillset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL)) {
+        ulm_err(("Error: trapping SIGINT\n"));
+        Abort();
+    }
+
+    return 0;
 }

@@ -39,62 +39,49 @@
 
 #include "internal/linkage.h"
 
+/* Runtime control of warning and debug messages */
+
+extern int ulm_dbg_enabled;
+extern int ulm_warn_enabled;
+
+/* error, warning, debug and exit macros */
+
 #define ulm_dbg(x)                                      \
     do {                                                \
         if (ulm_dbg_enabled) {                          \
             _ulm_set_file_line(__FILE__, __LINE__) ;    \
-            _ulm_dbg x ;                                \
+            _ulm_log x ;                                \
         }                                               \
     } while (0)
 
 #define ulm_err(x)                                      \
     do {                                                \
         _ulm_set_file_line(__FILE__, __LINE__) ;        \
-        _ulm_err x ;                                    \
+        _ulm_log x ;                                    \
     } while (0)
 
 #define ulm_warn(x)                                     \
     do {                                                \
         if (ulm_warn_enabled) {                         \
             _ulm_set_file_line(__FILE__, __LINE__) ;    \
-            _ulm_warn x ;                               \
+            _ulm_log x ;                                \
         }                                               \
     } while (0)
 
 #define ulm_exit(x)                                     \
     do {                                                \
         _ulm_set_file_line(__FILE__, __LINE__) ;        \
-        _ulm_exit x ;                                   \
-    } while (0)
-
-#define ulm_info(x)                             \
-    do {                                        \
-        _ulm_info x ;                           \
+        _ulm_log x ;                                    \
+        exit(EXIT_FAILURE);                             \
     } while (0)
 
 CDECL_BEGIN
 
-/* Error condition */
-void _ulm_err(const char* fmt, ...);
+/* print message to stderr and log file */
+void _ulm_log(const char* fmt, ...);
 
-/* Warning condition */
-void _ulm_warn(const char* fmt, ...);
-
-/* Informational message */
-void _ulm_info(const char* fmt, ...);
-
-/* Debugging message */
-void _ulm_dbg(const char* fmt, ...);
-
-/* Exit with error message */
-void _ulm_exit(int status, const char* fmt, ...);
-
-/* Set file and line info */
+/* set file and line information in message buffer */
 void _ulm_set_file_line(const char *file, int lineno);
-
-/* Runtime control of warning and debug messages */
-extern int ulm_dbg_enabled;
-extern int ulm_warn_enabled;
 
 CDECL_END
 

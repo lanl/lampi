@@ -395,11 +395,11 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     }
                     else {
                         if (usecrc()) {
-                            ulm_exit((-1, "gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                            ulm_exit(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
                                       rf->gmHeader_m->data.checksum, chksum));
                         }
                         else {
-                            ulm_exit((-1, "gmPath::receive - bad envelope checksum %u, "
+                            ulm_exit(("gmPath::receive - bad envelope checksum %u, "
                                       "calculated %u != 2*received %u\n",
                                       rf->gmHeader_m->data.checksum,
                                       chksum,
@@ -409,11 +409,11 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     }
 #else
                     if (usecrc()) {
-                        ulm_exit((-1, "gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                        ulm_exit(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
                                   rf->gmHeader_m->data.checksum, chksum));
                     }
                     else {
-                        ulm_exit((-1, "gmPath::receive - bad envelope checksum %u, "
+                        ulm_exit(("gmPath::receive - bad envelope checksum %u, "
                                   "calculated %u != 2*received %u\n",
                                   rf->gmHeader_m->data.checksum,
                                   chksum,
@@ -494,8 +494,7 @@ void gmPath::callback(struct gm_port *port,
 
     // fail if there was a failure -- first cut, no fault tolerance!
     if (status != GM_SUCCESS) {
-        ulm_exit((-1,
-                  "Error: gmPath::callback called with error status (%d)\n",
+        ulm_exit(("Error: gmPath::callback called with error status (%d)\n",
                   (int) status));
     }
     

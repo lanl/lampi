@@ -100,7 +100,7 @@ void TCPPeer::setAddress(int index, const struct sockaddr_in& inaddr)
 {
 #if !defined(NDEBUG)
     if(index < 0 || index >= (int)tcpSockets.size()) {
-        ulm_exit((-1, "TCPPeer::setAddress: invalid index %d\n", index));
+        ulm_exit(("TCPPeer::setAddress: invalid index %d\n", index));
     }
 #endif
     TCPSocket& tcpSocket = tcpSockets[index];

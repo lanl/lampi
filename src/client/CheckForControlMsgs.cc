@@ -53,140 +53,130 @@
 #include "queue/globals.h"
 
 /*
- * this routine receives and process control messages from the server
+ * Receive and process control messages from mpirun
  */
-int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
-                              double *HeartBeatTime, int *ProcessCount,
-                              int hostIndex, pid_t *ChildPIDs,
+int ClientCheckForControlMsgs(int MaxDescriptor,
+                              int *ServerSocketFD,
+                              double *HeartBeatTime,
+                              int *ProcessCount,
+                              int hostIndex,
+                              pid_t *ChildPIDs,
                               int *STDINfdToChild,
                               int *STDOUTfdsFromChildren,
                               int *STDERRfdsFromChildren, 
                               size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
-                              int *NewLineLast, PrefixName_t *IOPreFix,
-                              int *LenIOPreFix, lampiState_t *state)
+                              int *NewLineLast,
+                              PrefixName_t *IOPreFix,
+                              int *LenIOPreFix,
+                              lampiState_t *state)
 {
     fd_set ReadSet;
-    int i, RetVal, NotifyServer, NFDs, MaxDesc, error;
-    double Message;
+    int rc, NotifyServer, NFDs, MaxDesc, error;
+    ssize_t size;
     struct timeval WaitTime;
-    unsigned int Tag;
-    ssize_t IOReturn;
-    ulm_iovec_t IOVec;
-#ifndef HAVE_CLOCK_GETTIME
-    struct timeval Time;
-#else
-    struct timespec Time;
-#endif                          /* LINUX */
+    ulm_iovec_t iovec;
+    unsigned int message;
+    unsigned int tag;
 
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 100000;
 
-    if ((*ServerSocketFD) == -1)
+    if ((*ServerSocketFD) == -1) {
         return 0;
+    }
+
     FD_ZERO(&ReadSet);
-    if (*ServerSocketFD >= 0)
+    if (*ServerSocketFD >= 0) {
         FD_SET(*ServerSocketFD, &ReadSet);
+    }
 
-    RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
-    if (RetVal < 0)
-        return RetVal;
-    if (RetVal > 0) {
-        if (((*ServerSocketFD) >= 0)
-            && (FD_ISSET(*ServerSocketFD, &ReadSet))) {
-            /* Read tag value */
-            Tag = 0;
-            IOReturn = RecvSocket(*ServerSocketFD, &Tag,
-                                  sizeof(unsigned int), &error);
-            /* socket connection closed */
-            if (IOReturn == 0) {
-                *ServerSocketFD = -1;
-                return 0;
-            }
-            if (IOReturn < 0 || error != ULM_SUCCESS) {
-                ulm_exit((-1, "Error: reading Tag.  RetVal = %ld, "
-                          "error = %d\n", IOReturn, error));
-            }
-            switch (Tag) {      /* process according to message type */
-            case HEARTBEAT:
+    rc = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
+    if (rc <= 0) {
+        return rc;
+    }
+
+    if (((*ServerSocketFD) >= 0) && (FD_ISSET(*ServerSocketFD, &ReadSet))) {
+
+        /* read tag value */
+        tag = 0;
+        size = RecvSocket(*ServerSocketFD, &tag, sizeof(unsigned int), &error);
+
+        /* socket connection closed */
+        if (size == 0) {
+            *ServerSocketFD = -1;
+            return 0;
+        }
+        if (size < 0 || error != ULM_SUCCESS) {
+            ulm_exit(("Error: reading tag.  rc = %ld, "
+                      "error = %d\n", size, error));
+        }
+
+        /* process according to message type */
+        switch (tag) {
+
+        case HEARTBEAT:
 #ifndef HAVE_CLOCK_GETTIME
-                gettimeofday(&Time, NULL);
-                *HeartBeatTime =
-                    (double) (Time.tv_sec) +
-                    ((double) Time.tv_usec) * 1e-6;
+            struct timeval t;
+            gettimeofday(&t, NULL);
+            *HeartBeatTime = (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
 #else
-                clock_gettime(CLOCK_REALTIME, &Time);
-                *HeartBeatTime =
-                    (double) (Time.tv_sec) +
-                    ((double) Time.tv_nsec) * 1e-9;
-#endif                          /* LINUX */
-                break;
-            case ACKNORMALTERM:
-                Tag = ACKACKNORMALTERM;
-                IOVec.iov_base = (char *) &Tag;
-                IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                /* send ack of ack so that mpirun can shut down - this
-                   is done to let mpirun have time to read all stdio
-                   from the client hosts */
-                IOReturn = SendSocket(*ServerSocketFD, 1, &IOVec);
-                if (IOReturn < 0) {
-                    ulm_exit((-1, "Error: sending ACKACKNORMALTERM.  "
-                              "RetVal: %ld\n", IOReturn));
-                }
-                break;
-            case TERMINATENOW:
-                /* recieve request to teminate immediately */
-                Message = ACKTERMINATENOW;
-                NotifyServer = 1;
-                AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount,
-                                       hostIndex, ChildPIDs,
-                                       (unsigned int) Message,
-                                       NotifyServer, STDOUTfdsFromChildren,
-                                       STDERRfdsFromChildren, IOPreFix,
-                                       LenIOPreFix, StderrBytesWritten,
-                                       StdoutBytesWritten, NewLineLast,
-                                       state);
-                break;
-            case ALLHOSTSDONE:
-                // set flag indicating "app" process can terminate
-                ulm_dbg(("client ALLHOSTSDONE arrived on host %d\n",
-                         hostIndex));
-                Tag = ACKALLHOSTSDONE;
-                IOVec.iov_base = (char *) &Tag;
-                IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-                IOReturn = SendSocket(*ServerSocketFD, 1, &IOVec);
-                if (IOReturn < 0) {
-                    ulm_exit((-1, "Error: sending ACKALLHOSTSDONE.  "
-                              "RetVal: %ld\n", IOReturn));
-                }
-                /* drain stdio */
-                MaxDesc = 0;
-                NFDs = ProcessCount[hostIndex] + 1;
-                for (i = 0; i < NFDs; i++) {
-                    if (STDOUTfdsFromChildren[i] > MaxDesc)
-                        MaxDesc = STDOUTfdsFromChildren[i];
-                    if (STDERRfdsFromChildren[i] > MaxDesc)
-                        MaxDesc = STDERRfdsFromChildren[i];
-                }
-                MaxDesc++;
-                ClientDrainSTDIO(STDOUTfdsFromChildren,
-                                 STDERRfdsFromChildren, *ServerSocketFD,
-                                 NFDs, MaxDesc, IOPreFix, LenIOPreFix,
-                                 StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, state);
-                *lampiState.sync.AllHostsDone = 1;
-                // ok, the client daemon can now exit...
-                exit(0);
-                break;
+            struct timespec t;
+            clock_gettime(CLOCK_REALTIME, &t);
+            *HeartBeatTime = (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
+#endif
+            break;
 
-            case STDIOMSG:
-                if (*STDINfdToChild >= 0)
-                    ClientRecvStdin(ServerSocketFD, STDINfdToChild);
-                break;
-            default:
-                ulm_exit((-1, "Error: Unrecognized control message (%u)\n",
-                          Tag));
-            }                   /* end switch */
+        case TERMINATENOW:
+            /* recieve request to teminate immediately */
+            message = ACKTERMINATENOW;
+            NotifyServer = 1;
+            ClientAbort(*ServerSocketFD, ProcessCount, hostIndex,
+                        ChildPIDs, message, NotifyServer);
+            break;
+
+        case ALLHOSTSDONE:
+            /* set flag indicating app process can terminate */
+            ulm_err(("client ALLHOSTSDONE arrived on host %d\n", hostIndex));
+            tag = ACKALLHOSTSDONE;
+            iovec.iov_base = (char *) &tag;
+            iovec.iov_len = (ssize_t) sizeof(unsigned int);
+            size = SendSocket(*ServerSocketFD, 1, &iovec);
+            if (size < 0) {
+                ulm_exit(("Error: sending ACKALLHOSTSDONE.  "
+                          "rc: %ld\n", size));
+            }
+            /* drain stdio */
+            MaxDesc = 0;
+            NFDs = ProcessCount[hostIndex] + 1;
+            for (int i = 0; i < NFDs; i++) {
+                if (STDOUTfdsFromChildren[i] > MaxDesc) {
+                    MaxDesc = STDOUTfdsFromChildren[i];
+                }
+                if (STDERRfdsFromChildren[i] > MaxDesc) {
+                    MaxDesc = STDERRfdsFromChildren[i];
+                }
+            }
+            MaxDesc++;
+            ClientDrainSTDIO(STDOUTfdsFromChildren,
+                             STDERRfdsFromChildren, *ServerSocketFD,
+                             NFDs, MaxDesc, IOPreFix, LenIOPreFix,
+                             StderrBytesWritten, StdoutBytesWritten,
+                             NewLineLast, state);
+            *lampiState.sync.AllHostsDone = 1;
+
+            // ok, the client daemon can now exit...
+            exit(EXIT_SUCCESS);
+            break;
+
+        case STDIOMSG:
+            if (*STDINfdToChild >= 0) {
+                ClientRecvStdin(ServerSocketFD, STDINfdToChild);
+            }
+            break;
+
+        default:
+            ulm_exit(("Error: Unrecognized control message (%u)\n", tag));
         }
     }
 

@@ -64,8 +64,7 @@ void setupMemoryPools()
         SharedMemoryPools.getMemorySegment(lenToAlloc,
                                            CACHE_ALIGNMENT);
     if (!ShareMemDescPool) {
-        ulm_exit((-1,
-                  "Error: initializing  ShareMemDescPool memory pool\n"));
+        ulm_exit(("Error: initializing  ShareMemDescPool memory pool\n"));
     }
     // run constructor
     new(ShareMemDescPool) MemoryPoolShared_t;
@@ -73,7 +72,7 @@ void setupMemoryPools()
     // setup pool for shared memory descriptors
     ssize_t bytesToAllocate = bytesPerProcess * local_nprocs();
     if (bytesToAllocate <= 0) {
-        ulm_exit((-1, "Error: allocating ShareMemDescPool.  "
+        ulm_exit(("Error: allocating ShareMemDescPool.  "
                   "Bytes requested :: %ld (bytesPerProcess %ld local processes %d)\n",
                   bytesToAllocate, bytesPerProcess, local_nprocs()));
     }
@@ -83,8 +82,7 @@ void setupMemoryPools()
         Init(bytesToAllocate, bytesToAllocate, PoolChunkSize,
              getpagesize());
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1,
-                  "Error: initializing  ShareMemDescPool memory pool\n"));
+        ulm_exit(("Error: initializing  ShareMemDescPool memory pool\n"));
     }
 
     lenToAlloc = sizeof(MemoryPoolShared_t);
@@ -93,8 +91,7 @@ void setupMemoryPools()
         SharedMemoryPools.getMemorySegment(lenToAlloc,
                                            CACHE_ALIGNMENT);
     if (!largeShareMemDescPool) {
-        ulm_exit((-1,
-                  "Error: initializing  ShareMemDescPool memory pool\n"));
+        ulm_exit(("Error: initializing  ShareMemDescPool memory pool\n"));
     }
     // run constructor
     new(largeShareMemDescPool) MemoryPoolShared_t;
@@ -102,7 +99,7 @@ void setupMemoryPools()
     // setup pool for shared memory descriptors
     bytesToAllocate = largePoolBytesPerProcess * local_nprocs();
     if (bytesToAllocate <= 0) {
-        ulm_exit((-1, "Error: allocating largeShareMemDescPool.  "
+        ulm_exit(("Error: allocating largeShareMemDescPool.  "
                   "Bytes reqested :: %ld\n, ", bytesToAllocate));
     }
     // allocate memory
@@ -111,7 +108,7 @@ void setupMemoryPools()
         Init(bytesToAllocate, bytesToAllocate, PoolChunkSize,
              getpagesize());
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: initializing  largeShareMemDescPool "
+        ulm_exit(("Error: initializing  largeShareMemDescPool "
                   "memory pool\n"));
     }
 }

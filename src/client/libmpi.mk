@@ -4,12 +4,10 @@ SRC_LIBMPI += \
 	src/client/CheckIfChildrenAlive.cc \
 	src/client/ClientSendStdin.cc \
 	src/client/DrainSTDIO.cc \
-	src/client/InstallSigHandler.cc \
 	src/client/OrderlyShutdown.cc \
 	src/client/ScanStdoutStderr.cc \
 	src/client/SocketGeneric.cc \
 	src/client/TVSetup.cc \
-	src/client/ULMClientSignals.cc \
 	src/client/adminMessage.cc \
 	src/client/daemonLoop.cc \
 	src/client/setupMemoryPools.cc \

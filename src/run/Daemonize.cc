@@ -62,8 +62,10 @@ static int ScanStdIn(int fdin)
 {
     static char buff[ULM_MAX_IO_BUFFER];
     int rc = ULM_SUCCESS;
-    if(StdInCTS == false)
-        return 0;
+
+    if (StdInCTS == false) {
+        return ULM_SUCCESS;
+    }
 
     int cnt = read(fdin, buff, sizeof(buff));
     if (cnt == 0) {
@@ -112,7 +114,6 @@ void Daemonize(void)
     int *HostsNormalTerminated = &RunParams.HostsNormalTerminated;
     int *HostsAbNormalTerminated = &RunParams.HostsAbNormalTerminated;
 
-
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
@@ -135,28 +136,30 @@ void Daemonize(void)
 
     /* setup list of active hosts */
     ActiveHosts = ulm_new(int, NHosts);
-    for (i = 0; i < NHosts; i++)
+    for (i = 0; i < NHosts; i++) {
         ActiveHosts[i] = -1;
+    }
     TimeFirstCheckin = -1.0;
+
     /* setup array to hold list of app PID's */
     PIDsOfAppProcs = ulm_new(pid_t *, NHosts);
     for (i = 0; i < NHosts; i++) {
         PIDsOfAppProcs[i] = ulm_new(pid_t, ProcessCnt[i]);
     }
+
     /* setup initial control data */
     HeartBeatTime = ulm_new(double, NHosts);
 #ifndef HAVE_CLOCK_GETTIME
     gettimeofday(&Time, NULL);
-    TimeInSeconds =
-        (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
+    TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
 #else
     clock_gettime(CLOCK_REALTIME, &Time);
-    TimeInSeconds =
-        (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
+    TimeInSeconds = (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
 #endif
     LastTime = TimeInSeconds;
-    for (i = 0; i < NHosts; i++)
+    for (i = 0; i < NHosts; i++) {
         HeartBeatTime[i] = TimeInSeconds;
+    }
     LastTime = 0;
 
     /* find the largest descriptor - used for select */
@@ -293,8 +296,7 @@ void Daemonize(void)
 
             if (RetVal < NHosts) {
                 // Terminate all hosts
-                ulm_err(("Error: Host %d is no longer participating "
-                         "in the job\n", RetVal));
+                ulm_err(("Error: No heartbeat from host %d\n", RetVal));
                 ClientSocketFDList[RetVal] = -1;
                 KillAppProcs(RetVal);
                 Abort();

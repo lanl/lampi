@@ -50,22 +50,13 @@
 #include "client/SocketGeneric.h"
 
 /*
- * This routine is used to abort all local children and to notify the
- * Server of this event.
+ * Abort all local children, notify the server, and abort.
  */
-void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
-                    pid_t *ChildPIDs, unsigned int MessageType, int Notify)
+void ClientAbort(int ServerSocketFD, int *ProcessCount, int hostIndex,
+                 pid_t *ChildPIDs, unsigned int MessageType, int Notify)
 {
-    int i, NumChildren;
-    ulm_iovec_t IOVec;
-    ssize_t IOReturn;
-
-    /*
-     * kill all children  - this signal will not be processed by mpirun's
-     * daemon loop
-     */
-    NumChildren = ProcessCount[hostIndex];
-    for (i = 0; i < NumChildren; i++) {
+    /* kill all children */
+    for (int i = 0; i < ProcessCount[hostIndex]; i++) {
         if (ChildPIDs[i] != -1) {
             kill(ChildPIDs[i], SIGKILL);
             ChildPIDs[i] = -1;
@@ -74,101 +65,18 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
 
     /* notify server of termination */
     if (Notify) {
-        IOVec.iov_base = (char *) &MessageType;
-        IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-        IOReturn = SendSocket(ServerSocketFD, 1, &IOVec);
-        if (IOReturn < 0) {
-            ulm_exit((-1,
-                      "Error: reading Tag in AbortLocalHost.  "
-                      "RetVal: %ld\n", IOReturn));
+        ulm_iovec_t iovec;
+        iovec.iov_base = (char *) &MessageType;
+        iovec.iov_len = (ssize_t) (sizeof(unsigned int));
+        ssize_t rc = SendSocket(ServerSocketFD, 1, &iovec);
+        if (rc < 0) {
+            ulm_exit(("Error: reading Tag in ClientAbort. "
+                      "RetVal: %ld\n", rc));
         }
     }
 
-    /*  !!!!!!!!!  may want to do some cleanup here first */
-    exit(EXIT_FAILURE);
-}
-
-
-void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount,
-                            int hostIndex, pid_t *ChildPIDs,
-                            unsigned int MessageType, int Notify,
-                            int *ClientStdoutFDs, int *ClientStderrFDs,
-                            PrefixName_t * IOPrefix, int *LenIOPreFix,
-                            size_t *StderrBytesWritten,
-                            size_t *StdoutBytesWritten, int *NewLineLast,
-                            lampiState_t * state)
-{
-    int i, NumChildren, MaxDesc, NFDs;
-    ulm_iovec_t IOVec;
-    ssize_t IOReturn;
-    bool again = true;
-
-    /*
-     * kill all children  - this signal will not be processed by mpirun's
-     * daemon loop
-     */
-    NumChildren = ProcessCount[hostIndex];
-    for (i = 0; i < NumChildren; i++) {
-        if (ChildPIDs[i] != -1) {
-            kill(ChildPIDs[i], SIGKILL);
-            ChildPIDs[i] = -1;
-        }
-    }
-
-    if (0) { /* don't need to do this */
-
-        MaxDesc = 0;
-        NFDs = ProcessCount[hostIndex] + 1;
-
-        for (i = 0; i < NFDs; i++) {
-            if (ClientStdoutFDs[i] > MaxDesc)
-                MaxDesc = ClientStdoutFDs[i];
-            if (ClientStderrFDs[i] > MaxDesc)
-                MaxDesc = ClientStderrFDs[i];
-        }
-        MaxDesc++;
-
-        /* drain standard I/O of children */
-        if (ServerSocketFD >= 0) {
-            while (again) {
-                ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
-                                       &ServerSocketFD, NFDs, MaxDesc,
-                                       IOPrefix, LenIOPreFix,
-                                       StderrBytesWritten, StdoutBytesWritten,
-                                       NewLineLast, state);
-
-                again = false;
-                /* scan again only if pipes to children are still open; note
-                 * that we avoid the last set of descriptors since they are
-                 * the client daemon's....
-                 */
-                for (i = 0; i < (NFDs - 1); i++) {
-                    if ((ClientStdoutFDs[i] >= 0) || (ClientStderrFDs[i] >= 0)) {
-                        again = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        ClientStdoutFDs[NFDs - 1] = -1;
-        ClientStderrFDs[NFDs - 1] = -1;
-
-        /* notify server of termination */
-        if (Notify) {
-            IOVec.iov_base = (char *) &MessageType;
-            IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
-            IOReturn = SendSocket(ServerSocketFD, 1, &IOVec);
-            if (IOReturn < 0) {
-                ulm_exit((-1,
-                          "Error: reading Tag in AbortAndDrainLocalHost.  "
-                          "RetVal: %ld\n", IOReturn));
-            }
-        }
-    }
-
-    ulm_dbg(("Killing process group\n"));
-    kill(0, 9);
+    /* kill process group */
+    /* kill(0, SIGKILL); */
 
     exit(EXIT_FAILURE);
 }

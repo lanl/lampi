@@ -38,12 +38,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "internal/profiler.h"
+#include "client/SocketGeneric.h"
 #include "internal/constants.h"
 #include "internal/log.h"
-#include "internal/profiler.h"
 #include "internal/types.h"
 #include "run/Run.h"
-#include "internal/new.h"
 
 static int TerminateInitiated = 0;
 
@@ -52,18 +52,48 @@ static int TerminateInitiated = 0;
  */
 void AbortFunction(const char *file, int line)
 {
-    _ulm_set_file_line(file, line);
     if (!RunParams.ClientsSpawned) {
-        _ulm_err("mpirun exiting: (no clients spawned)\n");
+
+        _ulm_set_file_line(file, line);
+        _ulm_log("mpirun exiting: no clients spawned\n");
+
         if (RunParams.CmdLineOK == 0) {
             Usage(stderr);
         }
+
     } else if (TerminateInitiated == 0) {
-        _ulm_err("mpirun exiting: (aborting clients)\n");
-        TerminateInitiated = 1;
-        AbortAllHosts(RunParams.Networks.
-                      TCPAdminstrativeNetwork.SocketsToClients,
-                      RunParams.NHosts);
+
+        _ulm_set_file_line(file, line);
+        _ulm_log("mpirun exiting: aborting clients\n");
+
+        if (0 == ENABLE_RMS) {
+
+            int tag;
+            ulm_iovec_t iovec;
+            int *fd =
+                RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
+
+            TerminateInitiated = 1;
+
+            /* send abort message to each host */
+            tag = TERMINATENOW;
+            iovec.iov_base = (char *) &tag;
+            iovec.iov_len = (ssize_t) sizeof(int);
+            if (fd) {
+                for (int i = 0; i < RunParams.NHosts; i++) {
+                    /* send only to hosts that are still alive */
+                    if (fd[i] > 0) {
+                        if (SendSocket(fd[i], 1, &iovec) <= 0) {
+                            /* with failed send, register host as down */
+                            close(fd[i]);
+                            fd[i] = -1;
+                            RunParams.HostsAbNormalTerminated++;
+                        }
+                    }
+                }
+            }
+        }
+
         /* last ditch clean-up (on some platforms) */
         KillAppProcs(-1);
     }

@@ -76,6 +76,25 @@ typedef char ExeName_t[ULM_MAX_PATH_LEN];
 typedef char PrefixName_t[ULM_MAX_PREFIX];
 typedef char InterfaceName_t[ULM_MAX_IFNAME_LEN];
 
+
+/*
+ * Some special control messages
+ */
+
+typedef struct {
+    size_t err_bytes;
+    size_t out_bytes;
+} byte_count_msg_t;
+
+typedef struct {
+    unsigned pid;               /* PID of process */
+    unsigned lrank;             /* local rank */
+    unsigned grank;             /* global rank */
+    unsigned signal;            /* signal reported by process */
+    unsigned status;            /* exit status reported by process */
+} abnormal_term_msg_t;
+
+
 /*
  * Platform dependent time operations.
  */

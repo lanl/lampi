@@ -465,8 +465,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
         getMemorySegment(sizeof(DoubleLinkList *) * local_nprocs(),
                          CACHE_ALIGNMENT);
     if (!_ulm_CommunicatorRecvFrags) {
-        ulm_exit((-1,
-                  "Unable to allocate space for _ulm_CommunicatorRecvFrags\n"));
+        ulm_exit(("Unable to allocate space for _ulm_CommunicatorRecvFrags\n"));
     }
     // allocate individual lists and initialize locks
     for (int comm_rt = 0; comm_rt < local_nprocs(); comm_rt++) {
@@ -475,7 +474,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
             SharedMemoryPools.getMemorySegment(sizeof(DoubleLinkList),
                                                CACHE_ALIGNMENT);
         if (!(_ulm_CommunicatorRecvFrags[comm_rt])) {
-            ulm_exit((-1, "Unable to allocate space for "
+            ulm_exit(("Unable to allocate space for "
                       "_ulm_CommunicatorRecvFrags[%d]\n", comm_rt));
         }
         // run the constuctor
@@ -490,7 +489,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
     //
     // sanity check
     if (maxCommunicatorInstances <= 0) {
-        ulm_exit((-1, "Unable to instantiate communicators\n"
+        ulm_exit(("Unable to instantiate communicators\n"
                   "Upper limit :: %d\n", maxCommunicatorInstances));
     }
     //
@@ -498,8 +497,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
     //
     int retVal = allocSWSMPBarrierPools();
     if (retVal != ULM_SUCCESS) {
-        ulm_exit((-1,
-                  "Error: allocating resources for SW SMP barrier pool.\n"));
+        ulm_exit(("Error: allocating resources for SW SMP barrier pool.\n"));
     }
 
 #if ENABLE_RELIABILITY
@@ -507,8 +505,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
     reliabilityInfo = (ReliabilityInfo *) SharedMemoryPools.
         getMemorySegment(sizeof(ReliabilityInfo), CACHE_ALIGNMENT);
     if (!reliabilityInfo) {
-        ulm_exit((-1,
-                  "Error: allocating resources for reliability information.\n"));
+        ulm_exit(("Error: allocating resources for reliability information.\n"));
     }
     new(reliabilityInfo) ReliabilityInfo;
 #endif
@@ -523,8 +520,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
                          CACHE_ALIGNMENT);
 
     if (!SharedMemForCollective) {
-        ulm_exit((-1,
-                  "Unable to allocate space for SharedMemForCollective *\n"));
+        ulm_exit(("Unable to allocate space for SharedMemForCollective *\n"));
     }
     /*
      * Initialize the CollectiveSMBufferPool_t structure
@@ -559,8 +555,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
                                                    CACHE_ALIGNMENT);
             if (!SharedMemForCollective->collCtlData[ele].
                 collDescriptor[desc].mem) {
-                ulm_exit((-1,
-                          "Unable to allocate space for collDescriptor memory\n"));
+                ulm_exit(("Unable to allocate space for collDescriptor memory\n"));
             }
             SharedMemForCollective->collCtlData[ele].collDescriptor[desc].
                 controlFlags = (flagElement_t *)
@@ -568,8 +563,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
                                                    CACHE_ALIGNMENT);
             if (!SharedMemForCollective->collCtlData[ele].
                 collDescriptor[desc].controlFlags) {
-                ulm_exit((-1,
-                          "Unable to allocate space for controlFlags memory\n"));
+                ulm_exit(("Unable to allocate space for controlFlags memory\n"));
             }
         }
     }
@@ -599,7 +593,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     lampiState.map_global_proc_to_on_host_proc_id =
         (int *) ulm_malloc(sizeof(int) * lampiState.global_size);
     if (!lampiState.map_global_proc_to_on_host_proc_id) {
-        ulm_exit((-1, "Unable to allocate space for "
+        ulm_exit(("Unable to allocate space for "
                   "lampiState.map_global_proc_to_on_host_proc_id\n"));
     }
     int offset = 0;
@@ -660,7 +654,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
                            enforceAffinity(), inputPool,
                            irecvDescDescAbortWhenNoResource);
     if (retVal) {
-        ulm_exit((-1, "FreeListsT::Init Unable to initialize IReceive "
+        ulm_exit(("FreeListsT::Init Unable to initialize IReceive "
                   "descriptor pool\n"));
     }
     // Allocate memory for double link list of pointers
@@ -684,7 +678,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
          retryForMoreResources, &memAffinityPool, enforceAffinity(),
          inputPoolPtrL, pointerPoolAbortWhenNoResource);
     if (retVal) {
-        ulm_exit((-1, "FreeLists::Init Unable to initialize Dbl Link "
+        ulm_exit(("FreeLists::Init Unable to initialize Dbl Link "
                   "List pool\n"));
     }
     //
@@ -706,8 +700,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     // allocate array of group pointers
     grpPool.groups = ulm_new(Group *, grpPool.poolSize);
     if (!grpPool.groups) {
-        ulm_exit((-1,
-                  "Unable to allocate space for the array of group objects\n"));
+        ulm_exit(("Unable to allocate space for the array of group objects\n"));
     }
     for (int grpIndex = 0; grpIndex < grpPool.poolSize; grpIndex++) {
         grpPool.groups[grpIndex] = 0;
@@ -733,8 +726,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
         (attributes_t *) ulm_malloc(sizeof(attributes_t) *
                                     attribPool.poolSize);
     if (!attribPool.attributes) {
-        ulm_exit((-1,
-                  "Unable to allocate space for the array of attributes objects\n"));
+        ulm_exit(("Unable to allocate space for the array of attributes objects\n"));
     }
 
     // initialize locks
@@ -772,8 +764,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
     //! initialize array to hold active group objects
     communicators = ulm_new(Communicator *, communicatorsArrayLen);
     if (!communicators) {
-        ulm_exit((-1,
-                  "Unable to allocate space for activeCommunicators\n"));
+        ulm_exit(("Unable to allocate space for activeCommunicators\n"));
     }
     for (int i = 0; i < communicatorsArrayLen; i++) {
         communicators[i] = (Communicator *) NULL;
@@ -785,8 +776,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
     activeCommunicators = ulm_new(int, maxCommunicatorInstances);
 
     if (!activeCommunicators) {
-        ulm_exit((-1,
-                  "Unable to allocate space for activeCommunicators\n"));
+        ulm_exit(("Unable to allocate space for activeCommunicators\n"));
     }
 
     for (int i = 0; i < maxCommunicatorInstances; i++) {
@@ -810,7 +800,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
     int myGlobalProcID = myproc();
     int errorCode = setupNewGroupObject(1, &myGlobalProcID, &groupIndex);
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: setting up ULM_COMM_SELF's group\n"));
+        ulm_exit(("Error: setting up ULM_COMM_SELF's group\n"));
     }
     // increment group count for the remoteGroup
     grpPool.groups[groupIndex]->incrementRefCount();
@@ -833,8 +823,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
     communicatorData.listOfRanksInComm =
         (int *) ulm_malloc(communicatorData.commSize * sizeof(int));
     if (!communicatorData.listOfRanksInComm) {
-        ulm_exit((-1,
-                  "Unable to allocate space for communicatorData.listOfRanksInComm\n"));
+        ulm_exit(("Unable to allocate space for communicatorData.listOfRanksInComm\n"));
     }
     for (int proc = 0; proc < communicatorData.commSize; proc++) {
         communicatorData.listOfRanksInComm[proc] = proc;
@@ -847,7 +836,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
                                     communicatorData.listOfRanksInComm,
                                     &groupIndex);
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: setting up COMM_WORLD's group\n"));
+        ulm_exit(("Error: setting up COMM_WORLD's group\n"));
     }
     // increment group count for the remoteGroup
     grpPool.groups[groupIndex]->incrementRefCount();
@@ -871,7 +860,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
                                     Communicator::INTRA_COMMUNICATOR, 0,
                                     1, 1);
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: setting up ULM_COMM_WORLD\n"));
+        ulm_exit(("Error: setting up ULM_COMM_WORLD\n"));
     }
     // finish setting up ULM_COMM_SELF - ULM_COMM_SELF is setup in process private memory.
     errorCode = ulm_communicator_alloc(ULM_COMM_SELF, threadUsage,
@@ -881,7 +870,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
                                     Communicator::INTRA_COMMUNICATOR, 0,
                                     0, 0);
     if (errorCode != ULM_SUCCESS) {
-        ulm_exit((-1, "Error: setting up ULM_COMM_SELF\n"));
+        ulm_exit(("Error: setting up ULM_COMM_SELF\n"));
     }
 }
 
@@ -908,8 +897,7 @@ void lampi_init_fork(lampiState_t *s)
         getMemorySegment(sizeof(pid_t) * totalLocalProcs, CACHE_ALIGNMENT);
 
     if (!s->local_pids) {
-        ulm_exit((-1,
-                  "Error: allocating %ld bytes of shared memory for local_pids array\n",
+        ulm_exit(("Error: allocating %ld bytes of shared memory for local_pids array\n",
                   (long) (sizeof(pid_t) * totalLocalProcs)));
     }
 
@@ -1168,7 +1156,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&nCpPNode,
                               (adminMessage::packType) sizeof(int), 1);
             if ((nCpPNode < 0) || (nCpPNode > 2)) {
-                ulm_exit((-1, "Incorrect value for nCpPNode :: %d\n",
+                ulm_exit(("Incorrect value for nCpPNode :: %d\n",
                           nCpPNode));
             }
             break;
@@ -1178,8 +1166,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&tmpInt,
                               (adminMessage::packType) sizeof(int), 1);
             if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for USERESOURCEAFFINITY (%d)\n",
+                ulm_exit(("Incorrect value for USERESOURCEAFFINITY (%d)\n",
                           tmpInt));
             }
             if (tmpInt == 1) {
@@ -1193,8 +1180,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&tmpInt,
                               (adminMessage::packType) sizeof(int), 1);
             if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for DEFAULTRESOURCEAFFINITY (%d)\n",
+                ulm_exit(("Incorrect value for DEFAULTRESOURCEAFFINITY (%d)\n",
                           tmpInt));
             }
             if (tmpInt == 1) {
@@ -1208,8 +1194,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&tmpInt,
                               (adminMessage::packType) sizeof(int), 1);
             if ((tmpInt < 0) || (tmpInt > 1)) {
-                ulm_exit((-1,
-                          "Incorrect value for MANDATORYRESOURCEAFFINITY (%d)\n",
+                ulm_exit(("Incorrect value for MANDATORYRESOURCEAFFINITY (%d)\n",
                           tmpInt));
 
             }
@@ -1226,8 +1211,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&maxCommunicatorInstances,
                               (adminMessage::packType) sizeof(int), 1);
             if (maxCommunicatorInstances < 0) {
-                ulm_exit((-1,
-                          "Incorrect value for MAXCOMMUNICATORS (%d)\n",
+                ulm_exit(("Incorrect value for MAXCOMMUNICATORS (%d)\n",
                           maxCommunicatorInstances));
             }
             break;
@@ -1638,10 +1622,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     }
 
     /* only need to use pty's if mpirun is a tty */
+    if (0) {
     if (s->isatty) {
         enable_pty_stdio = ENABLE_PTY_STDIO;
     } else {
         enable_pty_stdio = 0;
+    }
+    } else {
+        enable_pty_stdio = ENABLE_PTY_STDIO;
     }
 
     /* allocate pipe for determining when all processes have exited... */
@@ -1681,14 +1669,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         return;
     }
 
-    if (enable_pty_stdio) {
+    if (enable_pty_stdio && s->isatty) {
         /* use a pty for stdin to avoid application buffering */
         if (openpty(&fd[1], &fd[0], NULL, NULL, NULL) < 0) {
             ulm_warn(("Warning: openpty failed: using pipe for stdio\n"));
             enable_pty_stdio = 0;
         }
     }
-    if (!enable_pty_stdio) {
+    if (!(enable_pty_stdio && s->isatty)) {
         if(pipe(fd) < 0) {
             ulm_err(("Error: pipe(): errno = %d\n", errno));
             s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;

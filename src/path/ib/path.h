@@ -66,7 +66,7 @@ class ibPath : public BasePath_t {
 
         void unbind(SendDesc_t *message, int *globalDestProcessIDArray,
             int destArrayCount) {
-            ulm_exit((-1, "ibPath::unbind - called, not implemented yet...\n"));
+            ulm_exit(("ibPath::unbind - called, not implemented yet...\n"));
         }
 
         bool init(SendDesc_t *message) {

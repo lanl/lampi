@@ -184,7 +184,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 
     // make sure this was intended for this process...
     if (dstProcID_m != myproc()) {
-        ulm_exit((-1, "Quadrics data frag on rail %d from process %d misdirected to process "
+        ulm_exit(("Quadrics data frag on rail %d from process %d misdirected to process "
                   "%d, intended destination %d\n",
                   rail, srcProcID_m, myproc(), dstProcID_m));
     }
@@ -204,7 +204,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 
     }
     else {
-        ulm_exit((-1, "Quadrics data envelope with invalid message "
+        ulm_exit(("Quadrics data envelope with invalid message "
                   "type %d\n", msgType_m));
     }
     return;
@@ -274,14 +274,14 @@ void quadricsRecvFragDesc::memRel()
             quadricsState.quadricsLock.unlock();            
         break;
     default:
-        ulm_exit((-1, "quadricsRecvFragDesc::memRel: bad memory "
+        ulm_exit(("quadricsRecvFragDesc::memRel: bad memory "
                   "type %d!\n", p->memType));
         break;
     }
 
     // record serial number
     if (!quadricsMemRlsSeqList[p->senderID].record(p->releaseSeq)) {
-        ulm_exit((-1, "quadricsRecvFragDesc::memRel: unable to record "
+        ulm_exit(("quadricsRecvFragDesc::memRel: unable to record "
                   "%lld in quadricsMemRlsSeqList[%d]\n",
                   p->releaseSeq, p->senderID));
     }
@@ -468,7 +468,7 @@ void quadricsRecvFragDesc::memReqAck()
         quadricsPeerMemory[rail]->push((int)p->senderID, (int)p->memType, addrs, (int)p->memBufCount);
         break;
     case MEMREQ_FAILURE_FATAL:
-        ulm_exit((-1, "quadricsRecvFragDesc::memReqAck() fatal "
+        ulm_exit(("quadricsRecvFragDesc::memReqAck() fatal "
                   "memory request error from global"
                   " process %d\n", p->senderID));
         break;

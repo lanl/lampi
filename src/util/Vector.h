@@ -206,7 +206,7 @@ TYPE& Vector<TYPE>::operator[](size_t index)
    {
 #if !defined(NDEBUG)
    if(index >= len)
-       ulm_exit((-1, "Vector<TYPE>::operator[](%d) invalid index", index));
+       ulm_exit(("Vector<TYPE>::operator[](%d) invalid index", index));
 #endif
    return ptr[index];
    }
@@ -216,7 +216,7 @@ TYPE Vector<TYPE>::operator[](size_t index) const
    {
 #if !defined(NDEBUG)
    if(index >= len) 
-       ulm_exit((-1, "Vector<TYPE>::operator[](%d) invalid index", index));
+       ulm_exit(("Vector<TYPE>::operator[](%d) invalid index", index));
 #endif
    return ptr[index];
    }

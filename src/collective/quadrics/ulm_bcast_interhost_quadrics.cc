@@ -588,7 +588,7 @@ void Broadcaster::segment_create(void)
 
   if ( nid_to_gid_tab == NULL  || !vp_to_gid_tab )
   {
-    ulm_exit((-1, "Failed to allocate memory\n"));
+    ulm_exit(("Failed to allocate memory\n"));
   }
   
   for ( i = 0 ; i < node_extent ; i++ )
@@ -742,7 +742,7 @@ void Broadcaster::segment_create(void)
       if ((elan3_addbcastvp(ctx, segment->bcastVp, 
       	segment->minVp, segment->maxVp) == -1))
       {
-        ulm_exit((-1, "Not able to add Bcast VP\n"));
+        ulm_exit(("Not able to add Bcast VP\n"));
       }
     }
 
@@ -913,7 +913,7 @@ int Broadcaster::hardware_coll_init(void)
 
     if ( !(branchRatio >= 2 && total_channels >= 2) )
     {
-      ulm_exit((-1, "Please reset LAMPI_BCAST_BRANCHRATIO " 
+      ulm_exit(("Please reset LAMPI_BCAST_BRANCHRATIO " 
 	  "or LAMPI_BCAST_CHANNELS\n" ));
     }
 

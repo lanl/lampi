@@ -317,12 +317,12 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     next_expected_isendSeqs =
         ulm_new(ULM_64BIT_INT, remoteGroup->groupSize);
     if (!next_expected_isendSeqs) {
-        ulm_exit((-1, "Error: Communicator::init: "
+        ulm_exit(("Error: Communicator::init: "
                   "Unable to allocate space for next_expected_isendSeqs\n"));
     }
     next_expected_isendSeqsLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!next_expected_isendSeqsLock) {
-        ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
+        ulm_exit(("Error: Communicator::init: Unable to allocate "
                   "space for next_expected_isendSeqsLock\n"));
     }
     // !!!!! threaded-lock
@@ -335,7 +335,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // set up receive lock
     recvLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!recvLock) {
-        ulm_exit((-1, "Error: Communicator::init: "
+        ulm_exit(("Error: Communicator::init: "
                   "Unable to allocate space for recvLock\n"));
     }
     //!!!!! threaded-lock
@@ -346,7 +346,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     // next sequence number to be assigned for a send
     next_isendSeqs = ulm_new(ULM_64BIT_INT, remoteGroup->groupSize);
     if (!next_isendSeqs) {
-        ulm_exit((-1, "Error: Communicator::init: "
+        ulm_exit(("Error: Communicator::init: "
                   "Unable to allocate space for next_isendSeqs\n"));
     }
 
@@ -355,7 +355,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 
     next_isendSeqsLock = ulm_new(Locks, remoteGroup->groupSize);
     if (!next_isendSeqsLock) {
-        ulm_exit((-1, "Error: Communicator::init: "
+        ulm_exit(("Error: Communicator::init: "
                   "Unable to allocate space for next_isendSeqsLock\n"));
     }
     //!!!!! threaded-lock
@@ -380,7 +380,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.PostedSpecificRecv[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.PostedSpecificRecv) {
-            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
+            ulm_exit(("Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.PostedSpecificRecv[proc]\n"));
         }
         // initialize locks
@@ -397,7 +397,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.MatchedRecv[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.MatchedRecv[proc]) {
-            ulm_exit((-1, "Error: Communicator::init: Unable to allocate"
+            ulm_exit(("Error: Communicator::init: Unable to allocate"
                       "space for privateQueues.MatchedRecv[proc]\n"));
         }
         // Initialize locks
@@ -414,7 +414,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.AheadOfSeqRecvFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.AheadOfSeqRecvFrags[proc]) {
-            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
+            ulm_exit(("Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.AheadOfSeqRecvFrags[proc]\n"));
         }
         // initialize lock
@@ -432,7 +432,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.OkToMatchRecvFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.OkToMatchRecvFrags[proc]) {
-            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
+            ulm_exit(("Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.OkToMatchRecvFrags[proc]\n"));
         }
         // initialize locks
@@ -451,7 +451,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         privateQueues.OkToMatchSMPFrags[proc] =
             ulm_new(ProcessPrivateMemDblLinkList, 1);
         if (!privateQueues.OkToMatchSMPFrags[proc]) {
-            ulm_exit((-1, "Error: Communicator::init: Unable to allocate "
+            ulm_exit(("Error: Communicator::init: Unable to allocate "
                       "space for privateQueues.OkToMatchSMPFrags[proc]\n"));
         }
         // initialize locks
@@ -868,8 +868,7 @@ int CheckForRetransmits()
 // revisit                        (commPtr-> pt2ptPathSelectionFunction) ((void *) sendDesc);
 // revisit                    if (errorCode != ULM_SUCCESS) {
 // revisit                        sendDesc->Lock.unlock();
-// revisit                        ulm_exit((-1,
-// revisit                                  "Error: CheckForRetransmits: no path "
+// revisit                        ulm_exit(("Error: CheckForRetransmits: no path "
 // revisit                                  "available to send message\n"));
 // revisit                    }
 // revisit                    // initialize the descriptor for this path
@@ -884,8 +883,7 @@ int CheckForRetransmits()
                     sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
                     // resend failed with fatal error
                     sendDesc->Lock.unlock();
-                    ulm_exit((-1,
-                              "Error: CheckForRetransmits: resend failed "
+                    ulm_exit(("Error: CheckForRetransmits: resend failed "
                               "with fatal error\n"));
                 }
             } while (errorCode != ULM_SUCCESS);
@@ -946,7 +944,7 @@ int CheckForRetransmits()
                         sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
                         // resend failed with fatal error
                         sendDesc->Lock.unlock();
-                        ulm_exit((-1, "Error: CheckForRetransmits: resend "
+                        ulm_exit(("Error: CheckForRetransmits: resend "
                                   "failed with fatal error.\n"));
                     }
                 }

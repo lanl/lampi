@@ -48,7 +48,7 @@ bool ib_memory_registration_cache::register_mr(void *addr, size_t size,
                         return result;
                     }
                     else {
-                        ulm_exit((-1, "VAPI_register_mr() for HCA %d returned %s\n",
+                        ulm_exit(("VAPI_register_mr() for HCA %d returned %s\n",
                             hca_index, VAPI_strerror(vapi_result)));
                     }
                 }
@@ -59,7 +59,7 @@ bool ib_memory_registration_cache::register_mr(void *addr, size_t size,
             }
         }
         else {
-            ulm_exit((-1, "VAPI_register_mr() for HCA %d returned %s\n",
+            ulm_exit(("VAPI_register_mr() for HCA %d returned %s\n",
                 hca_index, VAPI_strerror(vapi_result)));
         }
     }
@@ -70,7 +70,7 @@ bool ib_memory_registration_cache::register_mr(void *addr, size_t size,
         vapi_result = VAPI_deregister_mr(ib_state.hca[hca_index].handle,
             reginfo.handle);
         if (vapi_result != VAPI_OK) {
-            ulm_exit((-1, "VAPI_deregister_mr() for HCA %d returned %s\n",
+            ulm_exit(("VAPI_deregister_mr() for HCA %d returned %s\n",
                 hca_index, VAPI_strerror(vapi_result)));
         }
     }
@@ -104,7 +104,7 @@ bool ib_memory_registration_cache::reregister_mr(struct ib_mem_info *meminfo,
                         break;
                     }
                     else if (vapi_result != VAPI_EAGAIN) {
-                        ulm_exit((-1, "VAPI_register_mr() for HCA %d returned %s\n",
+                        ulm_exit(("VAPI_register_mr() for HCA %d returned %s\n",
                             hca_index, VAPI_strerror(vapi_result)));
                     }
                 }
@@ -143,7 +143,7 @@ void ib_memory_registration_cache::deregister_mr(struct ib_mem_info *meminfo,
         vapi_result = VAPI_deregister_mr(ib_state.hca[hca_index].handle,
             infop->handle);    
         if (vapi_result != VAPI_OK) {
-            ulm_exit((-1, "VAPI_deregister_mr() for HCA %d returned %s\n",
+            ulm_exit(("VAPI_deregister_mr() for HCA %d returned %s\n",
                 hca_index, VAPI_strerror(vapi_result)));
         }
         infop->registered = false;

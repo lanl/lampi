@@ -109,7 +109,7 @@ static void initFragFreelists(void)
 
     affinity = (int *) ulm_malloc(sizeof(int) * local_nprocs());
     if (!affinity) {
-        ulm_exit((-1, "Error: gmRecvDescs: Out of memory\n"));
+        ulm_exit(("Error: gmRecvDescs: Out of memory\n"));
     }
     for (i = 0; i < local_nprocs(); i++) {
         affinity[i] = i;
@@ -141,7 +141,7 @@ static void initFragFreelists(void)
                                    Abort = true,
                                    threshToGrowList = 0);
     if (rc) {
-        ulm_exit((-1, "Error: Can't initialize recvFragList\n"));
+        ulm_exit(("Error: Can't initialize recvFragList\n"));
     }
 
     // send fragment freelist: in private memory
@@ -162,7 +162,7 @@ static void initFragFreelists(void)
                                    Abort = true,
                                    threshToGrowList = 0);
     if (rc) {
-        ulm_exit((-1, "Error: Can't initialize sendFragList\n"));
+        ulm_exit(("Error: Can't initialize sendFragList\n"));
     }
 }
 

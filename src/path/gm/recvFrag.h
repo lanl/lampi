@@ -206,7 +206,7 @@ inline bool gmRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
     } else {
         DataOK = false;
         if (!gmState.doAck) {
-            ulm_exit((-1, "gmRecvFragDesc::CheckData: - corrupt data received "
+            ulm_exit(("gmRecvFragDesc::CheckData: - corrupt data received "
                       "(%s 0x%x calculated 0x%x)\n",
                       (usecrc()) ? "CRC" : "checksum",
                       gmHeader_m->data.dataChecksum, checkSum));

@@ -335,7 +335,7 @@ bool sharedmemPath::send(SendDesc_t *message, bool *incomplete,
 #ifdef _DEBUGQUEUES
             assert(FragDesc->WhichQueue == SMPFREELIST);
             if (FragDesc->WhichQueue != SMPFREELIST) {
-                ulm_exit((-1, " FragDesc->WhichQueue != SMPFREELIST "
+                ulm_exit((" FragDesc->WhichQueue != SMPFREELIST "
                           " :: FragDesc->WhichQueue %d\n",
                           FragDesc->WhichQueue));
             }
@@ -865,7 +865,7 @@ void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex)
     assert(message->FragsToAck.size() == 0);
 #else
     if (message->FragsToSend.size() != 0L) {
-        ulm_exit((-1, "sharedmemPath::ReturnDesc: message %p "
+        ulm_exit(("sharedmemPath::ReturnDesc: message %p "
                   "FragsToSend.size() %ld numfrags %d numsent %d "
                   "numacked %d list %d\n", message, 
 		  message->FragsToSend.size(),
@@ -873,7 +873,7 @@ void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex)
                   message->WhichQueue));
     }
     if (message->FragsToAck.size() != 0L) {
-        ulm_exit((-1, "sharedmemPath::ReturnDesc: message %p "
+        ulm_exit(("sharedmemPath::ReturnDesc: message %p "
                   "FragsToAck.size() %ld numfrags %d numsent %d "
                   "numacked %d list %d\n", message, message->FragsToAck.size(),
                   message->numfrags, message->NumSent, message->NumAcked,

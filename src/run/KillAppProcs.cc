@@ -73,15 +73,19 @@ void KillAppProcs(int host)
             ulm_err(("Killing processes\n"));
             for (int i = 0; i < RunParams.ProcessCount[host]; i++) {
                 pid_t pid = RunParams.AppPIDs[0][i];
-                ulm_dbg(("Executing \"kill -9 %d\"\n", pid));
-                if (kill(pid, 9) < 0) {
+                if (RunParams.Verbose) {
+                    ulm_err(("Executing \"kill(%d, SIGKILL)\"\n", pid));
+                }
+                if (kill(pid, SIGKILL) < 0) {
                     ulm_dbg(("kill: %d - No such process\n", pid));
                 }
             }
         }
 
-        ulm_dbg(("Killing process group\n"));
-        kill(0, 9);
+        if (0) {
+            ulm_dbg(("Killing process group\n"));
+            kill(0, SIGKILL);
+        }
 
     } else if (RunParams.UseBproc) {
 
@@ -95,16 +99,20 @@ void KillAppProcs(int host)
             for (int h = 0; h < RunParams.NHosts; h++) {
                 for (int p = 0; p < RunParams.ProcessCount[h]; p++) {
                     pid_t pid = RunParams.AppPIDs[h][p];
-                    ulm_dbg(("Executing \"kill -9 %d\"\n", pid));
-                    if (kill(pid, 9) < 0) {
+                    if (RunParams.Verbose) {
+                        ulm_err(("Executing \"kill(%d, SIGKILL)\"\n", pid));
+                    }
+                    if (kill(pid, SIGKILL) < 0) {
                         ulm_dbg(("kill: %d - No such process\n", pid));
                     }
                 }
             }
         }
 
-        ulm_dbg(("Killing process group\n"));
-        kill(0, 9);
+        if (0) {
+            ulm_dbg(("Killing process group\n"));
+            kill(0, SIGKILL);
+        }
 
     } else {
 

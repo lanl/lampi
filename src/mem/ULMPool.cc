@@ -50,15 +50,15 @@ ULMMemoryPool::ULMMemoryPool(int Log2MaxPoolSize, int Log2PoolChunkSize,
 {
     // some sanity checks
     if (Log2MaxPoolSize < Log2PoolChunkSize) {
-        ulm_exit((-1, "Log2MaxPoolSize (%ld) < Log2PoolChunkSize (%ld)\n",
+        ulm_exit(("Log2MaxPoolSize (%ld) < Log2PoolChunkSize (%ld)\n",
                   Log2MaxPoolSize, Log2PoolChunkSize));
     }
     if (Log2PoolChunkSize < Log2PageSize) {
-        ulm_exit((-1, "Log2PoolChunkSize (%ld) < Log2PageSize (%ld)\n",
+        ulm_exit(("Log2PoolChunkSize (%ld) < Log2PageSize (%ld)\n",
                   Log2PoolChunkSize, Log2PageSize));
     }
     if ((1LL << Log2MaxPoolSize) < initPoolSize) {
-        ulm_exit((-1, "max Pool size (%ld) < initPoolSize (%ld)\n",
+        ulm_exit(("max Pool size (%ld) < initPoolSize (%ld)\n",
                   (1LL << Log2MaxPoolSize), initPoolSize));
     }
     // initialize variables
@@ -145,7 +145,7 @@ int ULMMemoryPool::InitPool()
     if (WorkingSize > 0) {
         retval = mprotect(TmpPtr, PageSize, PROT_NONE);
         if (retval != 0) {
-            ulm_exit((-1, "Error in red zone 1 mprotect\n"));
+            ulm_exit(("Error in red zone 1 mprotect\n"));
         }
     }
     // end red zone
@@ -153,7 +153,7 @@ int ULMMemoryPool::InitPool()
         retval =
             mprotect(TmpPtr + PageSize + WorkingSize, PageSize, PROT_NONE);
         if (retval != 0) {
-            ulm_exit((-1, "Error in red zone 2 mprotect\n"));
+            ulm_exit(("Error in red zone 2 mprotect\n"));
         }
     }
 
@@ -190,7 +190,7 @@ int ULMMemoryPool::SetPoolSize(ssize_t initPoolSize)
 {
     // sanity check
     if (MaxPoolSize < initPoolSize) {
-        ulm_exit((-1, "Error:: Too much memory requested.\n"
+        ulm_exit(("Error:: Too much memory requested.\n"
                   "Amount requested :: %ld - Upper limit :: %ld\n",
                   (long) initPoolSize, (long) MaxPoolSize));
     }
@@ -236,7 +236,7 @@ int ULMMemoryPool::SetPoolSize(ssize_t initPoolSize)
     if (WorkingSize > 0) {
         retval = mprotect(TmpPtr, PageSize, PROT_NONE);
         if (retval != 0) {
-            ulm_exit((-1, "Error in red zone 1 mprotect\n"));
+            ulm_exit(("Error in red zone 1 mprotect\n"));
         }
     }
     // end red zone
@@ -244,7 +244,7 @@ int ULMMemoryPool::SetPoolSize(ssize_t initPoolSize)
         retval =
             mprotect(TmpPtr + PageSize + WorkingSize, PageSize, PROT_NONE);
         if (retval != 0) {
-            ulm_exit((-1, "Error in red zone 2 mprotect\n"));
+            ulm_exit(("Error in red zone 2 mprotect\n"));
         }
     }
 

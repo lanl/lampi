@@ -54,12 +54,8 @@
  * This routine needs to make sure that the "stdio" from the user
  * application is deliverd properly to mpirun, for output.
  */
-void ClientOrderlyShutdown(size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten,
-                           int ControlSocketToULMRunFD,
-                           lampiState_t *state)
+void ClientOrderlyShutdown(int ControlSocketToULMRunFD)
 {
-    size_t STDIOSent[2];
     unsigned int Tag;
     ssize_t IOReturn;
     ulm_iovec_t IOVec[2];
@@ -74,21 +70,17 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
      * ClientCheckForControlMsgs will wait for the ack from mpirun
      * that it is ok to shutdown
      */
-    STDIOSent[0] = *StderrBytesWritten;
-    STDIOSent[1] = *StdoutBytesWritten;
     Tag = NORMALTERM;
     IOVec[0].iov_base = (char *) &Tag;
-    IOVec[0].iov_len = (ssize_t) (sizeof(unsigned int));
-    IOVec[1].iov_base = (char *) STDIOSent;
-    IOVec[1].iov_len = (ssize_t) (2 * sizeof(ssize_t));
-    IOReturn = SendSocket(ControlSocketToULMRunFD, 2, IOVec);
+    IOVec[0].iov_len = (ssize_t) sizeof(unsigned int);
+    IOReturn = SendSocket(ControlSocketToULMRunFD, 1, IOVec);
 
     /* abort here on error, since not aborting will cause Client to
      *  spin wainting on an ack that will never arive, since the Normalterm
      *  control message never went out.
      */
     if (IOReturn < 0) {
-        ulm_exit((-1, "Error: sending NORMALTERM.  RetVal: %ld\n",
+        ulm_exit(("Error: sending NORMALTERM.  RetVal: %ld\n",
                   IOReturn));
     }
 

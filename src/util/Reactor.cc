@@ -152,7 +152,7 @@ void Reactor::poll()
     int rc = select(sd_max+1, (fd_set*)&rset, (fd_set*)&sset, (fd_set*)&eset, &tm);
     if(rc < 0) {
         if(errno != EINTR)
-           ulm_exit((-1, "Reactor::poll: select() failed with errno=%d\n", errno));
+           ulm_exit(("Reactor::poll: select() failed with errno=%d\n", errno));
         return;
     }
     dispatch(rc, rset, sset, eset);
@@ -169,7 +169,7 @@ void Reactor::run()
         int rc = select(sd_max+1, (fd_set*)&rset, (fd_set*)&sset, (fd_set*)&eset, 0);
         if(rc < 0) {
             if(errno != EINTR)
-                ulm_exit((-1, "Reactor::run: select() failed with errno=%d\n", errno));
+                ulm_exit(("Reactor::run: select() failed with errno=%d\n", errno));
             continue;
         }
         dispatch(rc, rset, sset, eset);

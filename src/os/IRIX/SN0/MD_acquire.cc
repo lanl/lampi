@@ -417,7 +417,7 @@ int acquire::allocO2kFetchOpbarrierPools()
     hwBarrier.nElementsInPool =
         (int *) ulm_malloc(sizeof(int) * hwBarrier.nPools);
     if (!(hwBarrier.nElementsInPool)) {
-        ulm_exit((-1, "Aborting\n"));
+        ulm_exit(("Aborting\n"));
     }
     //!
     //! allocate lastPoolUsed
@@ -425,7 +425,7 @@ int acquire::allocO2kFetchOpbarrierPools()
     hwBarrier.lastPoolUsed = (int *) SharedMemoryPools.getMemorySegment
         (sizeof(int), CACHE_ALIGNMENT);
     if (!(hwBarrier.lastPoolUsed)) {
-        ulm_exit((-1, "Aborting\n"));
+        ulm_exit(("Aborting\n"));
     }
     *(hwBarrier.lastPoolUsed) = 0;
 
@@ -433,7 +433,7 @@ int acquire::allocO2kFetchOpbarrierPools()
     hwBarrier.Lock = (Locks *) SharedMemoryPools.getMemorySegment
         (sizeof(Locks), CACHE_ALIGNMENT);
     if (!(hwBarrier.lastPoolUsed)) {
-        ulm_exit((-1, "Aborting\n"));
+        ulm_exit(("Aborting\n"));
     }
     hwBarrier.Lock->init();
 
@@ -443,7 +443,7 @@ int acquire::allocO2kFetchOpbarrierPools()
     hwBarrier.pool = (barrierFetchOpDataCtlData **)
         ulm_malloc(sizeof(barrierFetchOpDataCtlData *) * hwBarrier.nPools);
     if (!(hwBarrier.pool)) {
-        ulm_exit((-1, "Aborting\n"));
+        ulm_exit(("Aborting\n"));
     }
 
     //! set up policy modules for this memory
@@ -451,7 +451,7 @@ int acquire::allocO2kFetchOpbarrierPools()
         (pmo_handle_t *) ulm_malloc(sizeof(pmo_handle_t) *
                                     hwBarrier.nPools);
     if (!barrierMLD) {
-        ulm_exit((-1, "Aborting\n"));
+        ulm_exit(("Aborting\n"));
     }
     //!  create mld's
     for (int i = 0; i < hwBarrier.nPools; i++) {
@@ -538,7 +538,7 @@ int acquire::allocO2kFetchOpbarrierPools()
                                                (barrierFetchOpDataCtlData),
                                                CACHE_ALIGNMENT);
         if (!(hwBarrier.pool[pl])) {
-            ulm_exit((-1, "Aborting\n"));
+            ulm_exit(("Aborting\n"));
         }
         long long *fetchopPtr =
             (long long *) ((char *) memPtr + pl * getpagesize());
@@ -548,7 +548,7 @@ int acquire::allocO2kFetchOpbarrierPools()
                 (barrierFetchOpData *)
                 ulm_malloc(sizeof(barrierFetchOpData));
             if (!(hwBarrier.pool[pl][ele].barrierData)) {
-                ulm_exit((-1, "Aborting\n"));
+                ulm_exit(("Aborting\n"));
             }
             // mark element as available
             (hwBarrier.pool[pl][ele]).inUse = false;

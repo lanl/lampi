@@ -72,7 +72,7 @@ void InitSendDescriptors(int NumLocalProcs)
     int retryForMoreResources = 1;
     int *memAffinityPool = (int *) ulm_malloc(sizeof(int) * NumLocalProcs);
     if (!memAffinityPool) {
-        ulm_exit((-1, "Unable to allocate space for memAffinityPool\n"));
+        ulm_exit(("Unable to allocate space for memAffinityPool\n"));
     }
     // fill in memory affinity index
     for (int i = 0; i < nFreeLists; i++) {
@@ -94,8 +94,7 @@ void InitSendDescriptors(int NumLocalProcs)
     ulm_free(memAffinityPool);
 
     if (retVal) {
-        ulm_exit((-1,
-                  "FreeLists::Init Unable to initialize send "
+        ulm_exit(("FreeLists::Init Unable to initialize send "
                   "descriptor pool\n"));
     }
 }

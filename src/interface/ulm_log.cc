@@ -40,112 +40,53 @@
 #include <stdarg.h>
 #include <string.h>
 
-static const int buf_size = 255;
-static char file_line[buf_size + 1] = "";
-static char string[buf_size + 1] = "";
-static char log_file[buf_size + 1] = "lampi.log";
-static FILE *log_stream = NULL;
-static int initialized = 0;
+/* Runtime control of warning and debug messages */
 
 int ulm_warn_enabled = 0;
 int ulm_dbg_enabled = ENABLE_DBG;
 
-static void log(const char *fmt, va_list ap)
+static const int buf_size = 4096;
+static char buf[buf_size];
+static const int log_filename_size = 256; // log file
+static char log_filename[log_filename_size] = "lampi.log";
+static int initialized = 0;
+
+extern "C" void _ulm_log(const char *fmt, ...)
 {
-    /* write to log file */
+    /* write to stderr and a log file */
+    
+    FILE *stream;
+    va_list ap;
 
     if (!initialized) {
         initialized = 1;
         if (getenv("LAMPI_LOG")) {
-            snprintf(log_file, buf_size, getenv("LAMPI_LOG"));
+            snprintf(log_filename, buf_size, getenv("LAMPI_LOG"));
         }
     }
 
-    log_stream = fopen(log_file, "a");
-    if (log_stream) {
-        int n = snprintf(string, buf_size, file_line);
-        vsnprintf(string + n, buf_size - n, fmt, ap);
-        fprintf(log_stream, string);
-    }
-    fclose(log_stream);
-}
+    va_start(ap, fmt);
+    vsnprintf(buf + strlen(buf), buf_size - strlen(buf), fmt, ap);
+    va_end(ap);
 
-static void print(FILE *stream, const char *fmt, va_list ap)
-{
-    /* write to a file descriptor (usually stdout or stderr) */
+    fputs(buf, stderr);
+    fflush(stderr);
 
-    if (stream != NULL) {
-        int n = snprintf(string, buf_size, file_line);
-        vsnprintf(string + n, buf_size - n, fmt, ap);
-        fprintf(stream, string);
+    stream = fopen(log_filename, "a");
+    if (stream) {
+        fputs(buf, stream);
         fflush(stream);
+        fclose(stream);
     }
 }
 
 extern "C" void _ulm_set_file_line(const char *name, int line)
 {
-    char *p;
-
-    p = strstr(name, "src/");
+    char *p = strstr(name, "src/");
     if (p) {
         p += strlen("src/");
-        snprintf(file_line, buf_size, "LA-MPI:%s:%d: ", p, line);
+        snprintf(buf, buf_size, "LA-MPI:%s:%d: ", p, line);
     } else {
-        snprintf(file_line, buf_size, "LA-MPI:%s:%d: ", name, line);
+        snprintf(buf, buf_size, "LA-MPI:%s:%d: ", name, line);
     }
-}
-
-extern "C" void _ulm_err(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    print(stdout, fmt, ap);
-    log(fmt, ap);
-    va_end(ap);
-    file_line[0] = '\0';
-}
-
-extern "C" void _ulm_warn(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    print(stdout, fmt, ap);
-    log(fmt, ap);
-    va_end(ap);
-    file_line[0] = '\0';
-}
-
-extern "C" void _ulm_info(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    print(stdout, fmt, ap);
-    va_end(ap);
-    file_line[0] = '\0';
-}
-
-extern "C" void _ulm_dbg(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    print(stdout, fmt, ap);
-    log(fmt, ap);
-    va_end(ap);
-    file_line[0] = '\0';
-}
-
-extern "C" void _ulm_exit(int status, const char *fmt, ...)
-{
-    va_list ap;
-
-    if (fmt) {
-        va_start(ap, fmt);
-        print(stdout, fmt, ap);
-        if (status != 0) {
-            log(fmt, ap);
-        }
-        va_end(ap);
-    }
-
-    exit(status);
 }

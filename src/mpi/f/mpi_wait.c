@@ -41,13 +41,6 @@ void mpi_wait_f(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
 {
     MPI_Request c_req = MPI_Request_f2c(*req);
 
-    /* fast return for MPI_REQUEST_NULL */
-    if (*req = -1) {
-        memset(status, 0, sizeof(MPI_Status));
-        *rc = MPI_SUCCESS;
-        return;
-    }
-
     *rc = MPI_Wait(&c_req, status);
     if (*rc == MPI_SUCCESS && status->_persistent == 0 &&
         status->MPI_SOURCE != MPI_PROC_NULL) {

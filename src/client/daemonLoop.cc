@@ -52,6 +52,8 @@
 
 static double HeartBeatTimeOut = (double) HEARTBEATTIMEOUT;
 
+static void CleanupOnAbnormalChildTermination(pid_t, int, pid_t *, int *, int);
+
 /*
  * this is code executed by the parent that becomes the Client daemon
  */
@@ -71,6 +73,7 @@ void lampi_daemon_loop(lampiState_t *s)
     size_t *StdoutBytesWritten = &(s->StdoutBytesWritten);
     int *NewLineLast = s->NewLineLast;
     int *IAmAlive = s->IAmAlive;
+
     /* end tmp */
     int i, NumAlive = 0, MaxDescriptor;
     double LastTime, HeartBeatTime, DeltaTime, TimeInSeconds;
@@ -107,7 +110,7 @@ void lampi_daemon_loop(lampiState_t *s)
     }
     MaxDescriptor++;
 
-    /* change heartbeat timeout period, if being debuged */
+    /* change heartbeat timeout period, if being debugged */
     if (s->debug == 1)
         HeartBeatTimeOut = -1;
 
@@ -126,9 +129,9 @@ void lampi_daemon_loop(lampiState_t *s)
         DeltaTime = TimeInSeconds - LastTime;
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
-            ClientAbnormalChildTermination(s->AbnormalExit->pid,
-                                           NChildren, ChildPIDs, IAmAlive,
-                                           ServerSocketFD);
+            CleanupOnAbnormalChildTermination(s->AbnormalExit->pid,
+                                              NChildren, ChildPIDs, IAmAlive,
+                                              ServerSocketFD);
             /*
              * set abnormal termination flag to 2, so that termination
              * sequence does not start up again.
@@ -155,16 +158,17 @@ void lampi_daemon_loop(lampiState_t *s)
         }
 
         /* check to see if children alive */
-        NumAlive = CheckIfChildrenAlive(ProcessCount, hostIndex, IAmAlive);
+        NumAlive = ClientCheckIfChildrenAlive(ProcessCount,
+                                              hostIndex, IAmAlive);
 
         /* cleanup and exit */
-        if ((s->AbnormalExit->flag == 0) && (NumAlive == 0) && (!shuttingDown)) {
+        if ((s->AbnormalExit->flag == 0) && (NumAlive == 0)
+            && (!shuttingDown)) {
             /* make sure we check our children's exit status as well before continuing */
             daemon_wait_for_children();
             if (s->AbnormalExit->flag == 0) {
                 shuttingDown = true;
-                ClientOrderlyShutdown(StderrBytesWritten, StdoutBytesWritten,
-                                      ServerSocketFD, s);
+                ClientOrderlyShutdown(ServerSocketFD);
             }
         }
         /* check to see if any control messages have arrived from the server */
@@ -180,11 +184,78 @@ void lampi_daemon_loop(lampiState_t *s)
 
         /* check to see if Server has timed out */
         if ((HeartBeatTimeOut > 0) &&
-            ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut) && (!shuttingDown) )
-        {
+            ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut)
+            && (!shuttingDown)) {
             NotifyServer = 0;
-            AbortLocalHost(ServerSocketFD, ProcessCount, hostIndex,
-                           ChildPIDs, Message, NotifyServer);
+            ClientAbort(ServerSocketFD, ProcessCount, hostIndex,
+                        ChildPIDs, Message, NotifyServer);
         }
     }                           /* end for(;;) */
 }
+
+
+/*
+ * terminate all the worker process after client caught a sigchld
+ * from a abnormally terminating child process with pid PIDofChild
+ */
+static void CleanupOnAbnormalChildTermination(pid_t PIDofChild,
+                                              int NChildren,
+                                              pid_t *ChildPIDs,
+                                              int *IAmAlive,
+                                              int SocketToULMRun)
+{
+    int TerminatedLocalProcess = 0, TerminatedGlobalProcess = 0;
+    unsigned tag;
+    ulm_iovec_t iov[2];
+    abnormal_term_msg_t abnormal_term_msg;
+
+    /* figure out which process terminated abnormally */
+    for (int i = 0; i < NChildren; i++) {
+        if (PIDofChild == ChildPIDs[i]) {
+            TerminatedLocalProcess = i;
+            TerminatedGlobalProcess = i;
+            IAmAlive[TerminatedLocalProcess] = -1;
+        }
+    }
+    ChildPIDs[TerminatedLocalProcess] = -1;
+    for (int i = 0; i < lampiState.hostid; i++) {
+        TerminatedGlobalProcess += lampiState.map_host_to_local_size[i];
+    }
+    
+    if (lampiState.verbose) {
+        ulm_err(("Error: Application process exited abnormally\n"));
+        ulm_err(("Killing child processes\n"));
+    }
+
+    for (int i = 0; i < NChildren; i++) {
+        if (ChildPIDs[i] != -1) {
+            if (lampiState.verbose) {
+                ulm_err(("kill -SIGKILL %ld\n", (long) ChildPIDs[i]));
+            }
+            kill(ChildPIDs[i], SIGKILL);
+            ChildPIDs[i] = -1;
+        }
+        IAmAlive[i] = -1;
+    }
+
+    /* send mpirun notice of abnormal termination */
+    if (lampiState.verbose) {
+        ulm_err(("ABNORMALTERM being sent\n"));
+    }
+
+    tag = ABNORMALTERM;
+    abnormal_term_msg.pid    = (unsigned) PIDofChild;                     
+    abnormal_term_msg.lrank  = (unsigned) TerminatedLocalProcess;         
+    abnormal_term_msg.grank  = (unsigned) TerminatedGlobalProcess;        
+    abnormal_term_msg.signal = (unsigned) lampiState.AbnormalExit->signal;
+    abnormal_term_msg.status = (unsigned) lampiState.AbnormalExit->status;
+
+    iov[0].iov_base = &tag;
+    iov[0].iov_len = (ssize_t) (sizeof(unsigned int));
+    iov[1].iov_base = &abnormal_term_msg;
+    iov[1].iov_len = sizeof(abnormal_term_msg_t);
+    if (SendSocket(SocketToULMRun, 2, iov) < 0) {
+        ulm_exit(("Error: sending ABNORMALTERM\n"));
+    }
+}
+

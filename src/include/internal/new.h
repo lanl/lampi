@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -63,16 +63,17 @@ template <class T> inline T* _ulm_new(ssize_t nitems,
 
     _ulm_set_file_line(file, line);
     if (debug_level > 1) {
-        if (nitems <= 0) {
-            _ulm_warn("Warning: ulm_new: Request for %ld items of size %ld\n",
-                      (long) nitems, (long) sizeof(T));
+        if (ulm_warn_enabled && nitems <= 0) {
+            _ulm_log("Warning: ulm_new: Request for %ld items of size %ld\n",
+                     (long) nitems, (long) sizeof(T));
         }
     }
 
     addr = new T[nitems];
     if (debug_level > 0) {
         if (addr == NULL) {
-            _ulm_err("Error: ulm_new: Request for %ld items of size %ld failed\n",
+            _ulm_log("Error: ulm_new: "
+                     "Request for %ld items of size %ld failed\n",
                      (long) nitems, (long) sizeof(T));
         }
     }
@@ -86,8 +87,8 @@ template <class T> inline void _ulm_delete(T *addr,
                                            char *file,
                                            int line)
 {
-    if (debug_level > 1 && addr == NULL) {
-        _ulm_warn("Warning: ulm_free: Invalid pointer %p\n", addr);
+    if (debug_level > 1 && ulm_warn_enabled && addr == NULL) {
+        _ulm_log("Warning: ulm_free: Invalid pointer %p\n", addr);
     }
     delete [] addr;
 }
@@ -97,11 +98,14 @@ template <class T> inline void _ulm_delete(T *addr,
  * Macros to actually use
  */
 
-#define ulm_delete(ADDR) \
-    do { _ulm_delete((ADDR), ULM_NEW_DEBUG_LEVEL, __FILE__, __LINE__); ADDR = NULL; } while (0)
+#define ulm_delete(ADDR)                                                \
+    do {                                                                \
+        _ulm_delete((ADDR), ULM_NEW_DEBUG_LEVEL, __FILE__, __LINE__);   \
+        ADDR = NULL;                                                    \
+    } while (0)
 
 
-#define ulm_new(TYPE,NITEMS) \
+#define ulm_new(TYPE,NITEMS)                                            \
     _ulm_new<TYPE>(NITEMS, ULM_NEW_DEBUG_LEVEL, __FILE__, __LINE__)
 
 

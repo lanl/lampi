@@ -319,7 +319,7 @@ public:
         }
 #endif
         else {
-            ulm_exit((-1, "quadricsRecvFragDesc::processAck: Frag "
+            ulm_exit(("quadricsRecvFragDesc::processAck: Frag "
                       "on %d queue\n", WhichQueue));
         }
         

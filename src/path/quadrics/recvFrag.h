@@ -117,7 +117,7 @@ public:
             else {
                 DataOK = false;
                 if (!quadricsDoAck) {
-                    ulm_exit((-1, "quadricsRecvFragDesc::CheckData: - corrupt data received "
+                    ulm_exit(("quadricsRecvFragDesc::CheckData: - corrupt data received "
                               "(%s 0x%x calculated 0x%x)\n", (usecrc()) ? "CRC" : "checksum",
                               envelope.msgDataHdr.dataChecksum, checkSum));
                 }

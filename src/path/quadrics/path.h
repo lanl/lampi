@@ -81,7 +81,7 @@ public:
 
     void unbind(SendDesc_t *message, int *globalDestProcessIDArray,
                 int destArrayCount) {
-        ulm_exit((-1, "quadricsPath::unbind - called, not implemented yet...\n"));
+        ulm_exit(("quadricsPath::unbind - called, not implemented yet...\n"));
     }
 
     bool init(SendDesc_t *message) {

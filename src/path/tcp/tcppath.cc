@@ -82,7 +82,7 @@ TCPPath* TCPPath::singleton()
             int pathHandle;
             size_t tcpPathSize = sizeof(TCPPath);
             if(tcpPathSize > MAX_PATH_OBJECT_SIZE_IN_BYTES) {
-                ulm_exit((-1, "TCPPath::singleton(): sizeof(TCPPath) > MAX_PATH_OBJECT_SIZE_IN_BYTES\n"));
+                ulm_exit(("TCPPath::singleton(): sizeof(TCPPath) > MAX_PATH_OBJECT_SIZE_IN_BYTES\n"));
             }
             _singleton = (TCPPath *) (pathContainer()->add(&pathHandle));
             if (_singleton != 0)
@@ -444,7 +444,7 @@ void TCPPath::exceptEventHandler(int sd)
 {
     ulm_err(("TCPPath[%d]::exceptEventHandler(sd)\n", thisProc, sd));
     if(sd == tcpListenSocket) {
-        ulm_exit((-1, "TCPPath::exceptEventHandler(%d): exception on listen socket.\n", thisProc, sd));
+        ulm_exit(("TCPPath::exceptEventHandler(%d): exception on listen socket.\n", thisProc, sd));
     }
 
     tcpReactor.removeListener(sd, this, Reactor::NotifyAll);

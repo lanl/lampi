@@ -56,7 +56,7 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
     struct sigaction action, oldaction;
 
     _ulm_set_file_line(file, line);
-    _ulm_err("Client aborting (comm=%d, error=%d)\n", comm, error);
+    _ulm_log("Client aborting (comm=%d, error=%d)\n", comm, error);
 
     if (lampiState.AbnormalExit) {
         /* block SIGCHLD processing */

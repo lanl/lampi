@@ -55,8 +55,7 @@ ReliabilityInfo::ReliabilityInfo()
         SharedMemoryPools.getMemorySegment(LenToAllocate,
                                            CACHE_ALIGNMENT);
     if (!sender_ackinfo) {
-        ulm_exit((-1,
-                  "Error: Unable to allocate sender_ackinfo_control_t\n"));
+        ulm_exit(("Error: Unable to allocate sender_ackinfo_control_t\n"));
     }
     // initialize array by calling constructors, initializing the locks,
     // and getting a shared memory region for process_array
@@ -68,8 +67,7 @@ ReliabilityInfo::ReliabilityInfo()
             SharedMemoryPools.getMemorySegment(LenToAllocate,
                                                CACHE_ALIGNMENT);
         if (!sender_ackinfo[i].process_array) {
-            ulm_exit((-1,
-                      "Error: Unable to allocate sender_ackinfo_t array\n"));
+            ulm_exit(("Error: Unable to allocate sender_ackinfo_t array\n"));
         }
         // initialize sequence values to 0 (null/invalid)
         bzero((void *) sender_ackinfo[i].process_array, LenToAllocate);
@@ -78,8 +76,7 @@ ReliabilityInfo::ReliabilityInfo()
     //! next frag sequence number to be assigned for a send
     next_frag_seqs = ulm_new(ULM_64BIT_INT, nprocs());
     if (!next_frag_seqs) {
-        ulm_exit((-1,
-                  "Error: Unable to allocate space for next_frag_seqs\n"));
+        ulm_exit(("Error: Unable to allocate space for next_frag_seqs\n"));
     }
 
     for (int i = 0; i < nprocs(); ++i) {
@@ -88,7 +85,7 @@ ReliabilityInfo::ReliabilityInfo()
 
     next_frag_seqsLock = ulm_new(Locks, nprocs());
     if (!next_frag_seqsLock) {
-        ulm_exit((-1, "Error: Unable to allocate space for "
+        ulm_exit(("Error: Unable to allocate space for "
                   "next_frag_seqsLock\n"));
     }
     /* !!!!! threaded-lock */
@@ -99,20 +96,18 @@ ReliabilityInfo::ReliabilityInfo()
     // initialize sequence tracking list array for all received message frags
     receivedDataSeqs = ulm_new(SeqTrackingList, nprocs());
     if (!receivedDataSeqs) {
-        ulm_exit((-1,
-                  "Error: Unable to allocate space for receivedDataSeqs\n"));
+        ulm_exit(("Error: Unable to allocate space for receivedDataSeqs\n"));
     }
     // initialize sequence tracking list array for all delivered message frags
     deliveredDataSeqs = ulm_new(SeqTrackingList, nprocs());
     if (!deliveredDataSeqs) {
-        ulm_exit((-1,
-                  "Error: Unable to allocate space for "
+        ulm_exit(("Error: Unable to allocate space for "
                  "deliveredDataSeqs\n"));
     }
     // initialize sequence tracking list lock array for both rec'vd+delivered DataSeqs
     dataSeqsLock = ulm_new(Locks, nprocs());
     if (!dataSeqsLock) {
-        ulm_exit((-1, "Error: Unable to allocate space for dataSeqsLock\n"));
+        ulm_exit(("Error: Unable to allocate space for dataSeqsLock\n"));
     }
     /* !!!!! threaded-lock */
     for (int ele = 0; ele < nprocs(); ele++) {
@@ -135,8 +130,7 @@ ReliabilityInfo::ReliabilityInfo()
                                                      CACHE_ALIGNMENT);
 
     if (!coll_next_frag_seqs || !coll_next_frag_seqsLock) {
-        ulm_exit((-1,
-                  "Unable to allocate collective next frag_seqs "
+        ulm_exit(("Unable to allocate collective next frag_seqs "
                   "structures\n"));
     }
 
@@ -165,23 +159,19 @@ ReliabilityInfo::ReliabilityInfo()
 
     if (!coll_receivedDataSeqs || !coll_deliveredDataSeqs
         || !coll_dataSeqsLock) {
-        ulm_exit((-1,
-                  "Unable to allocated collective sequence tracking "
+        ulm_exit(("Unable to allocated collective sequence tracking "
                   "lists structures\n"));
     }
 
     for (int i = 0; i < lampiState.nhosts; i++) {
         new(&(coll_receivedDataSeqs[i])) SeqTrackingList(50, 0, 0, true);
         if (!coll_receivedDataSeqs[i].getArraySize()) {
-            ulm_exit((-1,
-                      "Unable to construct coll_receivedDataSeqs[%d]\n",
-                      i));
+            ulm_exit(("Unable to construct coll_receivedDataSeqs[%d]\n", i));
         }
 
         new(&(coll_deliveredDataSeqs[i])) SeqTrackingList(50, 0, 0, true);
         if (!coll_deliveredDataSeqs[i].getArraySize()) {
-            ulm_exit((-1,
-                      "Unable to construct "
+            ulm_exit(("Unable to construct "
                      "coll_deliveredDataSeqs[%d]\n", i));
         }
 
@@ -196,7 +186,7 @@ ReliabilityInfo::ReliabilityInfo()
         getMemorySegment(sizeof(sender_ackinfo_control_t),
                          CACHE_ALIGNMENT);
     if (!coll_sender_ackinfo) {
-        ulm_exit((-1, "Unable to allocate coll_sender_ackinfo\n"));
+        ulm_exit(("Unable to allocate coll_sender_ackinfo\n"));
     }
     new(coll_sender_ackinfo) sender_ackinfo_control_t;
     coll_sender_ackinfo->Lock.init();
@@ -205,8 +195,7 @@ ReliabilityInfo::ReliabilityInfo()
         getMemorySegment(sizeof(sender_ackinfo_t) * lampiState.nhosts,
                          CACHE_ALIGNMENT);
     if (!coll_sender_ackinfo->process_array) {
-        ulm_exit((-1,
-                  "Unable to allocate process_array of "
+        ulm_exit(("Unable to allocate process_array of "
                   "coll_sender_ackinfo\n"));
     }
     bzero((void *) coll_sender_ackinfo->process_array,

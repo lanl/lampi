@@ -921,7 +921,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                         rd->memReqAck();
                         break;
                     default:
-                        ulm_exit((-1, "quadricsPath::receive bad type %d\n",
+                        ulm_exit(("quadricsPath::receive bad type %d\n",
                                   (int)rd->envelope.commonHdr.type));
                         break;
                     }
@@ -948,11 +948,11 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     }
                     else {
                         if (usecrc()) {
-                            ulm_exit((-1, "quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                            ulm_exit(("quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
                                 rd->envelope.commonHdr.checksum, chksum));
                         }
                         else {
-                            ulm_exit((-1, "quadricsPath::receive - bad envelope checksum %u, "
+                            ulm_exit(("quadricsPath::receive - bad envelope checksum %u, "
                                 "calculated %u != 2*received %u\n",
                                 rd->envelope.commonHdr.checksum,
                                 chksum,
@@ -962,11 +962,11 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                     }
 #else
                     if (usecrc()) {
-                        ulm_exit((-1, "quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                        ulm_exit(("quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
                             rd->envelope.commonHdr.checksum, chksum));
                     }
                     else {
-                        ulm_exit((-1, "quadricsPath::receive - bad envelope checksum %u, "
+                        ulm_exit(("quadricsPath::receive - bad envelope checksum %u, "
                               "calculated %u != 2*received %u\n",
                               rd->envelope.commonHdr.checksum,
                               chksum,

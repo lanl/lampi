@@ -84,7 +84,7 @@ void GetClientCpus(const char *InfoStream)
 
     for (pi = cpulist.begin(), i = 0; pi != cpulist.end(); pi++, i++) {
         RunParams.CpuList[i] = atoi(*pi);
-        ulm_info(("adding cpu %d\n", RunParams.CpuList[i]));
+        ulm_dbg(("adding cpu %d\n", RunParams.CpuList[i]));
     }
 }
 

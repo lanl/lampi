@@ -59,7 +59,7 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 
     sendRequest = (ULMRequest_t *)ulm_malloc(sizeof(ULMRequest_t) * comm_size);
     if (!sendRequest) {
-	ulm_exit((-1, "ulm_alltoall: unable to allocate send request "
+	ulm_exit(("ulm_alltoall: unable to allocate send request "
                   "array memory!\n"));
     }
 

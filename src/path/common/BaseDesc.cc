@@ -211,7 +211,7 @@ int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr,
 				if (!recorded) {
 					reliabilityData->dataSeqsLock
 						[glSourceProcess].unlock();
-					ulm_exit((-1, "BaseRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
+					ulm_exit(("BaseRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
 								"to record deliv'd sequence number\n"));
 				}
 			} else {
@@ -222,7 +222,7 @@ int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr,
 							(seq_m))) {
 					reliabilityData->dataSeqsLock
 						[glSourceProcess].unlock();
-					ulm_exit((-1, "seRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
+					ulm_exit(("seRecvFragDesc_t::processRecvDataSeqs(pt2pt) unable "
 								"to erase rcv'd sequence number\n"));
 				}
 			}
@@ -232,7 +232,7 @@ int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr,
 				reliabilityData->dataSeqsLock[glSourceProcess].unlock();
 		} else {
 			// unknown communication type
-			ulm_exit((-1, "BaseRecvFragDesc_t::processRecvDataSeqs unknown communication "
+			ulm_exit(("BaseRecvFragDesc_t::processRecvDataSeqs unknown communication "
 						"type %d\n", msgType_m));
 		}
 	} else {
@@ -613,7 +613,7 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
         if ( (bsd->FragsToAck.size() + (unsigned) bsd->NumSent) >= bsd->numfrags) {
             // sanity check, is frag really in UnackedPostedSends queue
             if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
-                ulm_exit((-1, "Error: :: Send descriptor not "
+                ulm_exit(("Error: :: Send descriptor not "
                           "in UnackedPostedSends"
                           " list, where it was expected.\n"));
             }

@@ -120,7 +120,7 @@ public:
             size_t strLen = strlen(lstlistDescription) + 1;
             listDescription_m = (char *) ulm_malloc(strLen);
             if (!listDescription_m) {
-                ulm_exit((-1, "SharedMemoryFreeLists::Init Unable "
+                ulm_exit(("SharedMemoryFreeLists::Init Unable "
                           "to allocate memory for listDescription."
                           "size reqested %ld, errno %d\n", strlen, errno));
             }
@@ -302,7 +302,7 @@ private:
 
     //! functions to call when too many reqests have failed - abort function
     int AbortFunction(char *ErrorString) {
-        ulm_exit((-1, ErrorString));
+        ulm_exit((ErrorString));
         return 1;               // this line is never reached
     }
 

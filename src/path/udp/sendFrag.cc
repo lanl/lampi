@@ -88,7 +88,7 @@ void udpSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
 	}
 #endif
 	else {
-	    ulm_exit((-1, "udpRecvFragDesc::processAck: Frag on %d queue\n",
+	    ulm_exit(("udpRecvFragDesc::processAck: Frag on %d queue\n",
                   WhichQueue));
 	}
     

@@ -53,10 +53,9 @@
 #define MAX_RETRY		100
 
 #define TIMEOUT_HELP_STRING \
-"\n\n" \
+"\n" \
 "LA-MPI was unable to start your application.  This may be because:\n" \
 "- The application may not exist or not be executable on the remote node.\n" \
-"- The application may not be executable on the remote node.\n" \
 "- The loader may not be able to find the dynamic libraries needed to run\n" \
 "  run the application.\n" \
 "\n" \
@@ -160,8 +159,8 @@ adminMessage::adminMessage()
     recvBuffer_m = (unsigned char *) ulm_malloc(recvBufferSize_m);
 
     if (!sendBuffer_m || !recvBuffer_m) {
-        ulm_exit((-1,
-                  "adminMessage::adminMessage unable to allocate %d bytes for send/receive buffers\n",
+        ulm_exit(("adminMessage::adminMessage unable to allocate %d "
+                  "bytes for send/receive buffers\n",
                   sendBufferSize_m));
     }
     sendOffset_m = recvOffset_m = 0;

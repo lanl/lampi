@@ -36,7 +36,7 @@
 
 #ifndef _emit_error_msg_and_exit
 #define _emit_error_msg_and_exit() \
-      ulm_exit((-1, "Fatal error: %s line %d\n", __FILE__, __LINE__));
+      ulm_exit(("Fatal error: %s line %d\n", __FILE__, __LINE__));
 #endif
 
 #include <stdio.h>

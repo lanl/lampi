@@ -83,16 +83,14 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
     memSegments_m = (MemorySegment_t **)
         ulm_malloc(sizeof(MemorySegment_t *) * nPools_m);
     if (!memSegments_m) {
-        ulm_exit((-1,
-                  "FixedSharedMemPool::init Unable to allocate memory for "
+        ulm_exit(("FixedSharedMemPool::init Unable to allocate memory for "
                   "memSegments_m, requested %ld bytes, errno %d\n",
                   sizeof(MemorySegment_t *) * nPools_m, errno));
     }
     // allocate nMemorySegments_m
     nMemorySegments_m = (int *) ulm_malloc(sizeof(int) * nPools_m);
     if (!nMemorySegments_m) {
-        ulm_exit((-1,
-                  "FixedSharedMemPool::init Unable to allocate memory for "
+        ulm_exit(("FixedSharedMemPool::init Unable to allocate memory for "
                   "nMemorySegments_m, requested %ld bytes, errno %d\n",
                   sizeof(int) * nPools_m, errno));
     }
@@ -102,8 +100,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
     // allocate nMemorySegmentsInArray_m
     nMemorySegmentsInArray_m = (int *) ulm_malloc(sizeof(int) * nPools_m);
     if (!nMemorySegmentsInArray_m) {
-        ulm_exit((-1,
-                  "FixedSharedMemPool::init Unable to allocate memory for "
+        ulm_exit(("FixedSharedMemPool::init Unable to allocate memory for "
                   "nMemorySegmentsInArray, requested %ld bytes, errno %d\n",
                   sizeof(int) * nPools_m, errno));
     }
@@ -115,8 +112,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
         memSegments_m[pool] = (MemorySegment_t *)
             ulm_malloc(sizeof(MemorySegment_t) * nArrayElementsToAdd_m);
         if (!memSegments_m[pool]) {
-            ulm_exit((-1,
-                      "FixedSharedMemPool::init Unable to allocate memory "
+            ulm_exit(("FixedSharedMemPool::init Unable to allocate memory "
                       "for memSegments_m[], requested %ld bytes, errno %d\n",
                       sizeof(MemorySegment_t) * nArrayElementsToAdd_m,
                       errno));
@@ -139,15 +135,14 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
             void *tmpPtr = ZeroAlloc(initialAllocation, MMAP_SHARED_PROT,
                                      MMAP_SHARED_FLAGS);
             if (!tmpPtr) {
-                ulm_exit((-1,
-                          "FixedSharedMemPool::init Unable to allocate "
+                ulm_exit(("FixedSharedMemPool::init Unable to allocate "
                           "memory pool , requested %ld, errno %d\n",
                           initialAllocation, errno));
             }
             // apply memory affinity
             if (applyMemoryAffinity) {
                 if (!setAffinity(tmpPtr, initialAllocation, pool)) {
-                    ulm_exit((-1, "Error: setting memory affinity\n"));
+                    ulm_exit(("Error: setting memory affinity\n"));
                 }
             }
             // set MemorySegment_t data
@@ -232,8 +227,7 @@ void *FixedSharedMemPool::getMemorySegment(size_t length,
                            (nMemorySegments_m[poolIndex] +
                             nArrayElementsToAdd_m));
             if (!tmpMemSeg) {
-                ulm_exit((-1,
-                          "FixedSharedMemPool::getMemorySegment Unable to "
+                ulm_exit(("FixedSharedMemPool::getMemorySegment Unable to "
                           "allocate memory for tmpMemSeg, errno %d\n",
                           errno));
             }
@@ -269,13 +263,13 @@ void *FixedSharedMemPool::getMemorySegment(size_t length,
         void *tmpPtr =
             ZeroAlloc(lenToAllocate, MMAP_SHARED_PROT, MMAP_SHARED_FLAGS);
         if (!tmpPtr) {
-            ulm_exit((-1, "FixedSharedMemPool::getMemorySegment Unable to "
+            ulm_exit(("FixedSharedMemPool::getMemorySegment Unable to "
                       "allocate memory pool\n"));
         }
         // apply memory affinity
         if (applyMemoryAffinity) {
             if (!setAffinity(tmpPtr, lenToAllocate, poolIndex)) {
-                ulm_exit((-1, "Error: setting memory affinity\n"));
+                ulm_exit(("Error: setting memory affinity\n"));
             }
         }
         // fill in memSegments_m

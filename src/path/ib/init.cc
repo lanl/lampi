@@ -432,7 +432,7 @@ void ibSetup(lampiState_t *s)
             Abort = true,
             threshToGrowList = 0); 
         if (rc) {
-            ulm_exit((-1, "Error: can't initialize IB recv_frag_list for HCA %d\n",
+            ulm_exit(("Error: can't initialize IB recv_frag_list for HCA %d\n",
                 ib_state.active_hcas[i]));
         }
 
@@ -453,7 +453,7 @@ void ibSetup(lampiState_t *s)
             Abort = true,
             threshToGrowList = 0); 
         if (rc) {
-            ulm_exit((-1, "Error: can't initialize IB send_frag_list for HCA %d\n",
+            ulm_exit(("Error: can't initialize IB send_frag_list for HCA %d\n",
                 ib_state.active_hcas[i]));
         }
 

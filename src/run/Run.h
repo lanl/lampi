@@ -48,7 +48,6 @@
 /* prototypes */
 
 #define Abort() AbortFunction(__FILE__, __LINE__)
-int AbortAllHosts(int *ClientSocketFDList, int NHosts);
 void AbortFunction(const char *, int);
 int CheckForControlMsgs(int MaxDescriptor,
                         int *ClientSocketFDList,
@@ -93,7 +92,6 @@ int ProcessInput(int argc, char **argv, int *FirstAppArg);
 void RearrangeHostList(const char *InfoStream);
 void ScanInput(int argc, char **argv, int *FirstAppArg);
 int SendInitialInputDataToClients(void);
-void Sigalarm(int Signal);
 void VerifyLsfResources(void);
 void FixRunParams(int nhosts);
 void InitProc(void);

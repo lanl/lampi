@@ -41,4 +41,5 @@ extern RunParams_t RunParams; // mpiurn runtime parameters
 extern Options_t Options[];   // command line options
 extern int SizeOfOptions;     // size of options array
 extern int StdInCTS;          // stdin flow control
+
 #endif  /* _MPIRUNLIBGLOBS */

@@ -280,13 +280,13 @@ public:
             // change memory protection for red zones
             int retval = mprotect(TmpPtr, PageSize, PROT_NONE);
             if (retval != 0) {
-                ulm_exit((-1, "Error in red zone 1 mprotect\n"));
+                ulm_exit(("Error in red zone 1 mprotect\n"));
             }
             // end red zone
             retval =
                 mprotect(TmpPtr + PageSize + WorkingSize, PageSize, PROT_NONE);
             if (retval != 0) {
-                ulm_exit((-1, "Error in red zone 2 mprotect\n"));
+                ulm_exit(("Error in red zone 2 mprotect\n"));
             }
             // initialize chunk descriptors
             if (MemFlags == SharedMemFlag) {

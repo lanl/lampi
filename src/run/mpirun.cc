@@ -58,7 +58,6 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <assert.h>
-#include <setjmp.h>
 #include <errno.h>
 
 #define ULM_GLOBAL_DEFINE
@@ -362,6 +361,7 @@ static bool exchangeIBInfo(int *errorCode)
             // active[0] = max active HCAs of any process
             // active[1] = max active ports of any process
             // active[2] = sizeof(ib_ud_peer_info_t) -- to avoid bringing in unnecessary headers...
+
             if (!s->unpack(active, adminMessage::INTEGER, 3, alarm_time)) {
                 ulm_err(("Error: exchangeIBInfo() - can't unpack max active info\n"));
                 returnValue = false;
@@ -725,7 +725,7 @@ int mpirun(int argc, char **argv)
     /* more banner info: print out process distribution */
     if (RunParams.Quiet == 0) {
         fprintf(stderr,
-                "LA-MPI: *** %d processes on %d hosts:",
+                "LA-MPI: *** %d process(es) on %d host(s):",
                 nprocs, RunParams.NHosts);
         for (int h = 0; h < RunParams.NHosts; h++) {
             struct hostent *hptr;

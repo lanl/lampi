@@ -89,23 +89,17 @@ enum MsgType_t {
 
 /* control message types */
 enum CtlMsgType_t {
-    HEARTBEAT = 100,    /* heartbeat message */
-    STDIOMSG,           /* stdio message */
-    STDIOMSG_CTS,       /* stdio flow control message */
-
-    NORMALTERM = 200,   /* normal termination (client -> mpirun) */
-    ACKNORMALTERM,      /* ack (mpirun -> client) */
-    ACKACKNORMALTERM,   /* ack ack (client -> mpirun) */
-
-    ABNORMALTERM = 300, /* abnormal termination (client -> mpirun) */
-
-    TERMINATENOW = 400, /* mpirun -> client */
-    ACKTERMINATENOW,    /* client -> mpirun */
-
-    ALLHOSTSDONE = 500, /* all hosts done, library can stop processing
-                         * network data (mpirun -> client) */
-    ACKALLHOSTSDONE     /* ack (client -> mpirun) */
+    HEARTBEAT = 1,    /* heartbeat message */
+    STDIOMSG,         /* stdio message */
+    STDIOMSG_CTS,     /* stdio flow control message */
+    NORMALTERM,       /* normal termination (client -> mpirun) */
+    ABNORMALTERM,     /* abnormal termination (client -> mpirun) */
+    TERMINATENOW,     /* mpirun -> client */
+    ACKTERMINATENOW,  /* client -> mpirun */
+    ALLHOSTSDONE,     /* mpirun -> client (hosts can stop processing data) */
+    ACKALLHOSTSDONE   /* client -> mpirun */
 };
+
 
 /* queue/list types */
 enum QueueType_t {

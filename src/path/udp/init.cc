@@ -61,7 +61,7 @@ static void initRecvFragmentDescriptors(void)
     bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
-	ulm_exit((-1, "Unable to allocate space for memAffinityPool\n"));
+	ulm_exit(("Unable to allocate space for memAffinityPool\n"));
     }
 
     // fill in memory affinity index
@@ -87,7 +87,7 @@ static void initRecvFragmentDescriptors(void)
     ulm_free(memAffinityPool);
 
     if (rc) {
-	ulm_exit((-1, "FreeLists::Init Unable to initialize"
+	ulm_exit(("FreeLists::Init Unable to initialize"
                   " UDP recv frag descriptor pool\n"));
     }
 }
@@ -116,7 +116,7 @@ static void initSendFragmentDescriptors(void)
     bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
-	ulm_exit((-1, "Unable to allocate space for memAffinityPool\n"));
+	ulm_exit(("Unable to allocate space for memAffinityPool\n"));
     }
 
     // fill in memory affinity index
@@ -144,7 +144,7 @@ static void initSendFragmentDescriptors(void)
     ulm_free(memAffinityPool);
 
     if (rc) {
-	ulm_exit((-1, "FreeLists::Init Unable to initialize"
+	ulm_exit(("FreeLists::Init Unable to initialize"
                   " UDP send frag descriptor pool\n"));
     }
 }
@@ -195,7 +195,7 @@ static void initEarlySendFragmentBuffers(void)
                                      UDPEarlySendDescAbortWhenNoResource);
 
     if (rc) {
-        ulm_exit((-1, "FreeLists::Init Unable to initialize"
+        ulm_exit(("FreeLists::Init Unable to initialize"
                   " UDP Early Send (large) pool\n"));
     }
     //
@@ -214,7 +214,7 @@ static void initEarlySendFragmentBuffers(void)
                                    UDPEarlySendDescAbortWhenNoResource);
 
     if (rc) {
-        ulm_exit((-1, "FreeLists::Init Unable to initialize"
+        ulm_exit(("FreeLists::Init Unable to initialize"
                   " UDP Early Send (med) pool\n"));
     }
     // 
@@ -235,7 +235,7 @@ static void initEarlySendFragmentBuffers(void)
                                      UDPEarlySendDescAbortWhenNoResource);
 
     if (rc) {
-        ulm_exit((-1, "FreeLists::Init Unable to initialize"
+        ulm_exit(("FreeLists::Init Unable to initialize"
                   " UDP Early Send (small) pool\n"));
     }
 }

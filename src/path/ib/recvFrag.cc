@@ -235,7 +235,7 @@ bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
     } else {
         DataOK = false;
         if (!ib_state.ack) {
-            ulm_exit((-1, "ibRecvFragDesc::CheckData: - corrupt data received "
+            ulm_exit(("ibRecvFragDesc::CheckData: - corrupt data received "
                       "(%s 0x%x calculated 0x%x)\n",
                       (usecrc()) ? "CRC" : "checksum",
                       msg_m->header.dataChecksum, checkSum));
@@ -435,7 +435,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         }
 #endif
         else {
-            ulm_exit((-1, "ibRecvFragDesc::handlePt2PtMessageAck: Frag "
+            ulm_exit(("ibRecvFragDesc::handlePt2PtMessageAck: Frag "
                       "on %d queue\n", whichQueue));
         }
 
@@ -491,8 +491,7 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
         if (bsd->NumSent == (int)bsd->numfrags) {
             // sanity check, is frag really in UnackedPostedSends queue
             if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
-                ulm_exit((-1, "Error: Send descriptor not "
-                          "in UnackedPostedSends"
+                ulm_exit(("Error: Send descriptor not in UnackedPostedSends"
                           " list, where it was expected.\n"));
             }
             bsd->WhichQueue = INCOMPLETEISENDQUEUE;

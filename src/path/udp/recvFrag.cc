@@ -375,8 +375,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     // make sure destination process is on this host
     int dest_proc = dstProcID_m;
     if (dest_proc != myproc()) {
-	ulm_exit((-1,
-                  "UDP datagram not sent to me %d, destination %d\n",
+	ulm_exit(("UDP datagram not sent to me %d, destination %d\n",
                   myproc(), dest_proc));
     }
     
@@ -391,8 +390,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
 
         communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this);    
     } else {
-	ulm_exit((-1,
-                  "UDP datagram with invalid message type %d\n",
+	ulm_exit(("UDP datagram with invalid message type %d\n",
                   msgType_m));
     }
     return;
@@ -467,7 +465,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	if ((unsigned)sendDesc->NumSent == sendDesc->numfrags) {
 	    // sanity check, is frag really in UnackedPostedSends queue
 	    if (sendDesc->WhichQueue != UNACKEDISENDQUEUE) {
-		ulm_exit((-1, "Error: :: Send descriptor not in "
+		ulm_exit(("Error: :: Send descriptor not in "
                           "UnackedPostedSends list, where it was expected.\n"));
 	    }
 	    sendDesc->WhichQueue = INCOMPLETEISENDQUEUE;
@@ -505,7 +503,7 @@ unsigned int udpRecvFragDesc::CopyFunction(void *fragAddr, void *appAddr, ssize_
     //
 
     if (dataReadFromSocket) {
-	ulm_exit((-1, "udpRecvFragDesc::CopyFunction error addr = 0x%llx\n",
+	ulm_exit(("udpRecvFragDesc::CopyFunction error addr = 0x%llx\n",
                   addr_m));
     }
 

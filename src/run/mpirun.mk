@@ -1,7 +1,6 @@
 SRC_MPIRUN += \
 	src/init/environ.cc \
 	src/run/Abort.cc \
-	src/run/AbortAllHosts.cc \
 	src/run/CheckForControlMsgs.cc \
 	src/run/CheckHeartBeat.cc \
 	src/run/Daemonize.cc \
@@ -15,7 +14,7 @@ SRC_MPIRUN += \
 	src/run/GetLSFResource.cc \
 	src/run/GetNetworkDevList.cc \
 	src/run/Input.cc \
-	src/run/InstallSigHandler.cc \
+	src/run/Signal.cc \
 	src/run/KillAppProcs.cc \
 	src/run/ProcessInput.cc \
 	src/run/RearrangeHostList.cc \
@@ -31,7 +30,6 @@ SRC_MPIRUN += \
 	src/run/main.cc \
 	src/run/mpirun.cc \
 	src/run/parseEnvironmentSettings.cc \
-	src/run/sigalarm.cc \
 	src/run/spawn.cc \
 	src/run/spawn_bproc.cc \
 	src/run/spawn_exec.cc \

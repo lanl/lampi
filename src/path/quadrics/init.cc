@@ -68,7 +68,7 @@ void quadricsInitRecvDescs() {
     bool enforceAffinity = true;
     int *memAffinityPool = (int *)ulm_malloc(sizeof(int) * nFreeLists);
     if (!memAffinityPool) {
-	ulm_exit((-1, "quadricsInitRecvDescs: Unable to allocate space "
+	ulm_exit(("quadricsInitRecvDescs: Unable to allocate space "
                   "for memAffinityPool\n"));
     }
 

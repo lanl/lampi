@@ -165,7 +165,7 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	// sanity check
 #ifdef _DEBUGQUEUES
 	if (sendFragDesc->WhichQueue != UDPFRAGFREELIST) {
-	    ulm_exit((-1, "sendFragDesc->WhichQueue %d\n",
+	    ulm_exit(("sendFragDesc->WhichQueue %d\n",
                       sendFragDesc->WhichQueue));
 	}
 #endif	// _DEBUGQUEUES

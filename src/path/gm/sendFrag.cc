@@ -241,8 +241,7 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
         (bsd->NumSent)++;
     }
     else {
-        ulm_exit((-1,
-                  "Error: gmPath::callback: Frag on %d queue\n",
+        ulm_exit(("Error: gmPath::callback: Frag on %d queue\n",
                   WhichQueue));
     }
 

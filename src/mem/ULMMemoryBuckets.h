@@ -154,8 +154,7 @@ public:
             // if minimum allocation exceeds pool upper limit, 
             //   call error function
             if (minPages > maxPagePoolSize) {
-                ulm_exit((-1,
-                          "ULMMemoryBuckets::Init Too much memory requested "
+                ulm_exit(("ULMMemoryBuckets::Init Too much memory requested "
                           "from pool, minpages %ld, maxPagePoolSize %ld\n",
                           minPages, maxPagePoolSize));
             }
@@ -335,7 +334,7 @@ private:
     // functions to call when too many reqests have failed.
     // abort function
     int AbortFunction(char *ErrorString) {
-        ulm_exit((-1, ErrorString));
+        ulm_exit((ErrorString));
         // this line is never called
         return 1;
     }

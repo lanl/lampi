@@ -109,7 +109,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	// record the frag_seq number
 	if (!recorded) {
 	    reliabilityInfo->dataSeqsLock[glfragSrc].unlock();
-	    ulm_exit((-1, "Error: Unable to record frag sequence "
+	    ulm_exit(("Error: Unable to record frag sequence "
                       "number(2)\n"));
 	}
 	reliabilityInfo->dataSeqsLock[glfragSrc].unlock();
@@ -341,7 +341,7 @@ RecvDesc_t* Communicator::matchReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	// record the frag_seq number
 	if (!recorded) {
 	    reliabilityInfo->dataSeqsLock[glfragSrc].unlock();
-	    ulm_exit((-1, "Error: Unable to record frag sequence "
+	    ulm_exit(("Error: Unable to record frag sequence "
                       "number(2)\n"));
 	}
 	reliabilityInfo->dataSeqsLock[glfragSrc].unlock();

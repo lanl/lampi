@@ -118,8 +118,7 @@ int push_frags_into_network(double timeNow)
                                 SendDesc->Lock.unlock();
                                 IncompletePostedSends.Lock.unlock();
                             }
-                            ulm_exit((-1,
-                                      "Error: push_frags_into_network: "
+                            ulm_exit(("Error: push_frags_into_network: "
                                       "cannot find path for message\n"));
                         }
                         // initialize the descriptor for this path
@@ -132,7 +131,7 @@ int push_frags_into_network(double timeNow)
                         SendDesc->Lock.unlock();
                         IncompletePostedSends.Lock.unlock();
                     }
-                    ulm_exit((-1, "Error: push_frags_into_network: fatal "
+                    ulm_exit(("Error: push_frags_into_network: fatal "
                               "error in sending message\n"));
                 }
             }

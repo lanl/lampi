@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -60,15 +60,15 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
 
     _ulm_set_file_line(file, line);
     if (debug_level > 1) {
-        if (size <= 0) {
-            _ulm_warn("Warning: ulm_malloc: Request for %ld bytes\n",
-                      (long) size);
+        if (size <= 0 && ulm_warn_enabled) {
+            _ulm_log("Warning: ulm_malloc: Request for %ld bytes\n",
+                     (long) size);
         }
     }
     addr = malloc((size_t) size);
     if (debug_level > 0) {
         if (addr == NULL) {
-            _ulm_err("Error: ulm_malloc: Request for %ld bytes failed\n",
+            _ulm_log("Error: ulm_malloc: Request for %ld bytes failed\n",
                      (long) size);
         }
     }
@@ -80,8 +80,8 @@ CDECL_STATIC_INLINE
 void _ulm_free(void *addr, int debug_level, char *file, int line)
 {
     _ulm_set_file_line(file, line);
-    if (debug_level > 1 && addr == NULL) {
-        _ulm_warn("Warning: ulm_free: Invalid pointer %p\n", addr);
+    if (debug_level > 1 && addr == NULL && ulm_warn_enabled) {
+        _ulm_log("Warning: ulm_free: Invalid pointer %p\n", addr);
         return;
     }
     free(addr);

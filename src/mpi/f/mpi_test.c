@@ -42,14 +42,6 @@ void mpi_test_f(MPI_Fint *req, MPI_Fint *flag,
 {
     MPI_Request c_req = MPI_Request_f2c(*req);
 
-    /* fast return for MPI_REQUEST_NULL */
-    if (*req = -1) {
-        memset(status, 0, sizeof(MPI_Status));
-        *flag = 1;
-        *rc = MPI_SUCCESS;
-        return;
-    }
-
     *rc = MPI_Test(&c_req, flag, status);
     if (*rc == MPI_SUCCESS && (*req >= 0) && *flag
         && status->_persistent == 0) {

@@ -45,24 +45,16 @@ static void _mpi_errors_are_fatal(MPI_Comm *comm, int *rc,
 				  char *file, int *line)
 {
     char errstring[MPI_MAX_ERROR_STRING];
-    char *basename;
     int length;
 
     if (_MPI_DEBUG) {
 	_mpi_dbg("_mpi_errors_are_fatal:\n");
     }
 
-    basename = strrchr(file, '/');
-    if (basename == ((char *)NULL) ) {
-	basename = file;
-    } else {
-	basename += 1;
-    }
-
     MPI_Error_string(*rc, errstring, &length);
 
-    _ulm_err("%s:%d: MPI error: %s (%d): MPI errors are fatal\n",
-	     basename, *line, errstring, *rc);
+    _ulm_set_file_line(file, *line);
+    _ulm_log("MPI error: %s (%d): MPI errors are fatal\n", errstring, *rc);
     ulm_abort(*comm, *rc);
 }
 

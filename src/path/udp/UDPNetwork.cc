@@ -72,7 +72,7 @@ int UDPNetwork::initPostFork(int ifCount, struct sockaddr_in* peerAddrs)
 {
     UDPGlobals::UDPNet = new UDPNetwork(ifCount, peerAddrs);
     if (!UDPGlobals::UDPNet) {
-        ulm_exit((-1, "UDPNetwork::beginInitLocal - UDPNet not allocated!\n"));
+        ulm_exit(("UDPNetwork::beginInitLocal - UDPNet not allocated!\n"));
     }
     return ULM_SUCCESS;
 }
@@ -85,7 +85,7 @@ UDPNetwork::UDPNetwork(int ifCount, struct sockaddr_in* peerAddrs)
 
     hostAddrs = (struct sockaddr_in *)ulm_malloc(sizeof(struct sockaddr_in) * nProcs);
     if (!hostAddrs) {
-        ulm_exit((-1, "UDPNetwork::UDPNetwork error - unable to allocate "
+        ulm_exit(("UDPNetwork::UDPNetwork error - unable to allocate "
                   "%d bytes for hostAddrs!\n",
                   sizeof(struct sockaddr_in) * nHosts));
     }
@@ -100,7 +100,7 @@ UDPNetwork::UDPNetwork(int ifCount, struct sockaddr_in* peerAddrs)
     procPorts =
         (unsigned short *) ulm_malloc(sizeof(unsigned short) * numPorts);
     if (!procPorts) {
-        ulm_exit((-1, "UDPNetwork::UDPNetwork error - unable to allocate "
+        ulm_exit(("UDPNetwork::UDPNetwork error - unable to allocate "
                   "%d bytes for procPorts!\n",
                   sizeof(unsigned short) * numPorts));
     }

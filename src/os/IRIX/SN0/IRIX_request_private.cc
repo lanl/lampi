@@ -249,10 +249,10 @@ void request::MD_init_resource_info()
     if ((f = popen("/usr/bin/ls -FS1 /hw/module", "r")) != NULL) {
 	while (fscanf(f, "%d -> %s ", &mod_num, path) != EOF) {
 	    if (!(strlen(path) < 256)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_module_num(mod_num))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (mod_num > max_mod_num) {
 		max_mod_num = mod_num;
@@ -283,13 +283,13 @@ void request::MD_init_resource_info()
     if ((f = popen("/usr/bin/ls -FS1 /hw/nodenum", "r")) != NULL) {
 	while (fscanf(f, "%d -> %s ", &node_num, path) != EOF) {
 	    if (!(strlen(path) < 256)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_memory_num(node_num))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_node_num(node_num))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (node_num > max_node_num) {
 		max_node_num = node_num;
@@ -297,10 +297,10 @@ void request::MD_init_resource_info()
 
 	    retval = sscanf(path, "/hw/module/%d/slot/n%d/node", &mod, &node);
 	    if (!(retval == 2)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_module_num(mod))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 
 	    // set up node info
@@ -337,10 +337,10 @@ void request::MD_init_resource_info()
     if ((f = popen("/usr/bin/ls -FS1 /hw/cpunum", "r")) != NULL) {
 	while (fscanf(f, "%d -> %s ", &cpu_num, path) != EOF) {
 	    if (!(strlen(path) < 256)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_cpu_num(cpu_num))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (cpu_num > max_cpu_num) {
 		max_cpu_num = cpu_num;
@@ -362,16 +362,16 @@ void request::MD_init_resource_info()
 	    }
 
 	    if (!(retval == 3)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_module_num(mod))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_node(node))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_cpu_slot(slot))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 
 	    cpus[cpu_num].set_module(mod);
@@ -392,10 +392,10 @@ void request::MD_init_resource_info()
     if ((f = popen("/usr/bin/ls -FS1 /hw/hippi", "r")) != NULL) {
 	while (fscanf(f, "%d -> %s ", &hippi_num, path) != EOF) {
 	    if (!(strlen(path) < 256)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_hippi_num(hippi_num))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (hippi_num > max_hippi_num) {
 		max_hippi_num = hippi_num;
@@ -405,13 +405,13 @@ void request::MD_init_resource_info()
 
 	    retval = sscanf(path, "/hw/module/%d/slot/io%d/", &mod, &ioslot);
 	    if (!(retval == 2)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_module_num(mod))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if (!(MD_is_valid_xio_slot(ioslot))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 
 	    hippi_devs[hippi_num].set_module(mod);
@@ -446,7 +446,7 @@ void request::MD_add_constraint(resource_type rt, constraint_info *c)
     constraint_info my_c, tc;
 
     if (!(MD_is_valid_resource(rt, c->get_num()))) {
-	ulm_exit((-1, "Aborting\n"));
+	ulm_exit(("Aborting\n"));
     }
     num = c->get_num();
 
@@ -470,7 +470,7 @@ void request::MD_add_constraint(resource_type rt, constraint_info *c)
 	    default:
 		node = all_resources[rt][num].get_node();
 		if (!(MD_is_valid_node(node))) {
-		    ulm_exit((-1, "Aborting\n"));
+		    ulm_exit(("Aborting\n"));
 		}
 		node_num = modules[mod_num].get_node(node);
 		// connected to 2 cpus
@@ -495,20 +495,20 @@ void request::MD_add_constraint(resource_type rt, constraint_info *c)
 		}
 		break;
 	    case R_CPU:
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 		break;
 	    }
 	    break;
 	case C_NO_HIPPI:
 	    if (!(rt != R_HIPPI)) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    tc.set_type(R_HIPPI);
 	    tc.reset_mask(C_MUST_NOT_USE);
 	    mod_num = all_resources[rt][num].get_module();
 	    node = all_resources[rt][num].get_node();
 	    if (!(MD_is_valid_node(node))) {
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 	    }
 	    if ((node == 1) || (node == 3)) {
 		node_num = modules[mod_num].get_node(node);
@@ -531,7 +531,7 @@ void request::MD_add_constraint(resource_type rt, constraint_info *c)
 	    default:
 		node = all_resources[rt][num].get_node();
 		if (!(MD_is_valid_node(node))) {
-		    ulm_exit((-1, "Aborting\n"));
+		    ulm_exit(("Aborting\n"));
 		}
 		tc.set_num(modules[mod_num].get_node(node));
 		MD_add_constraint(R_MEMORY, &tc);
@@ -546,7 +546,7 @@ void request::MD_add_constraint(resource_type rt, constraint_info *c)
 		MD_add_constraint(R_MEMORY, &tc);
 		break;
 	    case R_MEMORY:
-		ulm_exit((-1, "Aborting\n"));
+		ulm_exit(("Aborting\n"));
 		break;
 	    }
 	    break;
@@ -689,7 +689,7 @@ void request::MD_allocate_resource(int res, int num)
 	    }
 	}
 	if (!(head < _PRIORITY_LIST_LEN_)) {
-	    ulm_exit((-1, "Aborting\n"));
+	    ulm_exit(("Aborting\n"));
 	}
 	for (tail = head; tail < _PRIORITY_LIST_LEN_; tail++) {
 	    if (_PRIORITY_LIST_[tail] == n) {
@@ -697,7 +697,7 @@ void request::MD_allocate_resource(int res, int num)
 	    }
 	}
 	if (!(tail < _PRIORITY_LIST_LEN_)) {
-	    ulm_exit((-1, "Aborting\n"));
+	    ulm_exit(("Aborting\n"));
 	}
 	for (cursor = tail; cursor > head; cursor--) {
 	    // move everyone down
@@ -716,7 +716,7 @@ void request::MD_allocate_resource(int res, int num)
 bool request::MD_is_valid_resource(resource_type rt, int r)
 {
     if (!(rt < R_NUM_RESOURCES)) {
-	ulm_exit((-1, "Aborting\n"));
+	ulm_exit(("Aborting\n"));
     }
     if ((r >= 0) && (r < max_resources[rt])) {
 	return(true);
