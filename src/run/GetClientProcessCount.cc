@@ -309,11 +309,13 @@ void GetClientProcessCount(const char *InfoStream)
         getBJSNodes();
         if (RunParameters.HostListSize > 0) {
             /* debug */
+            /*
             ulm_err(("RunParameters.NHostsSet %d RunParameters.NHosts %d "
                      "RunParameters.HostListSize %d\n",
                      RunParameters.NHostsSet,
                      RunParameters.NHosts,
                      RunParameters.HostListSize));
+            */
             /* end debug */
             nhosts =
                 (RunParameters.
@@ -323,7 +325,9 @@ void GetClientProcessCount(const char *InfoStream)
                                HostListSize : RunParameters.
                                NHosts) : RunParameters.HostListSize;
             /* debug */
+            /*
             ulm_err((" nhosts %d \n", nhosts));
+            */
             /* end debug */
             pickNodesFromList(nhosts);
         } else {
