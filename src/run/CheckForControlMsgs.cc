@@ -263,7 +263,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                               pid_t ** PIDsOfAppProcs,
                               double *TimeFirstCheckin, int *ActiveClients)
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     ulm_fd_set_t ReadSet;
 #else
     fd_set ReadSet;
@@ -288,7 +288,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
     WaitTime.tv_usec = 0;
 
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     bzero(&ReadSet, sizeof(ReadSet));
 #else
     FD_ZERO(&ReadSet);

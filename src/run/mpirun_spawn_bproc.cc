@@ -54,7 +54,7 @@
 
 #include "init/environ.h"
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 #include <sys/un.h>
 #include <sys/bproc.h>
 #endif
@@ -67,7 +67,7 @@
 #endif
 
 /// nehal's copy
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 extern char **environ;
 static int ERROR_LINE = 0;
 static char *ERROR_FILE = NULL;
@@ -84,7 +84,7 @@ enum {
 
 #endif
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 
 static void set_non_block(int fd)
 {
@@ -149,7 +149,7 @@ static int setup_socket(struct sockaddr_in *listenaddr)
 
 #endif
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 
 static int *pids = 0;
 static int iosock_fd[2];
@@ -249,7 +249,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 		       int **ListHostsStarted, ULMRunParams_t * RunParameters,
 		       int FirstAppArgument, int argc, char **argv)
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     /*     Strings with pre-assigned values  */
     char *execName = NULL;
     char *exec_args[END+1];
@@ -272,7 +272,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_AUTH[MAXBUFFERLEN];
     char LAMPI_SERVER[MAXBUFFERLEN];
 
-#ifndef USE_CT
+#ifndef ENABLE_CT
     struct bproc_io_t io[2];
     struct sockaddr_in addr;
     pthread_t a_thread;
@@ -301,7 +301,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
         pids[i] = -1;
     }
 
-#ifndef USE_CT
+#ifndef ENABLE_CT
     // allocate space for stdio file handles
     RunParameters->STDERRfds = ulm_new(int, nHosts);
     RunParameters->STDOUTfds = ulm_new(int, nHosts);
@@ -364,7 +364,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      */
     exec_args[END] = NULL;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if (bproc_vexecmove
 	(nHosts, nodes, pids, exec_args[EXEC_NAME],
 	 argv + (FirstAppArgument - 1), environ) < 0) {

@@ -134,7 +134,7 @@ case "${host}" in
 i?86-pc-linux*)
         if test "$CC" = "icc" ; then
            CXX="$CC"
-           if test "${enable_debug:-set}" = "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
@@ -143,7 +143,7 @@ i?86-pc-linux*)
         else
            CC="gcc"
            CXX="g++"
-           if test "${enable_debug:-set}" = "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
@@ -176,19 +176,20 @@ i?86-pc-linux*)
 
 	;;
 
-ia64-pc-linux*)
+ia64-unknown-linux*)
         if test "$CC" = "ecc" ; then
            CXX="$CC"
-           if test "${enable_debug:-set}" = "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
               CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
+           CFLAGS="$CFLAGS -ansi -restrict"
         else
            CC="gcc"
            CXX="g++"
-           if test "${enable_debug:-set}" = "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
@@ -225,7 +226,7 @@ alpha*-dec*)
         if test "$CC" = "gcc" ; then
            CXX="g++"
            CFLAGS="-Wall -mcpu=ev6"
-           if test "$enable_debug" "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="$CFLAGS -g"
            else
               CFLAGS="$CFLAGS -O3"
@@ -239,7 +240,7 @@ alpha*-dec*)
            CXX="cxx"
            CFLAGS="-arch host -accept restrict_keyword"
            CPPFLAGS="$CPPFLAGS -pthread -w"
-           if test "$enable_debug" "yes" ; then
+           if test "$enable_debug" = "yes" ; then
               CFLAGS="$CFLAGS -g -gall -trapuv"
            else
               # benchmarks seems to do better with -O3 than -O4 and -O5
@@ -249,7 +250,10 @@ alpha*-dec*)
            CXXFLAGS="$CFLAGS -model ansi"
 
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared -all $(patsubst %,-rpath %,$(rpath))'
+           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared -all $(patsubst %,-rpath %,$(rpath)) -none'
+           if test "$with_romio" = "yes" ; then
+              LDLIBS_LIBMPI="$LDLIBS_LIBMPI -laio"
+           fi
         fi
         CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
@@ -276,7 +280,7 @@ alpha*-dec*)
 powerpc-apple-darwin*)
         CC="gcc"
         CXX="g++"
-        if test "${enable_debug:-set}" = "yes" ; then
+        if test "$enable_debug" = "yes" ; then
            CFLAGS="-g"
         else
            CFLAGS="-g -O"
@@ -310,10 +314,10 @@ powerpc-apple-darwin*)
 mips-sgi-irix*)
         if test "$CC" = "cc" ; then
            CXX="CC"
-           if test "${enable_debug:-set}" = "yes" ; then
-              CFLAGS="-g"
+           if test "$enable_debug" = "yes" ; then
+              CFLAGS="-O0 -g -LANG:restrict=ON"
            else
-              CFLAGS="-g -O"
+              CFLAGS="-O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON"
               CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -64 -mips4 -LANG:ansi-for-init-scope=ON"
@@ -323,10 +327,10 @@ mips-sgi-irix*)
         else
            CC="gcc"
            CXX="g++"
-           if test "${enable_debug:-set}" = "yes" ; then
-              CFLAGS="-O0 -g -LANG:restrict=ON"
+           if test "$enable_debug" = "yes" ; then
+              CFLAGS="-g"
            else
-              CFLAGS="-O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON"
+              CFLAGS="-g -O"
               CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -finline-functions"
@@ -378,15 +382,15 @@ esac
 # Optional features
 
 AC_ARG_ENABLE(debug,
-              AC_HELP_STRING([--enable-debug], [Enable debugging (default is no)]))
+              AC_HELP_STRING([--enable-debug], [enable debugging (default is no)]))
 echo "debug build... ${enable_debug:-no}"
 
 AC_ARG_ENABLE(static,
-              AC_HELP_STRING([--enable-static], [Enable installation of static library]))
+              AC_HELP_STRING([--enable-static], [enable installation of static library]))
 echo "static library... ${enable_static:-no}"
 
 AC_ARG_ENABLE(dynamic,
-              AC_HELP_STRING([--enable-dynamic], [Enable installation of dynamic library]))
+              AC_HELP_STRING([--enable-dynamic], [enable installation of dynamic library]))
 echo "dynamic library... ${enable_dynamic:-no}"
 
 AC_ARG_ENABLE(lsf,
@@ -474,18 +478,25 @@ if test "$enable_ct" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_CT"
 fi
 
-AC_ARG_ENABLE(memprofile,
-              AC_HELP_STRING([--enable-memprofile], [enable memory profiling]))
-echo "feature MEMPROFILE... ${enable_memprofile:-no}"
-if test "$enable_memprofile" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_MEMPROFILE"
-fi
-
 AC_ARG_ENABLE(check_api_args,
               AC_HELP_STRING([--enable-check-api-args], [enable checking of API arguments]))
 echo "feature CHECK_API_ARGS... ${enable_check_api_args:-no}"
 if test "$enable_check_api_args" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_CHECK_API_ARGS"
+fi
+
+AC_ARG_ENABLE(enable-dbg,
+              AC_HELP_STRING([--enable-dbg], [enable copious debugging output]))
+echo "copious debugging output... ${enable_dbg:-no}"
+if test "$enable_dbg" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_DBG"
+fi
+
+AC_ARG_ENABLE(memprofile,
+              AC_HELP_STRING([--enable-memprofile], [enable memory profiling]))
+echo "feature MEMPROFILE... ${enable_memprofile:-no}"
+if test "$enable_memprofile" = "yes" ; then
+   CPPFLAGS="$CPPFLAGS -DENABLE_MEMPROFILE"
 fi
 
 AC_ARG_WITH(romio,

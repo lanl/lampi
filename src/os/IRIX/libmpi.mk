@@ -1,8 +1,8 @@
 SRC_LIBMPI += \
-	os/IRIX/lock.s \
-	os/IRIX/atomic.cc
+	src/os/IRIX/lock.s \
+	src/os/IRIX/atomic.cc
 
 ifeq (,$(findstring NUMA, $(CPPFLAGS)))
 SRC_LIBMPI += \
-	os/IRIX/PlatformBarrierSetup.cc
+	src/os/IRIX/PlatformBarrierSetup.cc
 endif

@@ -35,7 +35,7 @@
 #include "include/internal/mmap_params.h"
 #include "util/cbQueue.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/sendInfo.h"
 #endif

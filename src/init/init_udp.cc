@@ -38,7 +38,7 @@
 
 void lampi_init_prefork_udp(lampiState_t *s)
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int rank;
 #endif
 
@@ -58,7 +58,7 @@ void lampi_init_prefork_udp(lampiState_t *s)
         char *names = ulm_new(char, bufsize);
         int tag, errorCode;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
         // receive UDPADDRESSES broadcast
 
         /*

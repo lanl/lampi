@@ -44,7 +44,7 @@
 #include "path/common/InitSendDescriptors.h"
 #include "ulm/ulm.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif                          // SHARED_MEMORY
 
@@ -348,7 +348,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     return lengthToCopy;
 }
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 
 int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
                                    unsigned long fragLen, void *fragAddr,

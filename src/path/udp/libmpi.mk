@@ -1,7 +1,7 @@
 SRC_LIBMPI += \
-	path/udp/path.cc \
-	path/udp/state.cc \
-	path/udp/UDPNetwork.cc \
-	path/udp/recvFrag.cc \
-	path/udp/sendFrag.cc \
-	path/udp/init.cc
+	src/path/udp/path.cc \
+	src/path/udp/state.cc \
+	src/path/udp/UDPNetwork.cc \
+	src/path/udp/recvFrag.cc \
+	src/path/udp/sendFrag.cc \
+	src/path/udp/init.cc

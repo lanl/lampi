@@ -1,10 +1,6 @@
 .PHONY: all check clean
 .SUFFIXES : .c .o
 
-CONFIG := $(shell ../../conf/gnu-os)
-
-include ../../conf/$(CONFIG).mk
-
 CPPFLAGS	:= -I../../include
 LDFLAGS		:= -L../..
 LDLIBS		:= -lmpi

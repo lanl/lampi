@@ -1,3 +1,3 @@
 SRC_MPIRUN += \
-	threads/Thread.cc \
-	threads/Runnable.cc
+	src/threads/Thread.cc \
+	src/threads/Runnable.cc

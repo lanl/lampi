@@ -47,9 +47,9 @@
 int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *server)
 {
     int NFailed = 0;
-#ifndef USE_RMS
+#ifndef ENABLE_RMS
     int Tag;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int errorCode;
 #else
     int i;
@@ -60,7 +60,7 @@ int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *serve
     /* send abort message to each host */
     NFailed = 0;
     Tag = TERMINATENOW;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     server->reset(adminMessage::SEND);
     if ( false == server->broadcastMessage(Tag, &errorCode) )
     {

@@ -51,7 +51,7 @@
  ***/
 
 
-#ifdef NUMA
+#ifdef ENABLE_NUMA
 
 #include <stdio.h>
 #include <stdlib.h>

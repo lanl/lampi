@@ -197,7 +197,7 @@ public:
              * calculate checksums, and get frag_seq as needed
              */
             if (result) {
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
                 if ((cmType == MESSAGE_DATA) && (frag_seq == 0))
                     initFragSeq();
 #endif
@@ -282,7 +282,7 @@ public:
         {
             *errorCode = ULM_SUCCESS;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
             if (flags & QSF_DMA_ENQUEUED) {
                 if ((srcEventBlk == 0) ||
                     quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
@@ -307,7 +307,7 @@ public:
                 elan3_putdma(ctx, elanDMADesc[0]);
                 flags |= QSF_DMA_ENQUEUED;
                 return true;
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
             }
 #endif
         }
@@ -317,7 +317,7 @@ public:
             *errorCode = ULM_SUCCESS;
 
             if (flags & QSF_DMA_ENQUEUED) {
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
                 if ((srcEventBlk != 0) &&
                     quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
                     return true;
@@ -393,11 +393,11 @@ private:
     // return checksum of user data copied to dest
     inline unsigned int packBuffer(void *dest);
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     void initFragSeq()
         {
             /* the first frag of a synchronous send needs a valid frag_seq
-             * if RELIABILITY_ON is defined -- since it is recorded and ACK'ed...
+             * if ENABLE_RELIABILITY is defined -- since it is recorded and ACK'ed...
              */
             if (!quadricsDoAck) {
                 if ((parentSendDesc->sendType != ULM_SEND_SYNCHRONOUS) || 

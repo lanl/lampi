@@ -65,7 +65,7 @@ struct gmHeaderData {
     ulm_uint32_t destID;                // global process id of the data receiver
     ulm_uint32_t dataLength;            // the length in bytes of this frag's data
     ulm_uint64_t msgLength;             // the length in bytes of the total message data
-    ulm_uint64_t frag_seq;              // unique frag sequence for retrans. (0 if RELIABILITY_ON is not defined)
+    ulm_uint64_t frag_seq;              // unique frag sequence for retrans. (0 if ENABLE_RELIABILITY is not defined)
     ulm_uint64_t isendSeq_m;             // unique msg. sequence number for matching
     ulm_ptr_t sendFragDescPtr;          // a pointer to this frag's quadricsSendFragDesc (valid for sender only)
     ulm_uint64_t dataSeqOffset;         // the sequential offset in bytes of this frag's data

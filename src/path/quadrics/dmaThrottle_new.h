@@ -55,7 +55,7 @@ ELAN3_CTX *getElan3Ctx(int rail);
 #include "internal/state.h"
 #include "util/Lock.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "internal/constants.h"
 #include "queue/globals.h"
 #include "mem/FixedSharedMemPool.h"
@@ -164,7 +164,7 @@ public:
     dmaThrottle(bool shared = true, bool reclaimval = true,
 		int dmasperrail = 128, int numrails = 2) {
 	/* initialize private parameters */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 	sharedMemory = shared;
 #else
 	sharedMemory = false;
@@ -178,7 +178,7 @@ public:
             sharedMemory = false;
 
 	/* get the appropriate memory */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 	if (sharedMemory) {
             locks = (Locks *) SharedMemoryPools.getMemorySegment(nrails * sizeof(Locks),
                                                                  CACHE_ALIGNMENT);
@@ -188,7 +188,7 @@ public:
 #endif
             locks = (Locks *) ulm_malloc(nrails * sizeof(Locks));
             dmaCounts = (int *)ulm_malloc(nrails * sizeof(int));
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 	}
 #endif
     }

@@ -63,7 +63,7 @@ void VerifyLsfResources(const ULMRunParams_t *RunParameters)
     int Host;
     int LSFHost;
 
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
 /* LSF/RMS integration creates 1 virtual host with all of our processes, so
  * we can't compare the real hosts to the virtual host...we'll just check
  * to see if we have the same number of total processes...

@@ -51,7 +51,7 @@
 #include "client/SocketServer.h"
 #include "internal/new.h"
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 #include "sys/bproc.h"
 #endif
 
@@ -113,7 +113,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
     int len;
 #endif                          /* LINUX */
     struct sockaddr_in Child;
-#ifndef WITH_BPROC
+#ifndef ENABLE_BPROC
     struct hostent *TmpHost;
 #endif
     unsigned int AuthData[3];
@@ -142,7 +142,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
             return -1;
         }
         /* Sending host */
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
         int size = sizeof(struct sockaddr);
         int nodeID = bproc_nodenumber((struct sockaddr *) &Child, size);
         /* find order in list */

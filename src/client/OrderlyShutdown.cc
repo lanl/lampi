@@ -56,7 +56,7 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
 {
     size_t STDIOSent[2];
     unsigned int Tag;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int			errorCode;
 #else
     ssize_t IOReturn;
@@ -76,7 +76,7 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
     STDIOSent[0] = *StderrBytesWritten;
     STDIOSent[1] = *StdoutBytesWritten;
     Tag = NORMALTERM;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     // create admin msg to send to mpirun
     ulm_fdbg(("Node %d: sending NORMALTERM to mpirun.\n", state->client->nodeLabel()));
     state->client->reset(adminMessage::SEND);

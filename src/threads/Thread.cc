@@ -11,7 +11,7 @@
 #include <internal/Private.h>
 #include "internal/malloc.h"
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 #include <pthread.h>
 
 #define thread_t				pthread_t
@@ -41,7 +41,7 @@ typedef struct
 } mpi_thread_info_t;
 
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 
 static void *_exec_thread(void *arg)
 {

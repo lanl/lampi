@@ -63,15 +63,15 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 {
 	/* create default defive type count */
     int cnt = 0;
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
     cnt++;
 #endif
 
-#ifdef QUADRICS
+#ifdef  ENABLE_QSNET
     cnt++;
 #endif
 
-#ifdef WITH_GM
+#ifdef ENABLE_GM
     cnt++;
 #endif
 
@@ -88,14 +88,14 @@ void GetNetworkDevListNoInput(const char *InfoStream)
             RunParameters.ListPathTypes[i] = 0;
         }
         /* fill in list */
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_UDP;
 #endif
-#ifdef QUADRICS
+#ifdef  ENABLE_QSNET
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_QUADRICS;
 	    RunParameters.Networks.UseQSW=1;
 #endif
-#ifdef WITH_GM
+#ifdef ENABLE_GM
         RunParameters.ListPathTypes[i][DevCnt++] = PATH_GM;
 #endif
     }                           /* end i loop */

@@ -150,7 +150,7 @@ public:
     // destructor
     virtual ~quadricsRecvFragDesc() {}
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     // check to see if multicast frag is a duplicate
     bool isDuplicateCollectiveFrag();
 

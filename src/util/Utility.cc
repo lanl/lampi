@@ -241,7 +241,7 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     ssize_t IOReturn;
     int i;
     struct timeval WaitTime;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     ulm_fd_set_t WriteSet;
 #else
     fd_set WriteSet;
@@ -255,7 +255,7 @@ int _ulm_SendHeartBeat(int *ClientSocketFDList, int NHosts,
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 0;
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     bzero(&WriteSet, sizeof(WriteSet));
 #else
     FD_ZERO(&WriteSet);

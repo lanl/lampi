@@ -1,19 +1,19 @@
 SRC_LIBMPI += \
-	util/BitVect.c \
-	util/DblLinkList.cc \
-	util/MemFunctions.cc \
-	util/SharedMemBarrier.cc \
-	util/Utility.cc \
-	util/bcopy2.cc \
-	util/createDoubleLinkList.cc \
-	util/dclock.cc \
-	util/misc.c \
-	util/parsing.c \
-	util/linked_list.c \
-	util/setupCore.cc \
-	util/timing.cc \
-	util/CommandArg.cc \
-	util/HashNode.cc \
-	util/HashTable.cc \
-	util/RCObject.cc
+	src/util/BitVect.c \
+	src/util/DblLinkList.cc \
+	src/util/MemFunctions.cc \
+	src/util/SharedMemBarrier.cc \
+	src/util/Utility.cc \
+	src/util/bcopy2.cc \
+	src/util/createDoubleLinkList.cc \
+	src/util/dclock.cc \
+	src/util/misc.c \
+	src/util/parsing.c \
+	src/util/linked_list.c \
+	src/util/setupCore.cc \
+	src/util/timing.cc \
+	src/util/CommandArg.cc \
+	src/util/HashNode.cc \
+	src/util/HashTable.cc \
+	src/util/RCObject.cc
 

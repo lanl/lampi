@@ -326,7 +326,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 
 	// thread-safe allocation of frag sequence number in header
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	    
 	// thread-safe allocation of frag sequence number in header
 	reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].lock();
@@ -374,7 +374,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	    continue;
 	}
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	sendFragDesc->timeSent = dclock();
 	(sendFragDesc->numTransmits)++;
 	unsigned long long max_multiple =
@@ -417,7 +417,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     return true;
 }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 
 bool udpPath::resend(BaseSendDesc_t *message, int *errorCode)
 {

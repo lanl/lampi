@@ -33,7 +33,7 @@
 #include <strings.h>
 #include <new>
 
-#ifdef QUADRICS
+#ifdef  ENABLE_QSNET
 #include <elan3/elan3.h>
 #include "path/quadrics/state.h"
 #endif
@@ -42,7 +42,7 @@
 #include "queue/globals.h"
 #include "util/Lock.h"
 #include "util/dclock.h"
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif // SHARED_MEMORY
 #include "internal/log.h"
@@ -434,7 +434,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         // !!!!! threaded-lock
         privateQueues.OkToMatchRecvFrags[proc]->Lock.init();
     }
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     //
     // List of SMP message frags recieved in sequence, but with no ireceive posted -
     //   list resides in process private memory - only 0th frag of a message
@@ -488,7 +488,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 // of the method.  In case of error, zero is returned.
 void* Communicator::getMcastBuf(int rail, size_t *sz)
 {
-#ifndef QUADRICS
+#ifndef  ENABLE_QSNET
     *sz = 0;
     return 0;
 #else
@@ -544,7 +544,7 @@ void* Communicator::getMcastBuf(int rail, size_t *sz)
 // and, if no such vpid is available, then *vp = -1.
 int Communicator::getMcastVpid(int rail, int *vp)
 {
-#ifndef QUADRICS
+#ifndef  ENABLE_QSNET
     *vp = -1;
     return ULM_SUCCESS;
 #else
@@ -678,7 +678,7 @@ int Communicator::freeCommunicator()
     }
     ulm_delete(privateQueues.OkToMatchRecvFrags);
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     for (i = 0; i < nprocs(); i++) {
         ulm_delete(privateQueues.OkToMatchSMPFrags[i]);
     }
@@ -759,7 +759,7 @@ void CheckForAckedMessages(double timeNow)
 }
 
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 
 /*
  * Check to see if frag needs to be retransmitted.

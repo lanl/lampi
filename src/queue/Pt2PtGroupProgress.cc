@@ -38,7 +38,7 @@
 #include "path/common/path.h"
 #include "ulm/ulm.h"
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
@@ -46,7 +46,7 @@ int push_frags_into_network(double timeNow)
 {
     int returnValue=ULM_SUCCESS;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     // check for retransmits
     if ((timeNow >= (lastCheckForRetransmits + MIN_RETRANS_TIME)) || (lastCheckForRetransmits < 0.0)) {
 	lastCheckForRetransmits = timeNow;

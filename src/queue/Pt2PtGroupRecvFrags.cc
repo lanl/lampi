@@ -57,7 +57,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
     //! get frag source (group ProcID ID)
     int fragSrc = DataHeader->srcProcID_m;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     // duplicate/dropped message frag support
     // only for those communication paths that overwrite
     // the frag_seq value from its default constructor

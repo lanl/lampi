@@ -1,2 +1,2 @@
 SRC_LIBMPI += \
-	os/LINUX/PlatformBarrierSetup.cc
+	src/os/LINUX/PlatformBarrierSetup.cc

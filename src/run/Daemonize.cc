@@ -80,7 +80,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     int *ClientSocketFDList, NHosts, *STDERRfds, *STDOUTfds, *ProcessCnt;
     HostName_t *HostList;
 	adminMessage	*server;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int		terminateMsgSent = 0;
 #endif
     
@@ -159,7 +159,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     HostsNormalTerminated = 0;
     HostsAbNormalTerminated = 0;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     RunParameters->handleSTDio = false;
 #endif
 
@@ -186,7 +186,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         if (DeltaTime >= HEARTBEATINTERVAL) {
             LastTime = TimeInSeconds;
 			
-#ifdef USE_CT
+#ifdef ENABLE_CT
             if ( HostsNormalTerminated + HostsAbNormalTerminated < NHosts )
                 runSendHeartbeat(RunParameters);
 #else
@@ -198,7 +198,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         }
 
         /* check if any messages have arrived and process */
-#ifdef USE_CT
+#ifdef ENABLE_CT
 		RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
                                       &HostsNormalTerminated,
                                       &HostsAbNormalTerminated,
@@ -228,7 +228,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         if (((HostsNormalTerminated + HostsAbNormalTerminated) == NHosts)
             && (HostsAbNormalTerminated > 0)) {
             /* last check if any messages have arrived and process */
-#ifdef USE_CT
+#ifdef ENABLE_CT
 			RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
                                       &HostsNormalTerminated,
                                       &HostsAbNormalTerminated,

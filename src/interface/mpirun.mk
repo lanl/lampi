@@ -1,2 +1,2 @@
 SRC_MPIRUN += \
-	interface/ulm_log.cc
+	src/interface/ulm_log.cc

@@ -1,2 +1,2 @@
 SRC_MPIRUN += \
-	init/state.cc
+	src/init/state.cc

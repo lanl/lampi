@@ -1,6 +1,6 @@
 SRC_MPIRUN += \
-	popt/findme.c \
-	popt/popt.c \
-	popt/poptconfig.c \
-	popt/popthelp.c \
-	popt/poptparse.c
+	src/popt/findme.c \
+	src/popt/popt.c \
+	src/popt/poptconfig.c \
+	src/popt/popthelp.c \
+	src/popt/poptparse.c

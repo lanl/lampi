@@ -99,7 +99,7 @@ public:
     volatile unsigned NumFragDescAllocated; // number of frag descriptors allocated
     volatile unsigned NumSent;      // the number that have had the 'action' applied
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     double earliestTimeToResend;
 #endif
 
@@ -115,7 +115,7 @@ public:
             datatype = NULL;
             path_m = 0;
             AppAddr = 0;
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
         }
@@ -130,7 +130,7 @@ public:
             FragsToAck.Lock.init();
             path_m = 0;
             AppAddr = 0;
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
         }
@@ -184,7 +184,7 @@ public:
     ssize_t CopyToApp(void *FrgDesc, bool *recvDone = 0);
     ssize_t CopyToAppLock(void *FrgDesc, bool *recvDone = 0);
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     // SMP copy to app buffers
     int SMPCopyToApp(unsigned long sequentialOffset, unsigned long fragLen,
                      void *fragAddr, unsigned long sendMessageLength, int *recvDone);

@@ -1,6 +1,6 @@
 SRC_LIBMPI += \
-	mem/FirstFitAlloc.cc \
-	mem/FixedSharedMemPool.cc \
-	mem/MPool.cc \
-	mem/ULMPool.cc \
-	mem/ZeroAlloc.cc
+	src/mem/FirstFitAlloc.cc \
+	src/mem/FixedSharedMemPool.cc \
+	src/mem/MPool.cc \
+	src/mem/ULMPool.cc \
+	src/mem/ZeroAlloc.cc

@@ -105,7 +105,7 @@ public:
     ssize_t handleLongSocket();
     void processMessage(udp_message_header& hdr);
     void processAck(udp_ack_header& ack);
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     bool isDuplicateCollectiveFrag();
     bool checkForDuplicateAndNonSpecificAck(udpSendFragDesc *Frag, udp_ack_header &ack);
 #endif

@@ -1,2 +1,2 @@
 SRC_LIBMPI += \
-	os/DARWIN/PlatformBarrierSetup.cc
+	src/os/DARWIN/PlatformBarrierSetup.cc

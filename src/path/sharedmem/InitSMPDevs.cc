@@ -46,7 +46,7 @@
 #include "mem/FreeLists.h"
 #include "os/numa.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
 #include "path/sharedmem/SMPDev.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
@@ -247,7 +247,7 @@ void InitSMPSharedMemDevices(int NumLocalProcs)
         SMPSharedMemDevs[0].MemoryBuckets.buckets[NBuckets -
                                                   1].segmentSize_m;
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     // allocate shared memory send descriptors
     InitSMPSharedMemDescriptors(NumLocalProcs);
 #endif

@@ -1,14 +1,8 @@
-CONFIG		:= $(shell ../../conf/config.guess)
-
-include ../../conf/$(CONFIG).mk
-
+CC		:= gcc
 CPPFLAGS        := -I../../include
 LDFLAGS         := -L../..
 LDLIBS          := -lmpi -lm
-
-ifneq (,$(findstring osf, $(CONFIG)))
-LDFLAGS         += -rpath ../..
-endif
+LDFLAGS         += -Wl,-rpath ../..
 
 TARGET          := mpi-coll-bench
 MPIRUN          := ../../mpirun

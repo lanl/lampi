@@ -72,12 +72,12 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                                  ListHostsStarted, RunParameters,
                                  FirstAppArgument, argc, argv);
     }
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
     return mpirun_spawn_prun(AuthData, ReceivingSocket,
                              RunParameters, FirstAppArgument, argc, argv);
 #endif
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     return mpirun_spawn_bproc(AuthData, ReceivingSocket, ListHostsStarted,
                               RunParameters, FirstAppArgument, argc, argv);
 #endif

@@ -229,7 +229,7 @@ public:
     // deactivate this path
     virtual void deactivate() { pathActive = false; }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     virtual bool retransmitP(BaseSendDesc_t *message) { return false; }
 
     // returns true if message needs to be moved to a an incomplete list for further

@@ -73,7 +73,7 @@ void HostBuildExecArg(int, ULMRunParams_t *, int, int, char **);
 /*FILE   *DbgFile=fopen("DBG_LSF", "wb"); */
 
 
-#ifdef LSF
+#ifdef ENABLE_LSF
 extern "C" {
 #include <lsf/lsf.h>
 }
@@ -127,7 +127,7 @@ bool canExecute(struct stat *rstat) {
 
 void handleLsfTasks(int signo)
 {
-#ifdef LSF
+#ifdef ENABLE_LSF
     int i, taskID;
     LS_WAIT_T status;
 
@@ -176,12 +176,12 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
     int idx, host;
     int RetVal, dupSTDERRfd, dupSTDOUTfd;
-#ifndef USE_CT
+#ifndef ENABLE_CT
     int STDERRpipe[2], STDOUTpipe[2];
 #endif
     struct sigaction action;
     int NHostsStarted=0;
-#ifdef LSF
+#ifdef ENABLE_LSF
     struct stat rstat;
 
     if (ls_initrex(RunParameters->NHosts, 0) < 0) {
@@ -208,16 +208,16 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     }
 
 	nEnviron = 0;
-#ifdef LSF
+#ifdef ENABLE_LSF
     /*
      * Pre-calculate the number of entires and maxi space needed for
      * the environment variable list that global to all hosts.
      */
     for (nEnviron = 0; environ[nEnviron] != NULL; nEnviron++);
-#endif /* LSF */
+#endif /* ENABLE_LSF */
 
     NumEnvs = nEnviron;
-    NumEnvs += 7;               /* 3 for auth, 1 for working dir, 1 for USE_LSF */
+    NumEnvs += 7;               /* 3 for auth, 1 for working dir, 1 for ENABLE_LSF */
     NumEnvs++;                  /* 1 for NULL at end of *EnvList */
 
     /* copy the local hostname into LocalHostName as the official local name...
@@ -265,7 +265,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
         /* redirect stderr */
-#ifndef USE_CT
+#ifndef ENABLE_CT
         RetVal = pipe(STDERRpipe);
         if (RetVal < 0) {
             dup2(dupSTDOUTfd, STDOUT_FILENO);
@@ -298,7 +298,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         close(STDOUTpipe[1]);
 #endif
 
-#ifdef  LSF
+#ifdef  ENABLE_LSF
 /* debug
    ulm_dbg(("ls_rtaske(%s):\n", RunParameters->HostList[host]));
    for (int i = 0; i < hostNumEnvs; i++) {
@@ -405,7 +405,7 @@ void HostBuildEnvList(int host, char *localHostName,
      * Allocate and fill in all the individual environment variables.
      */
 
-#ifdef LSF
+#ifdef ENABLE_LSF
     for (envVar = 0; envVar < nEnviron; envVar++) {
         AllocateAndFillEnv(envVar, environ[envVar]);
     }
@@ -424,7 +424,7 @@ void HostBuildEnvList(int host, char *localHostName,
 
     sprintf(Temp, "PWD=%s", RunParameters->WorkingDirList[host]);
     AllocateAndFillEnv(envVar++, Temp);
-    sprintf(Temp, "%s", "LAMPI_USE_LSF=1");
+    sprintf(Temp, "%s", "LAMPI_WITH_LSF=1");
     AllocateAndFillEnv(envVar++, Temp);
 
     if (hostNumEnvs > NumEnvs) {

@@ -49,7 +49,7 @@
 #include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
 #include "path/udp/path.h"
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "queue/ReliabilityInfo.h"
 #endif
 
@@ -286,7 +286,7 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     return count;
 }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 bool udpRecvFragDesc::isDuplicateCollectiveFrag()
 {
     int source_box = global_proc_to_host(srcProcID_m);
@@ -377,7 +377,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     seqOffset_m         = dataOffset();
 #endif 
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     isDuplicate_m = false;
 #endif
 
@@ -437,7 +437,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
 		return;
 	    }
 	}
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	if (isDuplicateCollectiveFrag()) {
 	    if (!shortMsg) {
 		SMPSharedMem_logical_dev_t *dev = &SMPSharedMemDevs[smpPoolIndex];
@@ -507,7 +507,7 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
 	    return;
 	}
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	if (checkForDuplicateAndNonSpecificAck(Frag, ack)) {
 	    ((BaseSendDesc_t *)sendDesc)->Lock.unlock();
 	    ReturnDescToPool(getMemPoolIndex());
@@ -521,7 +521,7 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
     return;
 }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag, udp_ack_header & ack)
 {
     sender_ackinfo_control_t *sptr;
@@ -619,7 +619,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(BaseSendDesc_t *sendDesc, udpSendFra
 	if (whichQueue == UDPFRAGSTOACK) {
 	    sendDesc->FragsToAck.RemoveLinkNoLock((Links_t *) Frag);
 	}
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	else if (whichQueue == UDPFRAGSTOSEND) {
 	    sendDesc->FragsToSend.RemoveLinkNoLock((Links_t *) Frag);
 	    // increment NumSent since we were going to send this again...
@@ -631,7 +631,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(BaseSendDesc_t *sendDesc, udpSendFra
                       whichQueue));
 	}
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 	// set frag_seq value to 0/null/invalid to detect duplicate ACKs
 	Frag->frag_seq = 0;
 #endif
@@ -879,7 +879,7 @@ bool udpRecvFragDesc::AckData(double timeNow)
     ack.ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(ctx_m, msgType_m);
     ack.udpio = header.msg.udpio;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     Communicator *pg = communicators[ctx_m];
 
     // pt-2-pt acks must be processed by the frag destination process only to
@@ -921,7 +921,7 @@ bool udpRecvFragDesc::AckData(double timeNow)
 	ack.src_proc = dstProcID_m;
     }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     if (isDuplicate_m) {
 	ack.ack_or_nack = UDP_ACK_GOODACK;
     } else {
@@ -934,7 +934,7 @@ bool udpRecvFragDesc::AckData(double timeNow)
     ack.single_fseq = fragIndex_m;
     ack.single_fragseq = seq_m;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     if (msgType_m == MSGTYPE_PT2PT) {
 	unsigned int glSourceProcess = pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
 	// grab lock for sequence tracking lists

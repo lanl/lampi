@@ -1,16 +1,16 @@
 SRC_LIBMPI += \
-	queue/Communicator.cc \
-	queue/Pt2PtGroupMatchFrags.cc \
-	queue/Pt2PtGroupMatchRecv.cc \
-	queue/Pt2PtGroupMisc.cc \
-	queue/Pt2PtGroupProgress.cc \
-	queue/Pt2PtGroupRecv.cc \
-	queue/Pt2PtGroupRecvFrags.cc \
-	queue/Pt2PtGroupSend.cc \
-	queue/Pt2PtGroupTestRecv.cc \
-	queue/ReliabilityInfo.cc \
-	queue/SeqTrackingList.cc \
-	queue/barrier.cc \
-	queue/getNewContextID.cc \
-	queue/Group.cc \
-	queue/peerExchange.cc
+	src/queue/Communicator.cc \
+	src/queue/Pt2PtGroupMatchFrags.cc \
+	src/queue/Pt2PtGroupMatchRecv.cc \
+	src/queue/Pt2PtGroupMisc.cc \
+	src/queue/Pt2PtGroupProgress.cc \
+	src/queue/Pt2PtGroupRecv.cc \
+	src/queue/Pt2PtGroupRecvFrags.cc \
+	src/queue/Pt2PtGroupSend.cc \
+	src/queue/Pt2PtGroupTestRecv.cc \
+	src/queue/ReliabilityInfo.cc \
+	src/queue/SeqTrackingList.cc \
+	src/queue/barrier.cc \
+	src/queue/getNewContextID.cc \
+	src/queue/Group.cc \
+	src/queue/peerExchange.cc

@@ -69,7 +69,7 @@ static void free_qitem(void *arg)
     }
 }
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 
 static int match_msg(void *arg, void *ctx)
 {
@@ -94,7 +94,7 @@ static int match_msg(void *arg, void *ctx)
 int nodeIDToHostRank(int numHosts, HostName_t *hostList, int nodeid)
 {
     int hostIndex = numHosts;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     int j;
 
     for (j = 0; j < numHosts; j++) {
@@ -116,12 +116,12 @@ int socketToHostRank(int numHosts, HostName_t* hostList,
                    int *hostsAssigned)
 {
     int j;
-#ifndef WITH_BPROC
+#ifndef ENABLE_BPROC
     int RetVal;
     struct hostent *TmpHost;
 #endif
     int hostIndex=adminMessage::UNKNOWN_HOST_ID;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     int size = sizeof(struct sockaddr);
     int nodeID = bproc_nodenumber((struct sockaddr *) client, size);
     /* find order in list */
@@ -278,7 +278,7 @@ adminMessage::~adminMessage()
 
 bool adminMessage::clientInitialize(int *authData, char *hostname, int port) 
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     CTTCPSvrChannel         *chnl;
 #endif
                 
@@ -292,7 +292,7 @@ bool adminMessage::clientInitialize(int *authData, char *hostname, int port)
         authData_m[i] = authData[i];
     }
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     chnl = new CTTCPSvrChannel(0);
     daemon_m = new CTServer((CTChannelServer  *)chnl);
     daemon_m->setDelegate(this);
@@ -324,7 +324,7 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
     struct hostent *serverHost;
 
     serverHost = gethostbyname(hostname_m);
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     if (serverHost == (struct hostent *)NULL) {
         /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
         int size = sizeof(struct sockaddr);
@@ -430,7 +430,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     pid_t myPID;
     struct hostent *serverHost;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return connectToRun(nprocesses, hostrank, timeout);
 #endif
 
@@ -442,7 +442,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
     setsockopt(socketToServer_m, IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
 
     serverHost = gethostbyname(hostname_m);
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     if (serverHost == (struct hostent *)NULL) {
         /* can't find server's address via hostname_m --> use BPROC utilities to find the master */
         int size = sizeof(struct sockaddr);
@@ -602,7 +602,7 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
     int sockbuf = 1;
     struct sockaddr_in socketInfo;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     svrChannel_m = new CTTCPSvrChannel(0);
     setsockopt(((CTTCPChannel *)svrChannel_m->channel())->socketfd(),
                IPPROTO_TCP, TCP_NODELAY, &sockbuf, sizeof(int));
@@ -621,7 +621,7 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
         authData_m[i] = authData[i];
     }
 
-#ifndef USE_CT
+#ifndef ENABLE_CT
     registerCallback(NHOSTS, &processNHosts);
 
     serverSocket_m = socket(AF_INET, SOCK_STREAM, 0);
@@ -695,7 +695,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     CTTCPChannel            *daemon;
     struct timeval          endtime, curtime;
 
-#ifndef WITH_BPROC
+#ifndef ENABLE_BPROC
     int assignNewId;
 #endif
         
@@ -825,7 +825,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             continue;
         }
                
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
         /* BPROC node id from remote bproc_currnode() call must be translated */
         hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
         if (hostrank == numHosts) {
@@ -1049,7 +1049,7 @@ bool adminMessage::linkNetwork()
  *      CTDelegate implementations
  */
          
-#ifdef USE_CT
+#ifdef ENABLE_CT
 void adminMessage::messageDidArrive(CTServer *server, CTMessage *msg)
 {
     qitem_t         *item;
@@ -1093,7 +1093,7 @@ int adminMessage::exchange(void *sendbuf, void *recvbuf, ssize_t bytesPerHost)
       POST:   performs the same functionally as allgather, but only involves the daemon process
       and not the user processes.
     */
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if ( kCTChannelOK == daemon_m->allgather(nhosts_m, bytesPerHost,
                                              (char *)sendbuf, (char *)recvbuf)  )
         return ULM_SUCCESS;
@@ -1120,7 +1120,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
     ssize_t         recvCount = bytesPerProc;
     int                 returnCode = ULM_SUCCESS,typeTag,*dataArrivedFromHost;
     int             nHostsArrived,host,hst;
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int                 bytesToSend;
 #endif
     ssize_t         totalBytes, bytesToCopy = 0;
@@ -1167,7 +1167,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
         nLocalProcs = groupHostData_m[host].nGroupProcIDOnHost;
         totalBytes = nLocalProcs * recvCount;
         bytesLeftPerHost[host] = totalBytes;
-#ifdef USE_CT
+#ifdef ENABLE_CT
         recvlens_m[host] = (bytesPerProc > perRankStripeSize) ? 
             nLocalProcs*perRankStripeSize : nLocalProcs*bytesPerProc;
 #endif
@@ -1256,7 +1256,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
              * simple interhost accumlation of data 
              */
         
-#ifdef USE_CT
+#ifdef ENABLE_CT
             /* send data to mpirun */
             bReturnValue = reset(adminMessage::SEND);
             if( !bReturnValue )
@@ -1332,7 +1332,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
          * index. e.g. host0, host1, host2, ...  within a given
          * host's data, this is arranged by local rank */
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
         /* the daemon process does not need this information */
         if( recvBuff ) {
             ssize_t sharedMemBufOffset;
@@ -1384,7 +1384,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
 
 ServerCode:
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 
     // mpirun should not need to be involved here.
     goto ReturnCode;
@@ -1503,7 +1503,7 @@ ReturnCode:
 
 int adminMessage::scatterv(int root, int tag, int *errorCode)
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     CTChannelStatus         status;
     bool                            success;
     int                                     rank;
@@ -1535,7 +1535,7 @@ int adminMessage::scatterv(int root, int tag, int *errorCode)
 
 void adminMessage::synchronize(int nMembers)
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if ( client_m )
     {
         daemon_m->synchronize(nMembers);
@@ -1599,7 +1599,7 @@ int adminMessage::setupCollectives(int myLocalRank, int myHostRank,
     /* set localProcessRank_m */
     localProcessRank_m=myLocalRank;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if ( NULL == (recvlens_m = (int *)ulm_malloc(nhosts_m * sizeof(int))) )
         return ULM_ERROR;
 #endif
@@ -1744,7 +1744,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     pid_t daemonPid;
     pthread_t sca_thread;
 
-#ifndef WITH_BPROC
+#ifndef ENABLE_BPROC
     int assignNewId;
 #ifdef __linux__
     socklen_t addrlen;
@@ -1754,7 +1754,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
     struct sockaddr_in addr;
 #endif
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return collectDaemonInfo(procList, hostList, numHosts, timeout);
 #endif
 
@@ -1862,7 +1862,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             continue;
         }
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
         /* BPROC node id from remote bproc_currnode() call must be translated */
         hostrank = nodeIDToHostRank(numHosts, hostList, hostrank);
         if (hostrank == numHosts) {
@@ -2007,7 +2007,7 @@ bool adminMessage::broadcast(int tag, int *errorCode) {
     ulm_iovec_t iovecs[2];
     int bytesToWrite, bytesWritten;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return broadcastMessage(tag, errorCode);
 #endif
 
@@ -2047,7 +2047,7 @@ bool adminMessage::broadcast(int tag, int *errorCode) {
         
 bool adminMessage::broadcastMessage(int tag, int *errorCode)
 {
-#ifdef USE_CT    
+#ifdef ENABLE_CT    
     CTMessage                       *msg;
     CTChannelStatus         status;
     unsigned int            ctrl;
@@ -2095,7 +2095,7 @@ bool adminMessage::broadcastMessage(int tag, int *errorCode)
 
 bool adminMessage::getMessageFromQueue(int *rank, int *tag, int routingType, int *errorCode, int timeout)
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     // Keep checking msg queue until we get the msg or until timed out
     // translate rank to node label. Places msg content in recvBuffer.
     struct timeval          endtime, curtime;
@@ -2643,7 +2643,7 @@ bool adminMessage::unpack(void *data, packType type, int count, int timeout, unp
     bool returnValue = true, gotData = true;
     void *src = (void *)(recvBuffer_m);
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return unpackMessage(data, type, count, timeout, upf, upsf);
 #endif
 
@@ -2837,7 +2837,7 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
     recvResult returnValue = OK;
     int sockfd = -1, maxfd = 0,s;
     struct timeval t;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     ulm_fd_set_t fds;
 #else
     fd_set fds;
@@ -2856,7 +2856,7 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
         t.tv_usec = microseconds;
     }
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     bzero(&fds, sizeof(fds));
 #else
     FD_ZERO(&fds);
@@ -2932,7 +2932,7 @@ int adminMessage::allgatherv(void *sendbuf, void *recvbuf, ssize_t *bytesPerProc
 /* return true if the name or IP address in dot notation of the peer to be stored at dst, or false if there is an error */
 bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     int     cnt;
     char    **list;
     bool    success = true;
@@ -3046,7 +3046,7 @@ int adminMessage::numberOfDaemonChildren()
 
 unsigned short adminMessage::serverPort()
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return ((CTTCPChannel *)svrChannel_m->channel())->port();
 #endif
     return 0;
@@ -3055,7 +3055,7 @@ unsigned short adminMessage::serverPort()
 unsigned int adminMessage::channelID()
 {
     //ASSERT: netconn_m has connected to node 0
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if ( !client_m )
         return netconn_m->clientID();
     else
@@ -3066,7 +3066,7 @@ unsigned int adminMessage::channelID()
 
 unsigned int adminMessage::nodeLabel()
 {
-#ifdef USE_CT
+#ifdef ENABLE_CT
     if ( client_m )
         return daemon_m->node()->label();
     else

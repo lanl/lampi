@@ -56,7 +56,7 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
     int i;
 
     /* check to see if control socket is still open - if not exit */
-#ifndef USE_CT
+#ifndef ENABLE_CT
     if (ControlSocketToULMRunFD == -1) {
         exit(5);
     }
@@ -84,7 +84,7 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
 
     ClientStdoutFDs[NFDs - 1] = -1;
     ClientStderrFDs[NFDs - 1] = -1;
-#ifndef USE_CT
+#ifndef ENABLE_CT
     dup2(ToServerStderrFD, STDERR_FILENO);
     dup2(ToServerStdoutFD, STDOUT_FILENO);
 #endif

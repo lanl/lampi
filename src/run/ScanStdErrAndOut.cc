@@ -54,7 +54,7 @@ int mpirunScanStdErrAndOut(int *STDERRfds, int *STDOUTfds, int NHosts,
 {
     int i, RetVal;
     ssize_t DataBytes;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     ulm_fd_set_t ReadSet;
 #else
     fd_set ReadSet;
@@ -65,7 +65,7 @@ int mpirunScanStdErrAndOut(int *STDERRfds, int *STDOUTfds, int NHosts,
     WaitTime.tv_usec = 10000;
 
     /* check to see if there is any data to read */
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     bzero(&ReadSet, sizeof(ReadSet));
 #else
     FD_ZERO(&ReadSet);

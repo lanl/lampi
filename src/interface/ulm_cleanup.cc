@@ -10,7 +10,7 @@ void ulm_cleanup()
 {
     int i, j;
 
-#if RELIABILITY_ON
+#if ENABLE_RELIABILITY
     if (reliabilityInfo) {
         // Note the explicit d'tor call, we must do this since
         // reliabilityInfo was created in a segment of shared

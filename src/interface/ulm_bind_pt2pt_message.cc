@@ -42,7 +42,7 @@
 #include "path/common/pathContainer.h"
 #include "path/common/InitSendDescriptors.h"
 #include "path/common/pathGlobals.h"
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif /* SHARED_MEMORY */
 

@@ -1,19 +1,19 @@
 SRC_LIBMPI += \
-	client/AbortLocalHost.cc \
-	client/CheckForControlMsgs.cc \
-	client/CheckIfChildrenAlive.cc \
-	client/ClientHandshakeWithServer.cc \
-	client/DrainSTDIO.cc \
-	client/InstallSigHandler.cc \
-	client/OrderlyShutdown.cc \
-	client/ScanStdoutStderr.cc \
-	client/ServerHandshakeWithClient.cc \
-	client/SocketGeneric.cc \
-	client/SocketInitClient.cc \
-	client/SocketInitServer.cc \
-	client/TVSetup.cc \
-	client/ULMClientSignals.cc \
-	client/adminMessage.cc \
-	client/daemonLoop.cc \
-	client/setupMemoryPools.cc \
-	client/setupPerProcSharedMemPools.cc
+	src/client/AbortLocalHost.cc \
+	src/client/CheckForControlMsgs.cc \
+	src/client/CheckIfChildrenAlive.cc \
+	src/client/ClientHandshakeWithServer.cc \
+	src/client/DrainSTDIO.cc \
+	src/client/InstallSigHandler.cc \
+	src/client/OrderlyShutdown.cc \
+	src/client/ScanStdoutStderr.cc \
+	src/client/ServerHandshakeWithClient.cc \
+	src/client/SocketGeneric.cc \
+	src/client/SocketInitClient.cc \
+	src/client/SocketInitServer.cc \
+	src/client/TVSetup.cc \
+	src/client/ULMClientSignals.cc \
+	src/client/adminMessage.cc \
+	src/client/daemonLoop.cc \
+	src/client/setupMemoryPools.cc \
+	src/client/setupPerProcSharedMemPools.cc

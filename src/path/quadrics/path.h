@@ -43,7 +43,7 @@
 #include "path/quadrics/header.h"
 #include <stdio.h>
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
@@ -178,7 +178,7 @@ public:
 
     bool needsPush(void);
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     bool retransmitP(BaseSendDesc_t *message) {
         if (!quadricsDoAck || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
             || (message->FragsToAck.size() == 0))

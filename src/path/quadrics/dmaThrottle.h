@@ -50,7 +50,7 @@ typedef struct {
 #include "internal/state.h"
 #include "util/Lock.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "internal/constants.h"
 #include "mem/FixedSharedMemPool.h"
 extern FixedSharedMemPool SharedMemoryPools;
@@ -138,7 +138,7 @@ class dmaThrottle {
     dmaThrottle(bool shared = true, bool reclaimval = true,
                 int dmasperrail = 128, int numrails = 2) {
         /* initialize private parameters */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         sharedMemory = shared;
 #else
         sharedMemory = false;
@@ -147,7 +147,7 @@ class dmaThrottle {
         concurrentDmas = dmasperrail;
         nrails = numrails;
         /* get the appropriate memory */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         if (sharedMemory) {
             locks =
                 (Locks *) SharedMemoryPools.getMemorySegment(nrails *
@@ -218,7 +218,7 @@ class dmaThrottle {
                     }
                 }
             }
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         }
 #endif
         for (int i = 0; i < nrails; i++) {

@@ -46,7 +46,7 @@
 #include "path/udp/UDPEarlySend.h"
 #include "path/udp/UDPNetwork.h"
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "internal/constants.h"
 #include "util/dclock.h"
 #endif
@@ -112,7 +112,7 @@ public:
 
     virtual bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode);
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     virtual bool retransmitP(BaseSendDesc_t *message) {
         if (RETRANS_TIME == -1 || message->earliestTimeToResend == -1
             || message->FragsToAck.size() == 0)

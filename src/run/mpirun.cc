@@ -97,7 +97,7 @@ ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
 
 static adminMessage *server = NULL;
 
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
 bool broadcastQuadricsFlags(int *errorCode)
 {
     bool returnValue = true;
@@ -181,7 +181,7 @@ bool getClientPids(pid_t ** hostarray, int *errorCode)
     int rank, tag, contacted = 0;
     int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return getClientPidsMsg(hostarray, errorCode);
 #endif
 
@@ -218,7 +218,7 @@ bool releaseClients(int *errorCode)
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     ulm_dbg(("\nmpirun: synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
 	server->synchronize(RunParameters.NHosts + 1);
     ulm_dbg(("\nmpirun: done synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
@@ -319,7 +319,7 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return returnValue;
 #endif
 
@@ -358,7 +358,7 @@ bool exchangeGMInfo(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     return returnValue;
 #endif
 
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
      * initialize admin network
      */
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     CTNetworkInit();
 #endif
 
@@ -576,7 +576,7 @@ int main(int argc, char **argv)
         ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
         Abort();
     }
-#ifdef USE_CT
+#ifdef ENABLE_CT
 	// send msg to link the admin network
     ulm_dbg(("\nmpirun: linking network...\n"));
     if ( !server->linkNetwork() )
@@ -602,7 +602,7 @@ int main(int argc, char **argv)
     /* temporary fix */
     int *ClientSocketFDList =
         (int *) ulm_malloc(sizeof(int) * RunParameters.NHosts);
-#ifdef USE_CT
+#ifdef ENABLE_CT
     for (i = 0; i < RunParameters.NHosts; i++) {
         ClientSocketFDList[i] = 0;
     }

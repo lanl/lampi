@@ -1,135 +1,92 @@
-From: David Daniel <ddd@lanl.gov>
-Subject: release directory for la-mpi
-To: Nehal Desai <nehal@lanl.gov>, Richard Graham <rlgraham@lanl.gov>,
-    Dean Risinger <deanr@lanl.gov>, Mitch Sukalski <mitch@lanl.gov> 
-Date: 22 Aug 2002 14:58:02 -0600
-Organization: Los Alamos National Laboratory
+Deep breath... I have converted LA-MPI to use autoconf :(
 
-I have created a directory for us to keep our releases
+------------------------------------------------------------------------
 
-    /home/ulm/release
+Build instructions:
 
-with subdirectories for each version
+1) Build in the src tree
 
-    /home/ulm/release/1.0.0
-    /home/ulm/release/1.0.0_debug
+   cvs co lampi
+   cd lampi
+   ./configure --enable-bproc --enable-debug --prefix=$HOME/usr
+   make
+   make install
 
-under each of these, directories for each system/configuration
+2) Build in an empty directory
 
-    /home/ulm/release/1.0.0/alphaev6-dec-osf5.1
-    /home/ulm/release/1.0.0/i686-pc-linux-gnu
-    etc.
+   cvs co lampi
+   mkdir build
+   cd build
+   ../lampi/configure --enable-bproc --enable-debug --prefix=$HOME/usr
+   make
+   make install
 
-and under each of these a full "/usr" tree.
+3) ./configure --help gives of features you can enable/disable
 
-You can create such a tree using the install and debug-install targets
-of the Makefile:
+4) By default configure uses gcc.  If you want another compiler:
 
-On tru64 or linux just 
+   ./configure CC=cc ...
+   ./configure CC=icc ...
 
-   make prefix=<INSTALL DIR> install
-   make prefix=<DEBUG DIR> debug-install
+   etc.
 
-On irix, since we are doing a 64 bit build, do 
+5) By default ROMIO is not included.  For this
 
-   make prefix=<INSTALL DIR> libdir=<INSTALL DIR>/lib64 install
-   make prefix=<DEBUG DIR>   libdir=<DEBUG DIR>/lib64   debug-install
+   ./configure --with-romio
 
-If /home/ulm is mounted on the build system, then you can "make
-install" directly into the correct place.  Otherwise, install to an
-empty directory, tar it up, and copy to and untar on an ACL system.
+6) You can specify a fortran compiler (for the ROMIO build) like this
 
-When we're finished we should have a tree something like this:
+   ./configure --with-romio FC=lf77 F90=lf95
 
-/home/ulm/release
-|-- 1.0.0
-|   |-- i686-pc-linux-gnu
-|   |   |-- bin
-|   |   |   `-- mpirun
-|   |   |-- include
-|   |   |   |-- mpi
-|   |   |   |   |-- constants.h
-|   |   |   |   |-- mpi.h
-|   |   |   |   `-- types.h
-|   |   |   |-- mpi.h
-|   |   |   |-- mpif.h
-|   |   |   `-- ulm
-|   |   |       |-- constants.h
-|   |   |       |-- errors.h
-|   |   |       |-- system.h
-|   |   |       |-- types.h
-|   |   |       `-- ulm.h
-|   |   |-- lib
-|   |   |   `-- libmpi.so
-|   |   `-- man
-|   |       `-- man1
-|   |           |-- lampi.1
-|   |           `-- mpirun.1
-|   `-- mips-sgi-irix6.5
-|       |-- bin
-|       |   `-- mpirun
-|       |-- include
-|       |   |-- mpi
-|       |   |   |-- constants.h
-|       |   |   |-- mpi.h
-|       |   |   `-- types.h
-|       |   |-- mpi.h
-|       |   |-- mpif.h
-|       |   `-- ulm
-|       |       |-- constants.h
-|       |       |-- errors.h
-|       |       |-- system.h
-|       |       |-- types.h
-|       |       `-- ulm.h
-|       |-- lib64
-|       |   `-- libmpi.so
-|       `-- man
-|           `-- man1
-|               |-- lampi.1
-|               `-- mpirun.1
-`-- 1.0.0_debug
-    |-- i686-pc-linux-gnu
-    |   |-- bin
-    |   |   `-- mpirun
-    |   |-- include
-    |   |   |-- mpi
-    |   |   |   |-- constants.h
-    |   |   |   |-- mpi.h
-    |   |   |   `-- types.h
-    |   |   |-- mpi.h
-    |   |   |-- mpif.h
-    |   |   `-- ulm
-    |   |       |-- constants.h
-    |   |       |-- errors.h
-    |   |       |-- system.h
-    |   |       |-- types.h
-    |   |       `-- ulm.h
-    |   |-- lib
-    |   |   `-- libmpi.so
-    |   `-- man
-    |       `-- man1
-    |           |-- lampi.1
-    |           `-- mpirun.1
-    `-- mips-sgi-irix6.5
-        |-- bin
-        |   `-- mpirun
-        |-- include
-        |   |-- mpi
-        |   |   |-- constants.h
-        |   |   |-- mpi.h
-        |   |   `-- types.h
-        |   |-- mpi.h
-        |   |-- mpif.h
-        |   `-- ulm
-        |       |-- constants.h
-        |       |-- errors.h
-        |       |-- system.h
-        |       |-- types.h
-        |       `-- ulm.h
-        |-- lib64
-        |   `-- libmpi.so
-        `-- man
-            `-- man1
-                |-- lampi.1
-                `-- mpirun.1
+7) For a faster (parallel) build ...
 
+   make -j32
+
+------------------------------------------------------------------------
+
+Maintenance instructions:
+
+I've gone for a fairly monolithic approach here as it seems it may be
+easier to maintain in the long run.
+
+1) Key files:
+     lampi/configure.ac
+     lampi/config.h.in
+     lampi/Makefile.in
+
+   The configure.ac file has a case statement which sets up defaults
+   for each platform.
+
+2) If you change configure.ac, then remember to run autoconf before
+   comitting.
+
+   I have chosen the new name "configure.ac" rather that
+   "configure.in" to encourage you to run autoconf on a linux box with
+   a recent version.  I hope this will lead to fewer problems.
+
+   cd lampi
+   vi configure.ac
+   autoconf
+   cvs commit .
+
+3) If you change Makefile.in you don NOT need to run autoconf.  The
+   files are generated so:
+
+   configure.ac ---autoconf---> configure
+                --autoheader--> config.h.in
+   Makefile.in  ---configure--> Makefile
+   config.h.in  ---configure--> config.h
+
+4) When incrementing the version of LA-MPI, update the string in
+   AC_INIT() in configure.ac
+
+5) config.h should be conditionally included in any source file which
+   makes use of the autoconf "HAVE_<FEATURE> macros.  That is, put
+
+   #ifdef HAVE_CONFIG_H
+   #include "config.h"
+   #endif
+
+   BEFORE any other non-system #include statement.  We don't use these
+   macros at the moment, but we should probably move in this direction
+   -- so we might as well include config.h everywhere.

@@ -39,7 +39,7 @@
 #include "path/gm/sendFrag.h"
 #include "ulm/ulm.h"
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 

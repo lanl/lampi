@@ -1,8 +1,8 @@
 SRC_MPIRUN += \
-	ctnetwork/CTChannel.cc \
-	ctnetwork/CTClient.cc \
-	ctnetwork/CTController.cc \
-	ctnetwork/CTDelegate.cc \
-	ctnetwork/CTMessage.cc \
-	ctnetwork/CTNode.cc \
-	ctnetwork/CTServer.cc
+	src/ctnetwork/CTChannel.cc \
+	src/ctnetwork/CTClient.cc \
+	src/ctnetwork/CTController.cc \
+	src/ctnetwork/CTDelegate.cc \
+	src/ctnetwork/CTMessage.cc \
+	src/ctnetwork/CTNode.cc \
+	src/ctnetwork/CTServer.cc

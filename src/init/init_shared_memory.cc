@@ -219,7 +219,7 @@ void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *s)
     int recvd;
     int tag;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     lampi_init_prefork_receive_setup_msg_shared_memory(s);
     return;
 #endif

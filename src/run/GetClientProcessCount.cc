@@ -48,14 +48,14 @@
 
 static bool gotClientProcessCount = false;
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 #include <sys/bproc.h>
 #include "init/environ.h"
 #endif
 
 void getBJSNodes(void) 
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     int *nodes = 0;
     int nNodes = 0;
     char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
@@ -138,7 +138,7 @@ void getBJSNodes(void)
 
 void pickNodesFromList(int cnt)
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     int i, j = 0, tmp_node;
 
     if (RunParameters.HostListSize > 0) {
@@ -186,7 +186,7 @@ void pickNodesFromList(int cnt)
 
 void pickCurrentNode(void)
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     /* use the current node only */
     RunParameters.HostList = ulm_new(HostName_t, 1);
     RunParameters.HostListSize = 1;
@@ -239,7 +239,7 @@ void GetClientProcessCount(const char *InfoStream)
         if (RunParameters.HostListSize == 0) {
             nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
             if (nhosts > LSFNumHosts) {
-#ifndef USE_RMS
+#ifndef ENABLE_RMS
                 ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                     nhosts, LSFNumHosts));
                 Abort();
@@ -301,7 +301,7 @@ void GetClientProcessCount(const char *InfoStream)
     }
     else {
         if (RunParameters.HostListSize == 0) {
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
             if (!RunParameters.NHostsSet) {
                 RunParameters.NHosts = 1;
             }
@@ -335,7 +335,7 @@ void GetClientProcessCount(const char *InfoStream)
             ulm_err(("Error: -np/-n option must specify at least one process.\n"));
             Abort();
         }
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
         RunParameters.ProcessCount[0] = totalProcs;
 #else
         if (RunParameters.NHosts == 1) {
@@ -415,7 +415,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     if (RunParameters.HostListSize == 0) {
         nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
         if (nhosts > LSFNumHosts) {
-#ifndef USE_RMS
+#ifndef ENABLE_RMS
             ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                 nhosts, LSFNumHosts));
             Abort();

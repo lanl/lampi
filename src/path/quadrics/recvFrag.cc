@@ -97,7 +97,7 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
     p = &(hdr->msgDataAck);
     p->thisFragSeq = seq_m;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     Communicator *pg = communicators[ctx_m];
     unsigned int glSourceProcess =  pg->remoteGroup->mapGroupProcIDToGlobalProcID[srcProcID_m];
 
@@ -110,7 +110,7 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
     p->ackStatus = (DataOK) ? ACKSTATUS_DATAGOOD : ACKSTATUS_DATACORRUPT;
 #endif
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
         // grab lock for sequence tracking lists
         if (usethreads())
@@ -264,7 +264,7 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
 }
 
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 
 bool quadricsRecvFragDesc::isDuplicateCollectiveFrag()
 {
@@ -376,7 +376,7 @@ void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, BaseSendDesc_t 
         if (whichQueue == QUADRICSFRAGSTOACK) {
             bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
         }
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
         else if (whichQueue == QUADRICSFRAGSTOSEND) {
             bsd->FragsToSend.RemoveLinkNoLock((Links_t *)sfd);
             // increment NumSent since we were going to send this again...
@@ -391,7 +391,7 @@ void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, BaseSendDesc_t 
         // reset WhichQueue flag
         sfd->WhichQueue = QUADRICSFRAGFREELIST;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
         // set seq_m value to 0/null/invalid to detect duplicate ACKs
         sfd->frag_seq = 0;
 #endif
@@ -489,7 +489,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
                          SHARED_LARGE_BUFFERS : PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     isDuplicate_m = false;
 #endif
 
@@ -502,7 +502,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 
     if ((msgType_m == MSGTYPE_COLL) || (msgType_m == MSGTYPE_COLL_SYNC)) {
         // multicast message...
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
         if (isDuplicateCollectiveFrag()) {
             ReturnDescToPool(getMemPoolIndex());
             return;
@@ -556,7 +556,7 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
             return;
         }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
         if (checkForDuplicateAndNonSpecificAck(sfd)) {
             ((BaseSendDesc_t *)bsd)->Lock.unlock();
             ReturnDescToPool(getMemPoolIndex());

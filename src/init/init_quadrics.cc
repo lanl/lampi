@@ -183,7 +183,7 @@ void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
      */
 
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     lampi_init_prefork_receive_setup_msg_quadrics(s);
     return;
 #endif

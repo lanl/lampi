@@ -60,7 +60,7 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 #include <sys/bproc.h>
 #endif
 
@@ -192,7 +192,7 @@ typedef struct {
 } shared_mem_intput_params;
 
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 class adminMessage : public CTDelegate {
 #else
 class adminMessage {
@@ -225,13 +225,13 @@ public:
         IRECVMAXTOTPAGES,      /* maximum total number of pages for  irecv descriptors */
         NPATHTYPES,             /* number of network device types */
         GMMAXDEVS,      /* maximum number of opened Myrinet/GM devices */
-#ifdef NUMA
+#ifdef ENABLE_NUMA
         CPULIST,        /* list of cpus for resource affinity */
         NCPUSPERNODE,   /* number of cpus per node */
         USERESOURCEAFFINITY, /* user resource affinity */
         DEFAULTRESOURCEAFFINITY, /* default resource affinity */
         MANDATORYRESOURCEAFFINITY, /* mandatory resource affinity */
-#endif /* NUMA */
+#endif /* ENABLE_NUMA */
         NUMMSGTYPES     /* must be last */
     };
 
@@ -534,7 +534,7 @@ public:
      *      CTDelegate implementations
      */
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     virtual void messageDidArrive(CTServer *server, CTMessage *msg);
     virtual void nodeDidFail(/* node specific info. */);
 #endif
@@ -907,7 +907,7 @@ public:
             int sockfd = (rank == -1) ? socketToServer_m : clientRank2FD(rank);
             int s;
             struct timeval t;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
             ulm_fd_set_t fds;
 #else
             fd_set fds;
@@ -934,7 +934,7 @@ public:
                 t.tv_usec = microseconds;
             }
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
             bzero(&fds, sizeof(fds));
 #else
             FD_ZERO(&fds);

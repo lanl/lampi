@@ -42,12 +42,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/new.h"
 #include "internal/profiler.h"
 #include "internal/types.h"
-#include "internal/version.h"
 #include "util/ParseString.h"
 #include "run/Run.h"
 #include "run/Input.h"
@@ -135,7 +138,7 @@ static void ListOptions(void)
 
 static void Version(void)
 {
-    printf("LA-MPI: Version " LAMPI_VERSION "\n"
+    printf("LA-MPI: Version " PACKAGE_VERSION "\n"
            "mpirun built on " __DATE__ " at " __TIME__ "\n");
     exit(EXIT_SUCCESS);
 }
@@ -1254,7 +1257,7 @@ void setThreads(const char *InfoStream)
 }
 
 
-#ifdef NUMA
+#ifdef ENABLE_NUMA
 
 /*
  * Fill in number of cpus per node to use
@@ -1375,7 +1378,7 @@ void parseMandatoryAffinity(const char *InfoStream)
                 OptionIndex, 0);
 }
 
-#endif                          // NUMA
+#endif                          // ENABLE_NUMA
 
 
 /*
@@ -1493,7 +1496,7 @@ void parseQuadricsFlags(const char *InfoStream)
 
 void parseMyrinetFlags(const char *InfoStream)
 {
-#ifdef WITH_GM
+#ifdef ENABLE_GM
     int NSeparators = 2;
     char SeparatorList[] = { " , " };
     char *endptr;

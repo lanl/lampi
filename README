@@ -18,7 +18,7 @@ See the file LICENSE
 VERSION
 -------
 
-See the file src/VERSION
+See the file configure.ac
 
 DEVELOPER'S NOTES
 -----------------
@@ -27,5 +27,5 @@ To add source files to the build, add the file name to the file
 mpirun.mk or libmpi.mk in its directory.
 
 To add a new directory to the build, add the directory name to the
-list macros MODULES_MPIRUN or MODULES_LIBMPI in src/Makefile or (if
-appropriate) in conf/$(CONFIG).mk.
+list macros MODULES_MPIRUN or MODULES_LIBMPI in configure.ac and then
+run autoconf.

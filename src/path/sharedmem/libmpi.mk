@@ -1,5 +1,5 @@
 SRC_LIBMPI += \
-	path/sharedmem/path.cc \
-	path/sharedmem/InitSMPDevs.cc \
-	path/sharedmem/SMPProcessGroup.cc \
-	path/sharedmem/SMPUtil.cc
+	src/path/sharedmem/path.cc \
+	src/path/sharedmem/InitSMPDevs.cc \
+	src/path/sharedmem/SMPProcessGroup.cc \
+	src/path/sharedmem/SMPUtil.cc

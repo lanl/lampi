@@ -135,7 +135,7 @@ void lampi_init_wait_for_start_message(lampiState_t *);
  */
 typedef void (*lampi_init_func_t) (lampiState_t *);
 
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
 void lampi_init_prefork_rms(lampiState_t *);
 void lampi_init_postfork_rms(lampiState_t *);
 void lampi_init_allforked_rms(lampiState_t *);
@@ -145,7 +145,7 @@ extern lampi_init_func_t lampi_init_postfork_rms;
 extern lampi_init_func_t lampi_init_allforked_rms;
 #endif
 
-#ifdef WITH_GM
+#ifdef ENABLE_GM
 void lampi_init_prefork_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_gm(lampiState_t *);
@@ -157,7 +157,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_gm;
 extern lampi_init_func_t lampi_init_postfork_gm;
 #endif
 
-#ifdef QUADRICS
+#ifdef  ENABLE_QSNET
 void lampi_init_prefork_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *);
@@ -169,7 +169,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics;
 extern lampi_init_func_t lampi_init_postfork_quadrics;
 #endif
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 void lampi_init_prefork_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *);
@@ -181,7 +181,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory;
 extern lampi_init_func_t lampi_init_postfork_shared_memory;
 #endif
 
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
 void lampi_init_prefork_udp(lampiState_t *);
 void lampi_init_postfork_udp(lampiState_t *);
 #else

@@ -66,7 +66,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
     int i, RetVal, offset, LenList, dupSTDERRfd, dupSTDOUTfd;
-#ifndef USE_CT
+#ifndef ENABLE_CT
     int STDERRpipe[2], STDOUTpipe[2];
 #endif
     int AlarmReturn;
@@ -365,7 +365,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         sprintf(ExecArgs[(CDEntry + 3) + offset + 2], "\"");
 
         /* redirect stderr */
-#ifndef USE_CT
+#ifndef ENABLE_CT
         RetVal = pipe(STDERRpipe);
         if (RetVal < 0) {
             printf("Error: creating STDERRpipe pipe.\n");

@@ -1,9 +1,13 @@
-CONFIG		:= $(shell ../../conf/config.guess)
+ifdef MPI_ROOT
+MPI_INC		?= $(MPI_ROOT)/include
+MPI_LIB		?= $(MPI_ROOT)/lib
+else
+MPI_INC		?= ../..
+MPI_LIB		?= ../..
+endif
 
-include ../../conf/$(CONFIG).mk
-
-CPPFLAGS        := -I../../include
-LDFLAGS         := -L../..
+CPPFLAGS        := -I$(MPI_INC)
+LDFLAGS         := -L$(MPI_LIB)
 LDLIBS          := -lmpi
 
 TARGET          := mpi-ping mpi-ping-thread

@@ -78,7 +78,7 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
     /* 
      * initialize admin network
      */
-#ifdef USE_CT	 
+#ifdef ENABLE_CT	 
 	CTNetworkInit();
 
     // set up pipes to redirect stderr/stdout so that even the daemon's

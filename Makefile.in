@@ -76,7 +76,7 @@ with_romio	:= @with_romio@
 ifeq "$(with_romio)" "yes"
 ROMIODIR	:= @romiodir@
 ROMIOLIB	:= $(PWD)/$(ROMIODIR)/objects/romio.$(LIBEXT)
-OBJ_ROMIO	:= $(PWD)/$(ROMIODIR)/objects/*.$(OBJEXT)
+OBJ_ROMIO	:= $(ROMIODIR)/objects/*.$(OBJEXT)
 ROMIOCONFIGURE  := $(srcdir)/$(ROMIODIR)/configure
 ROMIOCONFIGURE	+= -noprofile -cc=$(CC) -fc=$(FC) -f90=$(F90)
 ifeq "$(enable_debug)" "yes"
@@ -137,7 +137,14 @@ DEPENDENCIES	+= $(patsubst %.cc,%.d,$(filter %.cc,$(SRC_MPIRUN)))
 
 # targets
 
-TARGET		:= mpirun$(EXEEXT) libmpi.$(DLLEXT) libmpi.$(LIBEXT)
+TARGET		:= mpirun$(EXEEXT)
+ifeq "$(enable_dynamic)" "yes"
+TARGET		+= libmpi.$(DLLEXT)
+endif
+ifeq "$(enable_static)" "yes"
+TARGET		+= libmpi.$(LIBEXT)
+endif
+
 
 all: $(TARGET)
 
@@ -183,6 +190,12 @@ ifeq "$(with_romio)" "yes"
 	test -f $(includedir)/mpio.h && mv $(includedir)/mpiandio.h $(includedir)/mpi.h
 endif
 
+check:
+	@test -d check/mpi-ping || mkdir check/mpi-ping
+	$(CC) -I$(srcdir)/include -L. -o check/mpi-ping/mpi-ping check/mpi-ping/mpi-ping.c -lmpi
+	./mpirun -n 2 check/mpi-ping/mpi-ping 0 16k
+
+
 mpirun$(EXEEXT): $(OBJ_MPIRUN)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_MPIRUN) -o $@ $(OBJ_MPIRUN) $(LDLIBS) $(LDLIBS_MPIRUN)
 
@@ -193,15 +206,20 @@ libmpi.$(DLLEXT): $(OBJ_LIBMPI) $(ROMIOLIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) -o $@ $(OBJ_LIBMPI) $(OBJ_ROMIO) $(LDLIBS) $(LDLIBS_LIBMPI)
 
 libmpi.$(LIBEXT): $(OBJ_LIBMPI) $(ROMIOLIB)
-	@for f in $(OBJ_LIBMPI) $(OBJ_ROMIO) ; do l=`echo $$f | tr '/' '.'`; $(LN_S) $$f lampi.$$l; done
-	$(AR) $(ARFLAGS) $@ lampi.*.$(OBJEXT)
-	@$(RM) lampi.*.$(OBJEXT)
+	@for f in $(OBJ_LIBMPI) $(OBJ_ROMIO) ; do \
+	  l=`echo $$f | tr '/' '.'`; \
+	  $(LN_S) $$f lampi-@PACKAGE_VERSION@.$$l; \
+	done
+	$(AR) $(ARFLAGS) $@ lampi*.$(OBJEXT)
+	@$(RM) lampi*.$(OBJEXT)
 	$(RANLIB) $@
 
 $(ROMIOLIB): lampi.$(DLLEXT)
 	@test -d $(ROMIODIR) || mkdir $(ROMIODIR)
 	@test -d $(ROMIODIR)/objects || mkdir $(ROMIODIR)/objects
-	(cd $(ROMIODIR) ; $(ROMIOCONFIGURE) ; $(MAKE))
+	@$(RM) $(ROMIOLIB)
+	(cd $(ROMIODIR) ; test -f Makefile || $(ROMIOCONFIGURE))
+	(cd $(ROMIODIR) ; $(MAKE) FROM_MPICH=1 mpiolib)
 
 # include dependency files, if we were not invoked as "make clean"
 # or "make distclean" or as "make nodeps=1 ..."

@@ -1,5 +1,5 @@
 SRC_MPIRUN += \
-	client/adminMessage.cc \
-	client/SocketGeneric.cc \
-	client/SocketInitServer.cc \
-	client/ServerHandshakeWithClient.cc
+	src/client/adminMessage.cc \
+	src/client/SocketGeneric.cc \
+	src/client/SocketInitServer.cc \
+	src/client/ServerHandshakeWithClient.cc

@@ -326,7 +326,7 @@ void gmSetup(lampiState_t *s)
             maxDevs = nDevsPerProc[i];
     }
 
-#ifndef USE_CT
+#ifndef ENABLE_CT
     if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) || 
         (!s->useDaemon && (local_myproc() == 0)))) {
         /* send maxDevs to mpirun */

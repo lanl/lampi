@@ -40,7 +40,7 @@ CDECL_BEGIN
 /*
  * Check validity of API arguments
  */
-#ifdef CHECK_API_ARGS
+#ifdef ENABLE_CHECK_API_ARGS
 enum { OPT_CHECK_API_ARGS = 1 };
 #else
 enum { OPT_CHECK_API_ARGS = 0 };
@@ -51,7 +51,7 @@ enum { OPT_CHECK_API_ARGS = 0 };
  * Shared Memory
  */
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 enum { OPT_SHARED_MEMORY = 1 };
 #else
 enum { OPT_SHARED_MEMORY = 0 };
@@ -62,7 +62,7 @@ enum { OPT_SHARED_MEMORY = 0 };
  * Multicast messaging
  */
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 enum { OPT_MCAST = 0 }; // Always zero for now
 #else
 enum { OPT_MCAST = 0 };
@@ -73,7 +73,7 @@ enum { OPT_MCAST = 0 };
  * Reliabitity
  */
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 enum { OPT_RELIABILITY = 1 };
 #else
 enum { OPT_RELIABILITY = 0 };
@@ -84,7 +84,7 @@ enum { OPT_RELIABILITY = 0 };
  * Debug output
  */
 
-#ifdef ULM_DBG
+#ifdef ENABLE_DBG
 enum { OPT_DBG = 1 };
 #else
 enum { OPT_DBG = 0 };
@@ -95,7 +95,7 @@ enum { OPT_DBG = 0 };
  * Memory profiling
  */
 
-#ifdef ULM_MEMPROFILE
+#ifdef ENABLE_MEMPROFILE
 enum { OPT_MEMPROFILE = 1 };
 #else
 enum { OPT_MEMPROFILE = 0 };
@@ -106,25 +106,31 @@ enum { OPT_MEMPROFILE = 0 };
  * Systems
  */
 
-#ifdef USE_BPROC
+#ifdef ENABLE_BPROC
 enum { OPT_BPROC = 1 };
 #else
 enum { OPT_BPROC = 0 };
 #endif
 
-#ifdef USE_LSF
+#ifdef ENABLE_LSF
 enum { OPT_LSF = 1 };
 #else
 enum { OPT_LSF = 0 };
 #endif
 
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
 enum { OPT_RMS = 1 };
 #else
 enum { OPT_RMS = 0 };
 #endif
 
-#ifdef USE_GM
+#ifdef ENABLE_QSNET
+enum { OPT_QSNET = 1 };
+#else
+enum { OPT_QSNET = 0 };
+#endif
+
+#ifdef ENABLE_GM
 enum { OPT_GM = 1 };
 #else
 enum { OPT_GM = 0 };

@@ -118,7 +118,7 @@ static struct {
     { "LAMPI_LOCAL", 0 },
 
 	/* flag whether procs are running in LSF environ. */
-    { "LAMPI_USE_LSF", 0 },
+    { "LAMPI_WITH_LSF", 0 },
 	
 	/* config info for RMS environ. */
     { "RMS_NNODES", 0 },

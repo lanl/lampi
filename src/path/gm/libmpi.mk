@@ -1,6 +1,6 @@
 SRC_LIBMPI += \
-	path/gm/path.cc \
-	path/gm/init.cc \
-	path/gm/recvFrag.cc \
-	path/gm/sendFrag.cc \
-	path/gm/state.cc
+	src/path/gm/path.cc \
+	src/path/gm/init.cc \
+	src/path/gm/recvFrag.cc \
+	src/path/gm/sendFrag.cc \
+	src/path/gm/state.cc

@@ -72,18 +72,18 @@
 #include "os/numa.h"
 #include "ulm/ulm.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/SMPfns.h"
 #endif /* SHARED_MEMORY */
 
-#if defined(NUMA) && defined(__mips)
+#if defined(ENABLE_NUMA) && defined(__mips)
 #include "os/IRIX/SN0/acquire.h"
 bool useRsrcAffinity = true;
 bool useDfltAffinity = true;
 bool affinMandatory = true;
 int nCpPNode = 2;
-#endif /* NUMA and __mips */
+#endif /* ENABLE_NUMA and __mips */
 
 #define ULM_INSTANTIATE_GLOBALS
 #include "path/common/pathGlobals.h"
@@ -356,7 +356,7 @@ void lampi_init_prefork_resource_management(lampiState_t *s)
         lampi_init_print("lampi_init_resource_management");
     }
     /* initialize data */
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     /* send current node id instead of doing scan of addresses on master */
     s->hostid = bproc_currnode();
 #else
@@ -440,7 +440,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
                                 daemonIsHostCommRoot, lenSMBuffer,
                                 sharedBufferPtr, lockPtr, CounterPtr,
                                 sPtr);
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     // setup queues for on host message fragements
     SetUpSharedMemoryQueues(local_nprocs());
 #endif                          // SHARED_MEMORY
@@ -489,7 +489,7 @@ void lampi_init_prefork_resources(lampiState_t *s)
                   "Error: allocating resources for SW SMP barrier pool.\n"));
     }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     // allocate info structure for reliable retransmission, etc.
     reliabilityInfo = (ReliabilityInfo *) SharedMemoryPools.
         getMemorySegment(sizeof(ReliabilityInfo), CACHE_ALIGNMENT);
@@ -604,7 +604,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     //
     IncompletePostedSends.Lock.init();
     UnackedPostedSends.Lock.init();
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     IncompletePostedSMPSends.Lock.init();
     UnackedPostedSMPSends.Lock.init();
 #endif
@@ -614,7 +614,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
     //
     // reliablity protocol initialization
     //
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     // initialize lastCheckForRetransmits to less than zero to ensure
     // we call CheckForRetransmits at the first available time...
     lastCheckForRetransmits = -(1.0);
@@ -1036,7 +1036,7 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
-#ifdef USE_CT
+#ifdef ENABLE_CT
     timing_stmp = second();
     sprintf(timing_out[timing_scnt++], "Connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
     timing_cur = timing_stmp;
@@ -1046,7 +1046,7 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         return;
     }
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     timing_stmp = second();
     sprintf(timing_out[timing_scnt++], "Done connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
     timing_cur = timing_stmp;
@@ -1143,7 +1143,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      (adminMessage::packType) sizeof(int),
                                      1);
             break;
-#ifdef NUMA
+#ifdef ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
             {
@@ -1229,7 +1229,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                 affinMandatory = false;
             }
             break;
-#endif /* NUMA */
+#endif /* ENABLE_NUMA */
 
 
         case adminMessage::MAXCOMMUNICATORS:
@@ -1417,7 +1417,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     int tag, errorCode, recvd, h, i, p;
     int pathcnt, *paths;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     lampi_init_prefork_receive_setup_msg(s);
     return;
 #endif
@@ -1496,7 +1496,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&(s->output_prefix),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-#ifdef NUMA
+#ifdef ENABLE_NUMA
         case adminMessage::CPULIST:
             // list of cpus to use
             {
@@ -1576,7 +1576,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
                 affinMandatory = false;
             }
             break;
-#endif /* NUMA */
+#endif /* ENABLE_NUMA */
 
         case adminMessage::MAXCOMMUNICATORS:
             /* specify upper limit on communicators */
@@ -1647,7 +1647,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     }
 
     /* decide if a daemon will be used */
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
     s->useDaemon = 0;
 #else
     s->useDaemon = 1;
@@ -1813,7 +1813,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
 
 void lampi_init_wait_for_start_message(lampiState_t *s)
 {
-#ifndef USE_CT
+#ifndef ENABLE_CT
     int tag, errorCode, goahead;
     bool r;
 #endif
@@ -1833,7 +1833,7 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
      */
     if ((s->useDaemon && s->iAmDaemon) ||
         (!s->useDaemon && (local_myproc() == 0))) {
-#ifdef USE_CT
+#ifdef ENABLE_CT
 
         ulm_fdbg(("node %u: syncing %d members...\n", s->client->nodeLabel(), s->nhosts+1));
         s->client->synchronize(s->nhosts + 1);
@@ -1899,7 +1899,7 @@ void lampi_init_postfork_debugger(lampiState_t *s)
             s->client->pack((void *) s->local_pids,
                             (adminMessage::packType) sizeof(pid_t),
                             s->local_size);
-#ifdef USE_CT
+#ifdef ENABLE_CT
             s->client->sendMessage(0, adminMessage::CLIENTPIDS,
                                    s->channelID, &errorCode);
 #else
@@ -2114,9 +2114,9 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->gm = 0;
     s->udp = 0;
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
     /* decide if a daemon will be used */
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
     s->useDaemon = 0;
 #else
     s->useDaemon = 1;

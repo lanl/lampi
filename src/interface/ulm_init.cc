@@ -51,7 +51,7 @@ extern "C" int ulm_init(void)
 {
     lampi_init();
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     extern bool _ulm_checkSMPInMakeProgress;
     if (local_nprocs() == 1) {
         _ulm_checkSMPInMakeProgress = false;

@@ -45,7 +45,7 @@
 #include "sender_ackinfo.h"
 #include "ulm/ulm.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPFragDesc.h"
 #include "queue/SharedMemForCollective.h"
 #endif
@@ -135,7 +135,7 @@ struct procPrivateQs_t {
     // sorted based on source process
     ProcessPrivateMemDblLinkList **OkToMatchRecvFrags;
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     ProcessPrivateMemDblLinkList **OkToMatchSMPFrags;
 #endif                          // SHARED_MEMORY
 
@@ -511,7 +511,7 @@ public:
     // posted (old name: both_wild_and_specific)
     RecvDesc_t *checkSpecificAndWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec);
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     // special code for on host messaging
     RecvDesc_t *checkSMPRecvListForMatch(SMPFragDesc_t * RecvDesc, int *queueMatched);
     RecvDesc_t *checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag);
@@ -537,7 +537,7 @@ public:
     // irecv_find_match)
     bool checkSpecifiedFragListsForMatch(RecvDesc_t *IRDesc, int ProcWithData);
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
     bool matchAgainstSMPFramentList(RecvDesc_t *receiver, int sourceProcess);
 #endif                          // SHARED_MEMORY
 

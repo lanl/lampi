@@ -78,7 +78,7 @@ static int readFromDescriptor(int fd, int *NewLineLast,
             else
                 *NewLineLast = 1;
         }
-#ifdef USE_CT
+#ifdef ENABLE_CT
         *lenWritten =
             ClientWriteIOToServer(ReadBuffer,
                                   (char *) IOPreFix,
@@ -168,7 +168,7 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     /*!!!! NewLineLast should really be 2*NFDs long to have a separate flag for
         * the standard output and error descriptors! -Mitch
         */
-#ifdef USE_CT
+#ifdef ENABLE_CT
     ToServerStderrFD = STDERR_FILENO;
     ToServerStdoutFD = STDOUT_FILENO;
 #endif

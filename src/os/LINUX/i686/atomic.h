@@ -56,7 +56,7 @@ typedef struct {
 } bigAtomicUnsignedInt;
 
 
-#ifdef WITH_ICC
+#ifdef __INTEL_COMPILER
 
 #ifdef __cplusplus
 extern "C"
@@ -147,7 +147,7 @@ inline static int fetchNset(volatile int *addr, int setValue)
     return (inputValue);
 }
 
-#endif		/* WITH_ICC */
+#endif		/* __INTEL_COMPILER */
 
 
 /*

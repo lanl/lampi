@@ -45,7 +45,7 @@
 #include "mem/FreeLists.h"
 #include "mem/MemoryPool.h"
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "queue/ReliabilityInfo.h"
 #endif
 
@@ -134,7 +134,7 @@ ssize_t minPgsIn1pointerPool = -1;
 long maxpointerPoolRetries = 100;
 bool pointerPoolAbortWhenNoResource = true;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 ReliabilityInfo *reliabilityInfo = 0;
 // last dclock() time CheckForRetransmits() was called
 // this way we can only check every MIN_RETRANS_TIME period
@@ -229,7 +229,7 @@ extern bool pointerPoolAbortWhenNoResource;
 // pool for SW SMP barrier data structures
 extern SWBarrierPool swBarrier;
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 extern ReliabilityInfo *reliabilityInfo;
 extern double lastCheckForRetransmits;
 #endif
@@ -257,7 +257,7 @@ extern ssize_t largePoolBytesPerProcess;
 ////////////////////////////////////////////////////////////////////////
 // SGI NUMA specific resources
 
-#if defined(NUMA) && defined(__mips)
+#if defined(ENABLE_NUMA) && defined(__mips)
 #include "os/IRIX/acquire.h"
 extern acquire *ULMai;
 extern request *ULMreq;
@@ -265,7 +265,7 @@ extern int nCpPNode;
 extern bool useRsrcAffinity;
 extern bool useDfltAffinity;
 extern bool affinMandatory;
-#endif /* NUMA and __mips*/
+#endif /* ENABLE_NUMA and __mips*/
 
 
 ////////////////////////////////////////////////////////////////////////

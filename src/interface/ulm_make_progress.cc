@@ -42,11 +42,11 @@
 #include "path/common/pathContainer.h"
 #include "ulm/ulm.h"
 
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
 # include "path/udp/UDPNetwork.h"
 #endif // UDP
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 
@@ -54,7 +54,7 @@ bool _ulm_checkSMPInMakeProgress = true;
 #endif // SHARED_MEMORY
 
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 #include "util/DblLinkList.h"
 #endif
 

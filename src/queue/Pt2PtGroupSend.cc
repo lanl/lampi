@@ -132,7 +132,7 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
     SendDescriptor->numFragsCopiedIntoLibBufs_m = 0;
     SendDescriptor->sendDone =
         (SendDescriptor->sendType == ULM_SEND_BUFFERED) ? 1 : 0;
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     SendDescriptor->earliestTimeToResend = -1.0;
 #endif
 

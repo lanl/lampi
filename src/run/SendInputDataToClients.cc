@@ -144,7 +144,7 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&(RunParameters->OutputPrefix), (adminMessage::packType)sizeof(int), 1))
 		    DataError("CheckArgs");
 
-#ifdef NUMA
+#ifdef ENABLE_NUMA
 	    /* cpu list */
 	    if (RunParameters->CpuListLen != 0) {
 		    tag = adminMessage::CPULIST;
@@ -199,7 +199,7 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
 					    (adminMessage::packType)sizeof(int), 1))
 			    DataError("mandatoryAffinity");
 	    }
-#endif /* NUMA */
+#endif /* ENABLE_NUMA */
 
 	    /* maximum number of communicators - needed for shared memory resrouces */
 	    if (RunParameters->maxCommunicators != 0) {
@@ -389,7 +389,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server)
 {
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 	return SendInitialInputDataMsgToClients(RunParameters, server);
 #endif
 
@@ -464,7 +464,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 	    if(!server->pack(&(RunParameters->OutputPrefix), (adminMessage::packType)sizeof(int), 1))
 		    DataError("CheckArgs");
 
-#ifdef NUMA
+#ifdef ENABLE_NUMA
 	    /* cpu list */
 	    if (RunParameters->CpuListLen != 0) {
 		    tag = adminMessage::CPULIST;
@@ -519,7 +519,7 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
 					    (adminMessage::packType)sizeof(int), 1))
 			    DataError("mandatoryAffinity");
 	    }
-#endif /* NUMA */
+#endif /* ENABLE_NUMA */
 
 	    /* maximum number of communicators - needed for shared memory resrouces */
 	    if (RunParameters->maxCommunicators != 0) {
@@ -682,7 +682,7 @@ int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
 	RunParameters->Networks.UseSharedMemory = 1;
 
 	/* send input data */
-#ifdef USE_CT
+#ifdef ENABLE_CT
 	if (!server->reset(adminMessage::SCATTERV) ) {
 		ulm_err(("Error: SendSharedMemInputToClients: unable to reset sendbuffer\n"));
 		returnValue = ULM_ERROR;
@@ -694,7 +694,7 @@ int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
     for (host = 0; host < RunParameters->NHosts ; host++) {
 
 	    /* initialize send buffer */
-#ifndef USE_CT
+#ifndef ENABLE_CT
 	    if (!server->reset(adminMessage::SEND) ) {
 		    ulm_err(("Error: SendSharedMemInputToClients: unable to reset sendbuffer\n"));
 		    returnValue = ULM_ERROR;
@@ -906,7 +906,7 @@ int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
 	if( !server->pack(&tag,(adminMessage::packType)sizeof(int),1) )
 		TagError("END_SHARED_MEM_INPUT");
     
-#ifdef USE_CT
+#ifdef ENABLE_CT
 	server->setScattervHost();
 #else
 	/* send the setup parameters */
@@ -919,7 +919,7 @@ int SendSharedMemInputToClients(ULMRunParams_t *RunParameters,
 
     }                           // end loop over hosts
 
-#ifdef USE_CT
+#ifdef ENABLE_CT
 	/* send the setup parameters */
     ulm_dbg( ("mpirun: scattering shared mem input...\n") );
 	if (!server->scatterv(0,dev_type_params::START_SHARED_MEM_INPUT,
@@ -984,7 +984,7 @@ int SendGMInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server)
 {
     int returnValue = ULM_SUCCESS;
-#ifdef WITH_GM
+#ifdef ENABLE_GM
     int tag,errorCode;
 
     if (RunParameters->Networks.GMSetup.NGMHosts == 0) {

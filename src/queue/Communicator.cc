@@ -32,7 +32,7 @@
 #include "queue/globals.h"
 #include "internal/options.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif
 
@@ -54,7 +54,7 @@ bool Communicator::areQueuesEmpty()
         empty = empty && (privateQueues.MatchedRecv[i]->size() == 0);
         empty = empty && (privateQueues.AheadOfSeqRecvFrags[i]->size() == 0);
         empty = empty && (privateQueues.OkToMatchRecvFrags[i]->size() == 0);
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         empty = empty && (privateQueues.OkToMatchSMPFrags[i]->size() == 0);
 #endif				// SHARED_MEMORY
         if (!empty)

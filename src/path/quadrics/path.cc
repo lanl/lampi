@@ -106,7 +106,7 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
             if (OKToSend) {
                 /* enqueue DMA */
                 if (sfd->enqueue(timeNow, errorCode)) {
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
                     sfd->timeSent = timeNow;
                     (sfd->numTransmits)++;
 #endif
@@ -665,7 +665,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         if (OKToSend) {
             /* enqueue DMA */
             if (sfd->enqueue(timeNow, errorCode)) {
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
                 sfd->timeSent = timeNow;
                 (sfd->numTransmits)++;
                 unsigned long long max_multiple =
@@ -914,8 +914,8 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 }
                 else {
                     // checksum BAD, then abort or return descriptor to pool if
-                    // RELIABILITY_ON is defined
-#ifdef RELIABILITY_ON
+                    // ENABLE_RELIABILITY is defined
+#ifdef ENABLE_RELIABILITY
                     if (quadricsDoAck) {
                         if (usecrc()) {
                             ulm_warn(("quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
@@ -972,7 +972,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
     return true;
 }
 
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
 
 bool quadricsPath::resend(BaseSendDesc_t *message, int *errorCode)
 {

@@ -1,0 +1,45 @@
+# Some examples of configuration commands:
+
+./configure --prefix=<INSTALLTREE>
+./configure --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure --prefix=<INSTALLTREE> --with-romio F90=lf95
+./configure --prefix=<INSTALLTREE> --with-romio F90=lf95 --disable-static
+
+./configure --enable-lsf --prefix=<INSTALLTREE>
+./configure --enable-lsf --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure --enable-lsf --prefix=<INSTALLTREE> --with-romio F90=lf95
+./configure --enable-lsf --prefix=<INSTALLTREE> --with-romio F90=lf95 --disable-static
+
+./configure --enable-bproc --prefix=<INSTALLTREE>
+./configure --enable-bproc --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure --enable-bproc --prefix=<INSTALLTREE> --with-romio F90=lf95
+./configure --enable-bproc --prefix=<INSTALLTREE> --with-romio F90=lf95 --disable-static
+
+./configure CC=icc --enable-bproc --enable-gm --prefix=<INSTALLTREE>
+./configure CC=icc --enable-bproc --enable-gm --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure CC=icc --enable-bproc --enable-gm --prefix=<INSTALLTREE> --with-romio F90=f90
+./configure CC=icc --enable-bproc --enable-gm --prefix=<INSTALLTREE> --with-romio F90=f90 --disable-static
+
+./configure --enable-rms --enable-qsnet --prefix=<INSTALLTREE>
+./configure --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --with-romio F90=lf95
+./configure --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --with-romio F90=lf95 --disable-static
+
+./configure CC=cc --enable-rms --enable-qsnet --prefix=<INSTALLTREE>
+./configure CC=cc --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --enable-debug --disable-static
+./configure CC=cc F90=lf95 --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --with-romio F90=lf95
+./configure CC=cc F90=lf95 --enable-rms --enable-qsnet --prefix=<INSTALLTREE> --with-romio F90=lf95 --disable-static
+
+
+# Specific and unusual options:
+
+./configure --enable-debug
+./configure --enable-dbg
+./configure --disable-reliability
+./configure --disable-check-api-args
+./configure --enable-ct
+./configure --enable-memprofile
+./configure --disable-dynamic
+./configure --disable-static
+
+

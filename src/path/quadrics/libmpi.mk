@@ -1,5 +1,5 @@
 SRC_LIBMPI += \
-	path/quadrics/path.cc \
-	path/quadrics/state.cc \
-	path/quadrics/init.cc \
-	path/quadrics/recvFrag.cc 
+	src/path/quadrics/path.cc \
+	src/path/quadrics/state.cc \
+	src/path/quadrics/init.cc \
+	src/path/quadrics/recvFrag.cc 

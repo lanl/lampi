@@ -32,7 +32,7 @@
 
 #include "run/parse_cmdln_bproc.h"
 
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
 static struct option long_opts[] = {
     {"debug", no_argument, 0, 'd'},
     {"help", no_argument, 0, 'h'},
@@ -64,7 +64,7 @@ void print_help()
 #endif
 int parse_cmdln_bproc(int argc, char **argv, ULMRunParams_t *parameters)
 {
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     int opt_index = 0;
     int c;
     int debugSet = 0;

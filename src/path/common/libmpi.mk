@@ -1,4 +1,4 @@
 SRC_LIBMPI += \
-	path/common/BaseDesc.cc \
-	path/common/InitSendDescriptors.cc \
-	path/common/path.cc
+	src/path/common/BaseDesc.cc \
+	src/path/common/InitSendDescriptors.cc \
+	src/path/common/path.cc

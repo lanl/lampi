@@ -75,12 +75,11 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->CmdLineOK = 0;
     RunParameters->mpirunName[0] = '\0';
     RunParameters->maxCommunicators = NULL;
-#ifdef NUMA
+#ifdef ENABLE_NUMA
     RunParameters->CpuList = NULL;
     RunParameters->CpuListLen = 0;
     RunParameters->nCpusPerNode = 0;
-#endif                          // NUMA
-    RunParameters->ULMVerbocity = 0;
+#endif                          // ENABLE_NUMA
     RunParameters->UseThreads = 0;
     RunParameters->CheckArgs = 1;
     RunParameters->OutputPrefix = 0;
@@ -89,13 +88,13 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->quadricsRailMask = 0;
 
     RunParameters->UseLSF = 0;
-#ifdef WITH_BPROC
+#ifdef ENABLE_BPROC
     RunParameters->UseBproc = 1;
 #else
     RunParameters->UseBproc = 0;
 #endif
 
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
     RunParameters->UseRMS = 1;
 #else
     RunParameters->UseRMS = 0;
@@ -119,7 +118,7 @@ int MPIrunProcessInput(int argc, char **argv,
         maxTotalPages_m = NULL;
 
     RunParameters->UseCRC = 0;
-#ifdef RELIABILITY_ON
+#ifdef ENABLE_RELIABILITY
     RunParameters->quadricsDoAck = 1;
     RunParameters->quadricsDoChecksum = 1;
 #else
@@ -136,7 +135,7 @@ int MPIrunProcessInput(int argc, char **argv,
     }
 
     /* */
-#ifdef USE_RMS
+#ifdef ENABLE_RMS
     RunParameters->handleSTDio=0;
 #else
     RunParameters->handleSTDio=1;
@@ -159,7 +158,7 @@ int MPIrunProcessInput(int argc, char **argv,
      */
     RunParameters->DaemonPIDs = ulm_new(pid_t,  RunParameters->NHosts);
 
-#ifndef USE_RMS
+#ifndef ENABLE_RMS
     /* disallow network setup if only 1 host */
     if (RunParameters->NHosts == 1)
         RunParameters->NPathTypes[0] = 0;
@@ -179,22 +178,22 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.UseUDP = 0;
     RunParameters->Networks.UseGM = 0;
     RunParameters->Networks.UseQSW=0;
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
     RunParameters->Networks.UDPSetup.NUDPHosts=0;
 #endif                          // UDP
-#ifdef WITH_GM
+#ifdef ENABLE_GM
     RunParameters->Networks.GMSetup.NGMHosts=0;
 #endif
     for (j = 0; j < RunParameters->NHosts; j++) {
         for (i = 0; i < RunParameters->NPathTypes[j]; i++) {
             switch (RunParameters->ListPathTypes[j][i]) {
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
             case PATH_UDP:          // UDP interface
 		RunParameters->Networks.UseUDP = 1;
                 (RunParameters->Networks.UDPSetup.NUDPHosts)++;
                 break;
 #endif                          // UDP
-#ifdef WITH_GM
+#ifdef ENABLE_GM
 	    case PATH_GM:
 		RunParameters->Networks.UseGM = 1;
 		RunParameters->Networks.GMSetup.NGMHosts++;

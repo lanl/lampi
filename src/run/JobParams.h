@@ -37,10 +37,10 @@
 
 #include "internal/types.h"
 #include "client/adminMessage.h"
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
 # include "path/udp/setupInfo.h"
 #endif
-#ifdef WITH_GM
+#ifdef ENABLE_GM
 # include "path/gm/setupInfo.h"
 #endif
 #include "client/SocketAdminNetwork.h"
@@ -68,13 +68,13 @@ typedef struct ULMRunNetworkTypes {
 
     /* structure for UDP setup */
     int UseUDP;
-#ifdef WITH_UDP
+#ifdef ENABLE_UDP
     UDPNetworkSetupInfo UDPSetup;
 #endif
 
     /* structure for GM setup */
     int UseGM;
-#ifdef WITH_GM
+#ifdef ENABLE_GM
     GMNetworkSetupInfo GMSetup;
 #endif
 
@@ -137,7 +137,7 @@ typedef struct ULMRunParams {
     /* pointer to struct with Network Data */
     ULMRunNetworkTypes_t Networks;
 
-#ifdef NUMA
+#ifdef ENABLE_NUMA
     int *CpuList;
     int CpuListLen;
     // number of cpus to allocate per node (1 or 2)

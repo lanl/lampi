@@ -48,7 +48,7 @@ typedef struct {int dummy[16];} E3_Event_Blk;
 #include "internal/state.h"
 #include "util/Lock.h"
 
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
 #include "internal/constants.h"
 #include "mem/FixedSharedMemPool.h"
 extern FixedSharedMemPool SharedMemoryPools;
@@ -94,7 +94,7 @@ public:
     //! the default constructor
     dmaThrottle(bool shared = true, int dmasperrail = 128, int numrails = 2) {
         /* initialize private parameters */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         sharedMemory = shared;
 #else
         sharedMemory = false;
@@ -102,7 +102,7 @@ public:
         concurrentDmas = dmasperrail;
         nrails = numrails;
         /* get the appropriate memory */
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         if (sharedMemory) {
             locks = (Locks *)SharedMemoryPools.getMemorySegment(
                 nrails * sizeof(Locks), CACHE_ALIGNMENT);
@@ -123,7 +123,7 @@ public:
             for (int j = 0 ; j < nrails; j++) {
                 array[j] = (eventBlkSlot_t *)ulm_malloc(concurrentDmas * sizeof(eventBlkSlot_t));
             }
-#ifdef SHARED_MEMORY
+#ifdef ENABLE_SHARED_MEMORY
         }
 #endif
         for (int i = 0; i < nrails; i++) {

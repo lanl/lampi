@@ -51,24 +51,29 @@
 
 class SMPDevDefaults {
 public:
+
 #ifdef __sgi
-# include "os/IRIX/SMPDevParams.h"
-#elif __osf__
-# include "os/TRU64/SMPDevParams.h"
-#elif __APPLE__
+#include "os/IRIX/SMPDevParams.h"
+#endif
+
+#ifdef __osf__
+#include "os/TRU64/SMPDevParams.h"
+#endif
+
+#ifdef __APPLE__
 # include "os/DARWIN/powerpc/SMPDevParams.h"
-#elif __linux__
-# ifdef __i386
-#   include "os/LINUX/i686/SMPDevParams.h"
-# else
-#ifdef __alpha
-#   include "os/LINUX/alpha/SMPDevParams.h"
-#else
-#error
 #endif
+
+#if defined(__linux__) && defined(__i386)
+#include "os/LINUX/i686/SMPDevParams.h"
 #endif
-#else
-#error
+
+#if defined(__linux__) && defined(__alpha)
+#include "os/LINUX/alpha/SMPDevParams.h"
+#endif
+
+#if defined(__linux__) && defined(__ia64)
+#include "os/LINUX/ia64/SMPDevParams.h"
 #endif
 };
 
@@ -96,23 +101,26 @@ private:
 
 #ifdef __sgi
 typedef SMPSharedMem_log_dev<57*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
-#elif __osf__
-typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
-#elif __APPLE__
-typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
-#elif __linux__
-#  ifdef __i386
-typedef SMPSharedMem_log_dev<440*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
-#  else
-#ifdef __alpha
-/*** sungeun ***/
-typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
-#else
-#error
-#  endif
 #endif
-#else
-# error
+
+#ifdef __osf__
+typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
+#endif
+
+#ifdef __APPLE__
+typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
+#endif
+
+#if defined(__linux__) && defined(__i386)
+typedef SMPSharedMem_log_dev<440*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
+#endif
+
+#if defined(__linux__) && defined(__alpha)
+typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
+#endif
+
+#if defined(__linux__) && defined(__ia64)
+typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 
 #undef Log2ChunkSize

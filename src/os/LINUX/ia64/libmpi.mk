@@ -1,4 +1,4 @@
-ifneq (,$(findstring WITH_ECC, $(CPPFLAGS)))
+ifeq "$(CC)" "ecc"
 SRC_LIBMPI += \
 	os/LINUX/ia64/lock.s
 endif
