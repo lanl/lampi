@@ -51,6 +51,7 @@ extern "C" void ulm_finalize(void)
 #ifdef USE_ELAN_COLL
     Broadcaster * bcaster;
     int bcaster_id = 0; 
+    rc=ULM_SUCCESS;
 
     /* To free all the sub communicator traffic,
      * Deadlock can occur if the ordering of different broadcasters
@@ -71,7 +72,8 @@ extern "C" void ulm_finalize(void)
     if (rc != ULM_SUCCESS)
     {
       bcast_request_t * last = communicators[ULM_COMM_WORLD]->bcast_queue.last;
-      communicators[ULM_COMM_WORLD]->fail_over(last);
+      if (last)
+          communicators[ULM_COMM_WORLD]->fail_over(last);
     }
 
 #endif
