@@ -37,10 +37,6 @@
 #include <netdb.h>		// for gethostbyname()
 #include <unistd.h>
 
-#ifdef BPROC
-#include <sys/bproc.h>
-#endif
-
 #include "client/adminMessage.h"
 #include "client/ULMClient.h"
 #include "internal/constants.h"
@@ -120,15 +116,6 @@ UDPNetwork::UDPNetwork(int num_hosts, int num_procs, int len_name,
 
     const char *hostName = names;
     for (int i = 0; i < nHosts; i++) {
-#ifdef BPROC
-        int size = sizeof(struct sockaddr);
-        int RetVal =
-            bproc_nodeaddr(bproc_getnodebyname(hostName),
-                           (struct sockaddr *) &hostAddrs[i], &size);
-        if (RetVal != 0) {
-            ulm_err(("Error: UDPNetwork::UDPNetwork :: error returned from the bproc_nodeaddr call :: errno - %d\n", errno));
-        }
-#else
         struct hostent *hostptr = gethostbyname(hostName);
         if (hostptr) {
             hostAddrs[i].sin_addr =
@@ -136,7 +123,6 @@ UDPNetwork::UDPNetwork(int num_hosts, int num_procs, int len_name,
         } else {
             hostAddrs[i].sin_addr.s_addr = 0;
         }
-#endif                          /* BPROC */
         hostAddrs[i].sin_family = AF_INET;
         hostAddrs[i].sin_port = htons(0);
         hostName += len_name;
