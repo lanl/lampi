@@ -349,6 +349,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 	}
 	CHECK_FOR_ERROR(tmp_args =
 			(char *) ulm_malloc(sizeof(char) * (1+len)));
+	tmp_args[0]=0;
 	for (i = FirstAppArgument; i < argc; i++) {
 	    strcat(tmp_args, argv[i]);
 	    strcat(tmp_args, space_str);
