@@ -426,20 +426,19 @@ double PMPI_Wtime(void);
 /*
  * C to fortran interoperability functions
  */
+MPI_Fint MPI_Comm_c2f(MPI_Comm comm);
+MPI_Comm MPI_Comm_f2c(MPI_Fint comm);
 #define MPI_Errhandler_c2f(x)   (x)
 #define MPI_Errhandler_f2c(x)   (x)
-MPI_Fint MPI_Comm_c2f(MPI_Comm comm);
 MPI_Fint MPI_Group_c2f(MPI_Group group);
-MPI_Fint MPI_Op_c2f(MPI_Op op);
-MPI_Fint MPI_Request_c2f(MPI_Request request);
-MPI_Fint MPI_Type_c2f(MPI_Datatype datatype);
-MPI_Fint MPI_Win_c2f(MPI_Win win);
-
-MPI_Comm MPI_Comm_f2c(MPI_Fint comm);
-MPI_Datatype MPI_Type_f2c(MPI_Fint datatype);
 MPI_Group MPI_Group_f2c(MPI_Fint group);
+MPI_Fint MPI_Op_c2f(MPI_Op op);
 MPI_Op MPI_Op_f2c(MPI_Fint op);
+MPI_Fint MPI_Request_c2f(MPI_Request request);
 MPI_Request MPI_Request_f2c(MPI_Fint request);
+MPI_Fint MPI_Type_c2f(MPI_Datatype datatype);
+MPI_Datatype MPI_Type_f2c(MPI_Fint datatype);
+MPI_Fint MPI_Win_c2f(MPI_Win win);
 MPI_Win MPI_Win_f2c(MPI_Fint win);
 
 /*
@@ -448,6 +447,37 @@ MPI_Win MPI_Win_f2c(MPI_Fint win);
 MPI_Copy_function mpi_dup_fn_c;
 MPI_Copy_function mpi_null_copy_fn_c;
 MPI_Delete_function mpi_null_delete_fn_c;
+
+/*
+ * A macro version of MPI_Abort that reports file and line
+ * information.
+ */
+
+#ifdef USE_ABORT_MACRO
+
+int _ulm_abort(int, int, char *, int);
+
+#define MPI_Abort(COMM, ERR)                    \
+    _ulm_abort(COMM, ERR, __FILE__, __LINE__)
+
+#define PMPI_Abort(COMM, ERR)                   \
+    _ulm_abort(COMM, ERR, __FILE__, __LINE__)
+
+#endif /* ! USE_ABORT_MACRO */
+
+
+/*
+ * A dummy debug gate to work around a TotalView / ld.so issue.
+ */
+static void debug_gate(void)
+{
+    extern volatile int MPIR_debug_gate;
+
+    while (MPIR_debug_gate == 0) {
+        /* do nothing */;
+    }
+}
+
 
 #ifdef __cplusplus
 }

@@ -34,12 +34,15 @@
 #include "internal/mpi.h"
 
 /*
- * MPI_Abort is a macro which calls this function
+ * MPI_Abort may be a which bypasses this function
  */
+
+#undef MPI_Abort
+#undef PMPI_Abort
 
 int PMPI_Abort(MPI_Comm comm, int errorcode)
 {
-    _ulm_abort(comm, errorcode, __FILE__, __LINE__);
+    ulm_abort(comm, errorcode);
 
     return errorcode;
 }
@@ -52,7 +55,7 @@ int PMPI_Abort(MPI_Comm comm, int errorcode)
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
-    _ulm_abort(comm, errorcode, __FILE__, __LINE__);
+    ulm_abort(comm, errorcode);
 
     return errorcode;
 }

@@ -102,7 +102,7 @@ double ulm_dclock(void);
 int _ulm_abort(int comm, int exitCode, char *file, int line);
 
 #define ulm_abort(COMM, EXITCODE) \
-    _ulm_abort((COMM), (EXITCODE), __FILE__, __LINE__)
+    _ulm_abort(COMM, EXITCODE, __FILE__, __LINE__)
 
 /*
  * progress messaging
