@@ -48,6 +48,58 @@
 
 static bool gotClientProcessCount = false;
 
+#ifdef BPROC
+#include <sys/bproc.h>
+#include "init/environ.h"
+#endif
+
+int getBprocNodes(void) 
+{
+    int nNodes = 0;
+#ifdef BPROC
+    char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
+    char *node_str = 0, *p;
+    char tmp_str[512];
+    int i, tmp_node;
+
+    lampi_environ_find_string("NODES", &node_str);
+    tmp_str[511] = '\0';
+    strncpy(tmp_str, node_str, 511);
+    p = tmp_str;
+    while (p && *p != '\0') {
+        tmp_node = bproc_getnodebyname(strsep(&p, ","));
+        if ((bproc_nodestatus(tmp_node) != bproc_node_up)) {
+		    ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
+			    tmp_node, bproc_states[bproc_nodestatus(tmp_node)]));
+            Abort();
+        }
+        nNodes++;
+    }
+
+    if (nNodes) {
+        if (RunParameters.NHostsSet) {
+            /* limit the number of hosts to a smaller specified value (option -N) */
+            nNodes = (nNodes > RunParameters.NHosts) ? RunParameters.NHosts : nNodes;
+        }
+        /* use the BJS reserved nodes specified */
+        RunParameters.HostList = ulm_new(HostName_t, nNodes);
+        RunParameters.HostListSize = nNodes;
+        /* fill in host information */
+        for (i = 0; i < nNodes; i++) {
+            strcpy(RunParameters.HostList[i], strsep(&node_str, ","));
+        }
+    } 
+    else {
+        /* use the current node only */
+        RunParameters.HostList = ulm_new(HostName_t, 1);
+        RunParameters.HostListSize = 1;
+        tmp_node = bproc_currnode();
+        sprintf(RunParameters.HostList[0], "%d", tmp_node);
+    }
+#endif
+    return nNodes;
+}
+
 /*
  * Get the process count for each client host.
  */
@@ -121,15 +173,26 @@ void GetClientProcessCount(const char *InfoStream)
             RunParameters.NHosts = RunParameters.HostListSize;
         }
     }
+    else if (RunParameters.UseBproc) {
+        if (RunParameters.HostListSize == 0) {
+            // is BJS NODES environment variable set?
+            nhosts = getBprocNodes();
+            if (RunParameters.NHostsSet && (nhosts < RunParameters.NHosts)) {
+                ulm_err(("Error: -N option specifies more hosts (%d) than are reserved via BJS (%d).\n",
+                    RunParameters.NHosts, nhosts));
+                Abort();
+            }
+        }
+        if (!RunParameters.NHostsSet) {
+            RunParameters.NHosts = RunParameters.HostListSize;
+        }
+    }
     else {
         if (RunParameters.HostListSize == 0) {
 #ifdef __osf__
             if (!RunParameters.NHostsSet) {
                 RunParameters.NHosts = 1;
             }
-#elif defined(BPROC)
-            ulm_err(("mpirun: Error: -H <hostlist> must be used!\n"));
-            Abort();
 #else
             GetAppHostDataNoInputRSH(InfoStream);
             if (!RunParameters.NHostsSet) {
