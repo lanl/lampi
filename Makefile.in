@@ -1,0 +1,233 @@
+######################################################################
+#
+# Makefile for LA-MPI
+#
+# This make file is patterned after the suggestions in "Recursive Make
+# Considered Harmful" by Peter Miller:
+#	http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html
+#
+######################################################################
+
+# general definitions
+
+.PHONY:		all clean distclean install
+SHELL		:= /bin/sh
+
+# special strings for text manipulation
+comma		:=,
+
+######################################################################
+
+# GNU / autoconf conforming variable names
+
+srcdir		:= @srcdir@
+top_srcdir	:= @top_srcdir@
+VPATH		:= @srcdir@
+prefix		:= @prefix@
+exec_prefix	:= @exec_prefix@
+bindir		:= @bindir@
+sbindir		:= @sbindir@
+libexecdir	:= @libexecdir@
+datadir		:= @datadir@
+sysconfdir	:= @sysconfdir@
+sharedstatedir	:= @sharedstatedir@
+localstatedir	:= @localstatedir@
+libdir		:= @libdir@
+infodir		:= @infodir@
+mandir		:= @mandir@
+includedir	:= @includedir@
+top_builddir	:= .
+INSTALL		:= @INSTALL@
+
+######################################################################
+
+CC		:= @CC@
+CXX		:= @CXX@
+CFLAGS		:= @CFLAGS@
+CXXFLAGS	:= @CXXFLAGS@
+CPPFLAGS	:= @DEFS@ @CPPFLAGS@
+LDFLAGS		:= @LDFLAGS@
+LDLIBS		:= @LIBS@
+RANLIB		:= @RANLIB@
+LN_S		:= @LN_S@
+FC		:= @F77@
+FFLAGS		:= @FFLAGS@
+F90		:= @F90@
+
+LDFLAGS_LIBMPI	:= @LDFLAGS_LIBMPI@
+LDFLAGS_MPIRUN	:= @LDFLAGS_MPIRUN@
+LDLIBS_LIBMPI	:= @LDLIBS_LIBMPI@
+LDLIBS_MPIRUN	:= @LDLIBS_MPIRUN@
+
+EXEEXT		:= @EXEEXT@
+OBJEXT		:= @OBJEXT@
+LIBEXT		:= @LIBEXT@
+DLLEXT		:= @DLLEXT@
+
+######################################################################
+
+# Optional feature/package autoconf substitutions
+
+enable_debug	:= @enable_debug@
+enable_dynamic	:= @enable_dynamic@
+enable_static	:= @enable_static@
+with_romio	:= @with_romio@
+
+ifeq "$(with_romio)" "yes"
+ROMIODIR	:= @romiodir@
+ROMIOLIB	:= $(PWD)/$(ROMIODIR)/objects/romio.$(LIBEXT)
+OBJ_ROMIO	:= $(PWD)/$(ROMIODIR)/objects/*.$(OBJEXT)
+ROMIOCONFIGURE  := $(srcdir)/$(ROMIODIR)/configure
+ROMIOCONFIGURE	+= -noprofile -cc=$(CC) -fc=$(FC) -f90=$(F90)
+ifeq "$(enable_debug)" "yes"
+ROMIOCONFIGURE	+= -debug
+endif
+ROMIOCONFIGURE	+= -mpi=lampi
+ROMIOCONFIGURE	+= -mpiolib=$(ROMIOLIB)
+ROMIOCONFIGURE	+= -mpiincdir=$(srcdir)/src/include
+ROMIOCONFIGURE	+= -mpilib=$(PWD)/lampi.$(DLLEXT)
+ROMIOCONFIGURE	+= -make=$(MAKE) 
+endif
+
+######################################################################
+
+# modules (subdirectories) for each target
+
+MODULES_LIBMPI	:= @MODULES_LIBMPI@ @MODULES_OS@
+MODULES_MPIRUN	:= @MODULES_MPIRUN@ @MODULES_OS@
+
+######################################################################
+
+# final flags needed by all platforms
+
+CPPFLAGS	+= -I. -I$(srcdir)/src -I$(srcdir)/src/include
+LDLIBS		+= -lpthread
+
+######################################################################
+
+# determine the source files by including the description of each module
+
+SRC_LIBMPI	:=
+include $(patsubst %,$(srcdir)/%/libmpi.mk,$(MODULES_LIBMPI))
+
+SRC_MPIRUN	:=
+include $(patsubst %,$(srcdir)/%/mpirun.mk,$(MODULES_MPIRUN))
+
+# determine the object files
+
+OBJ_LIBMPI	:=
+OBJ_LIBMPI	+= $(patsubst %.c,%.$(OBJEXT),$(filter %.c,$(SRC_LIBMPI)))
+OBJ_LIBMPI	+= $(patsubst %.cc,%.$(OBJEXT),$(filter %.cc,$(SRC_LIBMPI)))
+OBJ_LIBMPI	+= $(patsubst %.s,%.$(OBJEXT),$(filter %.s,$(SRC_LIBMPI)))
+
+OBJ_MPIRUN	:=
+OBJ_MPIRUN	+= $(patsubst %.c,%.$(OBJEXT),$(filter %.c,$(SRC_MPIRUN)))
+OBJ_MPIRUN	+= $(patsubst %.cc,%.$(OBJEXT),$(filter %.cc,$(SRC_MPIRUN)))
+OBJ_MPIRUN	+= $(patsubst %.s,%.$(OBJEXT),$(filter %.s,$(SRC_MPIRUN)))
+
+# determine dependency files
+
+DEPENDENCIES	:=
+DEPENDENCIES	+= $(patsubst %.c,%.d,$(filter %.c,$(SRC_LIBMPI)))
+DEPENDENCIES	+= $(patsubst %.cc,%.d,$(filter %.cc,$(SRC_LIBMPI)))
+DEPENDENCIES	+= $(patsubst %.c,%.d,$(filter %.c,$(SRC_MPIRUN)))
+DEPENDENCIES	+= $(patsubst %.cc,%.d,$(filter %.cc,$(SRC_MPIRUN)))
+
+######################################################################
+
+# targets
+
+TARGET		:= mpirun$(EXEEXT) libmpi.$(DLLEXT) libmpi.$(LIBEXT)
+
+all: $(TARGET)
+
+clean:
+	$(RM) $(OBJ_LIBMPI) $(DEPENDENCIES) $(OBJ_MPIRUN) lampi.$(DLLEXT)
+
+distclean: clean
+	$(RM) $(TARGET) Makefile config.h config.log config.status
+
+install: all
+	umask 002 ; \
+	$(INSTALL) -m 775 -d $(prefix) ; \
+	$(INSTALL) -m 775 -d $(bindir) ; \
+	$(INSTALL) -m 775 -d $(includedir) ; \
+	$(INSTALL) -m 775 -d $(libdir) ; \
+	$(INSTALL) -m 775 -d $(sysconfdir) ; \
+	$(INSTALL) -m 775 -d $(includedir)/mpi ; \
+	$(INSTALL) -m 775 -d $(includedir)/ulm ; \
+	$(INSTALL) -m 775 -d $(prefix)/share ; \
+	$(INSTALL) -m 775 -d $(prefix)/share/man ; \
+	$(INSTALL) -m 775 -d $(prefix)/share/man/man1 ; \
+	$(INSTALL) -m 775 -d $(prefix)/share/lampi ; \
+	$(INSTALL) -m 775 mpirun$(EXEEXT) $(bindir) ; \
+	$(INSTALL) -m 664 $(srcdir)/man/lampi.man1 $(prefix)/share/man/man1/lampi.1 ; \
+	$(INSTALL) -m 664 $(srcdir)/man/mpirun.man1 $(prefix)/share/man/man1/mpirun.1 ; \
+	$(INSTALL) -m 664 $(srcdir)/RELEASE_NOTES $(prefix)/share/lampi ; \
+	$(INSTALL) -m 664 $(srcdir)/man/lampi.html $(prefix)/share/lampi ; \
+	$(INSTALL) -m 664 $(srcdir)/man/mpirun.html $(prefix)/share/lampi ; \
+	$(INSTALL) -m 664 $(srcdir)/etc/lampi.conf $(sysconfdir)/lampi.conf ; \
+	(cd $(prefix) ; test -d man || $(LN_S) share/man .) ; \
+	(cd $(srcdir)/src/include ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
+	(cd $(srcdir)/src/include/mpi ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir)/mpi; done) ; \
+	(cd $(srcdir)/src/include/ulm ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir)/ulm; done)
+ifeq "$(enable_dynamic)" "yes"
+	umask 002; $(INSTALL) -m 775 libmpi.$(DLLEXT) $(libdir)/libmpi.$(DLLEXT)
+endif
+ifeq "$(enable_static)" "yes"
+	umask 002; $(INSTALL) -m 664 libmpi.$(LIBEXT) $(libdir)/libmpi.$(LIBEXT)
+endif
+ifeq "$(with_romio)" "yes"
+	umask 002 ; \
+	(cd $(ROMIODIR)/include ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
+	test -f $(includedir)/mpio.h && mv $(includedir)/mpiandio.h $(includedir)/mpi.h
+endif
+
+mpirun$(EXEEXT): $(OBJ_MPIRUN)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_MPIRUN) -o $@ $(OBJ_MPIRUN) $(LDLIBS) $(LDLIBS_MPIRUN)
+
+lampi.$(DLLEXT): $(OBJ_LIBMPI)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) -o $@ $(OBJ_LIBMPI) $(LDLIBS) $(LDLIBS_LIBMPI)
+
+libmpi.$(DLLEXT): $(OBJ_LIBMPI) $(ROMIOLIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDFLAGS_LIBMPI) -o $@ $(OBJ_LIBMPI) $(OBJ_ROMIO) $(LDLIBS) $(LDLIBS_LIBMPI)
+
+libmpi.$(LIBEXT): $(OBJ_LIBMPI) $(ROMIOLIB)
+	@for f in $(OBJ_LIBMPI) $(OBJ_ROMIO) ; do l=`echo $$f | tr '/' '.'`; $(LN_S) $$f lampi.$$l; done
+	$(AR) $(ARFLAGS) $@ lampi.*.$(OBJEXT)
+	@$(RM) lampi.*.$(OBJEXT)
+	$(RANLIB) $@
+
+$(ROMIOLIB): lampi.$(DLLEXT)
+	@test -d $(ROMIODIR) || mkdir $(ROMIODIR)
+	@test -d $(ROMIODIR)/objects || mkdir $(ROMIODIR)/objects
+	(cd $(ROMIODIR) ; $(ROMIOCONFIGURE) ; $(MAKE))
+
+# include dependency files, if we were not invoked as "make clean"
+# or "make distclean" or as "make nodeps=1 ..."
+
+ifndef nodeps
+ifneq ($(findstring clean, $(MAKECMDGOALS)),clean)
+-include $(DEPENDENCIES)
+endif
+endif
+
+# rules for calculating dependency files
+
+%.d: %.c
+	@mkdir -p $(@D)
+	$(CC) -M $(CPPFLAGS) $< | sed  -e 's@^.*\'.$(OBJEXT)':@$*'.$(OBJEXT)' $*.d:@' > $@
+
+%.d: %.cc
+	@mkdir -p $(@D)
+	$(CXX) -M $(CPPFLAGS) $< | sed  -e 's@^.*\'.$(OBJEXT)':@$*'.$(OBJEXT)' $*.d:@' > $@
+
+# rules for assembly files
+
+%.$(OBJEXT): %.s
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.$(OBJEXT): %.S
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
