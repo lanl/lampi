@@ -178,3 +178,11 @@ Version 1.3.4
 
 - Minor fixes for resource cleanup at finalize.
 - Support for newer BPROC releases.
+
+Version 1.3.5
+
+- More cleanup at finalize fixes, particulary in the fortran layer.
+- Removed memory leak associated with datatypes.
+- Fortran layer can be disabled by setting environment variable LAMPI_FORTRAN=0
+- Locking in the MPI layer simplified introduction of a few macros.
+- Fixes for the ever-evolving BPROC release.
