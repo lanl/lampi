@@ -130,6 +130,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
     for (i = 0; i < NClientsSpawned; i++)
         (*ListClientsAccepted)[i] = -1;
 
+
     /* accept connections */
     for (i = 0; i < NClientsSpawned; i++) {
         len = sizeof(struct sockaddr_in);
@@ -143,14 +144,29 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
         }
         /* Sending host */
 #ifdef ENABLE_BPROC
+        sockaddr socktmp;
         int size = sizeof(struct sockaddr);
+#ifdef BPROC_NODE_NSTATES
+        // BPROC_NODE_NSTATES only defined in obsolete version of bproc
+        // obsolete version: avoid calling bproc_nodeaddr() slow!
+        // newer versions:  bproc_nodeaddr() fast, bproc_nodenumber() removed 
         int nodeID = bproc_nodenumber((struct sockaddr *) &Child, size);
+#endif
         /* find order in list */
         for (j = 0; j < RunParameters->NHosts; j++) {
             int node = bproc_getnodebyname(RunParameters->HostList[j]);
             int foundNode = 0;
+#ifdef BPROC_NODE_NSTATES
             if (node == nodeID)
                 foundNode = 1;
+#else
+            // get sockadd of node:
+            if (bproc_nodeaddr(node,&socktmp,&size)) return -3;
+            if (0==memcmp(&Child,&socktmp,size)) {
+                foundNode=1;
+            } 
+#endif
+
             if ((foundNode)
                 && (RunParameters->Networks.TCPAdminstrativeNetwork.
                     SocketsToClients[j] == -1)) {

@@ -9841,7 +9841,7 @@ if test "${enable_bproc+set}" = set; then
 fi;
 echo "feature BPROC... ${enable_bproc:-no}"
 if test "$enable_bproc" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_BPROC"
+   CPPFLAGS="$CPPFLAGS -DENABLE_BPROC -Dbproc_getnodebyname=atoi"
    LIBS="$LIBS -lbproc"
 fi
 

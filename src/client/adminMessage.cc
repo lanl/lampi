@@ -116,27 +116,9 @@ int socketToHostRank(int numHosts, HostName_t* hostList,
                    int *hostsAssigned)
 {
     int j;
-#ifndef ENABLE_BPROC
     int RetVal;
     struct hostent *TmpHost;
-#endif
     int hostIndex=adminMessage::UNKNOWN_HOST_ID;
-#ifdef ENABLE_BPROC
-    int size = sizeof(struct sockaddr);
-    int nodeID = bproc_nodenumber((struct sockaddr *) client, size);
-    /* find order in list */
-    for (j = 0; j < numHosts ; j++) {
-        if( bproc_getnodebyname(hostList[j]) == nodeID ) {
-            /* if this host index already used - continue */
-            if( assignNewId && (hostsAssigned[j]) )
-                continue;
-            hostIndex=j;
-            if( assignNewId )
-                hostsAssigned[j]=1;
-            break;
-        }
-    }                       /* end j loop */
-#else
     TmpHost =
         gethostbyaddr((char *) &(client->sin_addr.s_addr), 4, AF_INET);
     /* find order in list */
@@ -154,7 +136,6 @@ int socketToHostRank(int numHosts, HostName_t* hostList,
             break;
         }
     }                       /* end j loop */
-#endif
 
     /* return host index */
     return hostIndex;
