@@ -113,7 +113,7 @@ void GetMpirunHostname(const char *InfoStream)
     struct hostent *localHostInfo;
     int NSeparators = 2, j, k, myNameLen;
     char SeparatorList[] = { " , " };
-    bool success = false, foundDomain = false;
+    bool success = false, foundDomain = false, isAddress = true;
 
     /* find HostList index in database */
     int OptionIndex = MatchOption("MpirunHostname", ULMInputOptions,
@@ -130,14 +130,27 @@ void GetMpirunHostname(const char *InfoStream)
     }
 
     myNameLen = strlen(myName);
-    k = 0;
+
+    /* check string to see if it is an IP address - in which case
+     * we skip the domain check
+     */
     for (j = 0; j < myNameLen; j++) {
-        if (!foundDomain && (myName[j] == '.')) {
-            foundDomain = true;
+        if ((myName[j] != '.') && ((myName[j] < '0') || (myName[j] > '9'))) {
+            isAddress = false;
+            break;
         }
-        if (foundDomain) {
-            myDomain[k++] = myName[j];
-            myName[j] = '\0';
+    }
+    
+    k = 0;
+    if (!isAddress) {
+        for (j = 0; j < myNameLen; j++) {
+            if (!foundDomain && (myName[j] == '.')) {
+                foundDomain = true;
+            }
+            if (foundDomain) {
+                myDomain[k++] = myName[j];
+                myName[j] = '\0';
+            }
         }
     }
     myDomain[k] = '\0';
