@@ -78,7 +78,8 @@ int PMPI_Waitall(int count,
 
 	    completed = 0;
 	    rc = ulm_test(&(req[i]), &completed, &stat);
-	    if (rc == ULM_ERR_RECV_LESS_THAN_POSTED) {
+	    if ( (rc == ULM_ERR_RECV_LESS_THAN_POSTED) ||
+                 (rc == ULM_ERR_TEMP_OUT_OF_RESOURCE) ) {
 		rc = ULM_SUCCESS;
 	    }
 	    if (rc != ULM_SUCCESS) {

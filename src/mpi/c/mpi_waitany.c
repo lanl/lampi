@@ -87,9 +87,11 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 	    }
 
 	    rc = ulm_test(req + i, &completed, &stat);
-	    if (rc == ULM_ERR_RECV_LESS_THAN_POSTED) {
+	    if ( (rc == ULM_ERR_RECV_LESS_THAN_POSTED) ||
+                 (rc == ULM_ERR_TEMP_OUT_OF_RESOURCE ) ) {
 		rc = ULM_SUCCESS;
 	    }
+
 	    if (rc != ULM_SUCCESS) {
 		if (status) {
 		    status->MPI_ERROR = _mpi_error(stat.error);
