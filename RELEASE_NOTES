@@ -129,3 +129,9 @@ Version 1.2.0
 - Myrinet GM Port.
 - Extensive reorganization of source directory structure and naming.
 - Some more thread-safety problems addressed.
+
+
+Version 1.2.1
+
+- Fixing a couple of UDP bugs
+- Correcting parising of configuration files
