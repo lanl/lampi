@@ -1825,6 +1825,7 @@ void lampi_init_prefork_check_stdio(lampiState_t *s)
 void lampi_init_prefork_stdio(lampiState_t *s)
 {
     int fd[2];
+    int enable_pty_stdio = ENABLE_PTY_STDIO;
 
     if (s->error) {
         return;
@@ -1870,15 +1871,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
         return;
     }
 
-    if (ENABLE_PTY_STDIO) {
+    if (enable_pty_stdio) {
         /* use a pty for stdin to avoid application buffering */
         if (openpty(&fd[1], &fd[0], NULL, NULL, NULL) < 0) {
-            ulm_err(("Error: openpty(): errno = %d\n", errno));
-            s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
-            return;
+            ulm_warn(("Warning: openpty failed: using pipe for stdio\n"));
+            enable_pty_stdio = 0;
         }
-
-    } else {
+    }
+    if (!enable_pty_stdio) {
         if(pipe(fd) < 0) {
             ulm_err(("Error: pipe(): errno = %d\n", errno));
             s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
@@ -1889,14 +1889,14 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     stdin_child = fd[0];
 
     for (int i = 0; i < s->local_size; i++) {
-        if (ENABLE_PTY_STDIO) {
+        if (enable_pty_stdio) {
             /* use a pty for stdout to avoid application buffering */
             if (openpty(&fd[0], &fd[1], NULL, NULL, NULL) < 0) {
-                ulm_err(("Error: openpty(): errno = %d\n", errno));
-                s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
-                return;
+                ulm_warn(("Warning: openpty failed: using pipe for stdio\n"));
+                enable_pty_stdio = 0;
             }
-        } else {
+        }
+        if (!enable_pty_stdio) {
             if (pipe(fd) < 0) {
                 ulm_err(("Error: pipe(): errno = %d\n", errno));
                 s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
@@ -2021,7 +2021,7 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         } else {
             s->STDINfdToChild = stdin_parent;
             close(stdin_child);
-            if (ENABLE_PTY_STDIO) {
+            if (isatty(stdin_parent)) {
                 tty_noecho(stdin_parent);
             }
         }
@@ -2056,7 +2056,7 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             return;
         }
 
-        if (ENABLE_PTY_STDIO) {
+        if (isatty(STDOUT_FILENO)) {
             tty_raw(STDOUT_FILENO);
         }
 
