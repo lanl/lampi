@@ -110,13 +110,13 @@ int _mpif_finalize(void)
         
         for (i = 0; i < _mpif.op_table->size; i++) {
             if (_mpif.op_table->addr[i]) {
-                MPI_Op_free((MPI_Op *) _mpif.op_table->addr[i]);
+                MPI_Op_free((MPI_Op *) &(_mpif.op_table->addr[i]));
             }
         }
 
         for (i = 0; i < _mpif.request_table->size; i++) {
             if (_mpif.request_table->addr[i]) {
-                MPI_Request_free((MPI_Request *) _mpif.request_table->addr[i]);
+                MPI_Request_free((MPI_Request *) &(_mpif.request_table->addr[i]));
             }
         }
 
