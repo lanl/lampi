@@ -31,6 +31,8 @@ AC_CHECK_HEADERS([netdb.h])
 AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([pty.h])
 AC_CHECK_HEADERS([stddef.h])
+AC_CHECK_HEADERS([syslog.h])
+AC_CHECK_HEADERS([sys/resource.h])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([sys/uio.h])
@@ -157,6 +159,7 @@ enable_numa=${enable_numa:-no}
 enable_qsnet=${enable_qsnet:-no}
 enable_rms=${enable_rms:-no}
 enable_static=${enable_static:-no}
+enable_syslog=${enable_syslog:-no}
 enable_tcp=${enable_tcp:-no}
 enable_udp=${enable_udp:-no}
 
@@ -652,6 +655,15 @@ else
    AC_DEFINE(ENABLE_DBG, 0)
 fi
 
+AC_ARG_ENABLE(enable-syslog,
+              AC_HELP_STRING([--enable-syslog], [enable syslog recording of jobs]))
+echo "syslog recording of jobs... ${enable_syslog:-no}"
+if test "$enable_syslog" = "yes" ; then
+   AC_DEFINE(ENABLE_SYSLOG, 1)
+else
+   AC_DEFINE(ENABLE_SYSLOG, 0)
+fi
+
 AC_ARG_ENABLE(memprofile,
               AC_HELP_STRING([--enable-memprofile], [enable memory profiling]))
 echo "feature MEMPROFILE... ${enable_memprofile:-no}"
@@ -719,6 +731,9 @@ AH_TEMPLATE([ENABLE_DEBUG],
 
 AH_TEMPLATE([ENABLE_DBG],
             [Define to 1 if copious debug output is enabled.])
+
+AH_TEMPLATE([ENABLE_SYSLOG],
+            [Define to 1 if syslog recording of jobs is enabled.])
 
 AH_TEMPLATE([ENABLE_MEMPROFILE],
             [Define to 1 if memory profiling is enabled.])

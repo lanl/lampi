@@ -50,6 +50,9 @@
 /* Define to 1 if the shared memory path is enabled. */
 #undef ENABLE_SHARED_MEMORY
 
+/* Define to 1 if syslog recording of jobs is enabled. */
+#undef ENABLE_SYSLOG
+
 /* Define to 1 if the TCP/IP path is enabled. */
 #undef ENABLE_TCP
 
@@ -225,6 +228,12 @@
 
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
