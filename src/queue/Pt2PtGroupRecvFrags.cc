@@ -28,8 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include <stdio.h>
 
 #include "internal/log.h"
@@ -41,7 +39,7 @@
 #include "client/ULMClient.h"
 #include "queue/globals.h"
 /* debug
-   #include "util/dclock.h"
+   #include "Utility/dclock.h"
    end debug */
 
 //!
@@ -176,7 +174,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	    //  is picked up. Need to search the list in any case
 	    //  just in case duplicate frags have arrived.
 	    if (!recvDone)
-		SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, timeNow);
+		SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,timeNow);
 
 	} else {
 
@@ -205,6 +203,16 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
             recvLock[fragSrc].unlock();
             next_expected_isendSeqsLock[fragSrc].unlock();
         }
+
+	/* mark message as done, if it has completed - need to mark
+	 *   it this late to avoid a race condition with another thread
+	 *   waiting to complete a recv, completing, and try to free the
+	 *   communicator before the current thread is done referencing
+	 *   this communicator
+	 */
+	if( recvDone ){
+		MatchedPostedRecvHeader->requestDesc->messageDone = true;
+	}
     } else if (fragSendSeqID < nextSeqIDToProcess) {
 
 	//!
@@ -218,7 +226,9 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 
 	//!
 	//! This frag comes before the next expected, so it
-	//! must be part of a fraged or corrupted message.
+	//! must be part of a fraged or corrupted message,
+	//! if a match has already been made.   If a match
+	//! has not been made, there is none to make.
 	//! Look in the list of already matched irecvs.
 	//!
 	MatchedPostedRecvHeader = isThisMissingFrag(DataHeader);
@@ -249,6 +259,9 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	    //! copy data into specified buffer - DataHeader is also
 	    ProcessMatchedData(MatchedPostedRecvHeader,
 			       DataHeader, timeNow, &recvDone);
+	    if( recvDone ){
+	    	    MatchedPostedRecvHeader->requestDesc->messageDone = true;
+	    }
 	}
     } else {
 	//

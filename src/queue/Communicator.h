@@ -510,7 +510,7 @@ public:
 
     // search for specified frags
     void SearchForFragsWithSpecifiedISendSeqNum(RecvDesc_t *MatchedPostedRecvHeader,
-                                                double timeNow = -1.0);
+		    bool *recvDone, double timeNow = -1.0);
 
     // search ahead of sequence queue to see if frags can now be
     // matched (old name: scan_ahead_of_sequence)

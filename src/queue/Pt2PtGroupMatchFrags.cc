@@ -29,7 +29,6 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include <stdio.h>
 
 #include "queue/Communicator.h"
@@ -104,18 +103,18 @@ RecvDesc_t *Communicator::isThisMissingFrag(BaseRecvFragDesc_t *rec)
 //
 
 void Communicator::SearchForFragsWithSpecifiedISendSeqNum
-(RecvDesc_t *MatchedPostedRecvHeader, double timeNow)
+(RecvDesc_t *MatchedPostedRecvHeader, bool *recvDone, double timeNow)
 {
+    int SendingProc = MatchedPostedRecvHeader->srcProcID_m;
     /* get sequence number */
     unsigned long SendingSequenceNumber =
         MatchedPostedRecvHeader->isendSeq_m;
-    int SendingProc = MatchedPostedRecvHeader->srcProcID_m;
-    bool recvDone = false;
     // loop over list of frags
     //
 
     // lock list for thread safety
-    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.lock();
+    if( usethreads() )
+	    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.lock();
 
     for (BaseRecvFragDesc_t *
              RecDesc =
@@ -138,15 +137,16 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
                 RemoveLinkNoLock(RecDesc);
             /* process data */
             ProcessMatchedData(MatchedPostedRecvHeader, TmpDesc, timeNow,
-                               &recvDone);
-            if (recvDone)
+                               recvDone);
+            if (*recvDone)
                 break;
 
         }                       // done processing  RecDesc
     }                           // done looping over privateQueues.OkToMatchRecvFrags
 
     // unlock list
-    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.unlock();
+    if( usethreads() )
+	    privateQueues.OkToMatchRecvFrags[SendingProc]->Lock.unlock();
 
     return;
 }
@@ -210,6 +210,10 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
                 if (MatchedPostedRecvHeader) {
                     ProcessMatchedData(MatchedPostedRecvHeader, RecvDesc,
                                        timeNow, &recvDone);
+		    if( recvDone ){
+			    MatchedPostedRecvHeader->requestDesc->
+				    messageDone = true;
+		    }
 
                 } else {
 
@@ -247,6 +251,10 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
                         if (MatchedPostedRecvHeader) {
                             ProcessMatchedData(MatchedPostedRecvHeader,
                                                RDesc, timeNow, &recvDone);
+			    if( recvDone ){
+				    MatchedPostedRecvHeader->requestDesc->
+					    messageDone = true;
+			    }
                         } else {
 
                             // if match not found, place on privateQueues.OkToMatchRecvFrags list

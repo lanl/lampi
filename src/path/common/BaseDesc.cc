@@ -37,8 +37,9 @@
 #include "util/Utility.h"
 #include "util/inline_copy_functions.h"
 #include "internal/buffer.h"
-#include "internal/constants.h"
+#include "internal/constants.h" // for CACHE_ALIGNMENT
 #include "internal/log.h"
+#include "internal/state.h"
 #include "path/common/BaseDesc.h"
 #include "path/common/InitSendDescriptors.h"
 #include "ulm/ulm.h"
@@ -199,6 +200,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     Communicator *Comm;
     ULMType_t *datatype;
     unsigned int checkSum;
+    ssize_t bytesIntoBitBucket;
 
     // frag pointer
     BaseRecvFragDesc_t *FragDesc = (BaseRecvFragDesc_t *) FrgDesc;
@@ -210,78 +212,45 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     void *Destination = (void *) ((char *) AppAddr + Offset);
 
     // length to copy
-    ssize_t length = FragDesc->length_m;
+    ssize_t lengthToCopy = FragDesc->length_m;
 
     // make sure we don't overflow app buffer
     ssize_t AppBufferLen = PostedLength - Offset;
 
     datatype = this->requestDesc->datatype;
 
-    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
-        // if AppBufferLen is negative or zero, then there is nothing to
-        // copy, so get out of here as soon as possible...
-        if (AppBufferLen <= 0) {
-            FragDesc->MarkDataOK(true);
-            // mark recv as complete
-            DataInBitBucket += FragDesc->length_m;
-            if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
-                // fill in request object
-                requestDesc->reslts_m.proc.source_m = srcProcID_m;
-                requestDesc->reslts_m.length_m = ReceivedMessageLength;
-                requestDesc->reslts_m.lengthProcessed_m = DataReceived;
-                requestDesc->reslts_m.UserTag_m = tag_m;
-                // mark recv as complete
-                requestDesc->messageDone = true;
-                if (recvDone)
-                    *recvDone = true;
-                wmb();
+    if (AppBufferLen <= 0) {
+    	    FragDesc->MarkDataOK(true);
+	    // mark recv as complete
+	    lengthToCopy=0;
+	    bytesIntoBitBucket=FragDesc->length_m;
+    } else {
+	    if (AppBufferLen < lengthToCopy) 
+		    lengthToCopy=AppBufferLen;
+	    bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
+	    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
+		    // copy the data
+		    checkSum =
+			    FragDesc->CopyFunction(FragDesc->addr_m, 
+					    Destination, lengthToCopy);
+	    } else {                    
+		    // Non-contiguous case
+		    non_contiguous_copy(FragDesc, datatype, AppAddr, 
+				    &lengthToCopy, &checkSum);
+	    }
 
-                Comm = communicators[ctx_m];
-                if (WhichQueue == MATCHEDIRECV) {
-                    // pt-2-pt multi-frag message with frags
-                    // already here at time of posting receive request...
-                    Comm->privateQueues.MatchedRecv[srcProcID_m]->
-                        RemoveLink(this);
-                } else if (WhichQueue == POSTEDUTRECVS) {
-                    // collective communications request through
-                    // Communicator::processCollectiveFrags()
-                    Comm->privateQueues.PostedUtrecvs.
-                        RemoveLinkNoLock(this);
-                }
-                // return send descriptor to free list
-                ReturnDesc();
-#ifdef DEBUG_DESCRIPTORS
-                requestDesc->t1 = dclock();
-#endif
-            }
-            return 0;
-        } else if (AppBufferLen < length) {
-            length = AppBufferLen;
-        }
-        // sanity check
-        // data can be copied in either before  the ireceive descriptor is placed
-        //  in any queue, of after it is placed in a queue
-        //assert(WhichQueue==MATCHEDIRECV  ||
-        //      WhichQueue==WILDMATCHEDIRECV || WhichQueue==IRECVFREELIST);
+	    // check to see if data arrived ok
+	    dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
 
-        // copy the data
-        checkSum =
-            FragDesc->CopyFunction(FragDesc->addr_m, Destination, length);
-    } else {                    // Non-contiguous case
-        non_contiguous_copy(FragDesc, datatype, AppAddr, &length,
-                            &checkSum);
+	    // return number of bytes copied
+	    if (!dataNotCorrupted) {
+		    return (-1);
+	    }
     }
 
-    // check to see if data arrived ok
-    dataNotCorrupted = FragDesc->CheckData(checkSum, length);
-
-    // return number of bytes copied
-    if (!dataNotCorrupted) {
-        return (-1);
-    }
     // update byte count
-    DataReceived += length;
-    DataInBitBucket += (FragDesc->length_m - length);
+    DataReceived += lengthToCopy;
+    DataInBitBucket += bytesIntoBitBucket;
 
     // check to see if receive is complete, and if so mark the request object
     //   as such
@@ -309,7 +278,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         ReturnDesc();
     }
 
-    return length;
+    return lengthToCopy;
 }
 
 
@@ -322,6 +291,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     Communicator *Comm;
     ULMType_t *datatype;
     unsigned int checkSum;
+    ssize_t bytesIntoBitBucket;
 
     // frag pointer
     BaseRecvFragDesc_t *FragDesc = (BaseRecvFragDesc_t *) FrgDesc;
@@ -333,81 +303,52 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     void *Destination = (void *) ((char *) AppAddr + Offset);
 
     // length to copy
-    ssize_t length = FragDesc->length_m;
+    ssize_t lengthToCopy = FragDesc->length_m;
 
     // make sure we don't overflow app buffer
     ssize_t AppBufferLen = PostedLength - Offset;
 
     //Contiguous Data
     datatype = this->requestDesc->datatype;
-    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
-        // if AppBufferLen is negative or zero, then there is nothing to
-        // copy, so get out of here as soon as possible...
-        if (AppBufferLen <= 0) {
-            FragDesc->MarkDataOK(true);
-            // mark recv as complete
-            Lock.lock();
-            DataInBitBucket += FragDesc->length_m;
-            Lock.unlock();
-            if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
-                // fill in request object
-                requestDesc->reslts_m.proc.source_m = srcProcID_m;
-                requestDesc->reslts_m.length_m = ReceivedMessageLength;
-                requestDesc->reslts_m.lengthProcessed_m = DataReceived;
-                requestDesc->reslts_m.UserTag_m = tag_m;
-                // mark recv as complete
-                requestDesc->messageDone = true;
-                if (recvDone)
-                    *recvDone = true;
-                wmb();
 
-                // remove receive descriptor from list
-                Comm = communicators[ctx_m];
-                Comm->privateQueues.MatchedRecv[srcProcID_m]->
-                    RemoveLink(this);
-
-                // return posted receive descriptor to free list
-                ReturnDesc();
-#ifdef DEBUG_DESCRIPTORS
-                requestDesc->t1 = dclock();
-#endif
-            }
-
-            return 0;
-        } else if (AppBufferLen < length) {
-            length = AppBufferLen;
-        }
-        // sanity check
-        // data can be copied in either before  the ireceive descriptor is placed
-        //  in any queue, of after it is placed in a queue
-        //assert(WhichQueue==MATCHEDIRECV  ||
-        //      WhichQueue==WILDMATCHEDIRECV || WhichQueue==IRECVFREELIST);
-
-        // copy the data
-        checkSum =
-            FragDesc->CopyFunction(FragDesc->addr_m, Destination, length);
-
+    if (AppBufferLen <= 0) {
+    	    FragDesc->MarkDataOK(true);
+	    // mark recv as complete
+	    lengthToCopy=0;
+	    bytesIntoBitBucket=FragDesc->length_m;
     } else {
-        non_contiguous_copy(FragDesc, datatype, AppAddr, &length,
-                            &checkSum);
+	    if (AppBufferLen < lengthToCopy) 
+		    lengthToCopy=AppBufferLen;
+	    bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
+	    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
+		    // copy the data
+		    checkSum =
+			    FragDesc->CopyFunction(FragDesc->addr_m, 
+					    Destination, lengthToCopy);
+	    } else {                    
+		    // Non-contiguous case
+		    non_contiguous_copy(FragDesc, datatype, AppAddr, 
+				    &lengthToCopy, &checkSum);
+	    }
+
+	    // check to see if data arrived ok
+	    dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
+
+	    // return number of bytes copied
+	    if (!dataNotCorrupted) {
+		    return (-1);
+	    }
     }
 
-    // check to see if data arrived ok
-    dataNotCorrupted = FragDesc->CheckData(checkSum, length);
-
-    // return number of bytes copied
-    if (!dataNotCorrupted) {
-        return (-1);
-    }
     // update byte count
     if (usethreads()) {
-        Lock.lock();
-        DataReceived += length;
-        DataInBitBucket += (FragDesc->length_m - length);
-        Lock.unlock();
+	    Lock.lock();
+	    DataReceived += lengthToCopy;
+	    DataInBitBucket += bytesIntoBitBucket;
+	    Lock.unlock();
     } else {
-        DataReceived += length;
-        DataInBitBucket += (FragDesc->length_m - length);
+	    DataReceived += lengthToCopy;
+	    DataInBitBucket += bytesIntoBitBucket;
     }
 
     // check to see if receive is complete, and if so mark the request
@@ -418,8 +359,11 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         requestDesc->reslts_m.length_m = ReceivedMessageLength;
         requestDesc->reslts_m.lengthProcessed_m = DataReceived;
         requestDesc->reslts_m.UserTag_m = tag_m;
-        // mark recv as complete
-        requestDesc->messageDone = true;
+        // mark recv as complete - the request descriptor will be marked
+	// later on.  This is to avoid a race condition with another thread
+	// waiting to complete a recv, completing, and try to free the
+	// communicator before the current thread is done referencing
+	// this communicator
         if (recvDone)
             *recvDone = true;
         wmb();
@@ -432,7 +376,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         ReturnDesc();
     }
 
-    return length;
+    return lengthToCopy;
 }
 
 
