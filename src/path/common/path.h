@@ -38,7 +38,6 @@
 #include "util/DblLinkList.h"
 
 enum pathType {
-    LOCALCOLLECTIVEPATH,
     UDPPATH,
     QUADRICSPATH,
     GMPATH,

@@ -156,6 +156,24 @@ public:
             return numCopied;
         }
 
+    // return whether or not this path can be used to reach
+    //   remote process remoteProc
+    int canUsePath(int remoteProc, int pathIndex)
+        {
+		int returnValue=0;
+		/* check array bounds */
+		if( pathIndex >= numAllocated) {
+			return returnValue;
+		}
+
+		if( (pathArray[pathIndex]->canReach(remoteProc))
+				&& (pathStatus[pathIndex] == ACTIVE) )
+		{
+			returnValue=1;
+		}
+		return returnValue;
+        }
+
     // returns a pointer to MAX_PATH_OBJECT_SIZE_IN_BYTES bytes
     // of shared memory (or 0 on failure), to instantiate the path object,
     // and returns a pathHandle to the new object for activate(), etc.

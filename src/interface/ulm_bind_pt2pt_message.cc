@@ -41,6 +41,7 @@
 #include "path/common/path.h"
 #include "path/common/pathContainer.h"
 #include "path/common/InitSendDescriptors.h"
+#include "path/common/pathGlobals.h"
 #ifdef SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif /* SHARED_MEMORY */
@@ -51,141 +52,106 @@
  * \param message   send message descriptor
  * \return          ULM return code
  */
-extern "C" int ulm_bind_pt2pt_message(void *req,
-		void **SendDesc)
+extern "C" int ulm_bind_pt2pt_message(void *req, void **SendDesc)
 {
 	RequestDesc_t *request=(RequestDesc_t *) req;
 	BaseSendDesc_t **SendDescriptor=(BaseSendDesc_t **)SendDesc;
-    int errorCode = ULM_SUCCESS, pathCount;
-    BasePath_t *pathArray[MAX_PATHS];
-    int globalDestID;
-    pathType ptype;
+	int errorCode = ULM_SUCCESS;
+	int globalDestID;
 
     globalDestID = communicators[request->ctx_m]->remoteGroup
         ->mapGroupProcIDToGlobalProcID[request->posted_m.proc.destination_m];
-    pathCount = pathContainer()->paths(&globalDestID, 1, pathArray, MAX_PATHS);
 
-    if (pathCount) {
-	    int useLocal = -1;
-	    int useUDP = -1;
-	    int useQuadrics = -1;
-            int useGM = -1;
-	    for (int i = 0; i < pathCount; i++) {
-		if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype, sizeof(pathType), 
-                                          &errorCode)) {
-		    if ((ptype == SHAREDMEM) && (useLocal < 0))
-			useLocal = i;
-		    else if ((ptype == UDPPATH) && (useUDP < 0))
-			useUDP = i;
-		    else if ((ptype == QUADRICSPATH) && (useQuadrics < 0))
-			useQuadrics = i;
-		    else if ((ptype == GMPATH) && (useGM < 0))
-			useGM = i;
-		}
-	    }
-	    // use local shared memory first, if at all possible
-	    if (useLocal >= 0) {
-		    /* get element from cache, is available */
-		    *SendDescriptor =(BaseSendDesc_t *)
-			    pathArray[useLocal]->sendDescCache.GetLastElement();
-		    if( !(*SendDescriptor) ) {
-			    /* if not available, get from free list */
-			    *SendDescriptor = _ulm_SendDescriptors.
-				    getElement(0, errorCode);
-			    if (!SendDescriptor) {
-				    return errorCode;
-			    }
-			    /* allocate sharedmemSendInfo data */
-			    (*SendDescriptor)->pathInfo.sharedmem.sharedData=
-				    (sharedMemData_t *)SMPSendDescs.getElement
-				    (getMemPoolIndex(), errorCode);
-			    if( !((*SendDescriptor)->pathInfo.sharedmem.sharedData ) )
-			    {
-				    return errorCode;
-			    }
-			    /* compute address of first frag */
-			    size_t offsetToFirstFrag = sizeof(sharedMemData_t);
-			    (*SendDescriptor)->pathInfo.sharedmem.firstFrag=
-				    (SMPFragDesc_t *) ((char *) 
-						       (*SendDescriptor)-> 
-						       pathInfo.sharedmem.sharedData 
-						       + offsetToFirstFrag);
+    // use local shared memory first, if at all possible
+    if (pathList[globalDestID].useSharedMemory_m >= 0) {
+	    int useLocal=pathList[globalDestID].useSharedMemory_m;
 
-			    /* placement new */
-			    new((*SendDescriptor)->pathInfo.sharedmem.firstFrag) 
-				    SMPFragDesc_t (getMemPoolIndex());
-
-			    /* compute address of first frag payload - 
-			     * will never change */
-			    size_t offsetToPayload =
-				    (((sizeof(sharedMemData_t) + sizeof(SMPFragDesc_t) - 1) /
-				      CACHE_ALIGNMENT) + 1) * CACHE_ALIGNMENT;
-			    void *firstFragPayloadAddr =
-				    (void *) ((char *) (*SendDescriptor)->
-					      pathInfo.sharedmem.sharedData + 
-					      offsetToPayload);
-
-			    /* set the payload address in the first frag */
-			    (*SendDescriptor)->pathInfo.sharedmem.firstFrag->
-				    addr_m = firstFragPayloadAddr;
-
-			    // fill in pointer to send descriptor
-			    (*SendDescriptor)->pathInfo.sharedmem.firstFrag->
-				    SendingHeader_m.SMP = (sharedMemData_t *) 
-				    (*SendDescriptor)->pathInfo.sharedmem.sharedData;
-		    }
-
-		    pathArray[useLocal]->bind((*SendDescriptor), 
-				    &globalDestID, 1, &errorCode);
-	    }
-	    // use Quadrics as option #2a
-	    else if (useQuadrics >= 0) {
+	    /* get element from cache, is available */
+	    *SendDescriptor =(BaseSendDesc_t *)
+		    pathArray[useLocal]->sendDescCache.GetLastElement();
+	    if( !(*SendDescriptor) ) {
 		    /* if not available, get from free list */
 		    *SendDescriptor = _ulm_SendDescriptors.
 			    getElement(0, errorCode);
 		    if (!SendDescriptor) {
 			    return errorCode;
 		    }
-		    pathArray[useQuadrics]->
-			    bind((*SendDescriptor), &globalDestID, 1, &errorCode);
-	    }
-	    // use Myrinet/GM as option #2b
-	    else if (useGM >= 0) {
-		    /* if not available, get from free list */
-		    *SendDescriptor = _ulm_SendDescriptors.
-			    getElement(0, errorCode);
-		    if (!SendDescriptor) {
+		    /* allocate sharedmemSendInfo data */
+		    (*SendDescriptor)->pathInfo.sharedmem.sharedData=
+			    (sharedMemData_t *)SMPSendDescs.getElement
+			    (getMemPoolIndex(), errorCode);
+		    if( !((*SendDescriptor)->pathInfo.sharedmem.sharedData ) )
+		    {
 			    return errorCode;
 		    }
-		    pathArray[useGM]->bind((*SendDescriptor), &globalDestID, 
-				    1, &errorCode);
+		    /* compute address of first frag */
+		    size_t offsetToFirstFrag = sizeof(sharedMemData_t);
+		    (*SendDescriptor)->pathInfo.sharedmem.firstFrag=
+			    (SMPFragDesc_t *) ((char *) (*SendDescriptor)-> 
+					       pathInfo.sharedmem.sharedData 
+					       + offsetToFirstFrag);
+		    /* placement new */
+		    new((*SendDescriptor)->pathInfo.sharedmem.firstFrag) 
+			    SMPFragDesc_t (getMemPoolIndex());
+
+		    /* compute address of first frag payload -
+		     * will never change */
+		    size_t offsetToPayload =
+			    (((sizeof(sharedMemData_t) + sizeof(SMPFragDesc_t) - 1) /
+			      CACHE_ALIGNMENT) + 1) * CACHE_ALIGNMENT;
+		    void *firstFragPayloadAddr =
+			    (void *) ((char *) (*SendDescriptor)-> 
+				      pathInfo.sharedmem.sharedData + 
+				      offsetToPayload);
+
+		    /* set the payload address in the first frag */
+		    (*SendDescriptor)->pathInfo.sharedmem.firstFrag->
+			    addr_m = firstFragPayloadAddr;
+
+		    // fill in pointer to send descriptor
+		    (*SendDescriptor)->pathInfo.sharedmem.firstFrag->
+			    SendingHeader_m.SMP = (sharedMemData_t *) 
+			    (*SendDescriptor)->pathInfo.sharedmem.sharedData;
 	    }
-	    // use UDP connectivity as option #3
-	    else if (useUDP >= 0) {
-		    /* if not available, get from free list */
-		    *SendDescriptor = _ulm_SendDescriptors.
-			    getElement(0, errorCode);
-		    if (!SendDescriptor) {
-			    return errorCode;
-		    }
-		    pathArray[useUDP]->bind((*SendDescriptor), &globalDestID, 
-				    1, &errorCode);
-	    }
-	    // otherwise, just use the first path...
-	    else {
-		    /* if not available, get from free list */
-		    *SendDescriptor = _ulm_SendDescriptors.
-			    getElement(0, errorCode);
-		    if (!SendDescriptor) {
-			    return errorCode;
-		    }
-		    pathArray[0]->bind((*SendDescriptor), &globalDestID, 
-				    1, &errorCode);
-	    }
+	    pathArray[useLocal]->bind((*SendDescriptor), &globalDestID, 
+			    1, &errorCode);
     }
-    else {
-	errorCode = ULM_ERR_FATAL;
-	ulm_err(("ulm_bind_pt2pt_message error: unable to find path to global process ID %d\n", globalDestID));
+    // use Quadrics as option #2a
+    else if (pathList[globalDestID].useQuadrics_m >= 0) {
+	    int useQuadrics=pathList[globalDestID].useQuadrics_m;
+	    /* if not available, get from free list */
+	    *SendDescriptor = _ulm_SendDescriptors.getElement(0, errorCode);
+	    if (!SendDescriptor) {
+		    return errorCode;
+	    }
+	    pathArray[useQuadrics]->
+		    bind((*SendDescriptor), &globalDestID, 1, &errorCode);
+    }
+    // use Myrinet/GM as option #2b
+    else if (pathList[globalDestID].useGM_m >= 0) {
+	    int useGM=pathList[globalDestID].useGM_m;
+	    /* if not available, get from free list */
+	    *SendDescriptor = _ulm_SendDescriptors.getElement(0, errorCode);
+	    if (!SendDescriptor) {
+		    return errorCode;
+	    }
+	    pathArray[useGM]->bind((*SendDescriptor), &globalDestID, 
+			    1, &errorCode);
+    }
+    // use UDP connectivity as option #3
+    else if (pathList[globalDestID].useUDP_m >= 0) {
+	    int useUDP=pathList[globalDestID].useUDP_m;
+	    /* if not available, get from free list */
+	    *SendDescriptor = _ulm_SendDescriptors.getElement(0, errorCode);
+	    if (!SendDescriptor) {
+		    return errorCode;
+	    }
+	    pathArray[useUDP]->bind((*SendDescriptor), &globalDestID, 
+			    1, &errorCode);
+    } else {
+	    /* not path - error */
+    	    errorCode = ULM_ERR_FATAL;
+    	    ulm_err(("ulm_bind_pt2pt_message error: unable to find path to global process ID %d\n", globalDestID));
     }
 
     return errorCode;

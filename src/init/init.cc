@@ -85,6 +85,10 @@ bool affinMandatory = true;
 int nCpPNode = 2;
 #endif /* NUMA and __mips */
 
+#define ULM_INSTANTIATE_GLOBALS
+#include "path/common/pathGlobals.h"
+#undef ULM_INSTANTIATE_GLOBALS
+
 /*
  * File scope variables
  */
@@ -1724,6 +1728,9 @@ void lampi_init_prefork_paths(lampiState_t *s)
 
 void lampi_init_postfork_paths(lampiState_t *s)
 {
+    int pathCount;
+    pathType ptype;
+
     if (s->error) {
         return;
     }
@@ -1749,7 +1756,53 @@ void lampi_init_postfork_paths(lampiState_t *s)
     lampi_init_postfork_udp(s);
     lampi_init_postfork_quadrics(s);
     lampi_init_postfork_gm(s);
-    //lampi_init_postfork_local_coll(s);
+
+    /*
+     * setup global array of available paths
+     */
+    pathList=(availablePaths_t *) ulm_malloc(sizeof(availablePaths_t) *
+		    s->global_size);
+    if( !pathList ) {
+        s->error = ERROR_LAMPI_INIT_POSTFORK_PATHS;
+        return;
+    }
+
+    pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
+
+    for( int proc=0 ; proc < s->global_size ; proc++ ) {
+	    pathList[proc].useSharedMemory_m=-1;
+	    pathList[proc].useUDP_m=-1;
+	    pathList[proc].useQuadrics_m=-1;
+	    pathList[proc].useGM_m=-1;
+
+	    for (int i = 0; i < pathCount; i++) {
+		    if( ! (lampiState.pathContainer->canUsePath(proc,i))  )
+				    continue;
+		    if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype, 
+					    sizeof(pathType), &(s->error))) {
+			    if ((ptype == SHAREDMEM)
+					    && (pathList[proc].useSharedMemory_m < 0))
+			    {
+				    pathList[proc].useSharedMemory_m = i;
+			    }
+			    else if ((ptype == UDPPATH)
+					    && (pathList[proc].useUDP_m < 0))
+			    {
+				    pathList[proc].useUDP_m = i;
+			    }
+			    else if ((ptype == QUADRICSPATH)
+					    && (pathList[proc].useQuadrics_m < 0))
+			    {
+				    pathList[proc].useQuadrics_m = i;
+			    }
+			    else if ((ptype == GMPATH) 
+					    && (pathList[proc].useGM_m < 0))
+			    {
+				    pathList[proc].useGM_m = i;
+			    }
+		    }
+	    }
+    } /* end proc loop */
 }
 
 
