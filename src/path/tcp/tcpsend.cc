@@ -138,7 +138,8 @@ int TCPSendFrag::init(TCPPeer *tcpPeer, SendDesc_t *message)
     tcp_msg_header& header  = this->fragHdr;
     header.type             = TCP_MSGTYPE_MSG;
     header.msg_length       = message->posted_m.length_m;
-    header.msg_desc.ptr     = message;
+    header.send_desc.ptr    = message;
+    header.recv_desc.ptr    = 0;
     header.src_proc         = comm->localGroup->mapGroupProcIDToGlobalProcID[comm->localGroup->ProcID];
     header.dst_proc         = comm->remoteGroup->mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
     header.tag_m            = message->posted_m.tag_m;

@@ -89,6 +89,7 @@ public:
     bool acceptConnection(int sd);
     bool canReach();
     bool send(SendDesc_t* message, bool* incomplete, int *errorCode);
+    void sendStart(SendDesc_t* message);
     void sendComplete(TCPSendFrag*);
 
     bool send(int sd, TCPRecvFrag*);

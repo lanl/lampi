@@ -52,7 +52,8 @@ struct tcp_msg_header
     ulm_int32_t  dst_proc;	 //!< global ProcID of receiving process
     ulm_uint64_t length;	 //!< length of data in this frag frag
     ulm_uint64_t msg_length;	 //!< length of data in entire message
-    ulm_ptr_t    msg_desc;       //!< point to message descriptor
+    ulm_ptr_t    send_desc;      //!< point to message descriptor
+    ulm_ptr_t    recv_desc;      //!< point to message descriptor
     ulm_int32_t  tag_m;		 //!< tag user gave in send
     ulm_uint32_t fragIndex_m;    //!< frag index
     ulm_uint64_t isendSeq_m;	 //!< sequence number of isend (source proc)

@@ -266,7 +266,17 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         message->NumFragDescAllocated++;
     }
 
+    sendStart(message);
+
+    // have all fragments been sent
+    *incomplete = ((unsigned)message->NumSent < message->numfrags);
+    return true;
+}
+
+void TCPPeer::sendStart(SendDesc_t* message)
+{
     // find unused sockets and start send for first fragments
+    size_t numSockets = tcpSockets.size();
     for(size_t i=0; 
         i<numSockets && message->FragsToSend.size() && message->clearToSend_m; 
         i++) {
@@ -281,7 +291,8 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 message->clearToSend_m = false;
 
             // pull first fragment off queue
-            tcpSocket.sendFrag = sendFrag = (TCPSendFrag*)message->FragsToSend.GetfirstElement();
+            TCPSendFrag *sendFrag = (TCPSendFrag*)message->FragsToSend.GetfirstElement();
+            tcpSocket.sendFrag = sendFrag;
             sendFrag->WhichQueue = 0;
             if(usethreads()) tcpSocket.lock.unlock();
 
@@ -298,10 +309,6 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         } else if (usethreads())
             tcpSocket.lock.unlock();
     }
-
-    // have all fragments been sent
-    *incomplete = ((unsigned)message->NumSent < message->numfrags);
-    return true;
 }
 
 

@@ -235,7 +235,9 @@ bool TCPRecvFrag::recvHeader(int sd)
     case TCP_MSGTYPE_MSG:
     {
         // attempt to match a posted receive
-        fragRequest = (RecvDesc_t*)comm->matchReceivedFrag(this);
+        fragRequest = (RecvDesc_t*)fragHdr.recv_desc.ptr;
+        if (fragRequest == 0)
+            fragRequest = (RecvDesc_t*)comm->matchReceivedFrag(this);
         if(fragRequest != 0) {
             ULMType_t *datatype = fragRequest->datatype;
             if(datatype == 0 || datatype->layout == CONTIGUOUS) {
@@ -262,9 +264,17 @@ bool TCPRecvFrag::recvHeader(int sd)
     }
     case TCP_MSGTYPE_ACK:
     {
-        SendDesc_t *message = (SendDesc_t*)fragHdr.msg_desc.ptr;
+        SendDesc_t *message = (SendDesc_t*)fragHdr.send_desc.ptr;
+        TCPSendFrag *frag;
+        for(frag =  (TCPSendFrag *) message->FragsToSend.begin();
+            frag != (TCPSendFrag *) message->FragsToSend.end();
+            frag =  (TCPSendFrag *) frag->next)
+        {
+            frag->getHeader().recv_desc = fragHdr.recv_desc;
+        }
         message->NumAcked++;
         message->clearToSend_m = true;
+        tcpPeer->sendStart(message);
         tcpPeer->recvComplete(this);
         ReturnDescToPool(getMemPoolIndex());
         return false;
@@ -373,6 +383,7 @@ bool TCPRecvFrag::sendAck(int sd)
         fragAck.src_proc = fragHdr.dst_proc;
         fragAck.dst_proc = fragHdr.src_proc;
         fragAck.length = 0;
+        fragAck.recv_desc.ptr = fragRequest;
 
         // attempt to send the ack
         fragAcked = tcpPeer->send(sd, this);
@@ -382,7 +393,7 @@ bool TCPRecvFrag::sendAck(int sd)
 
 
 //
-//  Continue wth non-blocking send() calls until the
+//  Continue with non-blocking send() calls until the
 //  entire ack header is delivered.
 //
 

@@ -47,8 +47,8 @@
 TCPPath* TCPPath::_singleton = 0;
 Locks    TCPPath::_lock;
 
-const size_t TCPPath::DefaultFragmentSize = 64 * 1024;
-const size_t TCPPath::DefaultEagerSendSize = 16 * 1024;
+const size_t TCPPath::DefaultFragmentSize = 128 * 1024;
+const size_t TCPPath::DefaultEagerSendSize = 64 * 1024;
 const int    TCPPath::DefaultConnectRetries = 2;
 
 size_t  TCPPath::MaxFragmentSize = 0;
@@ -155,7 +155,7 @@ int TCPPath::initClient(int ifCount, struct sockaddr_in *peerAddrs)
 {
     // setup configurable parameters
     if (MaxFragmentSize == 0)
-        MaxFragmentSize = (ifCount > 0) ? DefaultFragmentSize : (1024*1024);
+        MaxFragmentSize = (ifCount > 1) ? DefaultFragmentSize : (1024*1024);
     if (MaxEagerSendSize == 0)
         MaxEagerSendSize = DefaultEagerSendSize;
     if (MaxConnectRetries == 0)

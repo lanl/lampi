@@ -53,6 +53,7 @@ public:
 
     // accessors
     inline SendDesc_t* getMessage() { return fragMsg; }
+    inline tcp_msg_header& getHeader() { return fragHdr; }
 
     // per-fragment initialization/cleanup
     virtual int init(TCPPeer* tcpPeer, SendDesc_t* message);
