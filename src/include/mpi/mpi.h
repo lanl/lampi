@@ -465,23 +465,6 @@ int _ulm_abort(int, int, char *, int);
 
 #endif /* ! USE_ABORT_MACRO */
 
-
-/*
- * A dummy debug gate to work around a TotalView / ld.so issue.
- */
-#ifdef USE_DEBUG_GATE
-
-static void debug_gate(void)
-{
-    extern volatile int MPIR_debug_gate;
-
-    while (MPIR_debug_gate == 0) {
-        /* do nothing */;
-    }
-}
-
-#endif
-
 #ifdef __cplusplus
 }
 #endif

@@ -165,7 +165,7 @@ endif
 ifeq "$(enable_static)" "yes"
 TARGET		+= libmpi.$(LIBEXT)
 endif
-
+TARGET		+= debug_gate.$(OBJEXT)
 
 all: $(TARGET)
 
@@ -201,6 +201,7 @@ install: all
 	(for f in $(srcdir)/src/include/ulm/*.h; do $(INSTALL) -m 664 $$f $(includedir)/ulm; done)
 ifeq "$(enable_dynamic)" "yes"
 	umask 002; $(INSTALL) -m 775 libmpi.$(DLLEXT) $(libdir)/libmpi.$(DLLEXT)
+	$(INSTALL) -m 664 debug_gate.$(OBJEXT) $(libdir)/debug_gate.$(OBJEXT)
 endif
 ifeq "$(enable_static)" "yes"
 	umask 002; $(INSTALL) -m 664 libmpi.$(LIBEXT) $(libdir)/libmpi.$(LIBEXT)
@@ -250,6 +251,8 @@ romio-clean: lampi.$(DLLEXT)
 	(cd $(ROMIODIR) ; test -f Makefile || $(ROMIOCONFIGURE))
 	(cd $(ROMIODIR) ; $(MAKE) clean)
 
+debug_gate.$(OBJEXT): src/init/debug_gate.c
+	$(CC) -g -c -o $@ $<
 
 # include dependency files, if we were not invoked as "make clean"
 # or "make distclean" or as "make nodeps=1 ..."
