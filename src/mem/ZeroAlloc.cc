@@ -97,17 +97,18 @@ void *ZeroAlloc(size_t size, int prot, int flags)
 void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
 {
     void *ptr;
-    int fd, flags = MemoryFlags;
+    static int fd = -1;
+    int flags = MemoryFlags;
+
 #ifndef __osf__
-    fd = -1;
-		
 #ifndef __APPLE__
-    fd = open("/dev/zero", O_RDWR);
-    if (fd < 0)
-    {
-	perror("/dev/zero");
-	close(fd);
-	return 0;
+    if(fd < 0) {
+        fd = open("/dev/zero", O_RDWR);
+        if (fd < 0)
+        {
+	    perror("/dev/zero");
+	    return 0;
+        }
     }
 #else
 	flags = flags | MAP_ANON;
@@ -117,22 +118,21 @@ void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
     if ( ptr == MAP_FAILED )
     {
 	ulm_err(("Error: mmap failed (%s)\n", strerror(errno)));
-	close(fd);
 	return (void *)0;
     }
-    close(fd);
 #else
     if( MemoryFlags & MAP_PRIVATE ) {
 	//
 	// private memory allocation
 	//
-	fd = open("/dev/zero", O_RDWR);
-	if (fd < 0)
-	{
-	    perror("/dev/zero");
-	    close(fd);
-	    return 0;
-	}
+        if(fd < 0) {
+	    fd = open("/dev/zero", O_RDWR);
+	    if (fd < 0)
+	    {
+	        perror("/dev/zero");
+	        return 0;
+	    }
+        }
 	ptr = mmap(NULL, len, MemoryProtection, MemoryFlags, fd, 0);
 	if ( ptr == MAP_FAILED )
 	{
@@ -140,10 +140,8 @@ void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
 		    " ZeroAlloc :: error in mmap(\"/dev/zero\") call.  Bytes Allocated :: %ld\n", len);
 	    fprintf(stderr, " errno :: %d\n", errno);
 	    perror(" mmap failed");
-	    close(fd);
 	    return (void *)0;
 	}
-	close(fd);
     } else {
 	long pageSize = sysconf(_SC_PAGESIZE);
 	long long paddedLen = len + (2 * pageSize);
@@ -159,9 +157,7 @@ void *ZeroAlloc(size_t len, int MemoryProtection, int MemoryFlags)
 	//
 	// shared memory allocation
 	//
-	fd = -1;
-	ptr = mmap(ptr, len, MemoryProtection, MAP_FIXED | MemoryFlags, fd, 0);
-
+	ptr = mmap(ptr, len, MemoryProtection, MAP_FIXED | MemoryFlags, -1, 0);
 	if ( ptr == MAP_FAILED )
 	{
 	    ulm_warn(("ZeroAlloc shared mmap error :: %d fd %d\n", errno, fd));
