@@ -35,6 +35,13 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +62,6 @@
 #include "ulm/errors.h"
 
 static abnormal_term_msg_t abnormal_term_msg;
-static byte_count_msg_t byte_count_msg;
 
 
 static int GetIOFromClient(int *fd)
@@ -133,25 +139,25 @@ int CheckForControlMsgs(int MaxDesc,
     memset(&fdset, 0, sizeof(fdset));
     for (int i = 0; i < NHosts; i++) {
         if (fd[i] > 0) {
-            FD_SET(fd[i], (fd_set *) &fdset);
+            FD_SET(fd[i], (fd_set *) & fdset);
         }
     }
 
-    rc = select(MaxDesc, (fd_set *) &fdset, NULL, NULL, &timeout);
+    rc = select(MaxDesc, (fd_set *) & fdset, NULL, NULL, &timeout);
     if (rc <= 0) {
         return rc;
     }
 
-    for (int i = 0; i < NHosts; i++) {
-        if ((fd[i] > 0) && (FD_ISSET(fd[i], (fd_set *) &fdset))) {
+    for (int host = 0; host < NHosts; host++) {
+        if ((fd[host] > 0) && (FD_ISSET(fd[host], (fd_set *) & fdset))) {
             /* Read tag value */
-            size = RecvSocket(fd[i], &tag, sizeof(unsigned), &error);
+            size = RecvSocket(fd[host], &tag, sizeof(unsigned), &error);
             /* one end of pipe closed */
             if (size == 0 || error != ULM_SUCCESS) {
                 ulm_dbg(("RecvSocket: host=%i size=%ld error=%d\n",
-                         i, (long) size, error));
-                fd[i] = -1;
-                if (ActiveHosts[i]) {
+                         host, (long) size, error));
+                fd[host] = -1;
+                if (ActiveHosts[host]) {
                     (*HostsAbNormalTerminated)++;
                 } else {
                     (*ActiveClients)--;
@@ -160,7 +166,7 @@ int CheckForControlMsgs(int MaxDesc,
             }
             if (size < 0) {
                 ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
-                         i, (long) size, error));
+                         host, (long) size, error));
                 Abort();
             }
 
@@ -168,36 +174,60 @@ int CheckForControlMsgs(int MaxDesc,
 
             case HEARTBEAT:
                 if (RunParams.Verbose) {
-                    ulm_err(("heartbeat from host %d\n", i));
+                    ulm_err(("heartbeat from host %d\n", host));
                 }
 #ifndef HAVE_CLOCK_GETTIME
                 struct timeval t;
                 gettimeofday(&t, NULL);
-                HeartBeat[i] = (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
+                HeartBeat[host] =
+                    (double) t.tv_sec + ((double) t.tv_usec) * 1e-6;
 #else
                 struct timespec t;
                 clock_gettime(CLOCK_REALTIME, &t);
-                HeartBeat[i] = (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
+                HeartBeat[host] =
+                    (double) t.tv_sec + ((double) t.tv_nsec) * 1e-9;
 #endif
                 break;
 
             case NORMALTERM:
-                size = RecvSocket(fd[i], &byte_count_msg,
-                                  sizeof(byte_count_msg), &error);
+                struct rusage *ru;
+
+                ru = (struct rusage *) ulm_malloc(sizeof(struct rusage)
+                                                  *
+                                                  RunParams.
+                                                  ProcessCount[host]);
+                if (NULL == ru) {
+                    ulm_err(("Error: Out of memory\n"));
+                    Abort();
+                }
+                size = RecvSocket(fd[host], ru, sizeof(struct rusage)
+                                  * RunParams.ProcessCount[host], &error);
                 if (size < 0 || error != ULM_SUCCESS) {
                     ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
-                             i, (long) size, error));
+                             host, (long) size, error));
                     Abort();
                 }
 
                 if (RunParams.Verbose) {
-                    ulm_err(("host %d reports normal exit\n", i));
+                    ulm_err(("host %d reports normal exit\n", host));
                 }
 
-                if (ActiveHosts[i]) {
+                if (RunParams.PrintRusage) {
+                    for (int proc = 0; proc < RunParams.ProcessCount[host];
+                         proc++) {
+                        char name[128];
+                        snprintf(name, sizeof(name), "host %d, process %d",
+                                 host, proc);
+                        PrintRusage(name, ru + proc);
+                    }
+                }
+
+                ulm_free(ru);
+
+                if (ActiveHosts[host]) {
                     (*HostsNormalTerminated)++;
                 }
-                ActiveHosts[i] = 0;
+                ActiveHosts[host] = 0;
 
                 // if all hosts have terminated normally notify
                 // all hosts, so that they can stop network
@@ -216,15 +246,16 @@ int CheckForControlMsgs(int MaxDesc,
                         /* send request if socket still open */
                         if (fd[j] > 0) {
                             if (RunParams.Verbose) {
-                                ulm_err(("all hosts done to host %d\n", j));
+                                ulm_err(("all hosts done to host %d\n",
+                                         j));
                             }
                             size = SendSocket(fd[j], 1, &iov);
                             /* if size <= 0 assume connection lost */
                             if (size <= 0) {
-                                if (ActiveHosts[i]) {
+                                if (ActiveHosts[host]) {
                                     (*HostsAbNormalTerminated)++;
                                 }
-                                ActiveHosts[i] = 0;
+                                ActiveHosts[host] = 0;
                             }
                         }
                     }
@@ -233,20 +264,20 @@ int CheckForControlMsgs(int MaxDesc,
 
             case ACKALLHOSTSDONE:
                 if (RunParams.Verbose) {
-                    ulm_err(("host %d done\n", i));
+                    ulm_err(("host %d done\n", host));
                 }
                 (*ActiveClients)--;
-                fd[i] = -1;
+                fd[host] = -1;
                 break;
 
             case ABNORMALTERM:
-                size = RecvSocket(fd[i], &abnormal_term_msg,
+                size = RecvSocket(fd[host], &abnormal_term_msg,
                                   sizeof(abnormal_term_msg), &error);
                 if (size > 0 || error != ULM_SUCCESS) {
                     ulm_err(("Error: Process %d exited abnormally\n",
                              abnormal_term_msg.grank));
                     ulm_err(("host=%d proc=%d pid=%d sig=%d stat=%d\n",
-                             i,
+                             host,
                              abnormal_term_msg.lrank,
                              abnormal_term_msg.pid,
                              abnormal_term_msg.signal,
@@ -257,14 +288,15 @@ int CheckForControlMsgs(int MaxDesc,
 
             case STDIOMSG:
                 if (RunParams.Verbose) {
-                    ulm_err(("stdio: receiving output from host %d\n", i));
+                    ulm_err(("stdio: receiving output from host %d\n",
+                             host));
                 }
-                ActiveHosts[i] = GetIOFromClient(&fd[i]);
+                ActiveHosts[host] = GetIOFromClient(&fd[host]);
                 break;
 
             case STDIOMSG_CTS:
                 if (RunParams.Verbose) {
-                    ulm_err(("stdin: clear to send from host %d\n", i));
+                    ulm_err(("stdin: clear to send from host %d\n", host));
                 }
                 StdInCTS = true;
                 break;
@@ -272,9 +304,9 @@ int CheckForControlMsgs(int MaxDesc,
             default:
                 ulm_err(("Error: Unknown control message: %d\b", tag));
                 Abort();
-            }               /* end switch */
+            }                   /* end switch */
         }
-    }                       /* loop over hosts (i) */
+    }                           /* loop over hosts */
 
     return 0;
 }

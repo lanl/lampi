@@ -35,15 +35,16 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/uio.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/profiler.h"
 #include "internal/types.h"
+#include "internal/state.h"
 
 #include "client/ULMClient.h"
 #include "client/SocketGeneric.h"
@@ -73,7 +74,9 @@ void ClientOrderlyShutdown(int ControlSocketToULMRunFD)
     Tag = NORMALTERM;
     IOVec[0].iov_base = (char *) &Tag;
     IOVec[0].iov_len = (ssize_t) sizeof(unsigned int);
-    IOReturn = SendSocket(ControlSocketToULMRunFD, 1, IOVec);
+    IOVec[1].iov_base = (char *) lampiState.rusage;
+    IOVec[1].iov_len = (ssize_t) sizeof(struct rusage) * local_nprocs();
+    IOReturn = SendSocket(ControlSocketToULMRunFD, 2, IOVec);
 
     /* abort here on error, since not aborting will cause Client to
      *  spin wainting on an ack that will never arive, since the Normalterm

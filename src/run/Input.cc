@@ -184,6 +184,13 @@ Options_t Options[] =
      SetWarnTrue,
      "Enable warning messages", 0, "\0"
     },
+    {"-rusage",
+     "PrintRusage",
+     NO_ARGS,
+     NoOpFunction,
+     SetPrintRusageTrue,
+     "Print resource usage (when available)", 0, "\0"
+    },
     {"-dapp",
      "DirectoryOfBinary",
      STRING_ARGS,
@@ -454,6 +461,7 @@ void Usage(FILE *stream)
             "-local            Run on the local host using fork/exec to spawn processes.\n"
             "-ni NINTERFACES   Maximum number of interfaces to be used by TCP/UDP paths.\n"
             "-q                Suppress start-up messages.\n"
+            "-rusage           Print resource usage (where available).\n"
             "-s MPIRUNHOST     A comma-delimited list of preferred IP interface name\n"
             "                  fragments (whole, suffix, or prefix) or addresses for TCP/IP\n"
             "                  administrative and UDP/IP data traffic.\n"
@@ -1659,6 +1667,7 @@ void SetVerboseTrue(const char *InfoStream)
     RunParams.Quiet = 0;
     RunParams.Verbose = 1;
     RunParams.OutputPrefix = 1;
+    RunParams.PrintRusage = 1;
 }
 
 
@@ -1666,6 +1675,12 @@ void SetWarnTrue(const char *InfoStream)
 {
     RunParams.Warn = 1;
     ulm_warn_enabled = 1;
+}
+
+
+void SetPrintRusageTrue(const char *InfoStream)
+{
+    RunParams.PrintRusage = 1;
 }
 
 

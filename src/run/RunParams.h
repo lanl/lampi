@@ -80,6 +80,12 @@ struct RunParams_t {
     /* number of process on each host */
     int *ProcessCount;
 
+    /* total number of processes */
+    int TotalProcessCount;
+
+    /* maximum number of processes on any host */
+    int MaxProcessCount;
+
     /* Number of hosts that terminated normally */
     int HostsNormalTerminated;
 
@@ -106,6 +112,9 @@ struct RunParams_t {
 
     /* enable warning messages */
     int Warn;
+
+    /* report rusage of clients (where possible) */
+    int PrintRusage;
 
     /* hostname of mpirun host */
     HostName_t mpirunName;

@@ -70,6 +70,7 @@
 #include "init/fork_many.h"
 #include "os/atomic.h"
 #include "internal/malloc.h"
+#include "internal/state.h"
 #include "queue/globals.h"
 
 /*
@@ -174,13 +175,18 @@ static void sigchld_handler(int signo)
     while (1) {
 
         pid_t pid;
+        struct rusage ru;
 
         /*
          * Ask for status until we get a definite result
          */
         do {
             errno = 0;
+#ifdef HAVE_SYS_RESOURCE_H
+            pid = wait3(&status, WNOHANG, &ru);
+#else
             pid = waitpid(-1, &status, WNOHANG);
+#endif
         } while (pid <= 0 && errno == EINTR);
 
         if (pid <= 0) {
@@ -210,6 +216,17 @@ static void sigchld_handler(int signo)
                     abnormal_exitstatus = 0;
                     abnormal_signal = WTERMSIG(status);
                 }
+
+                /*
+                 * Copy rusage info into shared memory
+                 */
+#ifdef HAVE_SYS_RESOURCE_H
+                if (lampiState.useDaemon) {
+                    /* p->rank is local_rank + 1 (daemon is 0) */
+                    memcpy(&(lampiState.rusage[p->rank - 1]),
+                           &ru, sizeof(struct rusage));
+                }
+#endif
             }
         }
 

@@ -82,5 +82,6 @@ void SetOutputPrefixTrue(const char *ErrorString);
 void SetQuietTrue(const char *ErrorString);
 void SetVerboseTrue(const char *ErrorString);
 void SetWarnTrue(const char *ErrorString);
+void SetPrintRusageTrue(const char *ErrorString);
 
 #endif /* _INPUT */

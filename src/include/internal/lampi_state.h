@@ -34,8 +34,24 @@
 #ifndef LAMPI_INTERNAL_LAMPI_STATE_H
 #define LAMPI_INTERNAL_LAMPI_STATE_H
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifndef RUSAGE_SELF
+#define RUSAGE_SELF 0
+#endif
+#ifndef RUSAGE_CHILDREN
+#define RUSAGE_CHILDREN -1
+#endif
 
 #include "internal/types.h"
 #include "os/atomic.h"
@@ -156,6 +172,13 @@ typedef struct {
      */
 
     abnormalExitInfo *AbnormalExit;
+
+    /*
+     * per-process resource usage info (shared memory)
+     */
+#ifdef HAVE_SYS_RESOURCE_H
+    struct rusage *rusage;
+#endif
 
     /* 
      * MPI support
