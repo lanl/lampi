@@ -56,7 +56,7 @@ int PMPI_Startall(int count, MPI_Request array_of_requests[])
 
     while (count--) {
 
-	rc = ulm_start((ULMRequestHandle_t *) array_of_requests++);
+	rc = ulm_start((ULMRequest_t *) array_of_requests++);
         rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 	if (rc != MPI_SUCCESS) {
 	    _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);

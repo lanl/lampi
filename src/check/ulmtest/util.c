@@ -119,7 +119,7 @@ void barrier(int group)
 			   &nproc, sizeof(int)));
 
     for (shift = 1; shift < nproc; shift <<= 1) {
-	ULMRequestHandle_t req;
+	ULMRequest_t req;
 	ULMStatus_t status;
 	int fpeer = self + shift;
 	int bpeer = self - shift;
@@ -178,9 +178,11 @@ void print_status(int group, ULMStatus_t *status)
     printf("[%d.%d] "
 	   "status = (tag:%d, src/dest:%d, state:%d, error:%d, size:%ld)\n",
 	   group, self,
-	   status->tag,
-	   status->proc.source,
-	   status->state, status->error, status->matchedSize);
+	   status->tag_m,
+	   status->peer_m,
+	   status->state_m,
+           status->error_m,
+           status->length_m);
 }
 
 /*
@@ -221,7 +223,7 @@ void print_in_order(int group, char *format, ...)
     int self;
     int peer;
     int tag_mask = 0xCC << 16;
-    ULMRequestHandle_t req;
+    ULMRequest_t req;
     ULMStatus_t status;
     char msgo[8];
     char msgi[8];

@@ -42,7 +42,7 @@
 
 #include "queue/globals.h"             // needed for reliabilityInfo...
 #include "util/DblLinkList.h"        // needed for DoubleLinkList
-#include "path/common/BaseDesc.h"        // needed for BaseSendDesc_t
+#include "path/common/BaseDesc.h"        // needed for SendDesc_t
 #include "path/quadrics/header.h"
 #include "path/quadrics/state.h"
 #include "path/quadrics/dmaThrottle_new.h"
@@ -78,7 +78,7 @@ public:
         flags = 0;
     }
 
-    BaseSendDesc_t *parentSendDesc;     //!< pointer to "owning" message descriptor
+    SendDesc_t *parentSendDesc;     //!< pointer to "owning" message descriptor
     ELAN3_CTX *ctx;                     //!< pointer to Quadrics context for DMA...
     int cmType;                         //!< type of control message (data, mem. req., mem. release)
     int flags;                          //!< state of this frag (see QSF_* defines)
@@ -126,7 +126,7 @@ public:
 
     // called each time this descriptor is removed from the free list
     // ...should be called until true is returned...
-    bool init(BaseSendDesc_t *message = 0,
+    bool init(SendDesc_t *message = 0,
               ELAN3_CTX *context = 0,
               enum quadricsCtlMsgTypes cmtype = MESSAGE_DATA,
               int railnum = 0,
@@ -767,7 +767,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
                                                         MSGTYPE_PT2PT);
         }
-        p->tag_m = parentSendDesc->posted_m.UserTag_m;
+        p->tag_m = parentSendDesc->posted_m.tag_m;
         p->senderID = myproc();
         p->destID = globalDestID;
         p->msgLength = parentSendDesc->posted_m.length_m;
@@ -799,7 +799,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         quadricsMemReq_t *p = &(fragEnvelope->memRequest);
         p->msgLength = parentSendDesc->posted_m.length_m;
         p->sendMessagePtr.ptr = parentSendDesc;
-        p->tag_m = parentSendDesc->posted_m.UserTag_m;
+        p->tag_m = parentSendDesc->posted_m.tag_m;
         p->senderID = myproc();
         p->destID = globalDestID;
         p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,

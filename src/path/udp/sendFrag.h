@@ -65,7 +65,7 @@ public:
     void init();
 
     // Pointer to the send descriptor owning this frag
-    BaseSendDesc_t *parentSendDesc;
+    SendDesc_t *parentSendDesc;
 
     int sendSockfd;		// socket descriptor for sendmsg
     struct msghdr msgHdr;		// udp message header for sendmsg

@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -710,7 +713,7 @@ int Communicator::freeCommunicator()
 void CheckForAckedMessages(double timeNow)
 {
     // Loop over the sends that have not yet been acked.
-    BaseSendDesc_t *SendDesc = 0;
+    SendDesc_t *SendDesc = 0;
     int errorCode;
 
     // lock list to make sure reads are atomic
@@ -718,9 +721,9 @@ void CheckForAckedMessages(double timeNow)
     if (usethreads())
         UnackedPostedSends.Lock.lock();
 
-    for (SendDesc = (BaseSendDesc_t *) UnackedPostedSends.begin();
-         SendDesc != (BaseSendDesc_t *) UnackedPostedSends.end();
-         SendDesc = (BaseSendDesc_t *) SendDesc->next) {
+    for (SendDesc = (SendDesc_t *) UnackedPostedSends.begin();
+         SendDesc != (SendDesc_t *) UnackedPostedSends.end();
+         SendDesc = (SendDesc_t *) SendDesc->next) {
 
         int LockReturn = 1;
         if (usethreads())
@@ -730,24 +733,35 @@ void CheckForAckedMessages(double timeNow)
         if (LockReturn == 1) {  // we've acquired the lock
             // sanity check
             if (SendDesc->path_m
-                && SendDesc->path_m->sendDone(SendDesc, timeNow, &errorCode) ) {
+                && SendDesc->path_m->sendDone(SendDesc, timeNow,
+                                              &errorCode)) {
                 /* for synchronus sends, mark send as complete - overkill
-                *   for the rest of the send types - if we don't mark
-                *   send done here, wait or test will never complete */
-                if( !SendDesc->messageDone )
-                    SendDesc->messageDone=REQUEST_COMPLETE;
-    
-                if( (SendDesc->freeCalled) || (SendDesc->persistFreeCalled) ) {
+                 *   for the rest of the send types - if we don't mark
+                 *   send done here, wait or test will never complete */
+                if (!SendDesc->messageDone) {
+                    SendDesc->messageDone = REQUEST_COMPLETE;
+                    if (!SendDesc->persistent) {
+                        ulm_type_release(SendDesc->datatype);
+                        ulm_type_release(SendDesc->bsendDatatype);
+                    }
+                }
+
+                if ((SendDesc->freeCalled)
+                    || (SendDesc->persistFreeCalled)) {
                     /* a call to free the mpi object has been made,
-                    *   so ok to free this descriptor */
-                        BaseSendDesc_t *TmpDesc = (BaseSendDesc_t *)
-                            UnackedPostedSends.RemoveLinkNoLock(SendDesc);
-                        SendDesc->WhichQueue = ONNOLIST;
-                        if (usethreads())
-                            SendDesc->Lock.unlock();
-                        if ( SendDesc->freeCalled )
-                            SendDesc->path_m->ReturnDesc(SendDesc);
-                        SendDesc = TmpDesc;
+                     *   so ok to free this descriptor */
+                    SendDesc_t *TmpDesc = (SendDesc_t *)
+                        UnackedPostedSends.RemoveLinkNoLock(SendDesc);
+                    SendDesc->WhichQueue = ONNOLIST;
+                    if (SendDesc->persistent) {
+                        ulm_type_release(SendDesc->datatype);
+                        ulm_type_release(SendDesc->bsendDatatype);
+                    }
+                    if (usethreads())
+                        SendDesc->Lock.unlock();
+                    if (SendDesc->freeCalled)
+                        SendDesc->path_m->ReturnDesc(SendDesc);
+                    SendDesc = TmpDesc;
                 } else {
                     if (usethreads())
                         SendDesc->Lock.unlock();
@@ -775,26 +789,26 @@ int CheckForRetransmits()
 {
     int errorCode = ULM_SUCCESS;
 
-    BaseSendDesc_t *sendDesc = 0;
+    SendDesc_t *sendDesc = 0;
     // Loop over sends that have not been acked
 
     // lock list to make sure reads are atomic
     UnackedPostedSends.Lock.lock();
 
-    for (sendDesc = (BaseSendDesc_t *) UnackedPostedSends.begin();
-         sendDesc != (BaseSendDesc_t *) UnackedPostedSends.end();
-         sendDesc = (BaseSendDesc_t *) sendDesc->next) {
+    for (sendDesc = (SendDesc_t *) UnackedPostedSends.begin();
+         sendDesc != (SendDesc_t *) UnackedPostedSends.end();
+         sendDesc = (SendDesc_t *) sendDesc->next) {
 
         // lock descriptor
         sendDesc->Lock.lock();
 
         //check for retransmit
         if (sendDesc->path_m->retransmitP(sendDesc)) {
-            BaseSendDesc_t *TmpDesc = 0;
+            SendDesc_t *TmpDesc = 0;
             do {
                 if (sendDesc->path_m->resend(sendDesc, &errorCode)) {
                     // move to incomplete isend list
-                    TmpDesc = (BaseSendDesc_t *)
+                    TmpDesc = (SendDesc_t *)
                         UnackedPostedSends.RemoveLinkNoLock(sendDesc);
                     IncompletePostedSends.Append(sendDesc);
                 } else if (errorCode == ULM_SUCCESS) {
@@ -817,7 +831,7 @@ int CheckForRetransmits()
 // revisit                    sendDesc->path_m->init(sendDesc);
 // revisit
 // revisit                    // put the descriptor on the incomplete list
-// revisit                    TmpDesc = (BaseSendDesc_t *)
+// revisit                    TmpDesc = (SendDesc_t *)
 // revisit                        UnackedPostedSends.RemoveLinkNoLock(sendDesc);
 // revisit                    IncompletePostedSends.Append(sendDesc);
                 } else {
@@ -850,9 +864,9 @@ int CheckForRetransmits()
     // lock list to make sure reads are atomic
     IncompletePostedSends.Lock.lock();
 
-    for (sendDesc = (BaseSendDesc_t *) IncompletePostedSends.begin();
-         sendDesc != (BaseSendDesc_t *) IncompletePostedSends.end();
-         sendDesc = (BaseSendDesc_t *) sendDesc->next) {
+    for (sendDesc = (SendDesc_t *) IncompletePostedSends.begin();
+         sendDesc != (SendDesc_t *) IncompletePostedSends.end();
+         sendDesc = (SendDesc_t *) sendDesc->next) {
 
         // lock descriptor
         sendDesc->Lock.lock();
@@ -867,21 +881,21 @@ int CheckForRetransmits()
                         break;
                     } else if (errorCode == ULM_ERR_BAD_PATH) {
                         // rebind message to new path
-// revisit                        sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
-// revisit                        // select a new path
-// revisit                        Communicator *commPtr =
-// revisit                            communicators[sendDesc->ctx_m];
-// revisit                        errorCode =
-// revisit                            ((commPtr->
-// revisit                              pt2ptPathSelectionFunction)) ((void *)
-// revisit                                                            sendDesc);
-// revisit                        if (errorCode != ULM_SUCCESS) {
-// revisit                            sendDesc->Lock.unlock();
-// revisit                            ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
-// revisit                            return errorCode;
-// revisit                        }
-// revisit                        // initialize the descriptor for this path
-// revisit                        sendDesc->path_m->init(sendDesc);
+                        if (0) { // +++++++ REVISIT +++++
+                            sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
+                            // select a new path
+                            Communicator *commPtr =
+                                communicators[sendDesc->ctx_m];
+                            errorCode =
+                                ((commPtr->pt2ptPathSelectionFunction)) ((void **) &sendDesc, 0, 0);
+                            if (errorCode != ULM_SUCCESS) {
+                                sendDesc->Lock.unlock();
+                                ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
+                                return errorCode;
+                            }
+                            // initialize the descriptor for this path
+                            sendDesc->path_m->init(sendDesc);
+                        } // -------- REVISIT -------------
                     } else {
                         // unbind should free frag descriptors, etc.
                         sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);

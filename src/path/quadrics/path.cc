@@ -311,7 +311,7 @@ bool quadricsPath::cleanCtlMsgs(int rail, double timeNow, int startIndex, int en
     return true;
 }
 
-bool quadricsPath::sendMemoryRequest(BaseSendDesc_t *message, int gldestProc, size_t offset,
+bool quadricsPath::sendMemoryRequest(SendDesc_t *message, int gldestProc, size_t offset,
                                      size_t memNeeded, int *errorCode)
 {
     quadricsSendFragDesc *sfd;
@@ -424,7 +424,7 @@ bool quadricsPath::sendMemoryRequest(BaseSendDesc_t *message, int gldestProc, si
     return result;
 }
 
-bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
+bool quadricsPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     ELAN3_CTX *ctx;
     ssize_t offset = 0, leftToSend = 0, fragLength = 0;
@@ -447,7 +447,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
     /* destination memory? */
    if ( (nDescToAllocate && (message->posted_m.length_m > CTLHDR_DATABYTES))) {
         gldestProc = communicators[message->ctx_m]->remoteGroup->
-            mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
+            mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
 
         for (int i = 0; i < NUMBER_BUFTYPES; i++) {
             bufCounts[i] = 0;
@@ -555,7 +555,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
         } else if ((offset == 0) || (leftToSend && (leftToSend <= CTLHDR_DATABYTES))) {
             if (offset == 0) {
                 gldestProc = communicators[message->ctx_m]->remoteGroup->
-                    mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
+                    mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
             }
             leftToSend = fragLength = message->posted_m.length_m - offset;
             dest = 0;
@@ -614,7 +614,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
             rail,
             gldestProc,
             tmap_index,
-            (unsigned char *)message->AppAddr,
+            (unsigned char *)message->addr_m,
             offset,
             fragLength,
             dest,
@@ -969,7 +969,7 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 
 #ifdef ENABLE_RELIABILITY
 
-bool quadricsPath::resend(BaseSendDesc_t *message, int *errorCode)
+bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
 

@@ -79,7 +79,7 @@ extern "C" int ulm_allreduce_p2p(const void *s_buf,
         REDUCE_SMALL_BUFSIZE = 2048
     };
     ULMFunc_t *func;
-    ULMRequestHandle_t request;
+    ULMRequest_t request;
     ULMStatus_t status;
     int mask;
     int n;

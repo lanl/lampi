@@ -36,7 +36,7 @@
 int PMPI_Rsend_init(void *buf, int count, MPI_Datatype type, int dest,
 		    int tag, MPI_Comm comm, MPI_Request *request)
 {
-    ULMRequestHandle_t req;
+    ULMRequest_t req;
     ULMType_t *datatype = type;
     int persistent=1;
     int rc;

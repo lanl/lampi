@@ -309,7 +309,7 @@ bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDe
 
 #endif
 
-void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, BaseSendDesc_t *bsd,
+void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
                                                  quadricsSendFragDesc *sfd)
 {
     short whichQueue = sfd->WhichQueue;
@@ -477,7 +477,7 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 {
     quadricsDataAck_t *p = &(envelope.msgDataAck);
     quadricsSendFragDesc *sfd = (quadricsSendFragDesc *)p->sendFragDescPtr.ptr;
-    volatile BaseSendDesc_t *bsd = (volatile BaseSendDesc_t *)sfd->parentSendDesc;
+    volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc;
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
 
@@ -485,9 +485,9 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
         // ACKs from processing simultaneously
 
         if (bsd) {
-            ((BaseSendDesc_t *)bsd)->Lock.lock();
+            ((SendDesc_t *)bsd)->Lock.lock();
             if (bsd != sfd->parentSendDesc) {
-                ((BaseSendDesc_t *)bsd)->Lock.unlock();
+                ((SendDesc_t *)bsd)->Lock.unlock();
                 ReturnDescToPool(getMemPoolIndex());
                 return;
             }
@@ -498,14 +498,14 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 
 #ifdef ENABLE_RELIABILITY
         if (checkForDuplicateAndNonSpecificAck(sfd)) {
-            ((BaseSendDesc_t *)bsd)->Lock.unlock();
+            ((SendDesc_t *)bsd)->Lock.unlock();
             ReturnDescToPool(getMemPoolIndex());
             return;
         }
 #endif
 
-        handlePt2PtMessageAck(timeNow, (BaseSendDesc_t *)bsd, sfd);
-        ((BaseSendDesc_t *)bsd)->Lock.unlock();
+        handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
+        ((SendDesc_t *)bsd)->Lock.unlock();
 
     ReturnDescToPool(getMemPoolIndex());
     return;

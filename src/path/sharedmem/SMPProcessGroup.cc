@@ -107,7 +107,7 @@ checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag)
         //
         // If we have a match...
         //
-        int PostedIrecvTag = WildRecvDesc->posted_m.UserTag_m;
+        int PostedIrecvTag = WildRecvDesc->posted_m.tag_m;
         if ((FragUserTag == PostedIrecvTag) ||
             (PostedIrecvTag == ULM_ANY_TAG)) {
             if (PostedIrecvTag == ULM_ANY_TAG && FragUserTag < 0) {
@@ -145,7 +145,7 @@ RecvDesc_t *Communicator::checkSMPSpecificRecvListForMatch
         //
         // If we have a match...
         //
-        int PostedIrecvTag = SpecificDesc->posted_m.UserTag_m;
+        int PostedIrecvTag = SpecificDesc->posted_m.tag_m;
         if ((FragUserTag == PostedIrecvTag)
             || (PostedIrecvTag == ULM_ANY_TAG)) {
             if (PostedIrecvTag == ULM_ANY_TAG && FragUserTag < 0) {
@@ -197,7 +197,7 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
             //
             // If we have a match...
             //
-            int WildIRecvTag = WildRecvDesc->posted_m.UserTag_m;
+            int WildIRecvTag = WildRecvDesc->posted_m.tag_m;
             if ((SendUserTag == WildIRecvTag)
                 || (WildIRecvTag == ULM_ANY_TAG)) {
                 if (!(WildIRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {
@@ -238,7 +238,7 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
             //
             // If we have a match...
             //
-            int SpecificRecvTag = SpecificDesc->posted_m.UserTag_m;
+            int SpecificRecvTag = SpecificDesc->posted_m.tag_m;
             if ((SendUserTag == SpecificRecvTag)
                 || (SpecificRecvTag == ULM_ANY_TAG)) {
                 if (!(SpecificRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {

@@ -1,29 +1,29 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
+ * Copyright 2002-2003. The Regents of the University of California. This material
+ * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
+ * National Laboratory, which is operated by the University of California for
+ * the U.S. Department of Energy. The Government is granted for itself and
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+ * license in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years after
+ * October 10,2002 subject to additional five-year worldwide renewals, the
+ * Government is granted for itself and others acting on its behalf a paid-up,
+ * nonexclusive, irrevocable worldwide license in this material to reproduce,
+ * prepare derivative works, distribute copies to the public, perform publicly
+ * and display publicly, and to permit others to do so. NEITHER THE UNITED
+ * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
+ * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
+ * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
+ * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
  * OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * Additionally, this program is free software; you can distribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2 of the License,
+ * or any later version.  Accordingly, this program is distributed in the hope
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
@@ -53,78 +53,72 @@
  * The descriptor is allocated from the library's internal pools and
  * then filled in.  A request object is also allocated.
  */
-extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
-                              int sourceProc, int tag, int comm,
-                              ULMRequestHandle_t *request, int persistent)
+extern "C" int ulm_irecv_init(void *buf,
+                              size_t size,
+                              ULMType_t *dtype,
+                              int sourceProc,
+                              int tag,
+                              int comm,
+                              ULMRequest_t *request,
+                              int persistent)
 {
-    int errorCode;
-    RecvDesc_t *RecvDescriptor;
+    RecvDesc_t *RecvDesc;
+    int rc;
+
+    // get a receive request descriptor
 
     if (usethreads()) {
-        RecvDescriptor = IrecvDescPool.getElement(0, errorCode);
-        if (errorCode != ULM_SUCCESS)
-            return errorCode;
+        RecvDesc = IrecvDescPool.getElement(0, rc);
+        if (rc != ULM_SUCCESS) {
+            return rc;
+        }
     } else {
-        RecvDescriptor = IrecvDescPool.getElementNoLock(0, errorCode);
-        if (errorCode != ULM_SUCCESS)
-            return errorCode;
+        RecvDesc = IrecvDescPool.getElementNoLock(0, rc);
+        if (rc != ULM_SUCCESS) {
+            return rc;
+        }
     }
 
-    // set done flag to false
-    RecvDescriptor->messageDone = REQUEST_INCOMPLETE;
+    // initialize descriptor
 
-    // set ulm_free_request() called flag to false
-    RecvDescriptor->freeCalled = false;
-
-    RecvDescriptor->WhichQueue = REQUESTINUSE;
-
-    // set value of pointer
-    *request = (ULMRequestHandle_t) RecvDescriptor;
-
-    // set message type in ReturnHandle
-    RecvDescriptor->requestType = REQUEST_TYPE_RECV;
-
-    // set data type
-    RecvDescriptor->datatype = dtype;
-
-    // set receive address
-    if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        RecvDescriptor->AppAddr = (void *)((char *)buf + dtype->type_map[0].offset);
+    RecvDesc->WhichQueue = REQUESTINUSE;
+    RecvDesc->requestType = REQUEST_TYPE_RECV;
+    RecvDesc->messageDone = REQUEST_INCOMPLETE; // used by test/wait
+    RecvDesc->freeCalled = false;               // ulm_free_request() called
+    RecvDesc->status = ULM_STATUS_INITED;
+    RecvDesc->posted_m.peer_m = sourceProc;
+    RecvDesc->ctx_m = comm;
+    RecvDesc->posted_m.tag_m = tag;
+    RecvDesc->datatype = dtype;
+    if ((dtype != NULL) &&
+        (dtype->layout == CONTIGUOUS) &&
+        (dtype->num_pairs != 0)) {
+        RecvDesc->addr_m = (void *) ((char *) buf +
+                                      dtype->type_map[0].offset);
+    } else {
+        RecvDesc->addr_m = buf;
     }
-    else {
-        RecvDescriptor->AppAddr = buf;
-    }
-
-    // set destination process (need to check for completion)
-    RecvDescriptor->posted_m.proc.source_m = sourceProc;
-
-    // set communicator
-    RecvDescriptor->ctx_m = comm;
-
-    // set tag
-    RecvDescriptor->posted_m.UserTag_m = tag;
-
-    // set posted length
-    //
     if (dtype == NULL) {
-        RecvDescriptor->posted_m.length_m = size;
+        RecvDesc->posted_m.length_m = size;
     } else {
-        RecvDescriptor->posted_m.length_m = dtype->packed_size * size;
+        RecvDesc->posted_m.length_m = dtype->packed_size * size;
     }
 
-    // set request state to inactive
-    RecvDescriptor->status = ULM_STATUS_INITED;
+    // persistent request?
 
-    // set the persistence flag
     if (persistent) {
-        RecvDescriptor->persistent = true;
+        RecvDesc->persistent = true;
         // increment requestRefCount
         communicators[comm]->refCounLock.lock();
         (communicators[comm]->requestRefCount)++;
         communicators[comm]->refCounLock.unlock();
+        // increment datatype reference count
+        ulm_type_retain(RecvDesc->datatype);
     } else {
-        RecvDescriptor->persistent = false;
+        RecvDesc->persistent = false;
     }
+
+    *request = (ULMRequest_t) RecvDesc;
 
     return ULM_SUCCESS;
 }

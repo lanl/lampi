@@ -33,7 +33,7 @@
 
 #include "queue/globals.h"	        // needed for reliabilityInfo
 #include "util/DblLinkList.h"	// needed for DoubleLinkList
-#include "path/common/BaseDesc.h"	// needed for BaseSendDesc_t
+#include "path/common/BaseDesc.h"	// needed for SendDesc_t
 #include "path/common/path.h"
 #include "path/gm/state.h"               // GM runtime state
 
@@ -60,7 +60,7 @@ public:
 
     bool init(int globalDestProc = -1,
               int tmapIndex = -1,
-              BaseSendDesc_t *parentSendDesc = NULL,
+              SendDesc_t *parentSendDesc = NULL,
               size_t seqOffset = 0,
               size_t length = 0,
               BasePath_t *failedPath = NULL,

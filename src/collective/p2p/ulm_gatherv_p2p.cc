@@ -42,7 +42,7 @@ extern "C" int ulm_gatherv_p2p(void *sendbuf, int sendcount,
                                ULMType_t *recvtype, int root, int comm)
 {
     int proc, nproc, self, rc, tag, completed;
-    ULMRequestHandle_t sreq, *rreq;
+    ULMRequest_t sreq, *rreq;
     ULMStatus_t sstat;
     unsigned char *ptr;
 
@@ -62,8 +62,8 @@ extern "C" int ulm_gatherv_p2p(void *sendbuf, int sendcount,
         }
 
         /* allocate array of request handles */
-        rreq = (ULMRequestHandle_t *) 
-            malloc(nproc * sizeof(ULMRequestHandle_t));
+        rreq = (ULMRequest_t *) 
+            malloc(nproc * sizeof(ULMRequest_t));
         if (rreq == NULL) {
             return ULM_ERROR;
         }

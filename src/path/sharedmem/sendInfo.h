@@ -37,7 +37,7 @@
 class RecvDesc_t;
 class SMPFragDesc_t;
 class SMPSecondFragDesc_t;
-class BaseSendDesc_t;
+class SendDesc_t;
 
 /* data that needs to be allocated in shared memory */
 typedef struct sharedMemData : Links_t {
@@ -58,11 +58,11 @@ public:
 
 	/* copy to internal buffer function */
 	void CopyToULMBuffers(SMPFragDesc_t *descriptor,
-		BaseSendDesc_t *message);
+		SendDesc_t *message);
 
 	/* copy to internal buffer function - second fragment */
 	void CopyToULMBuffers(SMPSecondFragDesc_t *descriptor,
-		BaseSendDesc_t *message);
+		SendDesc_t *message);
 
 };
 

@@ -36,7 +36,7 @@
 int PMPI_Ssend(void *buf, int count, MPI_Datatype type, int dest,
 	       int tag, MPI_Comm comm)
 {
-    ULMRequestHandle_t req;
+    ULMRequest_t req;
     ULMStatus_t stat;
     ULMType_t *datatype = type;
     int rc;

@@ -37,7 +37,7 @@
 #include "ulm/ulm.h"
 #include "queue/globals.h"
 
-extern "C" int ulm_request_status(ULMRequestHandle_t request)
+extern "C" int ulm_request_status(ULMRequest_t request)
 {
     if (!request) { return ULM_STATUS_INVALID; }
     RequestDesc_t *tmpRequest = (RequestDesc_t *)request;

@@ -40,7 +40,6 @@
  */
 
 extern "C" int ulm_attr_delete(int comm, int keyval)
-
 {
     int returnValue=MPI_SUCCESS;
 

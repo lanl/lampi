@@ -69,7 +69,7 @@ RecvDesc_t *Communicator::isThisMissingFrag(BaseRecvFragDesc_t *rec)
         //
         if ((rec->isendSeq_m == SpecificDesc->isendSeq_m) &&
             // rec->SourceProcess is the the real source, so always >=0
-            (((int) (SourceProcess)) == SpecificDesc->reslts_m.proc.source_m)) {
+            (((int) (SourceProcess)) == SpecificDesc->reslts_m.peer_m)) {
             //
             // Match found
             //
@@ -105,7 +105,7 @@ RecvDesc_t *Communicator::isThisMissingFrag(BaseRecvFragDesc_t *rec)
 void Communicator::SearchForFragsWithSpecifiedISendSeqNum
 (RecvDesc_t *MatchedPostedRecvHeader, bool *recvDone, double timeNow)
 {
-    int SendingProc = MatchedPostedRecvHeader->reslts_m.proc.source_m;
+    int SendingProc = MatchedPostedRecvHeader->reslts_m.peer_m;
     /* get sequence number */
     unsigned long SendingSequenceNumber =
         MatchedPostedRecvHeader->isendSeq_m;
@@ -159,8 +159,8 @@ void Communicator::SearchForFragsWithSpecifiedISendSeqNum
 void Communicator::SearchForFragsWithSpecifiedTag
 (RecvDesc_t *MatchedPostedRecvHeader, bool *recvDone, double timeNow)
 {
-    int SendingProc = MatchedPostedRecvHeader->posted_m.proc.source_m;
-    int tag = MatchedPostedRecvHeader->posted_m.UserTag_m;
+    int SendingProc = MatchedPostedRecvHeader->posted_m.peer_m;
+    int tag = MatchedPostedRecvHeader->posted_m.tag_m;
 
     // lock list for thread safety
     if(usethreads()) {
@@ -401,7 +401,7 @@ checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec)
         //
         // If we have a match...
         //
-        int PostedIrecvTag = WildDesc->posted_m.UserTag_m;
+        int PostedIrecvTag = WildDesc->posted_m.tag_m;
         if ((FragUserTag == PostedIrecvTag) ||
             (PostedIrecvTag == ULM_ANY_TAG)) {
             if (PostedIrecvTag == ULM_ANY_TAG && FragUserTag < 0) {
@@ -412,8 +412,8 @@ checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec)
             //
             WildDesc->isendSeq_m = rec->isendSeq_m;
             WildDesc->reslts_m.length_m = rec->msgLength_m;
-            WildDesc->reslts_m.proc.source_m = rec->srcProcID_m;
-            WildDesc->reslts_m.UserTag_m = rec->tag_m;
+            WildDesc->reslts_m.peer_m = rec->srcProcID_m;
+            WildDesc->reslts_m.tag_m = rec->tag_m;
             //
             // Mark that this is the matching irecv, and go
             // to process it.
@@ -458,7 +458,7 @@ RecvDesc_t *Communicator::checkSpecificPostedRecvListForMatch(BaseRecvFragDesc_t
         //
         // If we have a match...
         //
-        int PostedIrecvTag = SpecificDesc->posted_m.UserTag_m;
+        int PostedIrecvTag = SpecificDesc->posted_m.tag_m;
         if ((FragUserTag == PostedIrecvTag)
             || (PostedIrecvTag == ULM_ANY_TAG)) {
             if (PostedIrecvTag == ULM_ANY_TAG && FragUserTag < 0) {
@@ -468,8 +468,8 @@ RecvDesc_t *Communicator::checkSpecificPostedRecvListForMatch(BaseRecvFragDesc_t
             // fill in received data information
             //
             SpecificDesc->reslts_m.length_m = rec->msgLength_m;
-            SpecificDesc->reslts_m.proc.source_m = rec->srcProcID_m;
-            SpecificDesc->reslts_m.UserTag_m = rec->tag_m;
+            SpecificDesc->reslts_m.peer_m = rec->srcProcID_m;
+            SpecificDesc->reslts_m.tag_m = rec->tag_m;
             SpecificDesc->isendSeq_m = rec->isendSeq_m;
             //
             // Mark that this is the matching irecv, and put this into the
@@ -523,7 +523,7 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
             //
             // If we have a match...
             //
-            int WildIRecvTag = WildDesc->posted_m.UserTag_m;
+            int WildIRecvTag = WildDesc->posted_m.tag_m;
             if ((SendUserTag == WildIRecvTag)
                 || (WildIRecvTag == ULM_ANY_TAG)) {
                 if (!(WildIRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {
@@ -532,8 +532,8 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
                     //
                     WildDesc->reslts_m.length_m = rec->msgLength_m;
                     WildDesc->isendSeq_m = rec->isendSeq_m;
-                    WildDesc->reslts_m.proc.source_m = SrcProc;
-                    WildDesc->reslts_m.UserTag_m = SendUserTag;
+                    WildDesc->reslts_m.peer_m = SrcProc;
+                    WildDesc->reslts_m.tag_m = SendUserTag;
 
                     //
                     // Mark it and process it.
@@ -575,7 +575,7 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
             //
             // If we have a match...
             //
-            int SpecificRecvTag = SpecificDesc->posted_m.UserTag_m;
+            int SpecificRecvTag = SpecificDesc->posted_m.tag_m;
             if ((SendUserTag == SpecificRecvTag)
                 || (SpecificRecvTag == ULM_ANY_TAG)) {
                 if (!(SpecificRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {
@@ -583,7 +583,7 @@ RecvDesc_t *Communicator::checkSpecificAndWildPostedRecvListForMatch
                     // fill in received data information
                     //
                     SpecificDesc->reslts_m.length_m = rec->msgLength_m;
-                    SpecificDesc->reslts_m.proc.source_m = SrcProc;
+                    SpecificDesc->reslts_m.peer_m = SrcProc;
                     SpecificDesc->isendSeq_m = rec->isendSeq_m;
 
                     //

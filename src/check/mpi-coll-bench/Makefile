@@ -1,11 +1,10 @@
-CC		:= gcc
-CPPFLAGS        := -I../../include
-LDFLAGS         := -L../..
-LDLIBS          := -lmpi -lm
-LDFLAGS         += -Wl,-rpath ../..
+CFLAGS  += $(MPI_COMPILE_FLAGS)
+LDFLAGS += $(MPI_LD_FLAGS)
+#LDFLAGS += -Wl,-rpath $(MPI_ROOT)/lib
+LDLIBS  := -lmpi -lm
 
-TARGET          := mpi-coll-bench
-MPIRUN          := ../../mpirun
+TARGET  := mpi-coll-bench
+MPIRUN  := $(MPI_ROOT)/bin/mpirun
 
 all: $(TARGET)
 

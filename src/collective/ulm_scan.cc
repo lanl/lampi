@@ -206,7 +206,7 @@ int _ulm_scan(const void *sendbuf,
 
     for (shift = 1; shift < nproc; shift <<= 1) {
 
-	ULMRequestHandle_t req;
+	ULMRequest_t req;
 	ULMStatus_t status;
 	int send_peer;
 	int recv_peer;

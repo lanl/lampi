@@ -157,7 +157,7 @@ public:
     // bind a message to this path, always return false if pathActive is false.
     // allocate network resources necessary to send this message for 1 or more destinations
     // in globalDestProcessIDArray
-    virtual bool bind(BaseSendDesc_t *message, int *globalDestProcessIDArray,
+    virtual bool bind(SendDesc_t *message, int *globalDestProcessIDArray,
                       int destArrayCount, int *errorCode) {
         if (pathActive) {
             message->path_m = this;
@@ -169,27 +169,27 @@ public:
     // unbind a message frag and release all path and network resources used for this
     // message; if destArray == 0, then unbind this message from all destinations.
     // otherwise, just unbind resources used to go to the specific list of destinations
-    virtual void unbind(BaseSendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount) {
+    virtual void unbind(SendDesc_t *message, int *globalDestProcessIDArray, int destArrayCount) {
         if (message->path_m == this) {
             message->path_m = 0;
         }
     }
 
     // path-specific initialization
-    virtual bool init(BaseSendDesc_t *message) { return true; }
+    virtual bool init(SendDesc_t *message) { return true; }
 
     // actually send this message via this path
     // will return false if the path is not capable of sending the message -- need to rebind;
     // will return true if the path is capable, and will set incomplete to true/false depending
     // upon the state of the message at the end of the call;
     // errorCode is only set if false is returned
-    virtual bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode) {
+    virtual bool send(SendDesc_t *message, bool *incomplete, int *errorCode) {
         *errorCode = ULM_SUCCESS;
         return true;
     }
 
     // is the send done?
-    virtual bool sendDone(BaseSendDesc_t *message, double timeNow, int *errorCode) {
+    virtual bool sendDone(SendDesc_t *message, double timeNow, int *errorCode) {
 	    unsigned int nAcked;
 	    if ( message->path_m->pathType_m == SHAREDMEM ){
 		    nAcked=message->pathInfo.sharedmem.sharedData->NumAcked;
@@ -209,7 +209,7 @@ public:
         *errorCode = ULM_SUCCESS; return true; }
 
     // return the message descritor to the free list
-    virtual void ReturnDesc(BaseSendDesc_t *message, int poolIndex=-1);
+    virtual void ReturnDesc(SendDesc_t *message, int poolIndex=-1);
 
     // called via progress call to send (or push) miscellaneous non-message related data, such as
     // control messages, etc.
@@ -230,13 +230,13 @@ public:
     virtual void deactivate() { pathActive = false; }
 
 #ifdef ENABLE_RELIABILITY
-    virtual bool retransmitP(BaseSendDesc_t *message) { return false; }
+    virtual bool retransmitP(SendDesc_t *message) { return false; }
 
     // returns true if message needs to be moved to a an incomplete list for further
     // send processing; returns false with errorCode = ULM_SUCCESS, if there is
     // no need to move the descriptor -- and with errorCode = ULM_ERR_BAD_PATH, if
     // the message must be rebound to a new path
-    virtual bool resend(BaseSendDesc_t *message, int *errorCode) { *errorCode = ULM_SUCCESS; return false; }
+    virtual bool resend(SendDesc_t *message, int *errorCode) { *errorCode = ULM_SUCCESS; return false; }
 #endif
 };
 

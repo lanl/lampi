@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -152,16 +155,17 @@ int non_contiguous_copy(BaseRecvFragDesc_t *frag,
     return ULM_SUCCESS;
 }
 
-
-void BaseSendDesc_t::shallowCopyTo(RequestDesc_t *request)
+void SendDesc_t::shallowCopyTo(RequestDesc_t *request)
 {
-    BaseSendDesc_t	*sendDesc = (BaseSendDesc_t *)request;
+    SendDesc_t	*sendDesc = (SendDesc_t *)request;
 
     RequestDesc_t::shallowCopyTo(request);
     sendDesc->bsendBufferSize = bsendBufferSize;
     sendDesc->sendType = sendType;
-    sendDesc->AppAddr = AppAddr;
+    sendDesc->addr_m = addr_m;
     sendDesc->posted_m = posted_m;
+
+    ulm_type_retain(sendDesc->bsendDatatype);
 }
 
 
@@ -182,7 +186,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     unsigned long Offset = FragDesc->dataOffset();
 
     // destination buffer
-    void *Destination = (void *) ((char *) AppAddr + Offset);
+    void *Destination = (void *) ((char *) addr_m + Offset);
 
     // length to copy
     ssize_t lengthToCopy = FragDesc->length_m;
@@ -193,32 +197,32 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     datatype = this->datatype;
 
     if (AppBufferLen <= 0) {
-    	    FragDesc->MarkDataOK(true);
-	    // mark recv as complete
-	    lengthToCopy=0;
-	    bytesIntoBitBucket=FragDesc->length_m;
+        FragDesc->MarkDataOK(true);
+        // mark recv as complete
+        lengthToCopy=0;
+        bytesIntoBitBucket=FragDesc->length_m;
     } else {
-	    if (AppBufferLen < lengthToCopy) 
-		    lengthToCopy=AppBufferLen;
-	    bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
-	    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
-		    // copy the data
-		    checkSum =
-			    FragDesc->CopyFunction(FragDesc->addr_m, 
-					    Destination, lengthToCopy);
-	    } else {                    
-		    // Non-contiguous case
-		    non_contiguous_copy(FragDesc, datatype, AppAddr, 
-				    &lengthToCopy, &checkSum);
-	    }
+        if (AppBufferLen < lengthToCopy) 
+            lengthToCopy=AppBufferLen;
+        bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
+        if (datatype == NULL || datatype->layout == CONTIGUOUS) {
+            // copy the data
+            checkSum =
+                FragDesc->CopyFunction(FragDesc->addr_m, 
+                                       Destination, lengthToCopy);
+        } else {                    
+            // Non-contiguous case
+            non_contiguous_copy(FragDesc, datatype, addr_m, 
+                                &lengthToCopy, &checkSum);
+        }
 
-	    // check to see if data arrived ok
-	    dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
+        // check to see if data arrived ok
+        dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
 
-	    // return number of bytes copied
-	    if (!dataNotCorrupted) {
-		    return (-1);
-	    }
+        // return number of bytes copied
+        if (!dataNotCorrupted) {
+            return (-1);
+        }
     }
 
     // update byte count
@@ -238,8 +242,8 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         // remove recv desc from list
         Comm = communicators[ctx_m];
         if (WhichQueue == MATCHEDIRECV) {
-            Comm->privateQueues.MatchedRecv[reslts_m.proc.source_m]
-		    ->RemoveLink(this);
+            Comm->privateQueues.MatchedRecv[reslts_m.peer_m]
+                ->RemoveLink(this);
         }
 
         // if ulm_request_free has already been called, then 
@@ -270,7 +274,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     unsigned long Offset = FragDesc->dataOffset();
 
     // destination buffer
-    void *Destination = (void *) ((char *) AppAddr + Offset);
+    void *Destination = (void *) ((char *) addr_m + Offset);
 
     // length to copy
     ssize_t lengthToCopy = FragDesc->length_m;
@@ -282,42 +286,42 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     datatype = this->datatype;
 
     if (AppBufferLen <= 0) {
-    	    FragDesc->MarkDataOK(true);
-	    // mark recv as complete
-	    lengthToCopy=0;
-	    bytesIntoBitBucket=FragDesc->length_m;
+        FragDesc->MarkDataOK(true);
+        // mark recv as complete
+        lengthToCopy=0;
+        bytesIntoBitBucket=FragDesc->length_m;
     } else {
-	    if (AppBufferLen < lengthToCopy) 
-		    lengthToCopy=AppBufferLen;
-	    bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
-	    if (datatype == NULL || datatype->layout == CONTIGUOUS) {
-		    // copy the data
-		    checkSum =
-			    FragDesc->CopyFunction(FragDesc->addr_m, 
-					    Destination, lengthToCopy);
-	    } else {                    
-		    // Non-contiguous case
-		    non_contiguous_copy(FragDesc, datatype, AppAddr, 
-				    &lengthToCopy, &checkSum);
-	    }
+        if (AppBufferLen < lengthToCopy) 
+            lengthToCopy=AppBufferLen;
+        bytesIntoBitBucket=FragDesc->length_m -lengthToCopy;
+        if (datatype == NULL || datatype->layout == CONTIGUOUS) {
+            // copy the data
+            checkSum =
+                FragDesc->CopyFunction(FragDesc->addr_m, 
+                                       Destination, lengthToCopy);
+        } else {                    
+            // Non-contiguous case
+            non_contiguous_copy(FragDesc, datatype, addr_m, 
+                                &lengthToCopy, &checkSum);
+        }
 
-	    // check to see if data arrived ok
-	    dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
-	    // return number of bytes copied
-	    if (!dataNotCorrupted) {
-		    return (-1);
-	    }
+        // check to see if data arrived ok
+        dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
+        // return number of bytes copied
+        if (!dataNotCorrupted) {
+            return (-1);
+        }
     }
 
     // update byte count
     if (usethreads()) {
-	    Lock.lock();
-	    DataReceived += lengthToCopy;
-	    DataInBitBucket += bytesIntoBitBucket;
-	    Lock.unlock();
+        Lock.lock();
+        DataReceived += lengthToCopy;
+        DataInBitBucket += bytesIntoBitBucket;
+        Lock.unlock();
     } else {
-	    DataReceived += lengthToCopy;
-	    DataInBitBucket += bytesIntoBitBucket;
+        DataReceived += lengthToCopy;
+        DataInBitBucket += bytesIntoBitBucket;
     }
 
     // check to see if receive is complete, and if so mark the request
@@ -334,8 +338,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 
         // remove receive descriptor from list
         Comm = communicators[ctx_m];
-        Comm->privateQueues.MatchedRecv[reslts_m.proc.source_m]->
-		RemoveLink(this);
+        Comm->privateQueues.MatchedRecv[reslts_m.peer_m]->RemoveLink(this);
 
         // if ulm_request_free() has already been called, then we
         // free the recv/request object here...
@@ -382,10 +385,10 @@ int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
             length = AppBufferLen;
         }
 
-        Destination = (void *) ((char *) AppAddr + sequentialOffset);   // Destination buffer
+        Destination = (void *) ((char *) addr_m + sequentialOffset);   // Destination buffer
         MEMCOPY_FUNC(fragAddr, Destination, length);
     } else {
-        contiguous_to_noncontiguous_copy(datatype, AppAddr, &length,
+        contiguous_to_noncontiguous_copy(datatype, addr_m, &length,
                                          sequentialOffset, fragLen,
                                          fragAddr);
     }
@@ -417,11 +420,10 @@ void RecvDesc_t::requestFree(void)
     
     // return request to free list
     if (usethreads()) {
-	    IrecvDescPool.returnElement(this);
+        IrecvDescPool.returnElement(this);
     } else {
-	    IrecvDescPool.returnElementNoLock(this);
+        IrecvDescPool.returnElementNoLock(this);
     }
 
     return;
 }
-

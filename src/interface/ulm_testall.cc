@@ -48,7 +48,7 @@
  * \param completed     Flag to set if request is complete
  * \return              ULM return code
  */
-extern "C" int ulm_testall(ULMRequestHandle_t *requestArray, int numRequests,
+extern "C" int ulm_testall(ULMRequest_t *requestArray, int numRequests,
                            int *completed)
 {
     RequestDesc_t *tmpRequest;

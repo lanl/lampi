@@ -42,7 +42,7 @@ int PMPI_Request_free(MPI_Request *request)
         return MPI_SUCCESS;
     }
 
-    rc = ulm_request_free((ULMRequestHandle_t *) request);
+    rc = ulm_request_free((ULMRequest_t *) request);
 
     rc =  (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 

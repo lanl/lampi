@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
- * National Laboratory, which is operated by the University of California for
- * the U.S. Department of Energy. The Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years after
- * October 10,2002 subject to additional five-year worldwide renewals, the
- * Government is granted for itself and others acting on its behalf a paid-up,
- * nonexclusive, irrevocable worldwide license in this material to reproduce,
- * prepare derivative works, distribute copies to the public, perform publicly
- * and display publicly, and to permit others to do so. NEITHER THE UNITED
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the License,
- * or any later version.  Accordingly, this program is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,100 +38,162 @@
 #include <string.h>             // for memcpy
 #include <sys/types.h>          // For fd_set in BaseRecvFragDesc_t
 
-#include "client/ULMClientTypes.h"
 #include "util/DblLinkList.h"
 #include "util/MemFunctions.h"
 #include "internal/constants.h"
 #include "internal/state.h"
 #include "ulm/ulm.h"
 
-// network path specific objects embbedded in BaseSendDesc_t
+// network path specific objects embbedded in SendDesc_t
 #include "path/udp/sendInfo.h"
 #include "path/quadrics/sendInfo.h"
 #include "path/sharedmem/sendInfo.h"
 
-#define REQUEST_TYPE_SEND   1
-#define REQUEST_TYPE_RECV   2
+enum RequestType_t {
+    REQUEST_TYPE_SEND = 1,
+    REQUEST_TYPE_RECV = 2
+};
+
+enum RequestState_t {
+    REQUEST_INCOMPLETE=0,
+    REQUEST_COMPLETE,
+    REQUEST_RELEASED
+};
 
 // forward declarations
 class SMPFragDesc_t;
 class SMPSecondFragDesc_t;
 class BasePath_t;
 
-// BaseSendDesc_t:
+
+// RequestDesc_t:
+//
+// A super class for both send and receive descriptors
+
+struct RequestDesc_t : public Links_t {
+
+    struct Status_t {
+        size_t length_m;	// length of request
+        int peer_m;	        // peer process (source for recv, destination for send)
+        int tag_m;	        // user tag
+    };
+
+    ULMType_t *datatype;        // datatype (NULL => contiguous)
+    int ctx_m;                  // communicator ID
+    int requestType;            // request type - send or receive
+    int status;                 // indicates request status
+    bool persistent;            // persistence flag
+    bool freeCalled;            // true when ulm_request_free is
+                                // called before recv. request complete
+    bool persistFreeCalled;     // used for tracking when user calls
+                                // request_free on persistent requests
+    volatile int messageDone;   // message completion flag
+
+    // default constructor
+    RequestDesc_t()
+        {
+        }
+
+    // constructor
+    RequestDesc_t(int poolIndex)
+        {
+            WhichQueue = REQUESTFREELIST;
+        }
+
+    virtual void shallowCopyTo(RequestDesc_t *request)
+        {
+            /*
+             * Copies field values of current object to passed request.
+             * This is mainly used for persistent requests where the
+             * underlying send descriptor could change (refer to
+             * ulm_start() logic).
+             */
+            request->datatype = datatype;
+            request->ctx_m = ctx_m;
+            request->requestType = requestType;
+            request->persistent = persistent;
+
+            ulm_type_retain(datatype);
+        }
+};
+
+
+// SendDesc_t:
 //
 // A super class for descriptors to manage sent messages.
 //
 // It stores a pointer to the data structures actually used to send
 // data, and to monitor the progress of this specific message.
 
-class BaseSendDesc_t : public RequestDesc_t
+class SendDesc_t : public RequestDesc_t
 {
 public:
 
     // Data members
 
-    BasePath_t *path_m;     // pointer to path object
+    BasePath_t * path_m;        // pointer to path object
 
     // path specific info/data
     union {
         udpSendInfo udp;
         quadricsSendInfo quadrics;
-	sharedmemSendInfo sharedmem;
+        sharedmemSendInfo sharedmem;
     } pathInfo;
 
-    Locks Lock;                     // lock
-    DoubleLinkList FragsToAck;      // double link list of frags that need to be acked
-    DoubleLinkList FragsToSend;     // double link list of frags that need to be sent
-    bool clearToSend_m;             // flag for flow control, frags are only sent when true
-    unsigned long isendSeq_m;        // library specified tag
-    void *AppAddr;                  // pointer to the base of the data
-    unsigned numfrags;              // number of frags that will be sent
-    volatile unsigned NumAcked;     //  number of acks received
-    volatile unsigned NumFragDescAllocated; // number of frag descriptors allocated
-    volatile unsigned NumSent;      // the number that have had the 'action' applied
-    int maxOutstandingFrags;        // maximum outstanding frags - for flow control
-    msgRequest posted_m;
+    Locks Lock;                 // lock
+    DoubleLinkList FragsToAck;  // double link list of frags that need to be acked
+    DoubleLinkList FragsToSend; // double link list of frags that need to be sent
+    bool clearToSend_m;         // flag for flow control, frags are only sent when true
+    unsigned long isendSeq_m;   // library specified tag
+    void *addr_m;              // pointer to the base of the data
+    unsigned numfrags;          // number of frags that will be sent
+    volatile unsigned NumAcked; //  number of acks received
+    volatile unsigned NumFragDescAllocated;     // number of frag descriptors allocated
+    volatile unsigned NumSent;  // the number that have had the 'action' applied
+    int maxOutstandingFrags;    // maximum outstanding frags - for flow control
+    Status_t posted_m;
 
 #ifdef ENABLE_RELIABILITY
     double earliestTimeToResend;
 #endif
 
     int sendType;               // send type - normal, buffered, synchronous, or ready
-    ssize_t bsendOffset;            // bsend buffer allocation offset
-    void *appBufferPointer;		// set to point to the original buffer (which
-                                // can be different from AppAddr -- MPI_Bsend)
-    ULMType_t *bsendDatatype;	// original datatype (NULL => contiguous)
-    size_t bsendBufferSize;		// the size of the buffer needed to pack the bsend data
+    ssize_t bsendOffset;        // bsend buffer allocation offset
+    void *appBufferPointer;     // set to point to the original buffer (which
+    // can be different from addr_m -- MPI_Bsend)
+    ULMType_t *bsendDatatype;   // original datatype (NULL => contiguous)
+    size_t bsendBufferSize;     // the size of the buffer needed to pack the bsend data
 
-    int bsendDtypeCount;	// datatype element count of original bsend data
+    int bsendDtypeCount;        // datatype element count of original bsend data
 
     // Methods
 
     // constructor
-    BaseSendDesc_t() : clearToSend_m(true)
+    SendDesc_t():clearToSend_m(true)
         {
             // initialize desriptor queue location - assumed to start on the
             // free list
             WhichQueue = SENDDESCFREELIST;
             datatype = NULL;
+            bsendDatatype = NULL;
             path_m = 0;
-            AppAddr = 0;
+            addr_m = 0;
 #ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
         }
 
     // Construct object and initialize locks
-    BaseSendDesc_t(int plIndex) : clearToSend_m(true)
+    SendDesc_t(int plIndex):clearToSend_m(true)
         {
             WhichQueue = SENDDESCFREELIST;
             datatype = NULL;
+            bsendDatatype = NULL;
             Lock.init();
             FragsToSend.Lock.init();
             FragsToAck.Lock.init();
             path_m = 0;
-            AppAddr = 0;
+            addr_m = 0;
 #ifdef ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
@@ -148,7 +213,7 @@ public:
 //
 // Descriptor used to track posted receives.
 
-class RecvDesc_t :  public RequestDesc_t
+class RecvDesc_t : public RequestDesc_t
 {
 public:
     
@@ -156,9 +221,9 @@ public:
 
     unsigned long long isendSeq_m;          // library specified isend tag
     unsigned long long irecvSeq_m;          // library specified irecv tag
-    void *AppAddr;                          // pointer to the base of the data
-    msgRequest posted_m;
-    msgRequest reslts_m;
+    void *addr_m;                          // pointer to the base of the data
+    Status_t posted_m;
+    Status_t reslts_m;
     volatile unsigned long DataReceived;    // Amount of data received
     volatile unsigned long DataInBitBucket; // Amount of data ignored if PostedLength < ReceivedMessageLength
 
@@ -211,14 +276,14 @@ public:
 
     // data members
 
-    BaseSendDesc_t *parentSendDesc_m;       // pointer to "owning" message descriptor
-    void *currentSrcAddr_m;                 // pointer into source buffer
-    size_t seqOffset_m;                     // sequential offset into packed buffer
-    size_t length_m;                        // length of fragment
-    BasePath_t *failedPath_m;               // failed path pointer
-    packType packed_m;                      // type of fragment
-    int numTransmits_m;                     // count transmission attempts
-    int tmapIndex_m;                        // type map index
+    SendDesc_t *parentSendDesc_m; // pointer to "owning" message descriptor
+    void *currentSrcAddr_m;     // pointer into source buffer
+    size_t seqOffset_m;         // sequential offset into packed buffer
+    size_t length_m;            // length of fragment
+    BasePath_t *failedPath_m;   // failed path pointer
+    packType packed_m;          // type of fragment
+    int numTransmits_m;         // count transmission attempts
+    int tmapIndex_m;            // type map index
 
     // methods
 };
@@ -235,8 +300,10 @@ public:
     // Data members
 
     Locks lock_m;
-    void *addr_m;                // base address - for data received off "net" this is the address to copy from
-                                 //                for posted receives, this is the base address to copy to
+    void *addr_m;                // base address - for data received
+                                 // off "net" this is the address to
+                                 // copy from for posted receives,
+                                 // the base address to copy to
     size_t length_m;             // length of fragment filled so far (after matching)
     size_t seqOffset_m;          // offset into message data (as if it were contiguous)
     unsigned long msgLength_m;   // total message length

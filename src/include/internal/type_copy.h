@@ -185,7 +185,6 @@ int type_pack(int pack,
 }
 
 
-
 /*
  * type_dump - Dump out a datatype to stderr (for debugging)
  *
@@ -206,7 +205,6 @@ void type_dump(ULMType_t * type)
             "\tisbasic = %d\n"
             "\tnum_primitives = %d\n"
             "\tsecond_primitive_offset = %d\n"
-            "\tlayout = %d\n"
             "\top_index = %d\n"
             "\tfhandle = %d\n"
             "\ttype_map =",

@@ -142,14 +142,14 @@ inline unsigned int gmRecvFragDesc::CopyFunction(void *fragAddr,
 
 // copy function for non-contiguous data with hooks for partial cksum word return
 inline unsigned long gmRecvFragDesc::nonContigCopyFunction(void *appAddr,
-                                                       void *fragAddr,
-                                                       ssize_t length,
-                                                       ssize_t cksumlength,
-                                                       unsigned int *cksum,
-                                                       unsigned int *partialInt,
-                                                       unsigned int *partialLength,
-                                                       bool firstCall,
-                                                       bool lastCall)
+                                                           void *fragAddr,
+                                                           ssize_t length,
+                                                           ssize_t cksumlength,
+                                                           unsigned int *cksum,
+                                                           unsigned int *partialInt,
+                                                           unsigned int *partialLength,
+                                                           bool firstCall,
+                                                           bool lastCall)
 {
     if (!cksum || !gmState.doChecksum) {
         memcpy(appAddr, fragAddr, length);

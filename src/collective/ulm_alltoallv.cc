@@ -57,8 +57,8 @@ extern "C" int ulm_alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
     int comm_size, rc, starting_proc;
     int next_send_proc, next_recv_proc;
     int end_sending_proc, end_receiving_proc;
-    ULMRequestHandle_t recvRequestArray[MAX_CONCURRENT_SCATTER_GATHERS];
-    ULMRequestHandle_t sendRequestArray[MAX_CONCURRENT_SCATTER_GATHERS];
+    ULMRequest_t recvRequestArray[MAX_CONCURRENT_SCATTER_GATHERS];
+    ULMRequest_t sendRequestArray[MAX_CONCURRENT_SCATTER_GATHERS];
     int sendInUse[MAX_CONCURRENT_SCATTER_GATHERS];
     int recvInUse[MAX_CONCURRENT_SCATTER_GATHERS];
     unsigned char *buf_loc;

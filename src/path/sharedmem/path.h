@@ -53,12 +53,12 @@ class sharedmemPath : public BasePath_t {
     ~sharedmemPath() {}
 
     bool canReach(int globalDestProcessID);
-    bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode);
+    bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
     bool receive(double timeNow, int *errorCode, recvType recvTypeArg);
-    void ReturnDesc(BaseSendDesc_t *message, int poolIndex);
+    void ReturnDesc(SendDesc_t *message, int poolIndex);
     bool push(double timeNow, int *errorCode);
     bool needsPush(void);
-    bool init(BaseSendDesc_t *message);
+    bool init(SendDesc_t *message);
 
     int processMatch(SMPFragDesc_t * incomingFrag, RecvDesc_t *matchedRecv);
 };

@@ -53,7 +53,7 @@ inline bool sharedmemPath::canReach(int globalDestProcessID)
 }
 
 // initialization function - first frag is posted on the receive side
-bool sharedmemPath::init(BaseSendDesc_t *message)
+bool sharedmemPath::init(SendDesc_t *message)
 {
     // For all the pages in the send request  - need a minimum of 1 page
     unsigned int FragCount;
@@ -84,7 +84,7 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
     // recv process's queue
     int SortedRecvFragsIndex =
         commPtr->remoteGroup->mapGroupProcIDToGlobalProcID
-	[message->posted_m.proc.destination_m];
+	[message->posted_m.peer_m];
     SortedRecvFragsIndex = global_to_local_proc(SortedRecvFragsIndex);
 
     // process as much as possible of the first frag
@@ -103,10 +103,10 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
     message->pathInfo.sharedmem.firstFrag->srcProcID_m = myRank;
 
     // set destination process
-    message->pathInfo.sharedmem.firstFrag->dstProcID_m = message->posted_m.proc.destination_m;
+    message->pathInfo.sharedmem.firstFrag->dstProcID_m = message->posted_m.peer_m;
 
     // set user tag and communicator and related fields
-    message->pathInfo.sharedmem.firstFrag->tag_m = message->posted_m.UserTag_m;
+    message->pathInfo.sharedmem.firstFrag->tag_m = message->posted_m.tag_m;
     message->pathInfo.sharedmem.firstFrag->ctx_m = message->ctx_m;
 
     // set message length
@@ -263,7 +263,7 @@ bool sharedmemPath::init(BaseSendDesc_t *message)
 }
 
 // continue sending, may be called multiple times per send descriptor
-bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
+bool sharedmemPath::send(SendDesc_t *message, bool *incomplete,
 		int *errorCode)
 {
 
@@ -278,7 +278,7 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
 
     // recv process's queue
     int SortedRecvFragsIndex =
-        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
+        commPtr->remoteGroup->mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
     SortedRecvFragsIndex = global_to_local_proc(SortedRecvFragsIndex);
 
 #ifdef USE_DEST_MEM
@@ -583,7 +583,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
             receiver->messageDone = REQUEST_COMPLETE;
             wmb();
             Comm = communicators[receiver->ctx_m];
-            Comm->privateQueues.MatchedRecv[receiver->reslts_m.proc.source_m]->
+            Comm->privateQueues.MatchedRecv[receiver->reslts_m.peer_m]->
                 RemoveLink(receiver);
             // if ulm_request_free() has already been called, then
             // we free the recv/request obj. here...
@@ -647,7 +647,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
-				reslts_m.proc.source_m]->RemoveLink
+				reslts_m.peer_m]->RemoveLink
 				(matchedRecv);
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here
@@ -703,7 +703,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
-				reslts_m.proc.source_m]->RemoveLink
+				reslts_m.peer_m]->RemoveLink
 				(matchedRecv);
                         // if ulm_request_free has already been called, then
                         // we free the recv/request obj. here...
@@ -731,7 +731,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 
     // copy data into library buffers
     void sharedmemSendInfo::CopyToULMBuffers(SMPFragDesc_t *descriptor,
-		    BaseSendDesc_t *message)
+		    SendDesc_t *message)
 {
     SMPFragDesc_t *recvFrag = (SMPFragDesc_t *) descriptor;
     unsigned char *src_addr, *dest_addr;
@@ -739,7 +739,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 
     // determine if data is contiguous
     if (message->datatype == NULL || message->datatype->layout == CONTIGUOUS) {
-        src_addr = ((unsigned char *) message->AppAddr) + recvFrag->seqOffset_m;
+        src_addr = ((unsigned char *) message->addr_m) + recvFrag->seqOffset_m;
         dest_addr = (unsigned char *) recvFrag->addr_m;
         len_to_copy = recvFrag->length_m;
         MEMCOPY_FUNC(src_addr, dest_addr, len_to_copy);
@@ -749,7 +749,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
         int tm_init = recvFrag->tmapIndex_m;
         int init_cnt = recvFrag->seqOffset_m / dtype->packed_size;
         int tot_cnt = recvFrag->msgLength_m / dtype->packed_size;
-        unsigned char *start_addr = ((unsigned char *) message->AppAddr)
+        unsigned char *start_addr = ((unsigned char *) message->addr_m)
             + init_cnt * dtype->extent;
         int dtype_cnt, ti;
 
@@ -796,7 +796,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 
 // copy data into library buffers
 void sharedmemSendInfo::CopyToULMBuffers(SMPSecondFragDesc_t * descriptor,
-		BaseSendDesc_t *message)
+		SendDesc_t *message)
 {
     SMPSecondFragDesc_t *recvFrag = (SMPSecondFragDesc_t *) descriptor;
     unsigned char *src_addr, *dest_addr;
@@ -804,7 +804,7 @@ void sharedmemSendInfo::CopyToULMBuffers(SMPSecondFragDesc_t * descriptor,
 
     // determine if data is contiguous
     if (message->datatype == NULL || message->datatype->layout == CONTIGUOUS) {
-        src_addr = ((unsigned char *) message->AppAddr) + recvFrag->seqOffset_m;
+        src_addr = ((unsigned char *) message->addr_m) + recvFrag->seqOffset_m;
         dest_addr = (unsigned char *) recvFrag->addr_m;
         len_to_copy = recvFrag->length_m;
 
@@ -816,7 +816,7 @@ void sharedmemSendInfo::CopyToULMBuffers(SMPSecondFragDesc_t * descriptor,
         int tm_init = recvFrag->tmapIndex_m;
         int init_cnt = recvFrag->seqOffset_m / dtype->packed_size;
         int tot_cnt = recvFrag->msgLength_m / dtype->packed_size;
-        unsigned char *start_addr = ((unsigned char *) message->AppAddr)
+        unsigned char *start_addr = ((unsigned char *) message->addr_m)
             + init_cnt * dtype->extent;
         int dtype_cnt, ti;
 
@@ -860,7 +860,7 @@ void sharedmemSendInfo::CopyToULMBuffers(SMPSecondFragDesc_t * descriptor,
     }
 }
 
-void sharedmemPath::ReturnDesc(BaseSendDesc_t *message, int poolIndex=-1)
+void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex=-1)
 {
     // sanity check - list must be empty
 #ifndef _DEBUGQUEUES
@@ -889,7 +889,7 @@ void sharedmemPath::ReturnDesc(BaseSendDesc_t *message, int poolIndex=-1)
     if (message->sendType == ULM_SEND_BUFFERED) {
         if (message->posted_m.length_m > 0) {
             ulm_bsend_decrement_refcount(
-			    (ULMRequestHandle_t) message,
+			    (ULMRequest_t) message,
 			    message->bsendOffset);
         }
     }
@@ -914,8 +914,8 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 #ifdef _DEBUGQUEUES
 	matchedRecv->isendSeq_m = incomingFrag->isendSeq_m;
 #endif                          // _DEBUGQUEUE
-	matchedRecv->reslts_m.proc.source_m = incomingFrag->srcProcID_m;
-	matchedRecv->reslts_m.UserTag_m = incomingFrag->tag_m;
+	matchedRecv->reslts_m.peer_m = incomingFrag->srcProcID_m;
+	matchedRecv->reslts_m.tag_m = incomingFrag->tag_m;
 
 	sharedMemData_t *matchedSender = incomingFrag->SendingHeader_m.SMP;
 

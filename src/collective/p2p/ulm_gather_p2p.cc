@@ -47,7 +47,7 @@ int ulm_gather_p2p(void *sendbuf, int sendcount, ULMType_t *sendtype,
                    int root, int comm)
 {
     int proc, nproc, self, rc, tag, completed;
-    ULMRequestHandle_t *rreq, sreq;
+    ULMRequest_t *rreq, sreq;
     ULMStatus_t sstat;
     unsigned char *ptr;
 
@@ -60,8 +60,8 @@ int ulm_gather_p2p(void *sendbuf, int sendcount, ULMType_t *sendtype,
     
     if (self == root) {
         /* array of requests, stati */
-        rreq = (ULMRequestHandle_t *)
-            malloc(nproc * sizeof(ULMRequestHandle_t));
+        rreq = (ULMRequest_t *)
+            malloc(nproc * sizeof(ULMRequest_t));
         if (rreq == NULL) {
             return ULM_ERROR;
         }

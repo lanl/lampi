@@ -435,15 +435,15 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
     //  memory is freed, we still have valid pointers.
     //  volatile udpSendFragDesc* fragDesc = (udpSendFragDesc*) ack.udpio.ptr;
     udpSendFragDesc *Frag = (udpSendFragDesc *) ack.udpio.ptr;
-    volatile BaseSendDesc_t *sendDesc = (volatile BaseSendDesc_t *) Frag->parentSendDesc;
+    volatile SendDesc_t *sendDesc = (volatile SendDesc_t *) Frag->parentSendDesc;
 
 	// lock frag through send descriptor to prevent two
 	// ACKs from processing simultaneously
 
 	if (sendDesc) {
-	    ((BaseSendDesc_t *)sendDesc)->Lock.lock();
+	    ((SendDesc_t *)sendDesc)->Lock.lock();
 	    if (sendDesc != Frag->parentSendDesc) {
-		((BaseSendDesc_t *)sendDesc)->Lock.unlock();
+		((SendDesc_t *)sendDesc)->Lock.unlock();
 		ReturnDescToPool(getMemPoolIndex());
 		return;
 	    }
@@ -454,14 +454,14 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
 
 #ifdef ENABLE_RELIABILITY
 	if (checkForDuplicateAndNonSpecificAck(Frag, ack)) {
-	    ((BaseSendDesc_t *)sendDesc)->Lock.unlock();
+	    ((SendDesc_t *)sendDesc)->Lock.unlock();
 	    ReturnDescToPool(getMemPoolIndex());
 	    return;
 	}
 #endif
 
-	handlePt2PtMessageAck((BaseSendDesc_t *) sendDesc, Frag, ack);
-	((BaseSendDesc_t *)sendDesc)->Lock.unlock();
+	handlePt2PtMessageAck((SendDesc_t *) sendDesc, Frag, ack);
+	((SendDesc_t *)sendDesc)->Lock.unlock();
     ReturnDescToPool(getMemPoolIndex());
     return;
 }
@@ -541,7 +541,7 @@ bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag,
 }
 #endif
 
-void udpRecvFragDesc::handlePt2PtMessageAck(BaseSendDesc_t *sendDesc, udpSendFragDesc * Frag, udp_ack_header & ack)
+void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDesc * Frag, udp_ack_header & ack)
 {
     int DescPoolIndex = 0;
 

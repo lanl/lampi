@@ -66,7 +66,7 @@ public:
             return false;
     }
 
-    bool bind(BaseSendDesc_t *message, int *globalDestProcessIDArray,
+    bool bind(SendDesc_t *message, int *globalDestProcessIDArray,
               int destArrayCount, int *errorCode) {
         if (isActive()) {
             *errorCode = ULM_SUCCESS;
@@ -79,12 +79,12 @@ public:
         }
     }
 
-    void unbind(BaseSendDesc_t *message, int *globalDestProcessIDArray,
+    void unbind(SendDesc_t *message, int *globalDestProcessIDArray,
                 int destArrayCount) {
         ulm_exit((-1, "quadricsPath::unbind - called, not implemented yet...\n"));
     }
 
-    bool init(BaseSendDesc_t *message) {
+    bool init(SendDesc_t *message) {
         int lbufType, npkts;
 
         // initialize quadricsSendInfo values
@@ -101,9 +101,9 @@ public:
         return true;
     }
 
-    bool send(BaseSendDesc_t *message, bool *incomplete, int *errorCode);
+    bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
 
-    bool sendDone(BaseSendDesc_t *message, double timeNow, int *errorCode) {
+    bool sendDone(SendDesc_t *message, double timeNow, int *errorCode) {
 
         if (!quadricsDoAck ) {
             quadricsSendFragDesc *sfd, *afd;
@@ -160,7 +160,7 @@ public:
     bool needsPush(void);
 
 #ifdef ENABLE_RELIABILITY
-    bool retransmitP(BaseSendDesc_t *message) {
+    bool retransmitP(SendDesc_t *message) {
         if (!quadricsDoAck || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
             || (message->FragsToAck.size() == 0))
             return false;
@@ -171,11 +171,11 @@ public:
         }
     }
 
-    bool resend(BaseSendDesc_t *message, int *errorCode);
+    bool resend(SendDesc_t *message, int *errorCode);
 #endif
 
     // lazy rail-balancer to even out the number of DMAs per rail
-    bool getCtxAndRail(BaseSendDesc_t *message, int globalDestProcessID,
+    bool getCtxAndRail(SendDesc_t *message, int globalDestProcessID,
                        ELAN3_CTX **ctx, int *rail) {
         int i, r, lr = quadricsLastRail;
 
@@ -224,7 +224,7 @@ public:
         return false;
     }
 
-    bool getCtxRailAndDest(BaseSendDesc_t *message, int globalDestProcessID,
+    bool getCtxRailAndDest(SendDesc_t *message, int globalDestProcessID,
                            ELAN3_CTX **ctx, int *rail, void **dest, 
                            int destBufType, bool needDest,
                            int *errorCode) {
@@ -285,7 +285,7 @@ public:
     // all rails version
     bool cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
 
-    bool sendMemoryRequest(BaseSendDesc_t *message, int gldestProc, size_t offset,
+    bool sendMemoryRequest(SendDesc_t *message, int gldestProc, size_t offset,
                            size_t memNeeded, int *errorCode);
 
     bool releaseMemory(double timeNow, int *errorCode);

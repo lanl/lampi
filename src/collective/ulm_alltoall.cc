@@ -106,8 +106,8 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
     int		tag;
     int		comm_size;
     int		self;
-    ULMRequestHandle_t	recvRequest;
-    ULMRequestHandle_t*	sendRequest;
+    ULMRequest_t	recvRequest;
+    ULMRequest_t*	sendRequest;
     ULMStatus_t	recvStatus;
     ULMStatus_t	sendStatus;
     unsigned char*	buf_loc;
@@ -121,7 +121,7 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
 	return MPI_ERR_INTERN;
     }
 
-    sendRequest = (ULMRequestHandle_t *)ulm_malloc(sizeof(ULMRequestHandle_t) * comm_size);
+    sendRequest = (ULMRequest_t *)ulm_malloc(sizeof(ULMRequest_t) * comm_size);
     if (!sendRequest) {
 	ulm_err(("Error: Out of memory\n"));
 	return MPI_ERR_INTERN;

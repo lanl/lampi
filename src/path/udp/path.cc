@@ -39,7 +39,7 @@
 
 int maxOutstandingUDPFrags = 8;
 // only done for non-zero non-contiguous data
-bool udpPath::packData(BaseSendDesc_t *message, udpSendFragDesc *frag)
+bool udpPath::packData(SendDesc_t *message, udpSendFragDesc *frag)
 {
     unsigned char *src_addr, *dest_addr;
     size_t len_to_copy, len_copied, payloadSize;
@@ -48,7 +48,7 @@ bool udpPath::packData(BaseSendDesc_t *message, udpSendFragDesc *frag)
     int tm_init = frag->tmap_index;
     int init_cnt = frag->seqOffset_m / dtype->packed_size;
     int tot_cnt = message->posted_m.length_m / dtype->packed_size;
-    unsigned char *start_addr = ((unsigned char *) message->AppAddr)
+    unsigned char *start_addr = ((unsigned char *) message->addr_m)
 	+ init_cnt * dtype->extent;
     int dtype_cnt, ti;
 
@@ -103,7 +103,7 @@ bool udpPath::packData(BaseSendDesc_t *message, udpSendFragDesc *frag)
     return true;
 }
 
-bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
+bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     bool shortMsg; 
     int gldestProc;  
@@ -122,7 +122,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
     offset 		= 0;
     returnValue 	= ULM_SUCCESS; 
     gldestProc 		= communicators[message->ctx_m]->remoteGroup->
-        mapGroupProcIDToGlobalProcID[message->posted_m.proc.destination_m];
+        mapGroupProcIDToGlobalProcID[message->posted_m.peer_m];
 
     // always allocate and try to send the first frag
     if (message->NumFragDescAllocated == 0)
@@ -265,7 +265,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
                         return false;
                     }
 	      	} 
-                src_addr = (unsigned char *)message->AppAddr + offset;
+                src_addr = (unsigned char *)message->addr_m + offset;
                 memcpy(dest_addr,src_addr,payloadSize);
                 message->pathInfo.udp.numFragsCopied++;
                 sendFragDesc->ioVecs[1].iov_base = (char *)dest_addr;
@@ -313,7 +313,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	header.udpio.ptr 	= sendFragDesc;
 	header.src_proc 	= communicators[message->ctx_m]->localGroup->mapGroupProcIDToGlobalProcID[myRank];
 	header.dest_proc 	= gldestProc;
-	header.tag_m 	= message->posted_m.UserTag_m;
+	header.tag_m 	= message->posted_m.tag_m;
 	header.ctxAndMsgType =
 	    GENERATE_CTX_AND_MSGTYPE(message->ctx_m, sendFragDesc->msgType_m);
 	header.fragIndex_m = message->NumFragDescAllocated;
@@ -417,7 +417,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 
 #ifdef ENABLE_RELIABILITY
 
-bool udpPath::resend(BaseSendDesc_t *message, int *errorCode)
+bool udpPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
 

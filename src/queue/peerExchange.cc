@@ -44,7 +44,7 @@ int peerExchange(int peerComm, int localComm, int localLeader,
                  ULMStatus_t *recvStatus )
 {
     int returnValue = MPI_SUCCESS;
-    ULMRequestHandle_t recvRequest, sendRequest;
+    ULMRequest_t recvRequest, sendRequest;
     ULMStatus_t sendStatus;
 
     // only communicator leader participate

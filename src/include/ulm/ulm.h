@@ -118,11 +118,12 @@ int ulm_make_progress(void);
  * bind a point-to-point send message descriptor to a path
  * object
  *
- * \param message       request descriptor
- * \param message       Send message descriptor
+ * \param req           Send request descriptor
+ * \param comm          Communicator ID
+ * \param dst           Destination process
  * \return              ULM return code
  */
-int ulm_bind_pt2pt_message( void **SendDescriptor, int ctx, int destination);
+int ulm_bind_pt2pt_message(ULMRequest_t *req, int comm, int dst);
 
 /*!
  * set the functions to bind point-to-point messages to
@@ -194,7 +195,7 @@ int ulm_pending_messages(int *flag);
  * \return              ULM return code
  */
 int ulm_isend(void *buf, size_t size, ULMType_t *dtype,
-      int dest, int tag, int comm, ULMRequestHandle_t *request, int sendMode);
+      int dest, int tag, int comm, ULMRequest_t *request, int sendMode);
 
 /*!
  * Blocking send
@@ -237,7 +238,7 @@ int ulm_send_vec(void **buf, size_t *size, ULMType_t ** dtype,
  * \param request       ULM request
  * \return              ULM return code
  */
-int ulm_request_free(ULMRequestHandle_t *request);
+int ulm_request_free(ULMRequest_t *request);
 
 /*!
  * Initialize send descriptor
@@ -255,7 +256,7 @@ int ulm_request_free(ULMRequestHandle_t *request);
  * \return              ULM return code
  */
 int ulm_isend_init(void *buf, size_t size, ULMType_t *dtype, int dest,
-                   int tag, int comm, ULMRequestHandle_t *request, int sendMode,
+                   int tag, int comm, ULMRequest_t *request, int sendMode,
 		   int persistent);
 
 /*!
@@ -264,7 +265,7 @@ int ulm_isend_init(void *buf, size_t size, ULMType_t *dtype, int dest,
  * \param request       ULM request
  * \return              ULM return code
  */
-int ulm_start(ULMRequestHandle_t *request);
+int ulm_start(ULMRequest_t *request);
 
 /*!
  * Post non-blocking receive
@@ -280,7 +281,7 @@ int ulm_start(ULMRequestHandle_t *request);
  * \return              ULM return code
  */
 int ulm_irecv(void *buf, size_t size, ULMType_t *dtype, int source,
-	      int tag, int comm, ULMRequestHandle_t *request);
+	      int tag, int comm, ULMRequest_t *request);
 
 /*!
  * Post blocking receive
@@ -332,7 +333,7 @@ int ulm_recv_vec(void **buf, size_t *size, ULMType_t ** dtype,
  *\return              ULM return code
  */
 int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype, int source,
-	      int tag, int comm, ULMRequestHandle_t *request, int persistent);
+	      int tag, int comm, ULMRequest_t *request, int persistent);
 
 /*!
  * Wait until send/receive done
@@ -341,7 +342,7 @@ int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype, int source,
  * \param status        ULM status struct to be filled in
  * \return              ULM return code
  */
-int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status);
+int ulm_wait(ULMRequest_t *request, ULMStatus_t *status);
 
 /*!
  * Test to see if send/recv done
@@ -350,7 +351,7 @@ int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status);
  * \param status        ULM status struct to be filled in
  * \return              ULM return code
  */
-int ulm_test(ULMRequestHandle_t *request, int *completed, ULMStatus_t *status);
+int ulm_test(ULMRequest_t *request, int *completed, ULMStatus_t *status);
 
 /*!
  * Test posted request(s) for completion without blocking ulm_test
@@ -362,7 +363,7 @@ int ulm_test(ULMRequestHandle_t *request, int *completed, ULMStatus_t *status);
  * \param completed     Flag to set if request is complete
  * \return              ULM return code
  */
-int ulm_testall(ULMRequestHandle_t *requestArray, int numRequests, int *completed);
+int ulm_testall(ULMRequest_t *requestArray, int numRequests, int *completed);
 
 /*!
  * probe to see if there is a message that we can start to receive
@@ -383,7 +384,7 @@ int ulm_iprobe(int sourceProc, int comm, int tag, int *found,
  * \param request       ULM request handle
  * \return              1 if request is persistent, 0 otherwise
  */
-int ulm_request_persistent(ULMRequestHandle_t request);
+int ulm_request_persistent(ULMRequest_t request);
 
 /*
  * Environment
@@ -797,6 +798,22 @@ int ulm_attr_put(int comm, int keyval, void *attributeVal);
 
 int ulm_keyval_free(int *keyval);
 
+/*
+ * Datatype functions
+ */
+
+/*!
+ * Free the resources associated with a type.  This does not do
+ * reference count manipulation, so don't use this unless you
+ * understand what you are doing; use the macros ulm_type_retain and
+ * ulm_type_release instead instead.
+ *
+ * \param type		Communicator ID
+ * \param errorCode	Exit code to pass to exit()
+ * \return		Function never returns
+ */
+int ulm_type_free(ULMType_t *type);
+
 /*!
  * associative binary functions for reductions
  */
@@ -942,16 +959,16 @@ extern ULMFunc_t ulm_lllxor;
  * access functions to store needed data for MPI_Bsend between
  * persistent init and start calls
  */
-void ulm_bsend_info_set(ULMRequestHandle_t request, void *originalBuffer,
+void ulm_bsend_info_set(ULMRequest_t request, void *originalBuffer,
 		     size_t bufferSize, int count, ULMType_t *datatype);
-void ulm_bsend_info_get(ULMRequestHandle_t request, void **originalBuffer,
+void ulm_bsend_info_get(ULMRequest_t request, void **originalBuffer,
 		  size_t *bufferSize, int *count, ULMType_t ** datatype,
 			int *comm);
 
 /*
  * returns the status of the request object
  */
-int ulm_request_status(ULMRequestHandle_t request);
+int ulm_request_status(ULMRequest_t request);
 
 /*
  * functions allowing users to set/get the current collective operations
@@ -963,10 +980,10 @@ int ulm_set_collective_function(int key, void *op);
  * argument checking functions
  */
 int ulm_invalid_comm(int comm);
-int ulm_invalid_request(ULMRequestHandle_t *request);
+int ulm_invalid_request(ULMRequest_t *request);
 int ulm_invalid_source(int comm, int source);
 int ulm_invalid_destination(int comm, int dest);
-int ulm_presistant_request(ULMRequestHandle_t *request);
+int ulm_presistant_request(ULMRequest_t *request);
 int ulm_am_i(int comm, int rank);
 
 #ifdef __cplusplus

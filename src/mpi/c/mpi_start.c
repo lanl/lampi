@@ -55,7 +55,7 @@ int PMPI_Start(MPI_Request *request)
         }
     }
 
-    rc = ulm_start((ULMRequestHandle_t *) request);
+    rc = ulm_start((ULMRequest_t *) request);
     rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
     if (rc != MPI_SUCCESS) {

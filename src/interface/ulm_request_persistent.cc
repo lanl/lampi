@@ -41,7 +41,7 @@
  * \param request	ULM request handle
  * \return		1 if request is persistent, 0 otherwise
  */
-extern "C" int ulm_request_persistent(ULMRequestHandle_t request)
+extern "C" int ulm_request_persistent(ULMRequest_t request)
 {
     if (request) {
 	if (((RequestDesc_t *) request)->persistent) {

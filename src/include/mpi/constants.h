@@ -89,8 +89,8 @@ enum {
     /*
      * Wildcards etc.
      */
-    MPI_ANY_SOURCE = -1,
-    MPI_ANY_TAG = -1,
+    MPI_ANY_SOURCE = ULM_ANY_PROC,
+    MPI_ANY_TAG = ULM_ANY_TAG,
     MPI_PROC_NULL = -2,
     MPI_ROOT = -3,
     MPI_UNDEFINED = -1,
