@@ -21,7 +21,7 @@ VERSION	:= include/internal/version.h
 #
 ######################################################################
 
-CPPFLAGS       := -DHAVE_PRAGMA_WEAK -DUSE_CT
+CPPFLAGS       := -DHAVE_PRAGMA_WEAK
 
 ######################################################################
 
