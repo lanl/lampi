@@ -1,3 +1,21 @@
+2004-02-20 9:58  rta
+
+	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Updating version
+      number to 1.4.13
+
+	* configure, configure.ac, RELEASE_NOTES, ChangeLog: Updating version
+	  number to 1.4.13
+      
+    * src/: client/libmpi.mk, client/TV.h, client/TVSetup.c,
+      init/init.cc, mpi/c/mpi_init.c mpi/c/mpi_init_thread.c,
+      include/mpi/mpi.h: Modified MPI_Init() and MPI_Init_thread() into 
+      macros for workaround to get LA-MPI working with Totalview.
+      
+    * src/: util/ParseTree.cc: Fixed bug when using '-env' runtime arg
+    
+    * src/: run/SpawnUserApp.c: Added check for validity of executable 
+      when running under bproc or RMS.
+
 2004-02-09 10:14  rta
 
 	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Updating version

@@ -272,3 +272,11 @@ Version 1.4.12
 - Added work-around for bug during process startup on bproc when
   mpirun is started from a debugger, e.g. Totalview.
 
+Version 1.4.13
+
+- Modified MPI_Init() and MPI_Init_thread() into macros for workaround
+  for Totalview
+  
+- Added check for validity of executable when running under bproc or RMS
+
+- Fixed bug when using '-env' runtime arg
