@@ -952,7 +952,7 @@ int ulm_allgathervMultipleStripes(void *sendbuf, int sendcount,
         /* write data to source buffer, if this process contributes to this
          *   stripeID
          */
-        size_t leftToCopy = recvcount[myCommRank] * recvtype->packed_size -
+        ssize_t leftToCopy = recvcount[myCommRank] * recvtype->packed_size -
             stripeID * commPtr->collectiveOpt.perRankStripeSize;
 
         if (leftToCopy > 0) {

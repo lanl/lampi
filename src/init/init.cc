@@ -35,8 +35,8 @@
  * Initialization
  */
 
-#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,6 @@
 #include "queue/contextID.h"
 #include "queue/globals.h"
 #include "client/adminMessage.h"
-#include "client/TV.h"
 #include "client/ULMClient.h"
 #include "util/Lock.h"
 #include "util/MemFunctions.h"
@@ -96,10 +95,13 @@ int nCpPNode = 2;
 static int initialized = 0;
 static int dupSTDERRfd;
 static int dupSTDOUTfd;
+static int  StdinPipe[2];
 static int *StderrPipes;
 static int *StdoutPipes;
 
 #include "internal/Private.h"
+
+extern "C" void ClientTVSetup();
 
 /*
  * inline functions
@@ -121,6 +123,7 @@ void lampi_init(void)
         return;
     }
     initialized = 1;
+
 
     /* initialize _ulm */
     lampi_init_prefork_initialize_state_information(&_ulm);
@@ -155,11 +158,6 @@ void lampi_init(void)
     lampi_init_prefork_receive_setup_params(&_ulm);
     lampi_init_prefork_ip_addresses(&_ulm);
 
-    if (lampiState.hostid == 0) {
-        ulm_notice(("*** LA-MPI: Copyright 2001-2004, "
-                    "ACL, Los Alamos National Laboratory ***\n"));
-    }
-
     lampi_init_prefork_debugger(&_ulm);
 
     lampi_init_prefork_resources(&_ulm);
@@ -183,7 +181,6 @@ void lampi_init(void)
 
     /* if library is to handle stdio, postfork data is set up */
     lampi_init_postfork_stdio(&_ulm);
-
 
     lampi_init_postfork_resource_management(&_ulm);
     lampi_init_postfork_globals(&_ulm);
@@ -209,11 +206,15 @@ void lampi_init(void)
     lampi_init_wait_for_start_message(&_ulm);
 
     lampi_init_check_for_error(&_ulm);
-    
+
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )
     {
         lampi_daemon_loop(&_ulm);
+    } 
+    else if (lampiState.global_rank == 0) 
+    {
+        fprintf(stderr, "LA-MPI: Copyright 2001-2004, ACL, Los Alamos National Laboratory ***\n");
     }
 }
 
@@ -1959,23 +1960,13 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     if (!s->interceptSTDio)
         return;
 
-    /* establish socket connection for stderr/stdout traffic to mpirun */
-    s->STDERRfdToMPIrun = STDERR_FILENO;
-    s->STDOUTfdToMPIrun = STDOUT_FILENO;
-
     /*
      * dup current stderr and stdout so that Client's stderr and
      * stdout can be restored to those before exiting this routines.
      */
 
     dupSTDERRfd = dup(STDERR_FILENO);
-    if (dupSTDERRfd <= 0) {
-        ulm_exit((-1, "Error: duping STDERR_FILENO.\n"));
-    }
     dupSTDOUTfd = dup(STDOUT_FILENO);
-    if (dupSTDOUTfd <= 0) {
-        ulm_exit((-1, "Error: duping STDOUT_FILENO.\n"));
-    }
 
     /*
      * get count for number of pipes needed between the daemon process
@@ -1983,7 +1974,11 @@ void lampi_init_prefork_stdio(lampiState_t *s)
      */
     NChildren = s->local_size;
 
-    /* setup stdio/stderr redirection */
+    /* setup stdin/stdout/stderr redirection */
+    if(pipe(StdinPipe) < 0) {
+        ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
+    }
+
     StderrPipes = ulm_new(int, 2 * NChildren);
     for (i = 0; i < NChildren; i++) {
         if (pipe(StderrPipes + (2 * i)) < 0) {
@@ -2050,7 +2045,7 @@ void lampi_init_prefork_stdio(lampiState_t *s)
 
 void lampi_init_postfork_stdio(lampiState_t *s)
 {
-    int NChildren, i, RetVal;
+    int NChildren, i;
 
     if (s->error) {
         return;
@@ -2079,6 +2074,16 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
         }
         
+        /* setup stdin */
+        if(s->hostid != 0) {
+            s->STDINfdToChild = -1;
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        } else {
+            s->STDINfdToChild = StdinPipe[1];
+            close(StdinPipe[0]);
+        }
+
         /* close all write stderr/stdout pipe fd's ) */
         for (i = 0; i < NChildren; i++) {
             close(StderrPipes[2 * i + 1]);
@@ -2089,19 +2094,24 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         /* restore STDERR_FILENO and STDOUT_FILENO to state when
          * this routine was entered */
         fflush(stderr);
-        //s->StderrFD=dupSTDERRfd;
-        RetVal = dup2(dupSTDERRfd, STDERR_FILENO);
-        if (RetVal <= 0) {
-            ulm_exit((-1, "Error: in dup2 dupSTDERRfd, STDERR_FILENO.\n"));
-        }
+        if(dupSTDERRfd > 0)
+            dup2(dupSTDERRfd, STDERR_FILENO);
         fflush(stdout);
-        //s->StdoutFD=dupSTDOUTfd;
-        RetVal = dup2(dupSTDOUTfd, STDOUT_FILENO);
-        if (RetVal <= 0) {
-            ulm_exit((-1, "Error: in dup2 dupSTDOUTfd, STDOUT_FILENO.\n"));
-        }
+        if(dupSTDOUTfd > 0)
+            dup2(dupSTDOUTfd, STDOUT_FILENO);
         /* end of daemon code */
     } else {
+
+        /* setup stdin handling */
+        if(s->global_rank == 0) {
+            dup2(StdinPipe[0], STDIN_FILENO);
+            close(StdinPipe[1]);
+        } else {
+            close(STDIN_FILENO);
+            close(StdinPipe[0]);
+            close(StdinPipe[1]);
+        }
+
         /* setup "application process" handling of stdout/stderr */
         dup2(StderrPipes[2 * lampiState.local_rank + 1],
              STDERR_FILENO);

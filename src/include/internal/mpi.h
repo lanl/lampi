@@ -53,11 +53,7 @@ CDECL_BEGIN
  * control
  */
 enum {
-#ifdef LAMPI_FORTRAN_SUPPORT
     _MPI_FORTRAN = 1,
-#else
-    _MPI_FORTRAN = 0,
-#endif
     _MPI_MARK_AS_CONTIGUOUS = 0, /* mark types as contiguous if they are */
     _MPI_DTYPE_TRIM = 0, /* interpretation of MPI standard for datatypes */
     _MPI_DEBUG = 0       /* enable debug info in MPI layer */ 

@@ -48,14 +48,16 @@
 #include "queue/globals.h"
 
 // data used to set startWithNewLine boolean of ClientWriteToServer
-static int lastInputFDToServerStdout = -1;
-static int lastInputFDToServerStderr = -1;
-static int lastNewLineLastToServerStdout = 0;
+static int lastClientStderrFD = -1;
+static int lastClientStdoutFD = -1;
 static int lastNewLineLastToServerStderr = 0;
+static int lastNewLineLastToServerStdout = 0;
+static int lastServerStdoutFD = 0;
+static int lastServerStderrFD = 0;
 
 
-static int readFromDescriptor(int fd, int *NewLineLast,
-                              int ToServerFD, int lastInputFD,
+static int readFromDescriptor(int ClientFD, int* ServerFD, int StdioFD,
+                              int *NewLineLast, int lastInputFD,
                               int lastNewLine, char *IOPreFix,
                               int LenIOPreFix, ssize_t *lenWritten, lampiState_t *state)
 {
@@ -64,35 +66,37 @@ static int readFromDescriptor(int fd, int *NewLineLast,
     bool 	startWithNewLine;
 
     do {
-        lenR = read(fd, ReadBuffer, ULM_MAX_TMP_BUFFER - 1);
+        lenR = read(ClientFD, ReadBuffer, ULM_MAX_TMP_BUFFER - 1);
     } while ((lenR < 0) && (errno == EINTR));
+
 
     if (lenR > 0)
     {
         startWithNewLine = false;
         ReadBuffer[lenR] = '\0';
-        if ((lastInputFD != fd) && (lastInputFD >= 0))
+        if ((lastInputFD != ClientFD) && (lastInputFD >= 0))
         {
             if (!lastNewLine)
                 startWithNewLine = true;
             else
                 *NewLineLast = 1;
         }
-#ifdef ENABLE_CT
+#ifdef CTNETWORK
         *lenWritten =
             ClientWriteIOToServer(ReadBuffer,
                                   (char *) IOPreFix,
                                   LenIOPreFix,
                                   NewLineLast,
-                                  ToServerFD, lenR,
+                                  StdioFD, lenR,
                                   startWithNewLine, state);
 #else
         *lenWritten =
-            ClientWriteToServer(ReadBuffer,
+            ClientWriteToServer(ServerFD,
+                                ReadBuffer,
                                 (char *) IOPreFix,
                                 LenIOPreFix,
                                 NewLineLast,
-                                ToServerFD, lenR,
+                                StdioFD, lenR,
                                 startWithNewLine);
 #endif
     }
@@ -110,7 +114,7 @@ static int readFromDescriptor(int fd, int *NewLineLast,
  * the Server.
  */
 int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
-                           int ToServerStdoutFD, int ToServerStderrFD,
+                           int *ServerFD,
                            int NFDs, int MaxDescriptor,
                            PrefixName_t *IOPreFix, int *LenIOPreFix,
                            size_t *StderrBytesWritten,
@@ -121,10 +125,10 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     fd_set ReadSet;
     ssize_t lenR, lenW;
     struct timeval WaitTime;
-    int		*daemonNewLineLast = state->daemonNewLineLast;
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 10000;
     NumberReads = 0;
+    int	*daemonNewLineLast = state->daemonNewLineLast;
 
     /* check to see if there is any data to read */
     nfds = 0;
@@ -165,13 +169,58 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     if (RetVal <= 0)
         return RetVal;
 
-    /*!!!! NewLineLast should really be 2*NFDs long to have a separate flag for
-        * the standard output and error descriptors! -Mitch
-        */
-#ifdef ENABLE_CT
-    ToServerStderrFD = STDERR_FILENO;
-    ToServerStdoutFD = STDOUT_FILENO;
-#endif
+    /* process daemon output. */
+    if ((state->daemonSTDERR[0] > 0)
+        && (FD_ISSET(state->daemonSTDERR[0], &ReadSet)))
+    {
+        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+        FD_CLR(state->daemonSTDERR[0], &ReadSet);
+        lenR = readFromDescriptor(state->daemonSTDERR[0], ServerFD, STDERR_FILENO,
+                                  &daemonNewLineLast[0], lastServerStderrFD,
+                                  lastNewLineLastToServerStderr, NULL,
+                                  0, &lenW, state);
+        if (lenR > 0)
+        {
+            NumberReads++;
+            if (lenW > 0)
+            {
+                (*StderrBytesWritten) += lenW;
+                lastServerStderrFD = state->daemonSTDERR[0];
+                lastNewLineLastToServerStderr = daemonNewLineLast[0];
+            }
+        }
+        else
+        {
+            close(state->daemonSTDERR[0]);
+            state->daemonSTDERR[0] = -1;
+        }
+    }
+
+    if ((state->daemonSTDOUT[0] > 0)
+        && (FD_ISSET(state->daemonSTDOUT[0], &ReadSet)))
+    {
+        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+        FD_CLR(state->daemonSTDOUT[0], &ReadSet);
+        lenR = readFromDescriptor(state->daemonSTDOUT[0], ServerFD, STDOUT_FILENO,
+                                  &daemonNewLineLast[1], lastServerStdoutFD,
+                                  lastNewLineLastToServerStdout, NULL,
+                                  0, &lenW, state);
+        if (lenR > 0)
+        {
+            NumberReads++;
+            if (lenW > 0)
+            {
+                (*StdoutBytesWritten) += lenW;
+                lastServerStdoutFD = state->daemonSTDOUT[0];
+                lastNewLineLastToServerStdout = daemonNewLineLast[1];
+            }
+        }
+        else
+        {
+            close(state->daemonSTDOUT[0]);
+            state->daemonSTDOUT[0] = -1;
+        }
+    }
 
     /* read data from standard error */
     for (i = 0; i < NFDs; i++)
@@ -181,8 +230,8 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
         {
             /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
             FD_CLR(ClientStderrFDs[i], &ReadSet);
-            lenR = readFromDescriptor(ClientStderrFDs[i], NewLineLast + i,
-                                      ToServerStderrFD, lastInputFDToServerStderr,
+            lenR = readFromDescriptor(ClientStderrFDs[i], ServerFD, STDERR_FILENO,
+                                      NewLineLast + i, lastClientStderrFD,
                                       lastNewLineLastToServerStderr, IOPreFix[i],
                                       LenIOPreFix[i], &lenW, state);
             if (lenR > 0)
@@ -191,7 +240,7 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                 if (lenW > 0)
                 {
                     (*StderrBytesWritten) += lenW;
-                    lastInputFDToServerStderr = ClientStderrFDs[i];
+                    lastClientStderrFD = ClientStderrFDs[i];
                     lastNewLineLastToServerStderr = NewLineLast[i];
                 }
             }
@@ -213,8 +262,8 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
         {
             /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
             FD_CLR(ClientStdoutFDs[i], &ReadSet);
-            lenR = readFromDescriptor(ClientStdoutFDs[i], NewLineLast + i,
-                                      ToServerStdoutFD, lastInputFDToServerStdout,
+            lenR = readFromDescriptor(ClientStdoutFDs[i], ServerFD, STDOUT_FILENO,
+                                      NewLineLast + i, lastClientStdoutFD,
                                       lastNewLineLastToServerStdout, IOPreFix[i],
                                       LenIOPreFix[i], &lenW, state);
             if (lenR > 0)
@@ -223,7 +272,7 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                 if (lenW > 0)
                 {
                     (*StdoutBytesWritten) += lenW;
-                    lastInputFDToServerStdout = ClientStdoutFDs[i];
+                    lastClientStdoutFD = ClientStdoutFDs[i];
                     lastNewLineLastToServerStdout = NewLineLast[i];
                 }
             }
@@ -236,58 +285,6 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
         }
     }
 
-    /* process daemon output. */
-    if ((state->daemonSTDERR[0] > 0)
-        && (FD_ISSET(state->daemonSTDERR[0], &ReadSet)))
-    {
-        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
-        FD_CLR(state->daemonSTDERR[0], &ReadSet);
-        lenR = readFromDescriptor(state->daemonSTDERR[0], &daemonNewLineLast[0],
-                                  ToServerStderrFD, lastInputFDToServerStdout,
-                                  lastNewLineLastToServerStderr, NULL,
-                                  0, &lenW, state);
-        if (lenR > 0)
-        {
-            NumberReads++;
-            if (lenW > 0)
-            {
-                (*StderrBytesWritten) += lenW;
-                lastInputFDToServerStderr = state->daemonSTDERR[0];
-                lastNewLineLastToServerStderr = daemonNewLineLast[0];
-            }
-        }
-        else
-        {
-            close(state->daemonSTDERR[0]);
-            state->daemonSTDERR[0] = -1;
-        }
-    }
-
-    if ((state->daemonSTDOUT[0] > 0)
-        && (FD_ISSET(state->daemonSTDOUT[0], &ReadSet)))
-    {
-        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
-        FD_CLR(state->daemonSTDOUT[0], &ReadSet);
-        lenR = readFromDescriptor(state->daemonSTDOUT[0], &daemonNewLineLast[1],
-                                  ToServerStdoutFD, lastInputFDToServerStdout,
-                                  lastNewLineLastToServerStdout, NULL,
-                                  0, &lenW, state);
-        if (lenR > 0)
-        {
-            NumberReads++;
-            if (lenW > 0)
-            {
-                (*StdoutBytesWritten) += lenW;
-                lastInputFDToServerStdout = state->daemonSTDOUT[0];
-                lastNewLineLastToServerStdout = daemonNewLineLast[1];
-            }
-        }
-        else
-        {
-            close(state->daemonSTDOUT[0]);
-            state->daemonSTDOUT[0] = -1;
-        }
-    }
-
     return NumberReads;
 }
+

@@ -66,7 +66,7 @@ Node::~Node()
     if (children != NULL) {
         // delete children, if they exist
         for (int i = 0; i < 2; i++) {
-            ulm_delete(children[i]);
+            delete children[i];
             children[i] = NULL;
         }
         ulm_delete(children);

@@ -32,7 +32,7 @@
 
 #include "internal/mpi.h"
 
-#define MAX_CONCURRENT_SCATTER_GATHERS	(int)50
+#define MAX_CONCURRENT_SCATTER_GATHERS    (int)50
 
 /*
  * This version of MPI_Alltoallv() does not assume that it can post
@@ -49,9 +49,9 @@
  */
 
 extern "C" int ulm_alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
-			     ULMType_t *sendtype,
-			     void *recvbuf, int *recvcounts, int *recvdispls,
-			     ULMType_t *recvtype , int comm)
+                 ULMType_t *sendtype,
+                 void *recvbuf, int *recvcounts, int *recvdispls,
+                 ULMType_t *recvtype , int comm)
 {
     int proc, grp_rank;
     int comm_size, rc, starting_proc;
@@ -66,17 +66,17 @@ extern "C" int ulm_alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
 
     rc = ulm_comm_rank(comm, &grp_rank);
     if (rc != ULM_SUCCESS) {
-	return MPI_ERR_COMM;
+    return MPI_ERR_COMM;
     }
 
     rc = ulm_comm_size(comm, &comm_size);
     if (rc != ULM_SUCCESS) {
-	return MPI_ERR_COMM;
+    return MPI_ERR_COMM;
     }
 
     rc = ulm_get_system_tag(comm, 1, &tag);
     if (rc != ULM_SUCCESS) {
-	return MPI_ERR_INTERN;
+    return MPI_ERR_INTERN;
     }
 
     /* integer arithmetic - not a no-op! */
@@ -85,136 +85,136 @@ extern "C" int ulm_alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
     end_sending_proc = end_receiving_proc = starting_proc;
 
     for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS; i++) {
-	sendInUse[i] = recvInUse[i] = 0;
-    }
-
-    /* Send to first disjoint set of up to MAX_CONCURRENT_SCATTER_GATHERS processes */
-    for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS; i++)
-    {
-	proc = (next_send_proc++);
-	next_send_proc = (next_send_proc >= comm_size) ? (next_send_proc - comm_size) : next_send_proc;
-	if (((i != 0) && (proc == starting_proc)) || (proc < starting_proc)) {
-	    next_send_proc = proc;
-	    break;
-	}
-
-	buf_loc = (unsigned char *)sendbuf + senddispls[proc] * sendtype->extent;
-
-	sendInUse[i] = 1;
-	rc = ulm_isend(buf_loc,  sendcounts[proc], sendtype, proc, tag,
-		       comm, &(sendRequestArray[i]), ULM_SEND_STANDARD);
-	if (rc != ULM_SUCCESS) break;
+    sendInUse[i] = recvInUse[i] = 0;
     }
 
     /* Receive from first disjoint set of up to MAX_CONCURRENT_SCATTER_GATHERS processes */
-    if (rc == ULM_SUCCESS) {
-	for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS ; i++) {
-	    proc = (next_recv_proc++);
-	    next_recv_proc = (next_recv_proc >= comm_size) ? (next_recv_proc - comm_size) : next_recv_proc;
-	    if (((i != 0) && (proc == starting_proc)) || (proc < starting_proc)) {
-		next_recv_proc = proc;
-		break;
-	    }
+    for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS ; i++) {
+        proc = (next_recv_proc++);
+        next_recv_proc = (next_recv_proc >= comm_size) ? (next_recv_proc - comm_size) : next_recv_proc;
+        if (((i != 0) && (proc == starting_proc)) || (proc < starting_proc)) {
+        next_recv_proc = proc;
+        break;
+        }
 
-	    end_receiving_proc = proc;
-	    buf_loc = (unsigned char *)recvbuf + recvdispls[proc] * recvtype->extent;
+        end_receiving_proc = proc;
+        buf_loc = (unsigned char *)recvbuf + recvdispls[proc] * recvtype->extent;
 
-	    recvInUse[i] = 1;
-	    rc = ulm_irecv(buf_loc, recvcounts[proc], recvtype, proc,
-			   tag,  comm,  &(recvRequestArray[i]));
-	    if (rc != ULM_SUCCESS) break;
-	}
-	next_recv_proc = starting_proc - 1;
-	if (comm_size > MAX_CONCURRENT_SCATTER_GATHERS) {
-	    if (next_recv_proc < 0)
-		next_recv_proc = comm_size - 1;
-	}
+        recvInUse[i] = 1;
+        rc = ulm_irecv(buf_loc, recvcounts[proc], recvtype, proc,
+               tag,  comm,  &(recvRequestArray[i]));
+        if (rc != ULM_SUCCESS) break;
+    }
+    next_recv_proc = starting_proc - 1;
+    if (comm_size > MAX_CONCURRENT_SCATTER_GATHERS) {
+        if (next_recv_proc < 0)
+        next_recv_proc = comm_size - 1;
+    }
+
+    /* Send to first disjoint set of up to MAX_CONCURRENT_SCATTER_GATHERS processes */
+    for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS; i++) {
+        proc = (next_send_proc++);
+        next_send_proc = (next_send_proc >= comm_size) ? (next_send_proc - comm_size) : next_send_proc;
+        if (((i != 0) && (proc == starting_proc)) || (proc < starting_proc)) {
+            next_send_proc = proc;
+            break;
+        }
+
+        buf_loc = (unsigned char *)sendbuf + senddispls[proc] * sendtype->extent;
+
+        sendInUse[i] = 1;
+        rc = ulm_isend(buf_loc,  sendcounts[proc], sendtype, proc, tag,
+                   comm, &(sendRequestArray[i]), ULM_SEND_SYNCHRONOUS);
+        if (rc != ULM_SUCCESS)
+                return rc;
     }
 
     /* now we test for completion of any of our requests, if done send/recv to the next process */
     if ((rc == ULM_SUCCESS) && (comm_size > MAX_CONCURRENT_SCATTER_GATHERS)) {
-	int done = 0;
-	while (!done) {
-	    for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS; i++) {
-		int completed = 0;
-		ULMStatus_t status;
+        int done = 0;
+        while (!done) {
+            for (i = 0; i < MAX_CONCURRENT_SCATTER_GATHERS; i++) {
+                int completed = 0;
+                ULMStatus_t status;
 
-		if (next_send_proc != end_sending_proc) {
-		    if (sendInUse[i])
-			rc = ulm_test(&(sendRequestArray[i]), &completed, &status);
-		    if (completed || !sendInUse[i]) {
-			if (rc != ULM_SUCCESS) {
-			    done = 1;
-			    break;
-			}
-			/* send to next process */
-			proc = (next_send_proc++);
-			next_send_proc = (next_send_proc >= comm_size) ? (next_send_proc - comm_size) : next_send_proc;
+                if (next_recv_proc != end_receiving_proc) {
+                    if (recvInUse[i])
+                        rc = ulm_test(&(recvRequestArray[i]), &completed, &status);
+                    if (completed || !recvInUse[i]) {
+                        if (rc != ULM_SUCCESS) {
+                            if ((rc == ULM_ERR_RECV_MORE_THAN_POSTED) || 
+                                (rc == ULM_ERR_RECV_LESS_THAN_POSTED)) {
+                                rc = ULM_SUCCESS;
+                            }
+                            else {
+                                done = 1;
+                                break;
+                            }
+                        }
 
-			buf_loc = (unsigned char *)sendbuf + senddispls[proc] * sendtype->extent;
+                        /* receive from next process */
+                        proc = (next_recv_proc--);
+                        next_recv_proc = (next_recv_proc < 0) ? (comm_size - 1) : next_recv_proc;
 
-			sendInUse[i] = 1;
-			rc = ulm_isend(buf_loc,  sendcounts[proc], sendtype, proc, tag,
-				       comm, &(sendRequestArray[i]), ULM_SEND_STANDARD);
-			if (rc != ULM_SUCCESS) {
-			    done = 1;
-			    break;
-			}
-		    }
-		}
+                        buf_loc = (unsigned char *)recvbuf + recvdispls[proc] * recvtype->extent;
 
-		if (next_recv_proc != end_receiving_proc) {
-		    if (recvInUse[i])
-			rc = ulm_test(&(recvRequestArray[i]), &completed, &status);
-		    if (completed || !recvInUse[i]) {
-			if (rc != ULM_SUCCESS) {
-			    if ((rc == ULM_ERR_RECV_MORE_THAN_POSTED) || (rc == ULM_ERR_RECV_LESS_THAN_POSTED)) {
-				rc = ULM_SUCCESS;
-			    }
-			    else {
-				done = 1;
-				break;
-			    }
-			}
-			/* receive from next process */
-			proc = (next_recv_proc--);
-			next_recv_proc = (next_recv_proc < 0) ? (comm_size - 1) : next_recv_proc;
+                        recvInUse[i] = 1;
+                        rc = ulm_irecv(buf_loc, recvcounts[proc], recvtype, proc,
+                           tag,  comm,  &(recvRequestArray[i]));
+                        if (rc != ULM_SUCCESS) {
+                            done = 1;
+                            break;
+                        }
+                    }
+                }
+    
+                if (next_send_proc != end_sending_proc) {
+                    if (sendInUse[i])
+                        rc = ulm_test(&(sendRequestArray[i]), &completed, &status);
+                    if (completed || !sendInUse[i]) {
+                        if (rc != ULM_SUCCESS) {
+                            done = 1;
+                            break;
+                        }
+                        /* send to next process */
+                        proc = (next_send_proc++);
+                        next_send_proc = (next_send_proc >= comm_size) ? 
+                                         (next_send_proc - comm_size) : next_send_proc;
+    
+                        buf_loc = (unsigned char *)sendbuf + senddispls[proc] * sendtype->extent;
+    
+                        sendInUse[i] = 1;
+                        rc = ulm_isend(buf_loc,  sendcounts[proc], sendtype, proc, tag,
+                               comm, &(sendRequestArray[i]), ULM_SEND_SYNCHRONOUS);
+                        if (rc != ULM_SUCCESS) {
+                            done = 1;
+                            break;
+                        }
+                    }
+                }
+            } // end for loop
 
-			buf_loc = (unsigned char *)recvbuf + recvdispls[proc] * recvtype->extent;
+            if ((next_send_proc == end_sending_proc) && (next_recv_proc == end_receiving_proc))
+                done = 1;
 
-			recvInUse[i] = 1;
-			rc = ulm_irecv(buf_loc, recvcounts[proc], recvtype, proc,
-				       tag,  comm,  &(recvRequestArray[i]));
-			if (rc != ULM_SUCCESS) {
-			    done = 1;
-			    break;
-			}
-		    }
-		}
-
-	    } // end for loop
-
-	    if ((next_send_proc == end_sending_proc) && (next_recv_proc == end_receiving_proc))
-		done = 1;
-
-	} // end while loop
+        } // end while loop
     }
 
     /* now wait for completion of all outstanding requests */
     if (rc == ULM_SUCCESS) {
-	ULMStatus_t status;
-	int numRequests = (comm_size <= MAX_CONCURRENT_SCATTER_GATHERS) ? comm_size : MAX_CONCURRENT_SCATTER_GATHERS;
-	for (proc = 0; proc < numRequests; proc++) {
-	    if (recvInUse[proc])
-		rc = ulm_wait(&(recvRequestArray[proc]), &status);
-	    if ((rc == ULM_ERR_RECV_MORE_THAN_POSTED) || (rc == ULM_ERR_RECV_LESS_THAN_POSTED))
-		rc = ULM_SUCCESS;
-	    if (rc != ULM_SUCCESS) break;
+    ULMStatus_t status;
+    int numRequests = (comm_size <= MAX_CONCURRENT_SCATTER_GATHERS) ? comm_size : MAX_CONCURRENT_SCATTER_GATHERS;
+    for (proc = 0; proc < numRequests; proc++) {
+        if (recvInUse[proc])
+        rc = ulm_wait(&(recvRequestArray[proc]), &status);
+        if ((rc == ULM_ERR_RECV_MORE_THAN_POSTED) || (rc == ULM_ERR_RECV_LESS_THAN_POSTED))
+        rc = ULM_SUCCESS;
+        if (rc != ULM_SUCCESS) break;
 
-	    if (sendInUse[proc])
-		rc = ulm_wait(&(sendRequestArray[proc]), &status);
-	    if (rc != ULM_SUCCESS) break;
-	}
+        if (sendInUse[proc])
+        rc = ulm_wait(&(sendRequestArray[proc]), &status);
+        if (rc != ULM_SUCCESS) break;
+    }
     }
 
     rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);

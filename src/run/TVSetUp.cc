@@ -62,7 +62,7 @@ volatile int TVDummy = 0;       /* NEVER change this - this is a variable the
                                    thinking that this might be modified, and
                                    therefore not optimize MPIR_Breakpoint away */
 volatile int MPIR_i_am_starter = 1;
-
+volatile int MPIR_debug_gate = 0;
 
 void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
 {

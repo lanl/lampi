@@ -42,6 +42,7 @@
 #include "util/MemFunctions.h"
 #include "internal/constants.h"
 #include "internal/state.h"
+#include "os/atomic.h"
 #include "ulm/ulm.h"
 #include "queue/ReliabilityInfo.h"
 

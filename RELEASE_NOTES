@@ -265,3 +265,37 @@ Version 1.4.11
 
 - Minor fixes.
 
+Version 1.4.12
+
+- Increased MAXSOCKETS value to 8192
+
+- Added work-around for bug during process startup on bproc when
+  mpirun is started from a debugger, e.g. Totalview.
+
+Version 1.4.13
+
+- Modified MPI_Init() and MPI_Init_thread() into macros for workaround
+  for Totalview
+  
+- Added check for validity of executable when running under bproc or RMS
+
+- Fixed bug when using '-env' runtime arg
+
+Version 1.4.14
+
+- Fixes to read STDIN from mpirun and direct it to proccess 0 of the application
+
+Version 1.4.15
+
+- There were some problems w/ the stdin forwarding in the 1.4.14 release. Specifically
+, bproc support for LSF/RSH and LSF/RSH appears to have been incomplete.
+
+Version 1.4.16
+
+- Fixed long machine names, lampi.conf file. Fixed RSH 
+
+Version 1.4.17
+
+- Fixed issue with processes hanging that used Pthreads. Changed MPI_Reduce to allow non-root 
+proccess to provide a null receive buffer.
+

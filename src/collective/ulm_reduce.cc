@@ -104,6 +104,26 @@ extern "C" int ulm_reduce(const void *s_buf,
     nhost = group->numberOfHostsInGroup;
     nproc_onhost = group->onHostGroupSize;
 
+    if (r_buf == NULL) {
+        if(group->ProcID == root) {
+            return ULM_ERR_BUFFER;
+        } else {
+            /*
+             * Allocate receive buffer for intermediate results
+             */
+            size_t size = type->extent * count;
+            if(size > communicator->reduceBufferSize)  {
+                communicator->reduceBuffer = realloc(communicator->reduceBuffer,size);
+                if(communicator->reduceBuffer == NULL) {
+                    communicator->reduceBufferSize = 0;
+                    return ULM_ERR_OUT_OF_RESOURCE;
+                }
+                communicator->reduceBufferSize = size;
+            }
+            r_buf = communicator->reduceBuffer;
+        }
+    }
+
     /*
      * Select algorithm based on arguments
      */

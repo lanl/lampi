@@ -137,8 +137,7 @@ typedef struct {
      */
 
     int interceptSTDio;             /* will library handle standard I/O? */
-    int STDERRfdToMPIrun;           /* file descriptor to which stderr data is redirected */
-    int STDOUTfdToMPIrun;           /* file descriptor to which stdout data is redirected */
+    int STDINfdToChild;
     int *STDERRfdsFromChildren;     /* stderr file descriptors to redirect */
     int *STDOUTfdsFromChildren;     /* stdout file descriptors to redirect */
     int output_prefix;              /* prepend informative prefix to stdout/stderr ? */

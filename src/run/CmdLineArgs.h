@@ -72,6 +72,13 @@ InputParameters_t ULMInputOptions[] =
      GetAppHostData,
      "List of hosts (machines)", 0, "\0"
     },
+    {"-machinefile",
+     "MachineFile",
+     STRING_ARGS,
+     NoOpFunction,
+     GetAppHostDataFromMachineFile,
+     "File containing list of hosts (machines)", 0, "\0"
+    },
     /* Procs must be after HostCount and HostList */
     {"-np",
      "Procs",

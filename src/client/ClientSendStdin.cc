@@ -30,41 +30,65 @@
 
 
 
-#include "internal/profiler.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <sys/time.h>           // needed for timespec
 #include <unistd.h>
+#include <sys/uio.h>
 
 #include "internal/constants.h"
+#include "internal/log.h"
+#include "internal/profiler.h"
 #include "internal/types.h"
-#include "run/Run.h"
-#include "run/globals.h"
+#include "client/ULMClient.h"
+#include "client/SocketGeneric.h"
 
-/*
- *  This routine is used to make sure mpirun has drained all the stdio data
- *   sent from a given client
- */
 
-void mpirunDrainStdioData(int *STDERRfds, int *STDOUTfds,
-                          ssize_t *StderrBytesRead,
-                          ssize_t *StdoutBytesRead,
-                          ssize_t ExpectedStderrBytesRead,
-                          ssize_t ExpectedStdoutBytesRead)
+
+int ClientSendStdin(int* src, int* dst)
 {
-    int MaxDescriptor;
-    if(! RunParameters.handleSTDio)
-	    return;
-
-    if (*STDERRfds > *STDOUTfds)
-        MaxDescriptor = (*STDERRfds) + 1;
-    else
-        MaxDescriptor = (*STDOUTfds) + 1;
-
-    /* check to see if there is still stdio data to write out */
-    while ((*STDERRfds >= 0) || (*STDOUTfds >= 0)) {
-            mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, 1, MaxDescriptor,
-                                   StderrBytesRead, StdoutBytesRead);
+    int size;
+    int error;
+    int IOReturn = _ulm_Recv_Socket(*src, &size, sizeof(size), &error);
+    /* socket connection closed */
+    if (IOReturn == 0) {
+        close(*src);
+        *src = -1;
+        return -1;
     }
+
+    if (IOReturn < 0 || error != ULM_SUCCESS) {
+        ulm_exit((-1, "Error: reading STDIOMSG.  RetVal = %ld, error = %d\n", IOReturn, error));
+    }
+
+    /* close stdin to child */
+    if(size == 0) {
+        close(*dst);
+        *dst = -1;
+        return 0;
+    }
+
+    char *buff = new char[size];
+    if(buff == 0) {
+        ulm_exit((-1, "ClientSendStdin: unable to allocate buffer for STDIOMSG\n"));
+    }
+    IOReturn = _ulm_Recv_Socket(*src, buff, size, &error);
+    if (IOReturn == 0) {
+        close(*src);
+        close(*dst);
+        *src = *dst = -1;
+        delete[] buff;
+        return -1;
+    }
+
+    if (IOReturn < 0 || error != ULM_SUCCESS) {
+        ulm_exit((-1, "ClientSendStdin: error reading STDIOMSG, error = %d\n", error));
+    }
+
+    IOReturn = write(*dst, buff, size);
+    if(IOReturn < 0) {
+        close(*dst);
+        *dst = -1;
+    }
+    delete[] buff;
+    return 0;
 }
+

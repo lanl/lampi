@@ -46,16 +46,14 @@ extern volatile int MPIR_debug_gate;
 extern int MPIR_being_debugged;
 extern volatile int TVDummy;
 
-extern "C" {
-    typedef struct {
-        char *host_name;        /* something that can be passed to inet_addr */
-        char *executable_name;  /* name of binary */
-        int pid;                /* process pid */
-    } MPIR_PROCDESC;
-};
+typedef struct {
+    char *host_name;        /* something that can be passed to inet_addr */
+    char *executable_name;  /* name of binary */
+    int pid;                /* process pid */
+} MPIR_PROCDESC;
 
 /* function prototypes */
 void ClientTVSetup(void);
-extern "C" void MPIR_Breakpoint();      /* dummy function used to let TotalView set a breakpoint */
+void MPIR_Breakpoint();      /* dummy function used to let TotalView set a breakpoint */
 
 #endif /* _ULMCLIENTTV */

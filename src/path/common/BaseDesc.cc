@@ -43,6 +43,7 @@
 #include "internal/constants.h" // for CACHE_ALIGNMENT
 #include "internal/log.h"
 #include "internal/state.h"
+#include "os/atomic.h"
 #include "path/common/BaseDesc.h"
 #include "path/common/path.h"
 #include "path/common/InitSendDescriptors.h"

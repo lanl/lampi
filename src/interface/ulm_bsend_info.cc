@@ -38,6 +38,7 @@
 #include "internal/malloc.h"
 #include "internal/options.h"
 #include "internal/state.h"
+#include "os/atomic.h"
 #include "path/common/BaseDesc.h"
 #include "queue/globals.h"
 #include "ulm/ulm.h"

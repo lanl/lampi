@@ -48,7 +48,7 @@
 %define	compiler	%{nil}
 %endif
 
-%define version 1.4.11
+%define version 1.5.0
 %define name lampi
 %define release 1
 
@@ -186,7 +186,7 @@ export PATH CC CFLAGS CXX CXXFLAGS FC F77 FFLAGS F90 F90FLAGS
 # rm -f /usr/man (useless symlink)
 %{__rm} -f %{buildroot}/man
 
-# populate /usr/share/doc/lampi-1.3.X/ by hand
+# populate /usr/share/doc/lampi-1.X.X/ by hand
 %define mydocdir %{_datadir}/doc/%{name}-%{version}
 %define mydocroot %{buildroot}%{mydocdir}
 %{__mkdir} -p %{mydocroot}

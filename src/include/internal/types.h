@@ -109,7 +109,7 @@ typedef struct {
 fix for bproc. */
 
 #ifndef ULM_FD_SETSIZE
-#define ULM_FD_SETSIZE		4096
+#define ULM_FD_SETSIZE 8192
 #endif
 
 typedef struct {

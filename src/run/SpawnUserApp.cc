@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sys/stat.h>
 
 #include "init/environ.h"
 #include "internal/constants.h"
@@ -56,12 +57,42 @@
  * stdout and stderr files - in this case the controlling tty.
  */
 
+#define I_OWN(fs)   \
+    ( (getuid() == fs.st_uid) && (S_IXUSR & fs.st_mode) )
+
+#define GRP_OWN(fs) \
+( (getgid() == fs.st_gid) && (S_IXGRP & fs.st_mode) )
+
 int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket, 
 		int **ListHostsStarted, ULMRunParams_t *RunParameters, 
 		int FirstAppArgument, int argc, char **argv)
 {
-    int		isLocal;
-	
+    int		isLocal, isValid;
+	char    *execName = NULL;
+    struct stat    fs;
+    
+    /*
+     * Check that executable is valid.
+     * (Only need to do this for bproc and RMS).
+     */
+    if ( RunParameters->UseRMS || RunParameters->UseBproc )
+    {
+        execName = RunParameters->ExeList[0];
+        if ( stat(execName, &fs) < 0 )
+        {
+            ulm_exit((-1, "Unable to determine status of executable %s."
+                      "  Please verify that the executable exists.\n",
+                      execName));
+        }
+        isValid = (fs.st_mode & S_IFREG) && ( I_OWN(fs) || GRP_OWN(fs)
+                                              || (fs.st_mode & S_IXOTH) );
+        if ( 0 == isValid )
+        {
+            ulm_err(("File %s is not executable by user.\n", execName));
+            return -1;
+        }        
+    }
+    
     /*
      * If LAMPI_LOCAL is set, then spawn all processes by execing
      * on the local host.  This is for debug purposes.

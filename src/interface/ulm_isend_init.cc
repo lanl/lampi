@@ -39,6 +39,7 @@
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "queue/globals.h"
+#include "os/atomic.h"
 #include "ulm/ulm.h"
 
 /*!

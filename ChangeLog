@@ -1,57 +1,202 @@
-2004-02-05 14:02  ddd
+2004-03-26 10:33  mitch
 
-	* src/: client/adminMessage.cc, run/mpirun.cc: Copyright update
+	* src/: path/common/BaseDesc.cc, path/ib/init.cc, path/ib/path.cc,
+	  path/ib/path.h, path/ib/recvFrag.cc, path/ib/recvFrag.h,
+	  path/ib/sendInfo.h, path/ib/state.h, path/sharedmem/path.cc,
+	  queue/Pt2PtGroupMatchFrags.cc, queue/Pt2PtGroupMatchRecv.cc,
+	  queue/Pt2PtGroupRecv.cc, queue/Pt2PtGroupRecvFrags.cc,
+	  queue/sender_ackinfo.h: - added useful assert() for debugging
+	  problems with setting messageDone to true multiple times...which
+	  is very bad for multithreaded code...
 
-2004-02-05 13:51  ddd
+	  - significant rework of IB acknowledgement code that should
+	  probably be pushed into other paths (verified under 192 process
+	  runs of multithreaded MPQC code)
 
-	* configure, configure.ac: Cosmetic change
+	  The acknowledgement code has the following major changes:
 
-2004-02-05 13:48  ddd
+	  1) If a fragment's sequence number is greater than the peer's
+	  reported largest in-order received sequence number, then it will
+	  be scheduled for retransmission if a) the current time is greater
+	  than the calculated time to resend; b) at least
+	  weighted_average_rtt seconds have passed since the last
+	  transmission; c) the receive completion queue is empty indicating
+	  that there are no possible acks that have not been received (UD
+	  only). If the fragment is not retransmitted, then the calculated
+	  time to resend is used to update the message's earliest time to
+	  resend.
 
-	* configure, configure.ac, RELEASE_NOTES: Updating version number
-	  to 1.4.11
+	  weighted_average_rtt is calculated for every destination peer,
+	  and stored in the sender ackinfo reliabilityInfo structure. It is
+	  a weighted average of (time[ack] - time[sent]).
 
-	  Adding -D_LARGEFILE_SOURCE to the variables defined when
-	  --enable-large-file-support is used
+	  2) If a fragment has not been retransmitted in
+	  ib_state.nack_lost_retrans_time seconds, then the fragment is
+	  unconditionally scheduled for retransmission.  This overcomes the
+	  ack hole that's existed for some time...
 
-2004-02-05 13:47  ddd
+	  These changes have reduced extra retransmission and
+	  acknowledgement by a factor of 3 to 5 in MPQC runs. - Mitch
 
-	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec, lampi.spec:
-	  Updating version number to 1.4.11
+2004-03-02 09:39  mitch
 
-2004-02-05 13:42  rta
+	* src/path/sharedmem/SMPProcessGroup.cc: added WhichQueue =
+	  ONNOLIST lines for clean-up of state
 
-	* src/: client/adminMessage.cc, run/mpirun.cc: Modified to not
-	  create the server_connect() thread if on bproc.  The
-	  bproc_vexecmove_io call will only spawn one remote process when
-	  running from within a debugger, e.g. totalview, if more than 1
-	  thread is created before making the bproc call.
+2004-03-02 09:19  mitch
 
-2004-02-05 13:35  ddd
+	* src/: path/sharedmem/path.cc, queue/Communicator.h,
+	  queue/Pt2PtGroupMatchFrags.cc, queue/Pt2PtGroupMatchRecv.cc,
+	  queue/Pt2PtGroupProgress.cc, queue/Pt2PtGroupTestRecv.cc:
+	  clean-up of privateQueues list manipulation functions and
+	  descriptor WhichQueue values. Here's a summary:
 
-	* src/init/init.cc: Updating copyright notice for 2004
+	  PostedSpecificRecv[src] - protected by recvLock[src]
+	  PostedWildRecv - protected by list lock MatchedRecv[src] -
+	  protected by list lock AheadOfSeqRecvFrags[src] - protected by
+	  recvLock[src] OkToMatchRecvFrags[src] - protected by
+	  recvLock[src] OkToMatchSMPFrags[src] - protected by recvLock[src]
 
-2004-02-04 15:26  ddd
+2004-03-02 09:16  mitch
 
-	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Updating rpm
-	  configuration options for Daryl
+	* src/queue/Pt2PtGroupRecvFrags.cc: fixed thread bug involving
+	  unprotected access to privateQueues.AheadOfSeqRecvFrags as last
+	  if-else condition in handleReceivedFrag
 
-2004-02-04 10:24  ddd
+2004-03-02 09:12  mitch
 
-	* ChangeLog, RELEASE_NOTES: Updating release notes, adding
-	  ChangeLog
+	* src/path/ib/: init.cc, sendFrag.cc, sendFrag.h: added general
+	  support (inline_m, and reg_addr_m) for EVAPI_post_inline_sr(),
+	  and fixed determination logic of when to call it
 
-2004-02-04 10:01  ddd
+2004-03-02 09:08  mitch
 
-	* RELEASE_NOTES, configure, configure.ac,
+	* src/path/common/BaseDesc.cc: fixed thread bug in
+	  DeliveredToAppLock() - two threads could properly update
+	  DataReceived and DataInBitBucket, then calculate the sum based on
+	  the last update, and both set recvDone = true -- with mixed
+	  catastrophic results down the line....now Lock is held through
+	  update and determination of whether recvDone = true...
+
+2004-03-02 09:05  mitch
+
+	* src/include/internal/constants.h: removed WILDMATCHEDIRECV list
+	  as part of WhichQueue clean-up
+
+2004-02-24 15:09  mitch
+
+	* src/path/ib/sendFrag.cc: added EVAPI_post_inline_sr() for small
+	  UD message fragments...now recording minimum 1/2 RTT 0-byte
+	  message MPI ping-pong latency of 11.32 microseconds on catalyst
+	  (3 GHz dual Xeon nodes)...performance still dependent on size of
+	  UD memory region -- HCA TPT settings?
+
+2004-02-24 14:27  mitch
+
+	* src/path/ib/path.cc: removing pthread_yield()
+	  call...reinvestigating still...
+
+2004-02-24 13:58  mitch
+
+	* src/run/ProcessInput.cc: fixing initialization of certain
+	  run-time defaults that are done mistakenly too late...namely
+	  after command-line parsing...thus overwriting any values that are
+	  set on the command line...
+
+2004-02-23 14:03  mitch
+
+	* src/path/ib/path.cc: fix of fix to ibPath::resend() ...
+
+2004-02-23 13:41  mitch
+
+	* src/: include/internal/constants.h, path/ib/init.cc,
+	  path/ib/path.cc, path/ib/path.h, path/ib/state.h,
+	  path/sharedmem/SMPProcessGroup.cc, queue/Pt2PtGroupMatchFrags.cc:
+	  1) multi-threaded fix for check*RecvListForMatch logic on both
+	  shared memory and other access -- locking PostedWildRecv before
+	  size() checks to make sure we're in the right code (wild ,
+	  specific, specific+wild); 2) changes to IB code initialization
+	  code to pick up values from environment variables for
+	  experimentation 3) retransmission rework for IB -- to try to send
+	  only one fragment/message if acking and NumAcked == 0 -- probably
+	  no match yet...
+
+2004-02-20 12:30  mitch
+
+	* src/run/TVSetUpApp.cc: modified private "-gdb" option code to
+	  default to "bpsh <node> gdb ..." -- works only on Bproc
+	  clusters....which is no change...
+
+2004-02-19 12:10  mitch
+
+	* src/path/ib/path.cc: fix to prevent starvation of send resources
+	  for acks
+
+2004-02-19 11:15  mitch
+
+	* src/path/ib/: path.cc, recvFrag.cc: additional threaded MPI fixes
+
+2004-02-17 22:57  mitch
+
+	* src/: path/sharedmem/SMPProcessGroup.cc,
+	  queue/Pt2PtGroupMatchFrags.cc, queue/Pt2PtGroupMatchRecv.cc:
+	  fixed Communicator::privateQueues.PostedWildRecv list corruption
+	  in multi-threaded code that may process multiple incoming
+	  fragments from different sources simultaneously; changed
+	  recvLock[src] locking to PostedWildRecv.Lock locking (should be
+	  only receive queue that need this as all other lists are indexed
+	  by fragment source rank)...will test this and move to release
+	  branch if it works...
+
+2004-02-16 00:55  mitch
+
+	* src/path/ib/: path.cc, recvFrag.cc: additional thread locking
+	  fixes -- including livelock avoidance between sending and
+	  acknowledgment processing threads...
+
+2004-02-15 00:34  mitch
+
+	* src/path/ib/: init.cc, path.cc, path.h, recvFrag.cc, recvFrag.h,
+	  sendFrag.cc, sendFrag.h, state.h: fixes for brain-dead recursive
+	  thread locking scheme (of mine)...if this fixes everything then
+	  it needs to be moved to the release branch...
+
+2004-02-05 15:22  ddd
+
+	* romio-1.2.5.1/adio/: common/ad_fstype.c, common/setfn.c,
+	  include/adio.h, include/adioi_fs_proto.h: Merging changes from
+	  BRANCH_1_4 up to PATCH_1_4_11 onto main branch.
+
+	  Merge command: cvs update -j PATCH_1_4_7 -j PATCH_1_4_11
+
+2004-02-05 15:17  ddd
+
+	* ChangeLog, Makefile.in, RELEASE_NOTES, config.h.in, configure,
+	  configure.ac, romio-1.2.5.1/test/runtests.in,
 	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
-	  rpm/lampi.spec: Adding an --enable-large-file-support option to
-	  our configure script which turns on the "-D_FILE_OFFSET_BITS=64
-	  -D_LARGEFILE64_SOURCE=1" for the ENTIRE COMPILATION (lampi and
-	  romio).  Feedback from panfs testing was that this was required
-	  to make everything happy.
+	  rpm/lampi.spec, src/client/adminMessage.cc,
+	  src/include/mpi/mpi.h, src/include/mpi/mpif.h, src/init/init.cc,
+	  src/mpi/internal/mpif_type.c, src/path/common/BaseDesc.cc,
+	  src/path/common/BaseDesc.h, src/path/common/path.cc,
+	  src/path/common/path.h, src/path/gm/header.h,
+	  src/path/gm/path.cc, src/path/gm/path.h, src/path/gm/recvFrag.cc,
+	  src/path/gm/recvFrag.h, src/path/gm/sendFrag.cc,
+	  src/path/gm/sendFrag.h, src/path/quadrics/init.cc,
+	  src/path/quadrics/path.cc, src/path/quadrics/path.h,
+	  src/path/quadrics/recvFrag.cc, src/path/quadrics/recvFrag.h,
+	  src/path/quadrics/sendFrag.h, src/path/sharedmem/path.cc,
+	  src/path/tcp/tcppath.cc, src/path/tcp/tcppath.h,
+	  src/path/tcp/tcppeer.cc, src/path/tcp/tcprecv.cc,
+	  src/path/tcp/tcprecv.h, src/path/tcp/tcpsend.cc,
+	  src/path/tcp/tcpsend.h, src/path/udp/path.cc,
+	  src/path/udp/path.h, src/path/udp/recvFrag.cc,
+	  src/path/udp/recvFrag.h, src/path/udp/sendFrag.cc,
+	  src/path/udp/sendFrag.h, src/queue/globals.h,
+	  src/run/ProcessInput.cc, src/run/mpirun.cc,
+	  src/run/mpirun_spawn_prun.cc: Merging changes from BRANCH_1_4 up
+	  to PATCH_1_4_11 onto main branch.
 
-	  Updating files for version 1.4.10.
+	  Merge command: cvs update -j PATCH_1_4_7 -j PATCH_1_4_11
 
 2004-02-03 09:28  yuw
 
@@ -71,25 +216,6 @@
 	* src/collective/quadrics/ulm_bcast_interhost_quadrics.cc: patch
 	  from Weikuan to fix hw bcast shared memory bug.  hw bcast with
 	  shared memory now working!
-
-2004-02-01 22:33  taylorm
-
-	* Makefile.in, configure, configure.ac,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_open.c,
-	  romio-1.2.5.1/test/runtests.in: bumped version to 1.4.9
-
-	  added "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE" options to
-	  ROMIO build, when panfs is being used.
-
-	  Removed one debug print statement from ROMIO panfs adio layer
-
-	  will tag as PATCH_1_4_9 after this commit.
-
-2004-01-30 14:37  dgdimick
-
-	* src/: client/adminMessage.cc, run/mpirun.cc: Added users error
-	  messages, that should help user debugging. Also added Version
-	  message at mpirun startup
 
 2004-01-29 13:47  taylorm
 
@@ -142,20 +268,6 @@
 	  sense -- although Tim reports that they don't actually fix
 	  anything...
 
-2004-01-26 14:48  ddd
-
-	* config.h.in: Undoing broken config.h.in change
-
-2004-01-26 14:39  ddd
-
-	* RELEASE_NOTES: Updating release notes
-
-2004-01-26 14:27  ddd
-
-	* configure, configure.ac, rpm/lampi-clustermatic.spec,
-	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec, config.h.in: Updating
-	  for version 1.4.8
-
 2004-01-26 07:25  twoodall
 
 	* src/init/init_rms.cc: merged in change from release branch
@@ -170,38 +282,9 @@
 	* src/collective/quadrics/ulm_bcast_interhost_quadrics.cc: patch
 	  from Weikuan to get HW broadcast working with new elan library.
 
-2004-01-22 17:20  twoodall
-
-	* src/init/init_rms.cc: an attempt to correctly determine the
-	  number of local processes on a given node for non-contigous node
-	  assignments - note this was determined by trial and error and may
-	  not work in all cases
-
-2004-01-21 15:34  ddd
-
-	* src/: include/mpi/mpi.h, include/mpi/mpif.h,
-	  mpi/internal/mpif_type.c: Adding MPI_INTEGER8 data type for
-	  fortran.  Not required by the standard, but assumed to exist by
-	  many codes (including L7).
-
 2004-01-21 13:58  twoodall
 
 	* src/path/quadrics/init.cc: merged in changes from release branch
-
-2004-01-21 13:50  twoodall
-
-	* src/path/quadrics/init.cc: additional memory barrier/init code
-	  added while debugging university of utah app
-
-2004-01-21 13:19  rta
-
-	* src/path/: gm/recvFrag.cc, gm/recvFrag.h, gm/sendFrag.cc,
-	  common/BaseDesc.cc, common/BaseDesc.h, common/path.cc,
-	  common/path.h, quadrics/recvFrag.h, sharedmem/path.cc,
-	  tcp/tcppeer.cc, udp/path.cc, udp/recvFrag.cc, udp/recvFrag.h: Bug
-	  fixes for GM reliability due to asynchronous send completion via
-	  the callback.  Still need to fix problem with freeing
-	  communicator...
 
 2004-01-21 12:49  twoodall
 
@@ -210,128 +293,12 @@
 	  src/run/mpirun_spawn_prun.cc: merged in changes from release
 	  branch to support new quadrics libs on QSC
 
-2004-01-21 11:36  twoodall
-
-	* src/path/quadrics/sendFrag.h: typo
-
-2004-01-21 11:34  twoodall
-
-	* src/queue/Pt2PtGroupMisc.cc: port to new QSC libs
-
-2004-01-21 11:31  twoodall
-
-	* src/run/mpirun_spawn_prun.cc: dont use
-	  UGLY_FIX_FOR_BROKEN_RMSLOADER
-
-2004-01-21 11:23  twoodall
-
-	* src/init/init_rms.cc, src/path/quadrics/init.cc, configure,
-	  configure.ac: port to new libs on QSC
-
 2004-01-13 12:43  mitch
 
 	* src/path/ib/: init.cc, libmpi.mk, memory.cc, memory.h, path.cc,
 	  state.cc, state.h: - new memory registration cache and fast
 	  sub-allocator malloc/free allocation object for IB RDMA
 	  communication -- not tested extensively yet...
-
-2004-01-12 13:11  rta
-
-	* src/run/ProcessInput.cc: Moving reliability logic into common
-	  code base.  This has been done for gm, quadrics, udp, tcp.  ib
-	  remains.  Still needs more testing and code review, but it has
-	  passed the C portion of the regression tests.
-
-2004-01-12 13:09  rta
-
-	* src/queue/globals.h: Moving reliability logic into common code
-	  base.  This has been done for gm, quadrics, udp, tcp.  ib
-	  remains.  Still needs more testing and code review, but it has
-	  passed the C portion of the regression tests.  Removed check for
-	  ENABLE_RELIABILITY and always instantiate reliabilityInfo,
-	  otherwise, UDP would not compile if reliability was disabled
-	  during configure.
-
-2004-01-12 13:07  rta
-
-	* src/path/udp/: path.cc, path.h, recvFrag.cc, recvFrag.h,
-	  sendFrag.cc, sendFrag.h: Moving reliability logic into common
-	  code base.  This has been done for gm, quadrics, udp, tcp.  ib
-	  remains.  Still needs more testing and code review, but it has
-	  passed the C portion of the regression tests.  Made send frag
-	  descriptor class a subclass of BaseSendFragDesc_t for all paths.
-
-2004-01-12 12:58  rta
-
-	* src/path/tcp/: tcppath.cc, tcppath.h, tcppeer.cc, tcprecv.cc,
-	  tcprecv.h, tcpsend.cc, tcpsend.h: Moving reliability logic into
-	  common code base.  This has been done for gm, quadrics, udp, tcp.
-	  ib remains.	Still needs more testing and code review, but it
-	  has passed the C portion of the regression tests.  Made send frag
-	  descriptor class a subclass of BaseSendFragDesc_t for all paths.
-	  Renamed init() to initialize() for tcp, because
-	  BaseSendFragDesc_t has init() method.
-
-2004-01-12 12:52  rta
-
-	* src/path/quadrics/: path.cc, path.h, recvFrag.cc, recvFrag.h,
-	  sendFrag.h: Moving reliability logic into common code base.  This
-	  has been done for gm, quadrics, udp, tcp.  ib remains.  Still
-	  needs more testing and code review, but it has passed the C
-	  portion of the regression tests.  Made send frag descriptor class
-	  a subclass of BaseSendFragDesc_t for all paths.
-
-2004-01-12 12:41  rta
-
-	* src/path/gm/: header.h, path.cc, path.h, recvFrag.cc, recvFrag.h,
-	  sendFrag.cc, sendFrag.h: Moving reliability logic into common
-	  code base.  This has been done for gm, quadrics, udp, tcp.  ib
-	  remains.  Still needs more testing and code review, but it has
-	  passed the C portion of the regression tests.
-
-2004-01-12 12:31  rta
-
-	* src/path/common/: BaseDesc.cc, BaseDesc.h, path.cc, path.h:
-	  Moving reliability logic into common code base.  This has been
-	  done for gm, quadrics, udp, tcp.  ib remains.  Still needs more
-	  testing and code review, but it has passed the C portion of the
-	  regression tests.
-
-2004-01-12 12:21  rta
-
-	* src/init/init.cc: Added check to make sure that s->client is not
-	  NULL.
-
-2004-01-08 11:56  taylorm
-
-	* configure, configure.ac, romio-1.2.5.1/Makefile.in,
-	  romio-1.2.5.1/configure, romio-1.2.5.1/adio/ad_panfs/Makefile.in,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs.h,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_close.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_done.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_fcntl.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_flush.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_hints.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_iread.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_iwrite.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_open.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_rdcoll.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_read.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_resize.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_seek.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_wait.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_wrcoll.c,
-	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_write.c,
-	  romio-1.2.5.1/adio/ad_panfs/pan_fs_client_cw_mode.h,
-	  romio-1.2.5.1/adio/ad_panfs/pan_fs_client_cw_mode.h.1.2.3,
-	  romio-1.2.5.1/adio/ad_panfs/pan_fs_client_cw_mode.h_R1.2.2,
-	  romio-1.2.5.1/adio/common/ad_fstype.c,
-	  romio-1.2.5.1/adio/common/setfn.c,
-	  romio-1.2.5.1/adio/include/adio.h,
-	  romio-1.2.5.1/adio/include/adioi_fs_proto.h,
-	  romio-1.2.5.1/adio/include/romioconf.h.in: backport of
-	  panasas/romio support from dev to 1.4 branch
 
 2004-01-07 17:56  taylorm
 
@@ -352,20 +319,6 @@
 	* configure.ac, configure, romio-1.2.5.1/Makefile.in: [no log
 	  message]
 
-2004-01-07 11:13  twoodall
-
-	* src/path/ib/path.cc: - reset earliestTimeToResend
-
-2004-01-07 11:12  twoodall
-
-	* src/queue/Pt2PtGroupProgress.cc: - use sendDone rath than numacks
-	  for completion
-
-2004-01-07 11:05  twoodall
-
-	* src/path/quadrics/: path.cc, sendFrag.h: - set flags correctly -
-	  reset earliestTimeToResend
-
 2004-01-07 10:38  taylorm
 
 	* romio-1.2.5.1/adio/ad_panfs/Makefile: [no log message]
@@ -379,12 +332,6 @@
 	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec,
 	  src/path/common/BaseDesc.h, src/path/gm/path.cc: Merging changes
 	  between 1.4.5 and 1.4.6 (an administrative release)
-
-2004-01-06 10:13  ddd
-
-	* configure, configure.ac, rpm/lampi-clustermatic.spec,
-	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating for version
-	  1.4.6 (an administrative release)
 
 2004-01-06 07:57  taylorm
 
@@ -412,34 +359,6 @@
 	* src/check/mpi-coll-bench/mpi-coll-bench.c: fix memory allocation
 	  bug for alltoall and alltoallv test.
 
-2003-12-23 09:02  rta
-
-	* src/path/tcp/tcprecv.cc: Fixed typo... this->init() should be
-	  this->Init().
-
-2003-12-23 08:48  twoodall
-
-	* src/path/quadrics/sendFrag.h: clear DMA enqueued flag if cannot
-	  acquire resource
-
-2003-12-22 16:21  rta
-
-	* src/path/udp/path.cc: Put back in Tim's fix with setting
-	  earliestTimeToResend in resend().
-
-2003-12-22 15:16  rta
-
-	* src/path/: common/BaseDesc.h, gm/path.cc, ib/path.cc,
-	  quadrics/path.cc, tcp/tcprecv.cc, udp/path.cc, udp/recvFrag.cc:
-	  Removed last 'else' condition in resend() so that we're always
-	  retransmitting.  Added Init() to base recv frag to initialize
-	  duplicate flag.
-
-2003-12-22 13:24  ddd
-
-	* src/path/quadrics/path.cc: Return error (bad path) rather than
-	  divide by zero
-
 2003-12-22 13:20  ddd
 
 	* src/path/quadrics/path.cc: Return error (bad path) rather than
@@ -450,21 +369,6 @@
 	* src/queue/Pt2PtGroupSend.cc: Fixed bug with persistent sends -
 	  needed to initialize persistFreeCalled to 0.
 
-2003-12-17 08:30  rta
-
-	* src/queue/Pt2PtGroupSend.cc: Fixed bug with persistent sends -
-	  needed to initialize persistFreeCalled to 0.
-
-2003-12-09 16:57  ddd
-
-	* configure: Updating for version 1.4.4
-
-2003-12-09 16:54  ddd
-
-	* RELEASE_NOTES, configure.ac, rpm/lampi-clustermatic.spec,
-	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating for version
-	  1.4.5
-
 2003-12-09 10:47  twoodall
 
 	* src/util/: Reactor.cc, Vector.h: - inline some template member
@@ -474,15 +378,6 @@
 
 	* src/path/tcp/: tcppath.html, tcppeer.cc, tcppeer.h, tcprecv.cc:
 	  merged in from release branch
-
-2003-12-09 10:02  twoodall
-
-	* src/util/Reactor.cc: dont acquire locks for non threading case
-
-2003-12-09 10:01  twoodall
-
-	* src/path/tcp/: tcppeer.cc, tcppeer.h, tcprecv.cc: set TCP_NODELAY
-	  flag to prevent TCP stack from attempting to COALESCE data
 
 2003-12-01 20:06  mitch
 
@@ -541,36 +436,6 @@
 	* src/: include/internal/types.h, util/Reactor.cc: merged in
 	  changes from release branch - defined ULM_FD_* macros
 
-2003-11-18 16:26  ddd
-
-	* RELEASE_NOTES, configure, configure.ac,
-	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
-	  rpm/lampi.spec: Preparing for version 1.4.4
-
-2003-11-18 16:25  twoodall
-
-	* src/: include/internal/types.h, util/Reactor.cc: defined/used
-	  ULM_FD_* macros for portability
-
-2003-11-18 16:25  rta
-
-	* src/run/: CmdLineArgs.h, Input.cc, JobParams.h, Run.h,
-	  SpawnUserAppRSH.cc: Merged changes to allow -ssh as run-time
-	  option.
-
-2003-11-18 16:25  rta
-
-	* src/: interface/ulm_start.cc, path/common/path.cc,
-	  path/sharedmem/path.cc, queue/Pt2PtGroupMisc.cc,
-	  queue/Pt2PtGroupProgress.cc: Merged Rich's changes from main
-	  branch to fix persistent sends.  Had to modify it slightly to fix
-	  buffered persistent sends - needed to set persistFreeCalled to
-	  true and added another check in path logic for common and shared
-	  mem to check if persistFreeCalled is true.  When a persistent
-	  send is replaced in ulm_start(), the descriptor is set to be no
-	  longer persistent, so that the path logic is not entirely
-	  correct.
-
 2003-11-18 07:38  twoodall
 
 	* src/check/mpi-ping/mpi-ping.c: removed debug code
@@ -580,16 +445,6 @@
 	* src/: path/tcp/tcppeer.cc, path/tcp/tcprecv.cc,
 	  path/tcp/tcpsend.cc, util/Reactor.cc, util/if.cc: - merged
 	  changes from release branch
-
-2003-11-18 07:32  twoodall
-
-	* src/path/tcp/: tcppeer.cc, tcprecv.cc, tcpsend.cc: - mods to
-	  support synchronous sends
-
-2003-11-18 07:32  twoodall
-
-	* src/util/: Reactor.cc, if.cc: - fixed interface discovery to
-	  support mac
 
 2003-11-17 14:10  rta
 
@@ -615,30 +470,6 @@
 	  run/TVSetUpApp.cc: -fixed IB flow-control problem -added
 	  gdbserver option to -gdb private debug option
 
-2003-11-14 15:16  ddd
-
-	* src/init/stub.cc: Adding function stub for TCP path since it
-	  prevents ROMIO from configuring properly when tcp is disabled.
-
-2003-11-13 18:31  ddd
-
-	* configure: Updating configure for new version number
-
-2003-11-13 17:53  taylorm
-
-	* src/util/: misc.c, misc.h:
-
-	  backport SA_RESTART code to BRANCH_1_4
-
-2003-11-13 17:53  taylorm
-
-	* src/run/lampirun_init_proc.cc:
-	  backport SA_RESTART code to BRANCH_1_4
-
-2003-11-13 17:53  taylorm
-
-	* src/init/init_proc.cc: backport SA_RESTART code to BRANCH_1_4
-
 2003-11-13 17:42  rta
 
 	* Makefile.in, RELEASE_NOTES, configure, configure.ac,
@@ -646,26 +477,6 @@
 	  src/path/sharedmem/path.cc, src/queue/Pt2PtGroupProgress.cc:
 	  Merging changes from release branch (mainly fixes to SYNCHRONOUS
 	  sends).
-
-2003-11-13 17:23  ddd
-
-	* configure, configure.ac, rpm/lampi-clustermatic.spec,
-	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating version
-	  number.
-
-	  Also changing configure to have ALL NETWORK PATHS and ALL
-	  RESOURCE MANAGERS disabled by default.  This is in the hope that
-	  we avoid confusion with the increasing numbers of paths
-	  available.
-
-2003-11-13 17:19  ddd
-
-	* Makefile.in, RELEASE_NOTES: Updating version number.
-
-	  Also changing configure to have ALL NETWORK PATHS and ALL
-	  RESOURCE MANAGERS disabled by default.  This is in the hope that
-	  we avoid confusion with the increasing numbers of paths
-	  available.
 
 2003-11-13 17:16  taylorm
 
@@ -694,35 +505,11 @@
 	* src/run/lampirun_init_proc.cc: set SA_RESTART for clients
 	  (forget to commit this with the other SA_RESTART commits)
 
-2003-11-13 15:05  rta
-
-	* src/: mpi/c/mpi_issend.c, path/sharedmem/path.cc,
-	  queue/Pt2PtGroupProgress.cc: Fixed with with SYNCHRONOUS sends.
-	  Sharedmem path should look at NumAcked in the send descriptor's
-	  pathInfo instead of the base NumAcked field.	Modified logic in
-	  push_frags...() logic to be consisent with logic in
-	  CheckForAckedMessages().
-
 2003-11-13 14:03  mitch
 
 	* src/path/ib/: init.cc, path.cc, recvFrag.cc, sendFrag.h, state.h:
 	  changed locking strategy to include protection against locking
 	  the ib_state.lock if it is already held...
-
-2003-11-13 09:18  rta
-
-	* src/init/init.cc: Moved init of output prefix from prefork_stdio
-	  to postfork_stdio.
-
-2003-11-12 17:46  rta
-
-	* src/mpi/c/mpi_issend.c, RELEASE_NOTES: Temporarily changed SYNC
-	  send to regular send until we can figure out the bug on
-	  lightning!
-
-2003-11-12 17:45  rta
-
-	* configure, configure.ac: Changed to 1.4.2.
 
 2003-11-12 17:38  mitch
 
@@ -755,14 +542,6 @@
 	* src/path/ib/sendFrag.cc: changed ulm_warn to ulm_exit for send
 	  descriptor of unknown type...
 
-2003-11-12 11:37  ddd
-
-	* RELEASE_NOTES: Updating release notes
-
-2003-11-12 11:34  ddd
-
-	* RELEASE_NOTES: Updating release notes
-
 2003-11-12 11:12  ddd
 
 	* configure, configure.ac, rpm/README, rpm/lampi-clustermatic.spec,
@@ -788,27 +567,6 @@
 	  signals will cause wait(), read() & write() to return a -1 and
 	  errno==EINTR.
 
-2003-11-12 09:52  twoodall
-
-	* src/path/sharedmem/path.cc: dont decrement refcount for
-	  persistent buffered sends
-
-2003-11-11 17:58  ddd
-
-	* rpm/README: Adding README file with outline of how to build an
-	  RPM (when you're not root).
-
-2003-11-11 17:36  ddd
-
-	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec: Adding
-	  switches for optional TCP and IB paths to RPM spec files
-
-2003-11-11 17:12  ddd
-
-	* configure, configure.ac, rpm/lampi-clustermatic.spec,
-	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating version
-	  numbers for version 1.4.1
-
 2003-11-11 15:57  mitch
 
 	* src/path/ib/: init.cc, path.cc, sendFrag.cc, sendFrag.h, state.h:
@@ -827,19 +585,9 @@
 	* src/path/gm/init.cc: change setup so that we have 1 to 1 board
 	  communications between a given pair of procs.
 
-2003-11-11 14:36  twoodall
-
-	* src/path/common/path.cc: - dont decrement reference count for
-	  persistent buffers
-
-2003-11-11 13:38  rta
-
-	* src/path/gm/init.cc: Fixed warning statement to check if process
-	  is daemon proc.
-
 2003-11-11 13:09  ddd
 
-	* src/interface/: ulm_cleanup.cc: Another fix for running with UDP
+	* src/interface/ulm_cleanup.cc: Another fix for running with UDP
 	  disabled.
 
 2003-11-11 12:51  mitch
@@ -849,17 +597,13 @@
 
 2003-11-11 11:53  ddd
 
-	* src/run/: JobParams.h: Minor fix to allow for "configure
+	* src/run/JobParams.h: Minor fix to allow for "configure
 	  --disable-udp --enable-tcp"
 
-2003-11-10 18:33  ddd
+2003-11-10 18:35  ddd
 
 	* configure, configure.ac: Fixing typo in overridable RMS_PREFIX
 	  variable
-
-2003-11-10 18:28  ddd
-
-	* configure, configure.ac: setting version number 1.4.0
 
 2003-11-10 18:07  ddd
 
@@ -927,10 +671,6 @@
 	  for tcp options - added (-i) command line option to specify
 	  UDP/TCP interface by name - changed TCP/UDP to not use shared
 	  memory for receive descriptors
-
-2003-11-10 13:33  rta
-
-	* src/path/gm/init.cc: Removed debug msg.
 
 2003-11-07 18:11  rlgraham
 
@@ -1317,27 +1057,10 @@
 	  path/gm/sendFrag.cc, path/gm/sendFrag.h, path/gm/state.h,
 	  queue/Pt2PtGroupProgress.cc: Merging diffs from release branch
 
-2003-10-16 12:52  rta
-
-	* man/lampi_man.html, man/lampi_man.tex, configure, configure.ac,
-	  lampi.spec: Updated to version 1.3.7
-
-2003-10-16 11:25  rta
-
-	* src/path/gm/: base_state.h, init.cc, path.cc, path.h,
-	  recvFrag.cc, sendFrag.cc, sendFrag.h, state.h: Fixed bug with GM
-	  when ACKs were arriving before GM completed sends.  Modified to
-	  work with GM 2.0.
-
 2003-10-16 11:24  rta
 
 	* Makefile.in, man/lampi.html, man/mpirun.html,
 	  src/path/udp/path.cc: Merging diffs from release branch
-
-2003-10-16 11:16  rta
-
-	* src/: queue/Pt2PtGroupProgress.cc, path/common/path.h: Added
-	  check that SendDesc->NumSent >= SendDesc->numfrags.
 
 2003-10-16 10:24  ddd
 
@@ -1408,21 +1131,6 @@
 2003-10-10 15:08  taylorm
 
 	* configure, configure.ac: switching to romio-1.2.5
-
-2003-10-10 09:07  taylorm
-
-	* RELEASE_NOTES, RELEASE_PROCESS: bumped up version to 1.3.6.
-
-2003-10-09 17:28  taylorm
-
-	* configure, configure.ac: changed version to 1.3.6, reran autoconf
-
-2003-10-09 13:39  twoodall
-
-	* src/path/udp/path.cc: - handle case on retrans where
-	  earliestTimeToResend is not setup for retransmission - corrected
-	  calculation of retransmission time to startout at 5 secs rather
-	  than 10
 
 2003-10-02 17:39  taylorm
 
@@ -1689,274 +1397,6 @@
 	  test/std/status.std, util/romioinstall.in, util/tarch: Initial
 	  revision
 
-2003-10-02 17:39  taylorm
-
-	* romio-1.2.5.1/: .config_params, COPYRIGHT, Makefile.in, README,
-	  acconfig.h, aclocal.m4, add_fortran_pragmas.py, configure,
-	  configure.in, configure2.in, adio/ad_cfs/README,
-	  adio/ad_hfs/Makefile.in, adio/ad_hfs/ad_hfs.c,
-	  adio/ad_hfs/ad_hfs.h, adio/ad_hfs/ad_hfs_close.c,
-	  adio/ad_hfs/ad_hfs_done.c, adio/ad_hfs/ad_hfs_fcntl.c,
-	  adio/ad_hfs/ad_hfs_flush.c, adio/ad_hfs/ad_hfs_hints.c,
-	  adio/ad_hfs/ad_hfs_iread.c, adio/ad_hfs/ad_hfs_iwrite.c,
-	  adio/ad_hfs/ad_hfs_open.c, adio/ad_hfs/ad_hfs_rdcoll.c,
-	  adio/ad_hfs/ad_hfs_read.c, adio/ad_hfs/ad_hfs_resize.c,
-	  adio/ad_hfs/ad_hfs_seek.c, adio/ad_hfs/ad_hfs_wait.c,
-	  adio/ad_hfs/ad_hfs_wrcoll.c, adio/ad_hfs/ad_hfs_write.c,
-	  adio/ad_nfs/Makefile.in, adio/ad_nfs/ad_nfs.c,
-	  adio/ad_nfs/ad_nfs.h, adio/ad_nfs/ad_nfs_close.c,
-	  adio/ad_nfs/ad_nfs_done.c, adio/ad_nfs/ad_nfs_fcntl.c,
-	  adio/ad_nfs/ad_nfs_flush.c, adio/ad_nfs/ad_nfs_getsh.c,
-	  adio/ad_nfs/ad_nfs_hints.c, adio/ad_nfs/ad_nfs_iread.c,
-	  adio/ad_nfs/ad_nfs_iwrite.c, adio/ad_nfs/ad_nfs_open.c,
-	  adio/ad_nfs/ad_nfs_rdcoll.c, adio/ad_nfs/ad_nfs_read.c,
-	  adio/ad_nfs/ad_nfs_resize.c, adio/ad_nfs/ad_nfs_seek.c,
-	  adio/ad_nfs/ad_nfs_setsh.c, adio/ad_nfs/ad_nfs_wait.c,
-	  adio/ad_nfs/ad_nfs_wrcoll.c, adio/ad_nfs/ad_nfs_write.c,
-	  adio/ad_ntfs/ad_ntfs.c, adio/ad_ntfs/ad_ntfs.h,
-	  adio/ad_ntfs/ad_ntfs_close.c, adio/ad_ntfs/ad_ntfs_done.c,
-	  adio/ad_ntfs/ad_ntfs_fcntl.c, adio/ad_ntfs/ad_ntfs_flush.c,
-	  adio/ad_ntfs/ad_ntfs_hints.c, adio/ad_ntfs/ad_ntfs_iread.c,
-	  adio/ad_ntfs/ad_ntfs_iwrite.c, adio/ad_ntfs/ad_ntfs_open.c,
-	  adio/ad_ntfs/ad_ntfs_rdcoll.c, adio/ad_ntfs/ad_ntfs_read.c,
-	  adio/ad_ntfs/ad_ntfs_resize.c, adio/ad_ntfs/ad_ntfs_seek.c,
-	  adio/ad_ntfs/ad_ntfs_wait.c, adio/ad_ntfs/ad_ntfs_wrcoll.c,
-	  adio/ad_ntfs/ad_ntfs_write.c, adio/ad_pfs/Makefile.in,
-	  adio/ad_pfs/ad_pfs.c, adio/ad_pfs/ad_pfs.h,
-	  adio/ad_pfs/ad_pfs_close.c, adio/ad_pfs/ad_pfs_done.c,
-	  adio/ad_pfs/ad_pfs_fcntl.c, adio/ad_pfs/ad_pfs_flush.c,
-	  adio/ad_pfs/ad_pfs_hints.c, adio/ad_pfs/ad_pfs_iread.c,
-	  adio/ad_pfs/ad_pfs_iwrite.c, adio/ad_pfs/ad_pfs_open.c,
-	  adio/ad_pfs/ad_pfs_rdcoll.c, adio/ad_pfs/ad_pfs_read.c,
-	  adio/ad_pfs/ad_pfs_resize.c, adio/ad_pfs/ad_pfs_seek.c,
-	  adio/ad_pfs/ad_pfs_wait.c, adio/ad_pfs/ad_pfs_wrcoll.c,
-	  adio/ad_pfs/ad_pfs_write.c, adio/ad_piofs/Makefile.in,
-	  adio/ad_piofs/ad_piofs.c, adio/ad_piofs/ad_piofs.h,
-	  adio/ad_piofs/ad_piofs_close.c, adio/ad_piofs/ad_piofs_done.c,
-	  adio/ad_piofs/ad_piofs_fcntl.c, adio/ad_piofs/ad_piofs_flush.c,
-	  adio/ad_piofs/ad_piofs_hints.c, adio/ad_piofs/ad_piofs_iread.c,
-	  adio/ad_piofs/ad_piofs_iwrite.c, adio/ad_piofs/ad_piofs_open.c,
-	  adio/ad_piofs/ad_piofs_rdcoll.c, adio/ad_piofs/ad_piofs_read.c,
-	  adio/ad_piofs/ad_piofs_resize.c, adio/ad_piofs/ad_piofs_seek.c,
-	  adio/ad_piofs/ad_piofs_wait.c, adio/ad_piofs/ad_piofs_wrcoll.c,
-	  adio/ad_piofs/ad_piofs_write.c, adio/ad_pvfs/Makefile.in,
-	  adio/ad_pvfs/ad_pvfs.c, adio/ad_pvfs/ad_pvfs.h,
-	  adio/ad_pvfs/ad_pvfs_close.c, adio/ad_pvfs/ad_pvfs_delete.c,
-	  adio/ad_pvfs/ad_pvfs_done.c, adio/ad_pvfs/ad_pvfs_fcntl.c,
-	  adio/ad_pvfs/ad_pvfs_flush.c, adio/ad_pvfs/ad_pvfs_hints.c,
-	  adio/ad_pvfs/ad_pvfs_iread.c, adio/ad_pvfs/ad_pvfs_iwrite.c,
-	  adio/ad_pvfs/ad_pvfs_open.c, adio/ad_pvfs/ad_pvfs_rdcoll.c,
-	  adio/ad_pvfs/ad_pvfs_read.c, adio/ad_pvfs/ad_pvfs_resize.c,
-	  adio/ad_pvfs/ad_pvfs_seek.c, adio/ad_pvfs/ad_pvfs_wait.c,
-	  adio/ad_pvfs/ad_pvfs_wrcoll.c, adio/ad_pvfs/ad_pvfs_write.c,
-	  adio/ad_sfs/Makefile.in, adio/ad_sfs/ad_sfs.c,
-	  adio/ad_sfs/ad_sfs.h, adio/ad_sfs/ad_sfs_close.c,
-	  adio/ad_sfs/ad_sfs_done.c, adio/ad_sfs/ad_sfs_fcntl.c,
-	  adio/ad_sfs/ad_sfs_flush.c, adio/ad_sfs/ad_sfs_hints.c,
-	  adio/ad_sfs/ad_sfs_iread.c, adio/ad_sfs/ad_sfs_iwrite.c,
-	  adio/ad_sfs/ad_sfs_open.c, adio/ad_sfs/ad_sfs_rdcoll.c,
-	  adio/ad_sfs/ad_sfs_read.c, adio/ad_sfs/ad_sfs_resize.c,
-	  adio/ad_sfs/ad_sfs_seek.c, adio/ad_sfs/ad_sfs_wait.c,
-	  adio/ad_sfs/ad_sfs_wrcoll.c, adio/ad_sfs/ad_sfs_write.c,
-	  adio/ad_testfs/Makefile.in, adio/ad_testfs/ad_testfs.c,
-	  adio/ad_testfs/ad_testfs.h, adio/ad_testfs/ad_testfs_close.c,
-	  adio/ad_testfs/ad_testfs_delete.c,
-	  adio/ad_testfs/ad_testfs_done.c,
-	  adio/ad_testfs/ad_testfs_fcntl.c,
-	  adio/ad_testfs/ad_testfs_flush.c,
-	  adio/ad_testfs/ad_testfs_getsh.c,
-	  adio/ad_testfs/ad_testfs_hints.c,
-	  adio/ad_testfs/ad_testfs_iread.c,
-	  adio/ad_testfs/ad_testfs_iwrite.c,
-	  adio/ad_testfs/ad_testfs_open.c,
-	  adio/ad_testfs/ad_testfs_rdcoll.c,
-	  adio/ad_testfs/ad_testfs_read.c,
-	  adio/ad_testfs/ad_testfs_resize.c,
-	  adio/ad_testfs/ad_testfs_seek.c,
-	  adio/ad_testfs/ad_testfs_setsh.c,
-	  adio/ad_testfs/ad_testfs_wait.c,
-	  adio/ad_testfs/ad_testfs_wrcoll.c,
-	  adio/ad_testfs/ad_testfs_write.c, adio/ad_ufs/Makefile.in,
-	  adio/ad_ufs/ad_ufs.c, adio/ad_ufs/ad_ufs.h,
-	  adio/ad_ufs/ad_ufs_close.c, adio/ad_ufs/ad_ufs_done.c,
-	  adio/ad_ufs/ad_ufs_fcntl.c, adio/ad_ufs/ad_ufs_flush.c,
-	  adio/ad_ufs/ad_ufs_hints.c, adio/ad_ufs/ad_ufs_iread.c,
-	  adio/ad_ufs/ad_ufs_iwrite.c, adio/ad_ufs/ad_ufs_open.c,
-	  adio/ad_ufs/ad_ufs_rdcoll.c, adio/ad_ufs/ad_ufs_read.c,
-	  adio/ad_ufs/ad_ufs_resize.c, adio/ad_ufs/ad_ufs_seek.c,
-	  adio/ad_ufs/ad_ufs_wait.c, adio/ad_ufs/ad_ufs_wrcoll.c,
-	  adio/ad_ufs/ad_ufs_write.c, adio/ad_xfs/Makefile.in,
-	  adio/ad_xfs/ad_xfs.c, adio/ad_xfs/ad_xfs.h,
-	  adio/ad_xfs/ad_xfs_close.c, adio/ad_xfs/ad_xfs_done.c,
-	  adio/ad_xfs/ad_xfs_fcntl.c, adio/ad_xfs/ad_xfs_flush.c,
-	  adio/ad_xfs/ad_xfs_hints.c, adio/ad_xfs/ad_xfs_iread.c,
-	  adio/ad_xfs/ad_xfs_iwrite.c, adio/ad_xfs/ad_xfs_open.c,
-	  adio/ad_xfs/ad_xfs_rdcoll.c, adio/ad_xfs/ad_xfs_read.c,
-	  adio/ad_xfs/ad_xfs_resize.c, adio/ad_xfs/ad_xfs_seek.c,
-	  adio/ad_xfs/ad_xfs_wait.c, adio/ad_xfs/ad_xfs_wrcoll.c,
-	  adio/ad_xfs/ad_xfs_write.c, adio/common/Makefile.in,
-	  adio/common/ad_aggregate.c, adio/common/ad_close.c,
-	  adio/common/ad_delete.c, adio/common/ad_end.c,
-	  adio/common/ad_flush.c, adio/common/ad_fstype.c,
-	  adio/common/ad_get_sh_fp.c, adio/common/ad_hints.c,
-	  adio/common/ad_init.c, adio/common/ad_open.c,
-	  adio/common/ad_read_coll.c, adio/common/ad_read_str.c,
-	  adio/common/ad_read_str_naive.c, adio/common/ad_seek.c,
-	  adio/common/ad_set_sh_fp.c, adio/common/ad_set_view.c,
-	  adio/common/ad_write_coll.c, adio/common/ad_write_str.c,
-	  adio/common/async_list.c, adio/common/byte_offset.c,
-	  adio/common/cb_config_list.c, adio/common/eof_offset.c,
-	  adio/common/error.c, adio/common/flatten.c,
-	  adio/common/gencheck.c, adio/common/get_fp_posn.c,
-	  adio/common/iscontig.c, adio/common/lock.c, adio/common/malloc.c,
-	  adio/common/req_malloc.c, adio/common/setfn.c,
-	  adio/common/shfp_fname.c, adio/common/status_setb.c,
-	  adio/include/BaseIOErrMsgs.msg, adio/include/adio.h,
-	  adio/include/adio_cb_config_list.h, adio/include/adio_extern.h,
-	  adio/include/adioi.h, adio/include/adioi_errmsg.h,
-	  adio/include/adioi_error.h, adio/include/adioi_fs_proto.h,
-	  adio/include/mpio_error.h, adio/include/mpipr.h,
-	  adio/include/mpisgi2.h, adio/include/romioconf.h.in,
-	  adio/sgi/mpi3.1/mpi.h, adio/sgi/mpi3.1/mpif.h, doc/Makefile,
-	  doc/README, doc/users-guide.bbl, doc/users-guide.ps.gz,
-	  doc/users-guide.tex, include/mpio.h.in, include/mpiof.h.in,
-	  man/man3/MPIO_Request_c2f.3, man/man3/MPIO_Request_f2c.3,
-	  man/man3/MPIO_Test.3, man/man3/MPIO_Wait.3,
-	  man/man3/MPI_File_c2f.3, man/man3/MPI_File_close.3,
-	  man/man3/MPI_File_delete.3, man/man3/MPI_File_f2c.3,
-	  man/man3/MPI_File_get_amode.3, man/man3/MPI_File_get_atomicity.3,
-	  man/man3/MPI_File_get_byte_offset.3,
-	  man/man3/MPI_File_get_group.3, man/man3/MPI_File_get_info.3,
-	  man/man3/MPI_File_get_position.3,
-	  man/man3/MPI_File_get_position_shared.3,
-	  man/man3/MPI_File_get_size.3,
-	  man/man3/MPI_File_get_type_extent.3,
-	  man/man3/MPI_File_get_view.3, man/man3/MPI_File_iread.3,
-	  man/man3/MPI_File_iread_at.3, man/man3/MPI_File_iread_shared.3,
-	  man/man3/MPI_File_iwrite.3, man/man3/MPI_File_iwrite_at.3,
-	  man/man3/MPI_File_iwrite_shared.3, man/man3/MPI_File_open.3,
-	  man/man3/MPI_File_preallocate.3, man/man3/MPI_File_read.3,
-	  man/man3/MPI_File_read_all.3, man/man3/MPI_File_read_all_begin.3,
-	  man/man3/MPI_File_read_all_end.3, man/man3/MPI_File_read_at.3,
-	  man/man3/MPI_File_read_at_all.3,
-	  man/man3/MPI_File_read_at_all_begin.3,
-	  man/man3/MPI_File_read_at_all_end.3,
-	  man/man3/MPI_File_read_ordered.3,
-	  man/man3/MPI_File_read_ordered_begin.3,
-	  man/man3/MPI_File_read_ordered_end.3,
-	  man/man3/MPI_File_read_shared.3, man/man3/MPI_File_seek.3,
-	  man/man3/MPI_File_seek_shared.3,
-	  man/man3/MPI_File_set_atomicity.3, man/man3/MPI_File_set_info.3,
-	  man/man3/MPI_File_set_size.3, man/man3/MPI_File_set_view.3,
-	  man/man3/MPI_File_sync.3, man/man3/MPI_File_write.3,
-	  man/man3/MPI_File_write_all.3,
-	  man/man3/MPI_File_write_all_begin.3,
-	  man/man3/MPI_File_write_all_end.3, man/man3/MPI_File_write_at.3,
-	  man/man3/MPI_File_write_at_all.3,
-	  man/man3/MPI_File_write_at_all_begin.3,
-	  man/man3/MPI_File_write_at_all_end.3,
-	  man/man3/MPI_File_write_ordered.3,
-	  man/man3/MPI_File_write_ordered_begin.3,
-	  man/man3/MPI_File_write_ordered_end.3,
-	  man/man3/MPI_File_write_shared.3, man/man3/MPI_Info_c2f.3,
-	  man/man3/MPI_Info_create.3, man/man3/MPI_Info_delete.3,
-	  man/man3/MPI_Info_dup.3, man/man3/MPI_Info_f2c.3,
-	  man/man3/MPI_Info_free.3, man/man3/MPI_Info_get.3,
-	  man/man3/MPI_Info_get_nkeys.3, man/man3/MPI_Info_get_nthkey.3,
-	  man/man3/MPI_Info_get_valuelen.3, man/man3/MPI_Info_set.3,
-	  man/man3/MPI_Type_create_darray.3,
-	  man/man3/MPI_Type_create_subarray.3, mpi-io/Makefile.in,
-	  mpi-io/close.c, mpi-io/delete.c, mpi-io/file_c2f.c,
-	  mpi-io/file_f2c.c, mpi-io/fsync.c, mpi-io/get_amode.c,
-	  mpi-io/get_atom.c, mpi-io/get_bytoff.c, mpi-io/get_errh.c,
-	  mpi-io/get_extent.c, mpi-io/get_group.c, mpi-io/get_info.c,
-	  mpi-io/get_posn.c, mpi-io/get_posn_sh.c, mpi-io/get_size.c,
-	  mpi-io/get_view.c, mpi-io/ioreq_c2f.c, mpi-io/ioreq_f2c.c,
-	  mpi-io/iotest.c, mpi-io/iowait.c, mpi-io/iread.c,
-	  mpi-io/iread_at.c, mpi-io/iread_sh.c, mpi-io/iwrite.c,
-	  mpi-io/iwrite_at.c, mpi-io/iwrite_sh.c, mpi-io/mpioimpl.h,
-	  mpi-io/mpioprof.h, mpi-io/open.c, mpi-io/prealloc.c,
-	  mpi-io/rd_atallb.c, mpi-io/rd_atalle.c, mpi-io/read.c,
-	  mpi-io/read_all.c, mpi-io/read_allb.c, mpi-io/read_alle.c,
-	  mpi-io/read_at.c, mpi-io/read_atall.c, mpi-io/read_ord.c,
-	  mpi-io/read_ordb.c, mpi-io/read_orde.c, mpi-io/read_sh.c,
-	  mpi-io/seek.c, mpi-io/seek_sh.c, mpi-io/set_atom.c,
-	  mpi-io/set_errh.c, mpi-io/set_info.c, mpi-io/set_size.c,
-	  mpi-io/set_view.c, mpi-io/wr_atallb.c, mpi-io/wr_atalle.c,
-	  mpi-io/write.c, mpi-io/write_all.c, mpi-io/write_allb.c,
-	  mpi-io/write_alle.c, mpi-io/write_at.c, mpi-io/write_atall.c,
-	  mpi-io/write_ord.c, mpi-io/write_ordb.c, mpi-io/write_orde.c,
-	  mpi-io/write_sh.c, mpi-io/fortran/Makefile.in,
-	  mpi-io/fortran/closef.c, mpi-io/fortran/deletef.c,
-	  mpi-io/fortran/fsyncf.c, mpi-io/fortran/get_amodef.c,
-	  mpi-io/fortran/get_atomf.c, mpi-io/fortran/get_bytofff.c,
-	  mpi-io/fortran/get_errhf.c, mpi-io/fortran/get_extentf.c,
-	  mpi-io/fortran/get_groupf.c, mpi-io/fortran/get_infof.c,
-	  mpi-io/fortran/get_posn_shf.c, mpi-io/fortran/get_posnf.c,
-	  mpi-io/fortran/get_sizef.c, mpi-io/fortran/get_viewf.c,
-	  mpi-io/fortran/iotestf.c, mpi-io/fortran/iowaitf.c,
-	  mpi-io/fortran/iread_atf.c, mpi-io/fortran/iread_shf.c,
-	  mpi-io/fortran/ireadf.c, mpi-io/fortran/iwrite_atf.c,
-	  mpi-io/fortran/iwrite_shf.c, mpi-io/fortran/iwritef.c,
-	  mpi-io/fortran/openf.c, mpi-io/fortran/preallocf.c,
-	  mpi-io/fortran/rd_atallbf.c, mpi-io/fortran/rd_atallef.c,
-	  mpi-io/fortran/read_allbf.c, mpi-io/fortran/read_allef.c,
-	  mpi-io/fortran/read_allf.c, mpi-io/fortran/read_atallf.c,
-	  mpi-io/fortran/read_atf.c, mpi-io/fortran/read_ordbf.c,
-	  mpi-io/fortran/read_ordef.c, mpi-io/fortran/read_ordf.c,
-	  mpi-io/fortran/read_shf.c, mpi-io/fortran/readf.c,
-	  mpi-io/fortran/seek_shf.c, mpi-io/fortran/seekf.c,
-	  mpi-io/fortran/set_atomf.c, mpi-io/fortran/set_errhf.c,
-	  mpi-io/fortran/set_infof.c, mpi-io/fortran/set_sizef.c,
-	  mpi-io/fortran/set_viewf.c, mpi-io/fortran/wr_atallbf.c,
-	  mpi-io/fortran/wr_atallef.c, mpi-io/fortran/write_allbf.c,
-	  mpi-io/fortran/write_allef.c, mpi-io/fortran/write_allf.c,
-	  mpi-io/fortran/write_atallf.c, mpi-io/fortran/write_atf.c,
-	  mpi-io/fortran/write_ordbf.c, mpi-io/fortran/write_ordef.c,
-	  mpi-io/fortran/write_ordf.c, mpi-io/fortran/write_shf.c,
-	  mpi-io/fortran/writef.c, mpi2-other/array/Makefile.in,
-	  mpi2-other/array/darray.c, mpi2-other/array/subarray.c,
-	  mpi2-other/array/fortran/Makefile.in,
-	  mpi2-other/array/fortran/darrayf.c,
-	  mpi2-other/array/fortran/subarrayf.c,
-	  mpi2-other/info/Makefile.in, mpi2-other/info/info_c2f.c,
-	  mpi2-other/info/info_create.c, mpi2-other/info/info_delete.c,
-	  mpi2-other/info/info_dup.c, mpi2-other/info/info_f2c.c,
-	  mpi2-other/info/info_free.c, mpi2-other/info/info_get.c,
-	  mpi2-other/info/info_getnks.c, mpi2-other/info/info_getnth.c,
-	  mpi2-other/info/info_getvln.c, mpi2-other/info/info_set.c,
-	  mpi2-other/info/fortran/Makefile.in,
-	  mpi2-other/info/fortran/info_createf.c,
-	  mpi2-other/info/fortran/info_deletef.c,
-	  mpi2-other/info/fortran/info_dupf.c,
-	  mpi2-other/info/fortran/info_freef.c,
-	  mpi2-other/info/fortran/info_getf.c,
-	  mpi2-other/info/fortran/info_getnksf.c,
-	  mpi2-other/info/fortran/info_getnthf.c,
-	  mpi2-other/info/fortran/info_getvlnf.c,
-	  mpi2-other/info/fortran/info_setf.c, objects/README,
-	  test/Makefile.in, test/README, test/async.c, test/atomicity.c,
-	  test/coll_perf.c, test/coll_test.c, test/error.c, test/excl.c,
-	  test/fcoll_test.f.in, test/file_info.c, test/fmisc.f.in,
-	  test/fperf.f.in, test/i_noncontig.c, test/large_array.c,
-	  test/large_file.c.in, test/misc.c.in, test/noncontig.c,
-	  test/noncontig_coll.c, test/noncontig_coll2.c, test/perf.c,
-	  test/pfcoll_test.f.in, test/psimple.c, test/runtests.in,
-	  test/shared_fp.c, test/simple.c, test/split_coll.c,
-	  test/status.c, test/std/async.std, test/std/atomicity.std,
-	  test/std/coll_test.std, test/std/error.std, test/std/excl.std,
-	  test/std/fcoll_test.std, test/std/file_info.std,
-	  test/std/fmisc.std, test/std/i_noncontig.std, test/std/misc.std,
-	  test/std/noncontig.std, test/std/noncontig_coll.std,
-	  test/std/noncontig_coll2.std, test/std/pfcoll_test.std,
-	  test/std/psimple.std, test/std/shared_fp.std,
-	  test/std/simple.std, test/std/split_coll.std,
-	  test/std/status.std, util/romioinstall.in, util/tarch: adding
-	  ROMIO 1.2.5.1
-
-	  took diff from 1.2.5.1 and 1.2.4.1, applied diff to our modified
-	  version of 1.2.4.1.  Checking this in as 1.2.5.1
-
 2003-09-30 18:34  taylorm
 
 	* src/: collective/ulm_bcast.cc,
@@ -1974,40 +1414,6 @@
 
 	  Passes lampi_regression when disabled.  When enabled, only works
 	  one 1 node.
-
-2003-09-30 16:00  ddd
-
-	* Makefile.in: Updating man page with "new" license and version
-	  info.
-
-	  Adding HTML blurb (lampi_intro.html) describing LA-MPI (as given
-	  to LANL consultants for use on http://computing.lanl.gov)
-
-2003-09-30 15:53  ddd
-
-	* man/: Makefile, lampi.html, lampi.man1, lampi_intro.html,
-	  lampi_man.tex, mpirun.html, mpirun.man1, lampi_man.html: Updating
-	  man page with "new" license and version info.
-
-	  Adding HTML blurb (lampi_intro.html) describing LA-MPI (as given
-	  to LANL consultants for use on http://computing.lanl.gov)
-
-2003-09-30 15:13  taylorm
-
-	* romio-1.2.4.1/test/: Makefile.in, fcoll_test.f.in, fmisc.f.in,
-	  fperf.f.in, pfcoll_test.f.in: minor changes to make test code
-	  compile with lampi+romio
-
-2003-09-30 15:13  taylorm
-
-	* romio-1.2.4.1/adio/: common/ad_fstype.c, common/lock.c,
-	  include/adio.h, include/adioi_fs_proto.h: minor changes to
-	  support CFS adio layer
-
-2003-09-30 15:13  taylorm
-
-	* romio-1.2.4.1/adio/ad_cfs/README: notes on compiling LAMPI with
-	  CFS support (HP propreitary code not included in LAMPI)
 
 2003-09-27 11:15  taylorm
 
@@ -2076,11 +1482,6 @@
 
 	* src/collective/quadrics/ulm_bcast_interhost_quadrics.cc: Fixed
 	  missing line for channels.
-
-2003-09-11 16:04  rta
-
-	* src/mpi/c/mpi_errhandler_set.c: Removed '&' when unlocking
-	  handler_old->lock; not needed.
 
 2003-09-11 15:31  mitch
 
@@ -2179,11 +1580,6 @@
 	* src/os/CYGWIN/PlatformBarrierSetup.o: accidentally checked in
 	  object file
 
-2003-09-11 12:30  rta
-
-	* src/mpi/f/mpi_finalized.c: Fixed bug to call MPI_Finalized
-	  instead of mpi_finalize_f.
-
 2003-09-11 12:10  mitch
 
 	* src/os/CYGWIN/: PlatformBarrierSetup.cc, PlatformBarrierSetup.o,
@@ -2201,17 +1597,6 @@
 	* src/: mpi/f/mpi_init_thread.c, mpi/f/mpi_query_thread.c,
 	  include/internal/mpi_ppc.h, mpi/f/mpi_finalized.c: Fixed weak
 	  symbol support for OSX.
-
-2003-09-11 08:39  rta
-
-	* src/mpi/internal/mpif_state.c: Fixed bug when freeing objects
-	  from Fortran-related tables.
-
-2003-09-11 08:37  rta
-
-	* src/: mpi/f/mpi_init_thread.c, mpi/f/mpi_query_thread.c,
-	  include/internal/mpi_ppc.h: Corrected compile bugs to compile on
-	  OSX.
 
 2003-09-08 17:02  rlgraham
 
@@ -2284,88 +1669,6 @@
 	  fortran layer cleanup at finalize changes and the simplified
 	  locking macros.
 
-2003-09-05 17:27  ddd
-
-	* src/mpi/c/: mpi_type_hindexed.c, mpi_type_indexed.c: More memory
-	  leaks
-
-2003-09-05 16:37  ddd
-
-	* src/interface/ulm_set_thread_usage.cc: Missed a file
-
-2003-09-05 16:31  ddd
-
-	* RELEASE_NOTES, configure, configure.ac, lampi.spec: Preparing for
-	  release 1.3.5
-
-2003-09-05 16:25  ddd
-
-	* src/: client/adminMessage.cc, ctnetwork/CTServer.cc,
-	  include/internal/buffer.h, include/internal/cLock.h,
-	  include/internal/lampi_state.h, include/internal/mpi.h,
-	  include/internal/mpif.h, include/internal/ptr_table.h,
-	  include/internal/state.h, include/ulm/errors.h,
-	  include/ulm/ulm.h, init/environ.cc, init/fork_many.cc,
-	  init/init.cc, init/init_proc.cc, init/state.cc,
-	  interface/libmpi.mk, interface/ulm_abort.cc,
-	  interface/ulm_bsend_info.cc, interface/ulm_cleanup.cc,
-	  interface/ulm_finalize.cc, interface/ulm_init.cc,
-	  interface/ulm_request_free.cc, interface/ulm_start.cc,
-	  mpi/c/mpi_bsend.c, mpi/c/mpi_bsend_init.c,
-	  mpi/c/mpi_buffer_attach.c, mpi/c/mpi_buffer_detach.c,
-	  mpi/c/mpi_errhandler_create.c, mpi/c/mpi_errhandler_free.c,
-	  mpi/c/mpi_errhandler_set.c, mpi/c/mpi_finalize.c,
-	  mpi/c/mpi_ibsend.c, mpi/c/mpi_init.c, mpi/c/mpi_init_thread.c,
-	  mpi/c/mpi_op_create.c, mpi/c/mpi_op_free.c,
-	  mpi/c/mpi_query_thread.c, mpi/c/mpi_type_contiguous.c,
-	  mpi/c/mpi_type_free.c, mpi/c/mpi_type_hindexed.c,
-	  mpi/c/mpi_type_hvector.c, mpi/c/mpi_type_indexed.c,
-	  mpi/c/mpi_type_struct.c, mpi/c/mpi_type_vector.c,
-	  mpi/f/mpi_finalize.c, mpi/f/mpi_finalized.c, mpi/f/mpi_init.c,
-	  mpi/f/mpi_init_thread.c, mpi/f/mpi_op_create.c,
-	  mpi/f/mpi_query_thread.c, mpi/f/mpi_request_free.c,
-	  mpi/f/mpi_type_free.c, mpi/internal/libmpi.mk,
-	  mpi/internal/lockFns.c, mpi/internal/mpi_errhandler.c,
-	  mpi/internal/mpi_ptr_table.c, mpi/internal/mpi_state.c,
-	  mpi/internal/mpi_util.c, mpi/internal/mpif_op.c,
-	  mpi/internal/mpif_request.c, mpi/internal/mpif_state.c,
-	  mpi/internal/mpif_type.c, os/atomic.h, os/IRIX/atomic.h,
-	  os/TRU64/atomic.h, util/Lock.h, util/dclock.cc: Another large
-	  check-in.
-
-	  1) Better fortran layer clean-up.
-
-	  2) Fortran layer can now be disabled at run-time by setting the
-	   environment variable LAMPI_FORTRAN to 0.  Obviously that's only
-	    useful for a code where MPI is only accessed from C/C++.
-
-	  3) Bug fix to MPI_Type_contiguous.  In the case where it was
-	  recursively calling MPI_Type_vector, two fortran handles where
-	  being allocated.  This had two consequences: a memory leak when
-	   MPI_Type_contiguous, MPI_Type_free where called repeatedly
-	  (perhaps    U Utah' s problem); intermittent SEGV now that I try
-	  to clean-up	 all fortran handles at finalize.
-
-	  4) Simplified locking in the MPI layer: introduced macros
-	  ATOMIC_LOCK,	  ATOMIC_LOCK_THREAD etc. Also fixed a couple of
-	  locks which were    never initialized.
-
-	  5) Renamed a couple of external symbols with potential for name
-	   clashes.
-
-	  6) Miscellaneous clean-up
-
-2003-09-03 13:58  taylorm
-
-	* configure, configure.ac, src/client/SocketInitServer.cc,
-	  src/client/adminMessage.cc: A few small changes to run under
-	  latest bproc on pinkish.
-
-	  One temporary fix: bproc_gethostbyname() is being replaced by
-	  atoi(), using a #define in the Makefile (need to rerun autoconf
-	  and configure to pick this up).  AFter testing on pink, we should
-	  do a global replace.
-
 2003-09-03 13:41  taylorm
 
 	* src/collective/quadrics/ulm_bcast_interhost_quadrics.cc: small
@@ -2402,10 +1705,6 @@
 	  Integrated OSU (Weikuan) work for quadrics hardware broadcast.
 	  To turn on, add -DUSE_ELAN_COLL to the CPPFLAGS in the Makefile.
 
-2003-08-27 15:26  ddd
-
-	* configure, configure.ac: Fixing typo
-
 2003-08-27 15:24  rta
 
 	* src/: collective/coll_fns.h, collective/ulm_bcast.cc,
@@ -2417,132 +1716,16 @@
 	  quadrics hardware broadcast.	To turn on, add -DUSE_ELAN_COLL to
 	  the CPPFLAGS in the Makefile.
 
-2003-08-27 14:52  ddd
-
-	* RELEASE_NOTES, configure, configure.ac, lampi.spec: Getting ready
-	  for release 1.3.4
-
-2003-08-27 14:31  ddd
-
-	* src/mpi/internal/mpi_errhandler.c: Allocate default error
-	  handlers one by one
-
 2003-08-26 14:35  taylorm
 
 	* Makefile.in: added romio-clean and romio-configure targets to
 	  Makefile.in
-
-2003-08-26 14:25  ddd
-
-	* src/: include/internal/mpi.h, include/internal/mpif.h,
-	  mpi/c/mpi_finalize.c, mpi/c/mpi_init.c, mpi/f/mpi_finalize.c,
-	  mpi/internal/mpi_errhandler.c, mpi/internal/mpi_state.c,
-	  mpi/internal/mpif_state.c, util/MemFunctions.cc: Some changes for
-	  cleaning up MPI library state during MPI_Finalize()
-
-2003-08-26 11:45  ddd
-
-	* src/include/ulm/types.h: Fixing typo
 
 2003-08-25 17:11  rta
 
 	* src/: init/init_gm.cc, mpi/f/mpi_start.c,
 	  run/SendInputDataToClients.cc, mem/FreeLists.h: Propogating
 	  changes from release branch.
-
-2003-08-25 17:06  ddd
-
-	* RELEASE_NOTES, configure, configure.ac, lampi.spec,
-	  src/check/mpi-coll-bench/Makefile, src/check/mpi-ping/Makefile,
-	  src/check/ulmtest/test_dping.c, src/check/ulmtest/test_sping.c,
-	  src/check/ulmtest/test_wildall.c,
-	  src/check/ulmtest/test_wildproc.c,
-	  src/check/ulmtest/test_wildtag.c, src/check/ulmtest/util.c,
-	  src/client/ULMClientTypes.h, src/collective/newalltoall.cc,
-	  src/collective/ulm_allgatherv.cc, src/collective/ulm_alltoall.cc,
-	  src/collective/ulm_alltoallv.cc,
-	  src/collective/ulm_barrier_interhost.cc,
-	  src/collective/ulm_reduce_linear.cc, src/collective/ulm_scan.cc,
-	  src/collective/p2p/ulm_allreduce_p2p.cc,
-	  src/collective/p2p/ulm_barrier_p2p.cc,
-	  src/collective/p2p/ulm_gather_p2p.cc,
-	  src/collective/p2p/ulm_gatherv_p2p.cc,
-	  src/collective/p2p/ulm_scatter_p2p.cc,
-	  src/collective/p2p/ulm_scatterv_p2p.cc,
-	  src/include/internal/buffer.h, src/include/internal/timestamp.h,
-	  src/include/internal/type_copy.h, src/include/mpi/constants.h,
-	  src/include/mpi/mpif.h, src/include/mpi/types.h,
-	  src/include/ulm/types.h, src/include/ulm/ulm.h,
-	  src/interface/libmpi.mk, src/interface/ulm_attr_delete.cc,
-	  src/interface/ulm_bind_pt2pt_message.cc,
-	  src/interface/ulm_bsend_info.cc, src/interface/ulm_check.cc,
-	  src/interface/ulm_intercomm_create.cc,
-	  src/interface/ulm_irecv.cc, src/interface/ulm_irecv_init.cc,
-	  src/interface/ulm_isend.cc, src/interface/ulm_isend_init.cc,
-	  src/interface/ulm_make_progress.cc, src/interface/ulm_recv.cc,
-	  src/interface/ulm_recv_vec.cc, src/interface/ulm_request_free.cc,
-	  src/interface/ulm_request_persistent.cc,
-	  src/interface/ulm_request_status.cc, src/interface/ulm_send.cc,
-	  src/interface/ulm_send_vec.cc, src/interface/ulm_start.cc,
-	  src/interface/ulm_test.cc, src/interface/ulm_testall.cc,
-	  src/interface/ulm_type_free.cc, src/interface/ulm_wait.cc,
-	  src/mpi/c/mpi_bsend.c, src/mpi/c/mpi_bsend_init.c,
-	  src/mpi/c/mpi_get_count.c, src/mpi/c/mpi_ibsend.c,
-	  src/mpi/c/mpi_iprobe.c, src/mpi/c/mpi_irecv.c,
-	  src/mpi/c/mpi_irsend.c, src/mpi/c/mpi_isend.c,
-	  src/mpi/c/mpi_issend.c, src/mpi/c/mpi_probe.c,
-	  src/mpi/c/mpi_recv.c, src/mpi/c/mpi_recv_init.c,
-	  src/mpi/c/mpi_request_free.c, src/mpi/c/mpi_rsend.c,
-	  src/mpi/c/mpi_rsend_init.c, src/mpi/c/mpi_send.c,
-	  src/mpi/c/mpi_send_init.c, src/mpi/c/mpi_sendrecv.c,
-	  src/mpi/c/mpi_ssend.c, src/mpi/c/mpi_ssend_init.c,
-	  src/mpi/c/mpi_start.c, src/mpi/c/mpi_startall.c,
-	  src/mpi/c/mpi_test.c, src/mpi/c/mpi_testall.c,
-	  src/mpi/c/mpi_testany.c, src/mpi/c/mpi_testsome.c,
-	  src/mpi/c/mpi_type_free.c, src/mpi/c/mpi_wait.c,
-	  src/mpi/c/mpi_waitall.c, src/mpi/c/mpi_waitany.c,
-	  src/mpi/c/mpi_waitsome.c, src/path/common/BaseDesc.cc,
-	  src/path/common/BaseDesc.h,
-	  src/path/common/InitSendDescriptors.cc,
-	  src/path/common/InitSendDescriptors.h, src/path/common/path.cc,
-	  src/path/common/path.h, src/path/gm/path.cc, src/path/gm/path.h,
-	  src/path/gm/recvFrag.h, src/path/gm/sendFrag.cc,
-	  src/path/gm/sendFrag.h, src/path/quadrics/header.h,
-	  src/path/quadrics/path.cc, src/path/quadrics/path.h,
-	  src/path/quadrics/recvFrag.cc, src/path/quadrics/recvFrag.h,
-	  src/path/quadrics/sendFrag.h,
-	  src/path/sharedmem/SMPProcessGroup.cc,
-	  src/path/sharedmem/path.cc, src/path/sharedmem/path.h,
-	  src/path/sharedmem/sendInfo.h, src/path/udp/UDPEarlySend.h,
-	  src/path/udp/path.cc, src/path/udp/path.h,
-	  src/path/udp/recvFrag.cc, src/path/udp/recvFrag.h,
-	  src/path/udp/sendFrag.h, src/queue/Communicator.cc,
-	  src/queue/Communicator.h, src/queue/Pt2PtGroupMatchFrags.cc,
-	  src/queue/Pt2PtGroupMatchRecv.cc, src/queue/Pt2PtGroupMisc.cc,
-	  src/queue/Pt2PtGroupProgress.cc, src/queue/Pt2PtGroupRecv.cc,
-	  src/queue/Pt2PtGroupSend.cc, src/queue/Pt2PtGroupTestRecv.cc,
-	  src/queue/getNewContextID.cc, src/queue/peerExchange.cc:
-	  Propagating datatype reference count changes from the main
-	  branch.
-
-	  This does not seem to have a significant effect on latency (in
-	  particular, note that for basic types the reference count logic
-	  is skipped).
-
-2003-08-25 17:01  rta
-
-	* src/mpi/f/mpi_start.c: Moved mpi_start_f code outside of #if
-	  defined() so that it compiles on Mac.
-
-2003-08-25 17:00  rta
-
-	* src/: init/init_gm.cc, run/SendInputDataToClients.cc: Fixed GM
-	  startup logic to pass gmState_t values correctly, e.g. bool
-	  instead of int.
-
-2003-08-25 16:59  rta
-
-	* src/mem/FreeLists.h: Replaced string copy logic to use strdup.
 
 2003-08-21 17:07  ddd
 
@@ -2638,13 +1821,7 @@
 
 2003-08-19 09:35  ddd
 
-	* src/include/internal/: type_copy.h: Updating type_dump()
-
-2003-08-19 09:34  ddd
-
-	* src/: client/adminMessage.cc, run/GetAppHostData.cc,
-	  run/ProcessInput.cc: Propagating Mark's BJS fixes to the release
-	  branch
+	* src/include/internal/type_copy.h: Updating type_dump()
 
 2003-08-18 19:46  taylorm
 
@@ -2679,37 +1856,11 @@
 	* src/run/TVSetUp.cc: Changed to pass the host name to Totalview
 	  instead of an IP address string.
 
-2003-08-14 16:56  rta
-
-	* src/run/TVSetUp.cc: Changed to pass the host name to Totalview
-	  instead of an IP address string.
-
 2003-08-14 13:57  ddd
 
 	* src/client/adminMessage.cc: Correcting typos
 
-2003-08-14 13:53  ddd
-
-	* RELEASE_NOTES, configure, configure.ac, lampi.spec: Preparing to
-	  tag for version 1.3.2 so that we can give a version to Laurie
-	  McGavran for testing totalview with bulk mode start-up (that is
-	  where the daemons are started with "prun -T -1 tvdsvr -callback
-	  ...").
-
-2003-08-14 13:49  ddd
-
-	* src/run/: JobParams.h, ProcessInput.cc, mpirun_spawn_prun.cc:
-	  More changes for handling of schedulers.
-
-	  Schedulers enabled at compile time are checked in order at
-	  runtime.  The first one found to be present is enabled, and the
-	  others are disabled.	Order of priority: BPROC, RMS, LSF.
-
-2003-08-14 13:44  ddd
-
-	* src/init/environ.cc: Indenting
-
-2003-08-14 09:54  rta
+2003-08-14 09:55  rta
 
 	* src/: client/adminMessage.cc, client/adminMessage.h,
 	  run/fix_RunParameters.cc, run/mpirun.cc: Changed to use the
@@ -2724,42 +1875,10 @@
 	  Opteron).  Based on the Linux/i686 port.  Passes
 	  lampi_regression.  Reviewed by ddd.
 
-2003-08-12 10:35  ddd
-
-	* romio-1.2.4.1/: configure, adio/common/ad_fstype.c,
-	  adio/common/setfn.c, adio/include/adio.h,
-	  adio/include/adioi_fs_proto.h, adio/include/romioconf.h.in,
-	  test/runtests.in: Merging Mark's ROMIO changes related to
-	  problems on Q from the main (development) branch
-
 2003-08-08 17:48  taylorm
 
 	* src/path/quadrics/sendFrag.h: elan3 last 64 bytes page bug fix
 	  merged in from BRANCH_1_3
-
-2003-08-07 19:00  taylorm
-
-	* Makefile.in, src/path/quadrics/sendFrag.h: a "better" workaround
-	  for the elan3 bug triggered by the fragEnvelope pointer being in
-	  the last 64 bytes of a page.
-
-2003-08-07 18:38  taylorm
-
-	* romio-1.2.4.1/: configure, adio/common/ad_fstype.c,
-	  adio/common/setfn.c, adio/include/adio.h,
-	  adio/include/adioi_fs_proto.h, adio/include/romioconf.h.in,
-	  test/runtests.in: added support to compile CFS adio layer
-	  (disabled by default)
-
-	  fixed bug in configure so that #define DEC is enabled on QSC,
-	  which allows for file system type detection
-
-	  default filesystem type made "ADIO_UFS" for all non-NSF
-	  filesystems
-
-	  tested on: NFS filesystem    ok local filesystem  ok CFS
-	  filesystem:	most calls work except those requiring file region
-	  locks
 
 2003-08-07 16:19  ddd
 
@@ -2768,42 +1887,6 @@
 	  patch branch.
 
 	  More changes to RMS start-up.
-
-	  1) Mixing LSF and RMS seems to cause intermittent confusion
-	  resulting    in the infamous SharedMemDescPool() initialization
-	  error.  Perhaps    our parsing of the LSF environment is broken,
-	  or perhaps someone	else is broken. So... let's not use LSF at
-	  all.	The only draw back    is that we always have to give mpirun
-	  a -n option (instead of    usually).
-
-	  2) The -N 3 -n 1,1,1 style of arguments is misleading in an RMS
-	   environment, since RMS doesn't let us determine the layout of
-	  processes.  So with RMS I remap the ProcessCount array with the
-	   result that all of the following are equivalent:
-
-	       mpirun -N 2 -n 7
-	       mpirun -N 2 -n 1,6
-	       mpirun -N 2 -n 2,5
-	       mpirun -N 2 -n 3,4
-	       mpirun -N 2 -n 4,3
-	       mpirun -N 2 -n 5,2
-	       mpirun -N 2 -n 6,1
-
-	     since they all end up doing "prun -N 2 -n 7" which (on Q)
-	  creates a
-	     4,3 set of processes.
-
-	     Note that many cases were failing catastrophically with the
-	     previous logic since, for example, mpirun -N 2 -n 3,4 would
-	  create
-	     a 4,3 set of processes, but our library would expect a 3,4
-	  set.
-
-2003-08-07 16:17  ddd
-
-	* src/run/: GetClientProcessCount.cc, GetLSFResource.cc,
-	  ProcessInput.cc, mpirun_spawn_prun.cc: More changes to RMS
-	  start-up.
 
 	  1) Mixing LSF and RMS seems to cause intermittent confusion
 	  resulting    in the infamous SharedMemDescPool() initialization
@@ -2862,28 +1945,6 @@
 	  elan3_* calls and added missing unlock() when returning from a
 	  function due to an error.
 
-2003-08-06 16:25  rta
-
-	* src/: interface/ulm_pending_messages.cc, mpi/c/mpi_init_thread.c,
-	  mpi/internal/mpi_ptr_table.c, path/quadrics/dmaThrottle_new.h,
-	  path/quadrics/path.cc, path/quadrics/path.h,
-	  path/quadrics/peerMemoryTracking.h, path/quadrics/recvFrag.cc,
-	  path/quadrics/sendFrag.h, path/quadrics/state.cc,
-	  path/quadrics/state.h, path/udp/recvFrag.cc: Added missing
-	  unlock() statements when returning due to errors.  Added locks
-	  around elan3_* calls.  Fixed thread bugs.
-
-2003-08-06 16:23  rta
-
-	* src/interface/: ulm_start.cc, ulm_test.cc, ulm_wait.cc: Added
-	  persistFreeCalled to fix bug with freeing persistent requests.
-	  Fixed bug with checking whether to reuse a send descriptor.
-
-2003-08-06 16:22  rta
-
-	* src/: client/ULMClientTypes.h, queue/Pt2PtGroupMisc.cc: Added
-	  persistFreeCalled to fix bug with freeing persistent requests.
-
 2003-08-06 15:12  ddd
 
 	* src/run/: GetClientProcessCount.cc, Input.cc,
@@ -2892,14 +1953,6 @@
 	  Fixing -n NPROCS option handling with RMS so that we can specify
 	    mpirun -N NHOSTS -n NPROCS_TOTAL ...  or	mpirun -N NHOSTS -n
 	  NPROCS_0,NPROCS_1...,NPROCS_{NHOSTS-1} ...
-
-2003-08-06 15:11  ddd
-
-	* src/run/: GetClientProcessCount.cc, Input.cc,
-	  mpirun_spawn_prun.cc: Fixing -n NPROCS option handling with RMS
-	  so that we can specify    mpirun -N NHOSTS -n NPROCS_TOTAL ...
-	  or	mpirun -N NHOSTS -n NPROCS_0,NPROCS_1...,NPROCS_{NHOSTS-1}
-	  ...
 
 2003-08-01 16:44  ddd
 
@@ -2920,44 +1973,10 @@
 	  In particular Q and lambda (with gcc 3.0) are OK, so we don't
 	  have to rush the fix into the 1.3.1 releases on these platforms.
 
-2003-08-01 16:43  ddd
-
-	* src/: interface/ulm_comm_create.cc, mpi/internal/mpi_attribute.c:
-	  Bug fix.
-
-	  On crescendo (CSS-3's linux/ia32/quadrics cluster) using gcc
-	  2.96, our fortran binding scheme was causing the symbols for the
-	  default C attribute functions (mpi_null_delete_fn_c etc.) to be
-	  redefined as weak bindings to the fortran functions.
-
-	  This was causing a large number of communicator tests to fail
-	  with SIGSEGV.
-
-	  This is not a problem elsewhere -- it depends on the precendence
-	  of #define and #pragma used by the compiler/preprocessor.
-
-	  In particular Q and lambda (with gcc 3.0) are OK, so we don't
-	  have to rush the fix into the 1.3.1 releases on these platforms.
-
 2003-08-01 10:15  ddd
 
 	* src/run/: option.cc, option.h: Adding templates for popt-based
 	  option processing (not used yet, but I don't want to lose them)
-
-2003-07-29 14:06  ddd
-
-	* RELEASE_NOTES: Updating RELEASE_NOTES
-
-2003-07-29 14:01  ddd
-
-	* src/run/mpirun.cc: More informative error message when the
-	  application fails to spawn.
-
-2003-07-29 13:58  ddd
-
-	* src/run/mpirun_spawn_prun.cc: Adding a test for early exit of
-	  prun so that we have a chance of not hanging around for a failed
-	  process.
 
 2003-07-29 13:54  jasonrm
 
@@ -2970,16 +1989,6 @@
 	  defined as "restrict", not "__restrict__".
 
 	  Reviewed by ddd.
-
-2003-07-28 17:41  ddd
-
-	* src/queue/Pt2PtGroupSend.cc: Propagating fix for persisitent
-	  buffered sends from the main branch.
-
-2003-07-28 17:41  ddd
-
-	* src/init/init_rms.cc: Adding check that elan3_nlocal returns a
-	  sane value.
 
 2003-07-28 17:36  ddd
 
@@ -3043,56 +2052,6 @@
 
 	  should have no effect on pink (older bproc systems).	ran
 	  lampi_regression on pink to make sure.
-
-2003-07-22 12:01  taylorm
-
-	* romio-1.2.4.1/: add_fortran_pragmas.py, configure,
-	  mpi-io/fortran/closef.c, mpi-io/fortran/deletef.c,
-	  mpi-io/fortran/fsyncf.c, mpi-io/fortran/get_amodef.c,
-	  mpi-io/fortran/get_atomf.c, mpi-io/fortran/get_bytofff.c,
-	  mpi-io/fortran/get_errhf.c, mpi-io/fortran/get_extentf.c,
-	  mpi-io/fortran/get_groupf.c, mpi-io/fortran/get_infof.c,
-	  mpi-io/fortran/get_posn_shf.c, mpi-io/fortran/get_posnf.c,
-	  mpi-io/fortran/get_sizef.c, mpi-io/fortran/get_viewf.c,
-	  mpi-io/fortran/iotestf.c, mpi-io/fortran/iowaitf.c,
-	  mpi-io/fortran/iread_atf.c, mpi-io/fortran/iread_shf.c,
-	  mpi-io/fortran/ireadf.c, mpi-io/fortran/iwrite_atf.c,
-	  mpi-io/fortran/iwrite_shf.c, mpi-io/fortran/iwritef.c,
-	  mpi-io/fortran/openf.c, mpi-io/fortran/preallocf.c,
-	  mpi-io/fortran/rd_atallbf.c, mpi-io/fortran/rd_atallef.c,
-	  mpi-io/fortran/read_allbf.c, mpi-io/fortran/read_allef.c,
-	  mpi-io/fortran/read_allf.c, mpi-io/fortran/read_atallf.c,
-	  mpi-io/fortran/read_atf.c, mpi-io/fortran/read_ordbf.c,
-	  mpi-io/fortran/read_ordef.c, mpi-io/fortran/read_ordf.c,
-	  mpi-io/fortran/read_shf.c, mpi-io/fortran/readf.c,
-	  mpi-io/fortran/seek_shf.c, mpi-io/fortran/seekf.c,
-	  mpi-io/fortran/set_atomf.c, mpi-io/fortran/set_errhf.c,
-	  mpi-io/fortran/set_infof.c, mpi-io/fortran/set_sizef.c,
-	  mpi-io/fortran/set_viewf.c, mpi-io/fortran/wr_atallbf.c,
-	  mpi-io/fortran/wr_atallef.c, mpi-io/fortran/write_allbf.c,
-	  mpi-io/fortran/write_allef.c, mpi-io/fortran/write_allf.c,
-	  mpi-io/fortran/write_atallf.c, mpi-io/fortran/write_atf.c,
-	  mpi-io/fortran/write_ordbf.c, mpi-io/fortran/write_ordef.c,
-	  mpi-io/fortran/write_ordf.c, mpi-io/fortran/write_shf.c,
-	  mpi-io/fortran/writef.c, mpi2-other/array/fortran/darrayf.c,
-	  mpi2-other/array/fortran/subarrayf.c,
-	  mpi2-other/info/fortran/info_createf.c,
-	  mpi2-other/info/fortran/info_deletef.c,
-	  mpi2-other/info/fortran/info_dupf.c,
-	  mpi2-other/info/fortran/info_freef.c,
-	  mpi2-other/info/fortran/info_getf.c,
-	  mpi2-other/info/fortran/info_getnksf.c,
-	  mpi2-other/info/fortran/info_getnthf.c,
-	  mpi2-other/info/fortran/info_getvlnf.c,
-	  mpi2-other/info/fortran/info_setf.c, test/Makefile.in: 1. Fixes
-	  to ROMIO fortran interface for undefined behavoir    of CPP
-	  acting on #pragma statements.  2. default MPI_OFFSET_KIND to 8 if
-	  no f90 compiler found.
-
-	  Reviewed by David.
-
-	  successfully ran ROMIO tests on Linux, with ifc, f77, pgf90 and
-	  lf95
 
 2003-07-22 10:33  taylorm
 
@@ -3532,62 +2491,6 @@
 	  diff -r1.12 mpirun_spawn_bproc.cc 351a352
 	  >	  tmp_args[0]=0;
 
-2003-06-14 13:55  taylorm
-
-	* romio-1.2.4.1/: Makefile.in, add_fortran_pragmas.py, configure,
-	  mpi-io/fortran/closef.c, mpi-io/fortran/deletef.c,
-	  mpi-io/fortran/fsyncf.c, mpi-io/fortran/get_amodef.c,
-	  mpi-io/fortran/get_atomf.c, mpi-io/fortran/get_bytofff.c,
-	  mpi-io/fortran/get_errhf.c, mpi-io/fortran/get_extentf.c,
-	  mpi-io/fortran/get_groupf.c, mpi-io/fortran/get_infof.c,
-	  mpi-io/fortran/get_posn_shf.c, mpi-io/fortran/get_posnf.c,
-	  mpi-io/fortran/get_sizef.c, mpi-io/fortran/get_viewf.c,
-	  mpi-io/fortran/iotestf.c, mpi-io/fortran/iowaitf.c,
-	  mpi-io/fortran/iread_atf.c, mpi-io/fortran/iread_shf.c,
-	  mpi-io/fortran/ireadf.c, mpi-io/fortran/iwrite_atf.c,
-	  mpi-io/fortran/iwrite_shf.c, mpi-io/fortran/iwritef.c,
-	  mpi-io/fortran/openf.c, mpi-io/fortran/preallocf.c,
-	  mpi-io/fortran/rd_atallbf.c, mpi-io/fortran/rd_atallef.c,
-	  mpi-io/fortran/read_allbf.c, mpi-io/fortran/read_allef.c,
-	  mpi-io/fortran/read_allf.c, mpi-io/fortran/read_atallf.c,
-	  mpi-io/fortran/read_atf.c, mpi-io/fortran/read_ordbf.c,
-	  mpi-io/fortran/read_ordef.c, mpi-io/fortran/read_ordf.c,
-	  mpi-io/fortran/read_shf.c, mpi-io/fortran/readf.c,
-	  mpi-io/fortran/seek_shf.c, mpi-io/fortran/seekf.c,
-	  mpi-io/fortran/set_atomf.c, mpi-io/fortran/set_errhf.c,
-	  mpi-io/fortran/set_infof.c, mpi-io/fortran/set_sizef.c,
-	  mpi-io/fortran/set_viewf.c, mpi-io/fortran/wr_atallbf.c,
-	  mpi-io/fortran/wr_atallef.c, mpi-io/fortran/write_allbf.c,
-	  mpi-io/fortran/write_allef.c, mpi-io/fortran/write_allf.c,
-	  mpi-io/fortran/write_atallf.c, mpi-io/fortran/write_atf.c,
-	  mpi-io/fortran/write_ordbf.c, mpi-io/fortran/write_ordef.c,
-	  mpi-io/fortran/write_ordf.c, mpi-io/fortran/write_shf.c,
-	  mpi-io/fortran/writef.c, mpi2-other/array/fortran/darrayf.c,
-	  mpi2-other/array/fortran/subarrayf.c, test/Makefile.in: ROMIO
-	  modifications.  These pass all the ROMIO tests (on pinkish, and
-	  only running on a single node because of lack of a parallel
-	  filesystem) EXCEPT for the MPI_File_write "status" check.
-
-	  *.c:	added #define pragma's for all fortran MPI_IO interfaces
-
-	  configure:  Fixed HAVE_WEAK_PRAGMA check (it was failing since
-	  linux/gcc 3.0 	    now requires prototypes for all weak
-	  symbols)
-
-		      Also removed fortran check and just imposed
-	  FORTRANUNDERSCORE rule
-
-	  TODO:    1.  with mpi-io "hints", should be possible to tell
-	  ROMIO to funnel all I/O	 through 1 cpu, so the collective
-	  i/o operations will work on pinkish	     when running on more
-	  than one node.  But we may need ROMIO 1.2.5.
-
-	     2.  on MAC OSX, fortran interfaces will be of the form mpi_*_
-	  only.  need to
-		 add dummy routines for the remaining possibilities.
-
-	  (reviewed by david)
-
 2003-06-14 13:27  taylorm
 
 	* src/run/mpirun_spawn_bproc.cc: Bug fix for bproc.  I was having
@@ -3772,11 +2675,6 @@
 	* src/util/Utility.cc: 0 is a valid file descriptor, changed "> 0"
 	  logic to ">= 0"
 
-2003-05-27 14:27  mitch
-
-	* src/: client/CheckForControlMsgs.cc, util/Utility.cc: 0 is a
-	  valid file descriptor, changed "> 0" logic to ">= 0"
-
 2003-05-24 13:20  rlgraham
 
 	* src/: Makefile, collective/quadrics/libmpi.mk,
@@ -3828,14 +2726,6 @@
 	* src/: os/LINUX/i686/lock.s, os/LINUX/i686/atomic.h,
 	  os/LINUX/i686/libmpi.mk, os/LINUX/i686/mpirun.mk,
 	  path/udp/header.h: Added code to work with Intel compiler on
-	  sandboxx (Linux/Bproc).
-
-2003-05-21 15:09  rta
-
-	* src/: ctnetwork/CTController.h, os/LINUX/i686/atomic.h,
-	  os/LINUX/i686/libmpi.mk, os/LINUX/i686/mpirun.mk,
-	  path/udp/header.h, run/mpirun_spawn_bproc.cc,
-	  os/LINUX/i686/lock.s: Added code to work with Intel compiler on
 	  sandboxx (Linux/Bproc).
 
 2003-05-20 14:31  ddd
@@ -3933,17 +2823,6 @@
 	  path/common/path.h, path/common/pathContainer.h,
 	  path/common/pathGlobals.h: cache the available paths for each
 	  remote process, rather than recompute every send call.
-
-2003-05-20 09:37  ddd
-
-	* src/init/init_rms.cc: Another try...
-
-	  A fix that should take account of the different software releases
-	  on QSC versus QA and QB.
-
-	  Note the macros QSNETLIBS_VERSION_STRING and
-	  QSNETLIBS_VERSION_CODE are new in version 1.4.x from Quadrics, so
-	  we need to test for their existence before using them.
 
 2003-05-20 09:26  ddd
 
@@ -4103,17 +2982,6 @@
 	* src/mpi/f/mpi_allreduce.c: adding newline to end of file to quiet
 	  gcc
 
-2003-05-14 12:24  rta
-
-	* src/client/adminMessage.cc: Added line to initialize nhosts_m
-	  variable.
-
-2003-05-14 12:24  rta
-
-	* src/run/: JobParams.h, ProcessInput.cc, mpirun.cc: Added UseRMS
-	  to RunParameters to identify that RMS is being used; fixed bug on
-	  Q when '-dev udp' is passed to mpirun.
-
 2003-05-14 12:14  rta
 
 	* src/: client/AbortLocalHost.cc, client/CheckForControlMsgs.cc,
@@ -4211,7 +3079,7 @@
 
 2003-05-01 14:42  mitch
 
-	* src/run/: GetAppHostData.cc: default mpirun hostname for
+	* src/run/GetAppHostData.cc: default mpirun hostname for
 	  Bproc-enabled hosts should not be hostname() but n<node id> to
 	  map to internal-network interface
 
@@ -4220,29 +3088,6 @@
 	* src/queue/Pt2PtGroupMatchRecv.cc: fixed matching bug by resetting
 	  local variable, tag, with first fragment's tag value for further
 	  OkToMatchRecvFrags processing...
-
-2003-04-30 14:34  mitch
-
-	* src/run/GetAppHostData.cc: changed -s option processing to avoid
-	  myDomain processing if an IP address (all numbers and periods) is
-	  passed in
-
-2003-04-30 14:34  mitch
-
-	* src/path/udp/UDPNetwork.cc: eliminated Bproc-specific resolution
-	  of received IP hostnames...gethostbyname() is sufficient
-
-2003-04-30 14:33  mitch
-
-	* src/init/fork_many.cc: always install SIGCHLD handler, and clear
-	  process signal mask to unblock all signals
-
-2003-04-30 14:33  mitch
-
-	* src/client/: SocketInitClient.cc, adminMessage.cc: changed
-	  Bproc-specific logic to attempt gethostbyname() then use
-	  bproc_nodeaddr() of the master to determine the IP address of
-	  mpirun
 
 2003-04-30 14:26  mitch
 
@@ -4266,21 +3111,6 @@
 	  Bproc-specific logic to attempt gethostbyname() then use
 	  bproc_nodeaddr() of the master to determine the IP address of
 	  mpirun
-
-2003-04-25 10:58  mitch
-
-	* src/run/mpirun.cc: changed connectTimeout to min-timeout +
-	  (per-proc-timeout * nprocs) instead of per-host-timeout * nhosts
-	  since we do not always know the number of hosts at this point...
-
-2003-04-25 10:57  mitch
-
-	* src/include/internal/constants.h: added min and per-proc connect
-	  timeout constants
-
-2003-04-25 10:57  mitch
-
-	* src/client/adminMessage.h: changed MAXSOCKETS to 4096
 
 2003-04-25 10:44  mitch
 
@@ -4315,20 +3145,6 @@
 	* src/client/adminMessage.cc: fixing collectDaemonInfo() with same
 	  procList fix
 
-2003-04-23 18:40  mitch
-
-	* src/: client/adminMessage.cc, client/adminMessage.h,
-	  run/fix_RunParameters.cc: fixes to adminMessage::serverConnect
-	  and fix_RunParameters() when we don't know the number of hosts a
-	  priori (i.e., RMS) -- we were accessing
-	  RunParameters.ProcessCount array beyond its bounds....with
-	  unpredictable results...
-
-2003-04-23 18:38  mitch
-
-	* src/init/init_proc.cc: removed installation of older client
-	  signal handler
-
 2003-04-23 17:50  deanr
 
 	* src/path/quadrics/sendFrag.h: adding appropriate broadcast flags
@@ -4353,11 +3169,6 @@
 	  RunParameters.ProcessCount array beyond its bounds....with
 	  unpredictable results...
 
-2003-04-23 13:20  mitch
-
-	* src/queue/Pt2PtGroupRecv.cc: quieting compiler warning about
-	  uninitialized srcProc
-
 2003-04-23 13:12  mitch
 
 	* src/queue/Pt2PtGroupRecv.cc: quieting compiler warning about
@@ -4367,13 +3178,6 @@
 
 	* src/client/adminMessage.cc: cleaning up end of file to quiet
 	  compiler warning about no newline at end of file...
-
-2003-04-23 11:31  mitch
-
-	* src/run/: GetAppHostData.cc, GetClientProcessCount.cc: startup
-	  under Bproc/BJS is now even more flexible: can specify lists of
-	  ranges of nodes with -H, and mpirun will now use BJS reserved
-	  nodes or any node that the user has executable access on...
 
 2003-04-23 10:58  mitch
 
@@ -4419,21 +3223,10 @@
 	  macro for non-null outFile handle for final fprintf() to avoid
 	  segmentation violations when it can not be opened....
 
-2003-04-21 14:49  rlgraham
-
-	* src/queue/Pt2PtGroupRecv.cc: cache destination process id for
-	  thread locking - if not, stale reference may result.
-
 2003-04-21 14:41  rlgraham
 
 	* src/queue/Pt2PtGroupRecv.cc: cache destination process id for
 	  thread locking - if not, stale reference may result.
-
-2003-04-18 15:15  rlgraham
-
-	* src/mpi/c/: mpi_waitall.c, mpi_waitany.c: if the return status
-	  from ulm_test is ULM_ERR_TEMP_OUT_OF_RESOURCE, do not treat this
-	  as an error.
 
 2003-04-18 14:46  rlgraham
 
@@ -4446,14 +3239,6 @@
 	* src/path/gm/: init.cc, path.cc, state.h: added gmState.gmLock
 	  lock and gmState.inited flag to protect non-thread-safe calls to
 	  GM in a threaded environment
-
-2003-04-17 13:36  mitch
-
-	* src/path/gm/: init.cc, path.cc, state.h: adding thread locking
-	  (gmState.gmLock) to all relevant GM calls since GM is not
-	  thread-safe, and added gmState.inited to protect initialization
-	  code in threaded environments; added missing return to error
-	  check in gmSetup()
 
 2003-04-17 12:45  rta
 
@@ -4483,12 +3268,6 @@
 	  STDIO handling in new startup.  Simplified logic in labeling
 	  nodes.  Replaced malloc with ulm_malloc and free with ulm_free2.
 
-2003-04-17 12:32  mitch
-
-	* src/path/udp/: UDPNetwork.cc, UDPNetwork.h, recvFrag.cc: thread
-	  lock (UDPGlobals::longMessageLock) around longMessageSocket
-	  processing in pullFrags()
-
 2003-04-17 12:28  mitch
 
 	* src/path/udp/: UDPNetwork.cc, UDPNetwork.h, recvFrag.cc: thread
@@ -4504,25 +3283,10 @@
 
 	* RELEASE_NOTES: Updating to reflect patch release 1.2.1
 
-2003-04-16 17:45  ddd
+2003-04-16 17:00  mitch
 
-	* RELEASE_NOTES, lampi.spec, src/VERSION: Preparing for patch
-	  release 1.2.1
-
-2003-04-16 16:59  mitch
-
-	* src/path/udp/: path.cc: fix to resend and early send buffer
-	  return logic
-
-2003-04-16 16:54  mitch
-
-	* src/path/udp/recvFrag.cc: fix to handle{Short,Long}Socket putting
-	  recvmsg call in do-loop and better error checking...
-
-2003-04-16 16:53  mitch
-
-	* src/run/Input.cc: adding space to separator string in
-	  ScanConfigFile
+	* src/path/udp/path.cc: fix to resend and early send buffer return
+	  logic
 
 2003-04-16 16:44  mitch
 
@@ -4919,1431 +3683,6 @@
 	  RELEASE_NOTES, RELEASE_PROCESS, license-update.sh, license.sh,
 	  etc/lampi.conf, man/Makefile, man/lampi.html, man/lampi.man1,
 	  man/lampi_man.tex, man/mpirun.html, man/mpirun.man1,
-	  romio-1.2.4.1/.config_params, romio-1.2.4.1/COPYRIGHT,
-	  romio-1.2.4.1/Makefile.in, romio-1.2.4.1/README,
-	  romio-1.2.4.1/acconfig.h, romio-1.2.4.1/aclocal.m4,
-	  romio-1.2.4.1/configure, romio-1.2.4.1/configure.in,
-	  romio-1.2.4.1/adio/ad_hfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs.h,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_close.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_done.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_flush.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_hints.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_iread.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_open.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_read.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_resize.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_seek.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_wait.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_write.c,
-	  romio-1.2.4.1/adio/ad_nfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs.h,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_close.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_done.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_flush.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_getsh.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_hints.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_iread.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_open.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_read.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_resize.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_seek.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_setsh.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_wait.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_write.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs.h,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_close.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_done.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_flush.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_hints.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_iread.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_open.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_read.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_resize.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_seek.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_wait.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_write.c,
-	  romio-1.2.4.1/adio/ad_pfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs.h,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_close.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_done.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_flush.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_hints.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_iread.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_open.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_read.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_resize.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_seek.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_wait.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_write.c,
-	  romio-1.2.4.1/adio/ad_piofs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs.h,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_close.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_done.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_flush.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_hints.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_iread.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_open.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_read.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_resize.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_seek.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_wait.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_write.c,
-	  romio-1.2.4.1/adio/ad_pvfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs.h,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_close.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_delete.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_done.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_flush.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_hints.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_iread.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_open.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_read.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_resize.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_seek.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_wait.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_write.c,
-	  romio-1.2.4.1/adio/ad_sfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs.h,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_close.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_done.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_flush.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_hints.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_iread.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_open.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_read.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_resize.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_seek.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_wait.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_write.c,
-	  romio-1.2.4.1/adio/ad_testfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs.h,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_close.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_delete.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_done.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_flush.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_getsh.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_hints.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_iread.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_open.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_read.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_resize.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_seek.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_setsh.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_wait.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_write.c,
-	  romio-1.2.4.1/adio/ad_ufs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs.h,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_close.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_done.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_flush.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_hints.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_iread.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_open.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_read.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_resize.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_seek.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_wait.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_write.c,
-	  romio-1.2.4.1/adio/ad_xfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs.h,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_close.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_done.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_flush.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_hints.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_iread.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_open.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_read.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_resize.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_seek.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_wait.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_write.c,
-	  romio-1.2.4.1/adio/common/Makefile.in,
-	  romio-1.2.4.1/adio/common/ad_aggregate.c,
-	  romio-1.2.4.1/adio/common/ad_close.c,
-	  romio-1.2.4.1/adio/common/ad_delete.c,
-	  romio-1.2.4.1/adio/common/ad_end.c,
-	  romio-1.2.4.1/adio/common/ad_flush.c,
-	  romio-1.2.4.1/adio/common/ad_fstype.c,
-	  romio-1.2.4.1/adio/common/ad_get_sh_fp.c,
-	  romio-1.2.4.1/adio/common/ad_hints.c,
-	  romio-1.2.4.1/adio/common/ad_init.c,
-	  romio-1.2.4.1/adio/common/ad_open.c,
-	  romio-1.2.4.1/adio/common/ad_read_coll.c,
-	  romio-1.2.4.1/adio/common/ad_read_str.c,
-	  romio-1.2.4.1/adio/common/ad_read_str_naive.c,
-	  romio-1.2.4.1/adio/common/ad_seek.c,
-	  romio-1.2.4.1/adio/common/ad_set_sh_fp.c,
-	  romio-1.2.4.1/adio/common/ad_write_coll.c,
-	  romio-1.2.4.1/adio/common/ad_write_str.c,
-	  romio-1.2.4.1/adio/common/async_list.c,
-	  romio-1.2.4.1/adio/common/byte_offset.c,
-	  romio-1.2.4.1/adio/common/cb_config_list.c,
-	  romio-1.2.4.1/adio/common/eof_offset.c,
-	  romio-1.2.4.1/adio/common/error.c,
-	  romio-1.2.4.1/adio/common/flatten.c,
-	  romio-1.2.4.1/adio/common/get_fp_posn.c,
-	  romio-1.2.4.1/adio/common/iscontig.c,
-	  romio-1.2.4.1/adio/common/lock.c,
-	  romio-1.2.4.1/adio/common/malloc.c,
-	  romio-1.2.4.1/adio/common/req_malloc.c,
-	  romio-1.2.4.1/adio/common/setfn.c,
-	  romio-1.2.4.1/adio/common/shfp_fname.c,
-	  romio-1.2.4.1/adio/common/status_setb.c,
-	  romio-1.2.4.1/adio/include/BaseIOErrMsgs.msg,
-	  romio-1.2.4.1/adio/include/adio.h,
-	  romio-1.2.4.1/adio/include/adio_cb_config_list.h,
-	  romio-1.2.4.1/adio/include/adio_extern.h,
-	  romio-1.2.4.1/adio/include/adioi.h,
-	  romio-1.2.4.1/adio/include/adioi_errmsg.h,
-	  romio-1.2.4.1/adio/include/adioi_error.h,
-	  romio-1.2.4.1/adio/include/adioi_fs_proto.h,
-	  romio-1.2.4.1/adio/include/mpio_error.h,
-	  romio-1.2.4.1/adio/include/mpipr.h,
-	  romio-1.2.4.1/adio/include/mpisgi2.h,
-	  romio-1.2.4.1/adio/include/romioconf.h.in,
-	  romio-1.2.4.1/adio/sgi/mpi3.1/mpi.h,
-	  romio-1.2.4.1/adio/sgi/mpi3.1/mpif.h, romio-1.2.4.1/doc/Makefile,
-	  romio-1.2.4.1/doc/README, romio-1.2.4.1/doc/users-guide.bbl,
-	  romio-1.2.4.1/doc/users-guide.ps.gz,
-	  romio-1.2.4.1/doc/users-guide.tex,
-	  romio-1.2.4.1/include/mpio.h.in,
-	  romio-1.2.4.1/include/mpiof.h.in,
-	  romio-1.2.4.1/man/man3/MPIO_Request_c2f.3,
-	  romio-1.2.4.1/man/man3/MPIO_Request_f2c.3,
-	  romio-1.2.4.1/man/man3/MPIO_Test.3,
-	  romio-1.2.4.1/man/man3/MPIO_Wait.3,
-	  romio-1.2.4.1/man/man3/MPI_File_c2f.3,
-	  romio-1.2.4.1/man/man3/MPI_File_close.3,
-	  romio-1.2.4.1/man/man3/MPI_File_delete.3,
-	  romio-1.2.4.1/man/man3/MPI_File_f2c.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_amode.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_atomicity.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_byte_offset.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_group.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_info.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_position.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_position_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_size.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_type_extent.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_view.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_open.3,
-	  romio-1.2.4.1/man/man3/MPI_File_preallocate.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_seek.3,
-	  romio-1.2.4.1/man/man3/MPI_File_seek_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_atomicity.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_info.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_size.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_view.3,
-	  romio-1.2.4.1/man/man3/MPI_File_sync.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_c2f.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_create.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_delete.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_dup.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_f2c.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_free.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_nkeys.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_nthkey.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_valuelen.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_set.3,
-	  romio-1.2.4.1/man/man3/MPI_Type_create_darray.3,
-	  romio-1.2.4.1/man/man3/MPI_Type_create_subarray.3,
-	  romio-1.2.4.1/mpi-io/Makefile.in, romio-1.2.4.1/mpi-io/close.c,
-	  romio-1.2.4.1/mpi-io/delete.c, romio-1.2.4.1/mpi-io/file_c2f.c,
-	  romio-1.2.4.1/mpi-io/file_f2c.c, romio-1.2.4.1/mpi-io/fsync.c,
-	  romio-1.2.4.1/mpi-io/get_amode.c,
-	  romio-1.2.4.1/mpi-io/get_atom.c,
-	  romio-1.2.4.1/mpi-io/get_bytoff.c,
-	  romio-1.2.4.1/mpi-io/get_errh.c,
-	  romio-1.2.4.1/mpi-io/get_extent.c,
-	  romio-1.2.4.1/mpi-io/get_group.c,
-	  romio-1.2.4.1/mpi-io/get_info.c, romio-1.2.4.1/mpi-io/get_posn.c,
-	  romio-1.2.4.1/mpi-io/get_posn_sh.c,
-	  romio-1.2.4.1/mpi-io/get_size.c, romio-1.2.4.1/mpi-io/get_view.c,
-	  romio-1.2.4.1/mpi-io/ioreq_c2f.c,
-	  romio-1.2.4.1/mpi-io/ioreq_f2c.c, romio-1.2.4.1/mpi-io/iotest.c,
-	  romio-1.2.4.1/mpi-io/iowait.c, romio-1.2.4.1/mpi-io/iread.c,
-	  romio-1.2.4.1/mpi-io/iread_at.c, romio-1.2.4.1/mpi-io/iread_sh.c,
-	  romio-1.2.4.1/mpi-io/iwrite.c, romio-1.2.4.1/mpi-io/iwrite_at.c,
-	  romio-1.2.4.1/mpi-io/iwrite_sh.c,
-	  romio-1.2.4.1/mpi-io/mpioimpl.h, romio-1.2.4.1/mpi-io/mpioprof.h,
-	  romio-1.2.4.1/mpi-io/open.c, romio-1.2.4.1/mpi-io/prealloc.c,
-	  romio-1.2.4.1/mpi-io/rd_atallb.c,
-	  romio-1.2.4.1/mpi-io/rd_atalle.c, romio-1.2.4.1/mpi-io/read.c,
-	  romio-1.2.4.1/mpi-io/read_all.c,
-	  romio-1.2.4.1/mpi-io/read_allb.c,
-	  romio-1.2.4.1/mpi-io/read_alle.c, romio-1.2.4.1/mpi-io/read_at.c,
-	  romio-1.2.4.1/mpi-io/read_atall.c,
-	  romio-1.2.4.1/mpi-io/read_ord.c,
-	  romio-1.2.4.1/mpi-io/read_ordb.c,
-	  romio-1.2.4.1/mpi-io/read_orde.c, romio-1.2.4.1/mpi-io/read_sh.c,
-	  romio-1.2.4.1/mpi-io/seek.c, romio-1.2.4.1/mpi-io/seek_sh.c,
-	  romio-1.2.4.1/mpi-io/set_atom.c, romio-1.2.4.1/mpi-io/set_errh.c,
-	  romio-1.2.4.1/mpi-io/set_info.c, romio-1.2.4.1/mpi-io/set_size.c,
-	  romio-1.2.4.1/mpi-io/set_view.c,
-	  romio-1.2.4.1/mpi-io/wr_atallb.c,
-	  romio-1.2.4.1/mpi-io/wr_atalle.c, romio-1.2.4.1/mpi-io/write.c,
-	  romio-1.2.4.1/mpi-io/write_all.c,
-	  romio-1.2.4.1/mpi-io/write_allb.c,
-	  romio-1.2.4.1/mpi-io/write_alle.c,
-	  romio-1.2.4.1/mpi-io/write_at.c,
-	  romio-1.2.4.1/mpi-io/write_atall.c,
-	  romio-1.2.4.1/mpi-io/write_ord.c,
-	  romio-1.2.4.1/mpi-io/write_ordb.c,
-	  romio-1.2.4.1/mpi-io/write_orde.c,
-	  romio-1.2.4.1/mpi-io/write_sh.c,
-	  romio-1.2.4.1/mpi-io/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi-io/fortran/closef.c,
-	  romio-1.2.4.1/mpi-io/fortran/deletef.c,
-	  romio-1.2.4.1/mpi-io/fortran/fsyncf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_amodef.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_atomf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_bytofff.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_errhf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_extentf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_groupf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_infof.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_posn_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_posnf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_sizef.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_viewf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iotestf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iowaitf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iread_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iread_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/ireadf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwrite_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwrite_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwritef.c,
-	  romio-1.2.4.1/mpi-io/fortran/openf.c,
-	  romio-1.2.4.1/mpi-io/fortran/preallocf.c,
-	  romio-1.2.4.1/mpi-io/fortran/rd_atallbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/rd_atallef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_atallf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/readf.c,
-	  romio-1.2.4.1/mpi-io/fortran/seek_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/seekf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_atomf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_errhf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_infof.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_sizef.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_viewf.c,
-	  romio-1.2.4.1/mpi-io/fortran/wr_atallbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/wr_atallef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_atallf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/writef.c,
-	  romio-1.2.4.1/mpi2-other/array/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/array/darray.c,
-	  romio-1.2.4.1/mpi2-other/array/subarray.c,
-	  romio-1.2.4.1/mpi2-other/array/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/array/fortran/darrayf.c,
-	  romio-1.2.4.1/mpi2-other/array/fortran/subarrayf.c,
-	  romio-1.2.4.1/mpi2-other/info/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/info/info_c2f.c,
-	  romio-1.2.4.1/mpi2-other/info/info_create.c,
-	  romio-1.2.4.1/mpi2-other/info/info_delete.c,
-	  romio-1.2.4.1/mpi2-other/info/info_dup.c,
-	  romio-1.2.4.1/mpi2-other/info/info_f2c.c,
-	  romio-1.2.4.1/mpi2-other/info/info_free.c,
-	  romio-1.2.4.1/mpi2-other/info/info_get.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getnks.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getnth.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getvln.c,
-	  romio-1.2.4.1/mpi2-other/info/info_set.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_createf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_deletef.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_dupf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_freef.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getnksf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getnthf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getvlnf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_setf.c,
-	  romio-1.2.4.1/objects/README, romio-1.2.4.1/test/Makefile.in,
-	  romio-1.2.4.1/test/README, romio-1.2.4.1/test/async.c,
-	  romio-1.2.4.1/test/atomicity.c, romio-1.2.4.1/test/coll_perf.c,
-	  romio-1.2.4.1/test/coll_test.c, romio-1.2.4.1/test/error.c,
-	  romio-1.2.4.1/test/excl.c, romio-1.2.4.1/test/fcoll_test.f.in,
-	  romio-1.2.4.1/test/file_info.c, romio-1.2.4.1/test/fmisc.f.in,
-	  romio-1.2.4.1/test/fperf.f.in, romio-1.2.4.1/test/i_noncontig.c,
-	  romio-1.2.4.1/test/large_array.c,
-	  romio-1.2.4.1/test/large_file.c.in, romio-1.2.4.1/test/misc.c.in,
-	  romio-1.2.4.1/test/noncontig.c,
-	  romio-1.2.4.1/test/noncontig_coll.c, romio-1.2.4.1/test/perf.c,
-	  romio-1.2.4.1/test/pfcoll_test.f.in,
-	  romio-1.2.4.1/test/psimple.c, romio-1.2.4.1/test/runtests.in,
-	  romio-1.2.4.1/test/shared_fp.c, romio-1.2.4.1/test/simple.c,
-	  romio-1.2.4.1/test/split_coll.c, romio-1.2.4.1/test/status.c,
-	  romio-1.2.4.1/test/std/async.std,
-	  romio-1.2.4.1/test/std/atomicity.std,
-	  romio-1.2.4.1/test/std/coll_test.std,
-	  romio-1.2.4.1/test/std/error.std,
-	  romio-1.2.4.1/test/std/excl.std,
-	  romio-1.2.4.1/test/std/fcoll_test.std,
-	  romio-1.2.4.1/test/std/file_info.std,
-	  romio-1.2.4.1/test/std/fmisc.std,
-	  romio-1.2.4.1/test/std/i_noncontig.std,
-	  romio-1.2.4.1/test/std/misc.std,
-	  romio-1.2.4.1/test/std/noncontig.std,
-	  romio-1.2.4.1/test/std/noncontig_coll.std,
-	  romio-1.2.4.1/test/std/pfcoll_test.std,
-	  romio-1.2.4.1/test/std/psimple.std,
-	  romio-1.2.4.1/test/std/shared_fp.std,
-	  romio-1.2.4.1/test/std/simple.std,
-	  romio-1.2.4.1/test/std/split_coll.std,
-	  romio-1.2.4.1/test/std/status.std,
-	  romio-1.2.4.1/util/romioinstall.in, romio-1.2.4.1/util/tarch,
-	  src/Makefile, src/VERSION, src/install-sh, src/check/Makefile,
-	  src/check/README, src/check/mpi-coll-bench/Makefile,
-	  src/check/mpi-coll-bench/mpi-coll-bench.c,
-	  src/check/mpi-ping/Makefile, src/check/mpi-ping/README,
-	  src/check/mpi-ping/mpi-ping-thread.c,
-	  src/check/mpi-ping/mpi-ping.c, src/check/mpi-ping/run,
-	  src/check/ulmprobe/Makefile, src/check/ulmprobe/README,
-	  src/check/ulmtest/Makefile, src/check/ulmtest/README,
-	  src/check/ulmtest/prand.c, src/check/ulmtest/prand.h,
-	  src/check/ulmtest/test_allreduce.c,
-	  src/check/ulmtest/test_bcast.c, src/check/ulmtest/test_dping.c,
-	  src/check/ulmtest/test_env.c, src/check/ulmtest/test_mcast.c,
-	  src/check/ulmtest/test_monte_carlo.c,
-	  src/check/ulmtest/test_reduce.c, src/check/ulmtest/test_sping.c,
-	  src/check/ulmtest/test_wildall.c,
-	  src/check/ulmtest/test_wildproc.c,
-	  src/check/ulmtest/test_wildtag.c, src/check/ulmtest/ulmtest.c,
-	  src/check/ulmtest/ulmtest.h, src/check/ulmtest/util.c,
-	  src/client/AbortLocalHost.cc, src/client/CheckForControlMsgs.cc,
-	  src/client/CheckIfChildrenAlive.cc,
-	  src/client/ClientHandshakeWithServer.cc,
-	  src/client/DrainSTDIO.cc, src/client/InstallSigHandler.cc,
-	  src/client/OrderlyShutdown.cc, src/client/ScanStdoutStderr.cc,
-	  src/client/ServerHandshakeWithClient.cc,
-	  src/client/SocketAdminNetwork.h, src/client/SocketClient.h,
-	  src/client/SocketGeneric.cc, src/client/SocketGeneric.h,
-	  src/client/SocketInitClient.cc, src/client/SocketInitServer.cc,
-	  src/client/SocketServer.h, src/client/TV.h,
-	  src/client/TVSetup.cc, src/client/ULMClient.h,
-	  src/client/ULMClientSignals.cc, src/client/ULMClientTypes.h,
-	  src/client/adminMessage.cc, src/client/adminMessage.h,
-	  src/client/daemonLoop.cc, src/client/libmpi.mk,
-	  src/client/mpirun.mk, src/client/setupMemoryPools.cc,
-	  src/client/setupPerProcSharedMemPools.cc, src/collective/README,
-	  src/collective/barrier.h, src/collective/barrierSetup.cc,
-	  src/collective/coll_error.h, src/collective/coll_fns.h,
-	  src/collective/coll_tree.c, src/collective/coll_tree.h,
-	  src/collective/libmpi.mk, src/collective/mpirun.mk,
-	  src/collective/newalltoall.cc, src/collective/ulm_allgather.cc,
-	  src/collective/ulm_allgatherv.cc,
-	  src/collective/ulm_allreduce.cc,
-	  src/collective/ulm_allreduce_int.cc,
-	  src/collective/ulm_allreduce_linear.cc,
-	  src/collective/ulm_alltoall.cc, src/collective/ulm_alltoallv.cc,
-	  src/collective/ulm_barrier.cc,
-	  src/collective/ulm_barrier_interhost.cc,
-	  src/collective/ulm_barrier_intrahost.cc,
-	  src/collective/ulm_bcast.cc,
-	  src/collective/ulm_bcast_interhost.cc,
-	  src/collective/ulm_gather.cc,
-	  src/collective/ulm_gather_interhost.cc,
-	  src/collective/ulm_gatherv.cc, src/collective/ulm_reduce.cc,
-	  src/collective/ulm_reduce_interhost.cc,
-	  src/collective/ulm_reduce_intrahost.cc,
-	  src/collective/ulm_reduce_linear.cc, src/collective/ulm_scan.cc,
-	  src/collective/ulm_scatter.cc,
-	  src/collective/ulm_scatter_interhost.cc,
-	  src/collective/ulm_scatterv.cc,
-	  src/collective/ulm_scatterv_interhost.cc,
-	  src/collective/p2p/libmpi.mk, src/collective/p2p/mpirun.mk,
-	  src/collective/p2p/ulm_allgather_p2p.cc,
-	  src/collective/p2p/ulm_allgatherv_p2p.cc,
-	  src/collective/p2p/ulm_allreduce_p2p.cc,
-	  src/collective/p2p/ulm_barrier_p2p.cc,
-	  src/collective/p2p/ulm_bcast_p2p.cc,
-	  src/collective/p2p/ulm_gather_p2p.cc,
-	  src/collective/p2p/ulm_gatherv_p2p.cc,
-	  src/collective/p2p/ulm_reduce_p2p.cc,
-	  src/collective/p2p/ulm_scatter_p2p.cc,
-	  src/collective/p2p/ulm_scatterv_p2p.cc,
-	  src/collective/quadrics/libmpi.mk,
-	  src/collective/quadrics/mcast_notes.txt,
-	  src/collective/quadrics/mpirun.mk,
-	  src/collective/quadrics/ulm_barrier_quadrics.cc,
-	  src/collective/quadrics/ulm_bcast_quadrics.cc,
-	  src/collective/quadrics/ulm_reduce_quadrics.cc,
-	  src/ctnetwork/CTChannel.cc, src/ctnetwork/CTChannel.h,
-	  src/ctnetwork/CTClient.cc, src/ctnetwork/CTClient.h,
-	  src/ctnetwork/CTController.cc, src/ctnetwork/CTController.h,
-	  src/ctnetwork/CTDelegate.cc, src/ctnetwork/CTDelegate.h,
-	  src/ctnetwork/CTMessage.cc, src/ctnetwork/CTMessage.h,
-	  src/ctnetwork/CTNetwork.h, src/ctnetwork/CTNode.cc,
-	  src/ctnetwork/CTNode.h, src/ctnetwork/CTServer.cc,
-	  src/ctnetwork/CTServer.h, src/ctnetwork/libmpi.mk,
-	  src/ctnetwork/mpirun.mk, src/include/mpi.h,
-	  src/include/mpiandio.h, src/include/mpif.h,
-	  src/include/internal/MPIIncludes.h,
-	  src/include/internal/Private.h, src/include/internal/buffer.h,
-	  src/include/internal/cLock.h, src/include/internal/collective.h,
-	  src/include/internal/constants.h, src/include/internal/ftoc.h,
-	  src/include/internal/lampi_state.h,
-	  src/include/internal/linkage.h, src/include/internal/log.h,
-	  src/include/internal/malloc.h,
-	  src/include/internal/mmap_params.h, src/include/internal/mpi.h,
-	  src/include/internal/mpi_ppc.h, src/include/internal/mpif.h,
-	  src/include/internal/mpif_decls.h, src/include/internal/new.h,
-	  src/include/internal/options.h, src/include/internal/profiler.h,
-	  src/include/internal/ptr_table.h, src/include/internal/state.h,
-	  src/include/internal/system.h, src/include/internal/type_copy.h,
-	  src/include/internal/types.h, src/include/internal/sys/hippibp.h,
-	  src/include/mpi/constants.h, src/include/mpi/mpi.h,
-	  src/include/mpi/types.h, src/include/ulm/constants.h,
-	  src/include/ulm/errors.h, src/include/ulm/system.h,
-	  src/include/ulm/types.h, src/include/ulm/ulm.h,
-	  src/init/environ.cc, src/init/environ.h, src/init/fork_many.cc,
-	  src/init/fork_many.h, src/init/init.cc, src/init/init.h,
-	  src/init/init_debug.cc, src/init/init_gm.cc,
-	  src/init/init_local_coll.cc, src/init/init_lsf.cc,
-	  src/init/init_proc.cc, src/init/init_quadrics.cc,
-	  src/init/init_rms.cc, src/init/init_shared_memory.cc,
-	  src/init/init_udp.cc, src/init/libmpi.mk, src/init/state.cc,
-	  src/init/stub.cc, src/interface/libmpi.mk,
-	  src/interface/mpirun.mk, src/interface/ulm_abort.cc,
-	  src/interface/ulm_attr_delete.cc, src/interface/ulm_attr_get.cc,
-	  src/interface/ulm_attr_put.cc,
-	  src/interface/ulm_binary_functions.cc,
-	  src/interface/ulm_bind_multicast_message.cc,
-	  src/interface/ulm_bind_pt2pt_message.cc,
-	  src/interface/ulm_bsend_info.cc,
-	  src/interface/ulm_c_keyval_create.cc, src/interface/ulm_check.cc,
-	  src/interface/ulm_cleanup.cc, src/interface/ulm_comm_compare.cc,
-	  src/interface/ulm_comm_create.cc, src/interface/ulm_comm_dup.cc,
-	  src/interface/ulm_comm_free.cc, src/interface/ulm_comm_group.cc,
-	  src/interface/ulm_comm_lock.cc, src/interface/ulm_comm_rank.cc,
-	  src/interface/ulm_comm_remote_group.cc,
-	  src/interface/ulm_comm_remote_size.cc,
-	  src/interface/ulm_comm_size.cc, src/interface/ulm_comm_split.cc,
-	  src/interface/ulm_comm_test_inter.cc,
-	  src/interface/ulm_communicator_alloc.cc,
-	  src/interface/ulm_dclock.cc,
-	  src/interface/ulm_f_keyval_create.cc,
-	  src/interface/ulm_finalize.cc,
-	  src/interface/ulm_get_errhandler_index.cc,
-	  src/interface/ulm_get_info.cc,
-	  src/interface/ulm_get_path_selection_functions.cc,
-	  src/interface/ulm_get_system_tag.cc,
-	  src/interface/ulm_get_topology.cc,
-	  src/interface/ulm_group_compare.cc,
-	  src/interface/ulm_group_difference.cc,
-	  src/interface/ulm_group_excl.cc, src/interface/ulm_group_free.cc,
-	  src/interface/ulm_group_incl.cc,
-	  src/interface/ulm_group_intersection.cc,
-	  src/interface/ulm_group_range_excl.cc,
-	  src/interface/ulm_group_range_incl.cc,
-	  src/interface/ulm_group_rank.cc, src/interface/ulm_group_size.cc,
-	  src/interface/ulm_group_translate_ranks.cc,
-	  src/interface/ulm_group_union.cc, src/interface/ulm_init.cc,
-	  src/interface/ulm_intercomm_create.cc,
-	  src/interface/ulm_intercomm_merge.cc,
-	  src/interface/ulm_iprobe.cc, src/interface/ulm_irecv.cc,
-	  src/interface/ulm_irecv_init.cc, src/interface/ulm_isend.cc,
-	  src/interface/ulm_isend_init.cc,
-	  src/interface/ulm_keyval_free.cc, src/interface/ulm_log.cc,
-	  src/interface/ulm_make_progress.cc,
-	  src/interface/ulm_pending_messages.cc, src/interface/ulm_recv.cc,
-	  src/interface/ulm_recv_vec.cc, src/interface/ulm_request_free.cc,
-	  src/interface/ulm_request_persistent.cc,
-	  src/interface/ulm_request_status.cc, src/interface/ulm_send.cc,
-	  src/interface/ulm_send_vec.cc,
-	  src/interface/ulm_set_errhandler_index.cc,
-	  src/interface/ulm_set_path_selection_functions.cc,
-	  src/interface/ulm_set_topology.cc, src/interface/ulm_start.cc,
-	  src/interface/ulm_test.cc, src/interface/ulm_testall.cc,
-	  src/interface/ulm_utrecv.cc, src/interface/ulm_utsend.cc,
-	  src/interface/ulm_wait.cc, src/mem/Allocator.h, src/mem/Bucket.h,
-	  src/mem/FirstFitAlloc.cc, src/mem/FirstFitAlloc.h,
-	  src/mem/FixedSharedMemPool.cc, src/mem/FixedSharedMemPool.h,
-	  src/mem/FreeLists.h, src/mem/MPool.cc, src/mem/MPool.h,
-	  src/mem/MPool_design.txt, src/mem/MemoryPool.h,
-	  src/mem/MemorySegments.h, src/mem/PrivateMPool.cc,
-	  src/mem/PrivateMPool.h, src/mem/ULMMallocMacros.h,
-	  src/mem/ULMMallocSharedLocal.h, src/mem/ULMMallocUtil.cc,
-	  src/mem/ULMMallocUtil.h, src/mem/ULMMemoryBuckets.h,
-	  src/mem/ULMPool.cc, src/mem/ULMPool.h, src/mem/ULMStack.h,
-	  src/mem/libmpi.mk, src/mpi/README, src/mpi/c/libmpi.mk,
-	  src/mpi/c/mpi_abort.c, src/mpi/c/mpi_address.c,
-	  src/mpi/c/mpi_allgather.c, src/mpi/c/mpi_allgatherv.c,
-	  src/mpi/c/mpi_allreduce.c, src/mpi/c/mpi_alltoall.c,
-	  src/mpi/c/mpi_alltoallv.c, src/mpi/c/mpi_alltoallw.c,
-	  src/mpi/c/mpi_attr_delete.c, src/mpi/c/mpi_attr_get.c,
-	  src/mpi/c/mpi_attr_put.c, src/mpi/c/mpi_barrier.c,
-	  src/mpi/c/mpi_bcast.c, src/mpi/c/mpi_bsend.c,
-	  src/mpi/c/mpi_bsend_init.c, src/mpi/c/mpi_buffer_attach.c,
-	  src/mpi/c/mpi_buffer_detach.c, src/mpi/c/mpi_cancel.c,
-	  src/mpi/c/mpi_cart_coords.c, src/mpi/c/mpi_cart_create.c,
-	  src/mpi/c/mpi_cart_get.c, src/mpi/c/mpi_cart_map.c,
-	  src/mpi/c/mpi_cart_rank.c, src/mpi/c/mpi_cart_shift.c,
-	  src/mpi/c/mpi_cart_sub.c, src/mpi/c/mpi_cartdim_get.c,
-	  src/mpi/c/mpi_comm_compare.c, src/mpi/c/mpi_comm_create.c,
-	  src/mpi/c/mpi_comm_dup.c, src/mpi/c/mpi_comm_free.c,
-	  src/mpi/c/mpi_comm_group.c, src/mpi/c/mpi_comm_rank.c,
-	  src/mpi/c/mpi_comm_remote_group.c,
-	  src/mpi/c/mpi_comm_remote_size.c, src/mpi/c/mpi_comm_size.c,
-	  src/mpi/c/mpi_comm_split.c, src/mpi/c/mpi_comm_test_inter.c,
-	  src/mpi/c/mpi_dims_create.c, src/mpi/c/mpi_errhandler_create.c,
-	  src/mpi/c/mpi_errhandler_free.c, src/mpi/c/mpi_errhandler_get.c,
-	  src/mpi/c/mpi_errhandler_set.c, src/mpi/c/mpi_error_class.c,
-	  src/mpi/c/mpi_error_string.c, src/mpi/c/mpi_finalize.c,
-	  src/mpi/c/mpi_finalized.c, src/mpi/c/mpi_gather.c,
-	  src/mpi/c/mpi_gatherv.c, src/mpi/c/mpi_get_count.c,
-	  src/mpi/c/mpi_get_elements.c, src/mpi/c/mpi_get_processor_name.c,
-	  src/mpi/c/mpi_get_version.c, src/mpi/c/mpi_graph_create.c,
-	  src/mpi/c/mpi_graph_get.c, src/mpi/c/mpi_graph_map.c,
-	  src/mpi/c/mpi_graph_neighbors.c,
-	  src/mpi/c/mpi_graph_neighbors_count.c,
-	  src/mpi/c/mpi_graphdims_get.c, src/mpi/c/mpi_group_compare.c,
-	  src/mpi/c/mpi_group_difference.c, src/mpi/c/mpi_group_excl.c,
-	  src/mpi/c/mpi_group_free.c, src/mpi/c/mpi_group_incl.c,
-	  src/mpi/c/mpi_group_intersection.c,
-	  src/mpi/c/mpi_group_range_excl.c,
-	  src/mpi/c/mpi_group_range_incl.c, src/mpi/c/mpi_group_rank.c,
-	  src/mpi/c/mpi_group_size.c,
-	  src/mpi/c/mpi_group_translate_ranks.c,
-	  src/mpi/c/mpi_group_union.c, src/mpi/c/mpi_ibsend.c,
-	  src/mpi/c/mpi_init.c, src/mpi/c/mpi_initialized.c,
-	  src/mpi/c/mpi_intercomm_create.c,
-	  src/mpi/c/mpi_intercomm_merge.c, src/mpi/c/mpi_iprobe.c,
-	  src/mpi/c/mpi_irecv.c, src/mpi/c/mpi_irsend.c,
-	  src/mpi/c/mpi_isend.c, src/mpi/c/mpi_issend.c,
-	  src/mpi/c/mpi_keyval_create.c, src/mpi/c/mpi_keyval_free.c,
-	  src/mpi/c/mpi_op_create.c, src/mpi/c/mpi_op_free.c,
-	  src/mpi/c/mpi_pack.c, src/mpi/c/mpi_pack_size.c,
-	  src/mpi/c/mpi_pcontrol.c, src/mpi/c/mpi_probe.c,
-	  src/mpi/c/mpi_recv.c, src/mpi/c/mpi_recv_init.c,
-	  src/mpi/c/mpi_reduce.c, src/mpi/c/mpi_reduce_scatter.c,
-	  src/mpi/c/mpi_request_free.c, src/mpi/c/mpi_rsend.c,
-	  src/mpi/c/mpi_rsend_init.c, src/mpi/c/mpi_scan.c,
-	  src/mpi/c/mpi_scatter.c, src/mpi/c/mpi_scatterv.c,
-	  src/mpi/c/mpi_send.c, src/mpi/c/mpi_send_init.c,
-	  src/mpi/c/mpi_sendrecv.c, src/mpi/c/mpi_sendrecv_replace.c,
-	  src/mpi/c/mpi_ssend.c, src/mpi/c/mpi_ssend_init.c,
-	  src/mpi/c/mpi_start.c, src/mpi/c/mpi_startall.c,
-	  src/mpi/c/mpi_test.c, src/mpi/c/mpi_test_cancelled.c,
-	  src/mpi/c/mpi_testall.c, src/mpi/c/mpi_testany.c,
-	  src/mpi/c/mpi_testsome.c, src/mpi/c/mpi_topo_test.c,
-	  src/mpi/c/mpi_type_commit.c, src/mpi/c/mpi_type_contiguous.c,
-	  src/mpi/c/mpi_type_create_darray.c,
-	  src/mpi/c/mpi_type_create_subarray.c,
-	  src/mpi/c/mpi_type_extent.c, src/mpi/c/mpi_type_free.c,
-	  src/mpi/c/mpi_type_get_contents.c,
-	  src/mpi/c/mpi_type_get_envelope.c, src/mpi/c/mpi_type_hindexed.c,
-	  src/mpi/c/mpi_type_hvector.c, src/mpi/c/mpi_type_indexed.c,
-	  src/mpi/c/mpi_type_lb.c, src/mpi/c/mpi_type_size.c,
-	  src/mpi/c/mpi_type_struct.c, src/mpi/c/mpi_type_ub.c,
-	  src/mpi/c/mpi_type_vector.c, src/mpi/c/mpi_unpack.c,
-	  src/mpi/c/mpi_wait.c, src/mpi/c/mpi_waitall.c,
-	  src/mpi/c/mpi_waitany.c, src/mpi/c/mpi_waitsome.c,
-	  src/mpi/c/mpi_wtick.c, src/mpi/c/mpi_wtime.c,
-	  src/mpi/c/mpirun.mk, src/mpi/c2f/libmpi.mk,
-	  src/mpi/c2f/mpi_comm_c2f.c, src/mpi/c2f/mpi_comm_f2c.c,
-	  src/mpi/c2f/mpi_file_c2f.c, src/mpi/c2f/mpi_file_f2c.c,
-	  src/mpi/c2f/mpi_group_c2f.c, src/mpi/c2f/mpi_group_f2c.c,
-	  src/mpi/c2f/mpi_info_c2f.c, src/mpi/c2f/mpi_info_f2c.c,
-	  src/mpi/c2f/mpi_op_c2f.c, src/mpi/c2f/mpi_op_f2c.c,
-	  src/mpi/c2f/mpi_request_c2f.c, src/mpi/c2f/mpi_request_f2c.c,
-	  src/mpi/c2f/mpi_type_c2f.c, src/mpi/c2f/mpi_type_f2c.c,
-	  src/mpi/c2f/mpi_win_c2f.c, src/mpi/c2f/mpi_win_f2c.c,
-	  src/mpi/c2f/mpirun.mk, src/mpi/f/libmpi.mk,
-	  src/mpi/f/mpi_abort.c, src/mpi/f/mpi_address.c,
-	  src/mpi/f/mpi_allgather.c, src/mpi/f/mpi_allgatherv.c,
-	  src/mpi/f/mpi_allreduce.c, src/mpi/f/mpi_alltoall.c,
-	  src/mpi/f/mpi_alltoallv.c, src/mpi/f/mpi_attr_delete.c,
-	  src/mpi/f/mpi_attr_get.c, src/mpi/f/mpi_attr_put.c,
-	  src/mpi/f/mpi_barrier.c, src/mpi/f/mpi_bcast.c,
-	  src/mpi/f/mpi_bsend.c, src/mpi/f/mpi_bsend_init.c,
-	  src/mpi/f/mpi_buffer_attach.c, src/mpi/f/mpi_buffer_detach.c,
-	  src/mpi/f/mpi_cancel.c, src/mpi/f/mpi_cart_coords.c,
-	  src/mpi/f/mpi_cart_create.c, src/mpi/f/mpi_cart_get.c,
-	  src/mpi/f/mpi_cart_map.c, src/mpi/f/mpi_cart_rank.c,
-	  src/mpi/f/mpi_cart_shift.c, src/mpi/f/mpi_cart_sub.c,
-	  src/mpi/f/mpi_cartdim_get.c, src/mpi/f/mpi_comm_compare.c,
-	  src/mpi/f/mpi_comm_create.c, src/mpi/f/mpi_comm_dup.c,
-	  src/mpi/f/mpi_comm_free.c, src/mpi/f/mpi_comm_group.c,
-	  src/mpi/f/mpi_comm_rank.c, src/mpi/f/mpi_comm_remote_group.c,
-	  src/mpi/f/mpi_comm_remote_size.c, src/mpi/f/mpi_comm_size.c,
-	  src/mpi/f/mpi_comm_split.c, src/mpi/f/mpi_comm_test_inter.c,
-	  src/mpi/f/mpi_dims_create.c, src/mpi/f/mpi_errhandler_create.c,
-	  src/mpi/f/mpi_errhandler_free.c, src/mpi/f/mpi_errhandler_get.c,
-	  src/mpi/f/mpi_errhandler_set.c, src/mpi/f/mpi_error_class.c,
-	  src/mpi/f/mpi_error_string.c, src/mpi/f/mpi_finalize.c,
-	  src/mpi/f/mpi_finalized.c, src/mpi/f/mpi_gather.c,
-	  src/mpi/f/mpi_gatherv.c, src/mpi/f/mpi_get_count.c,
-	  src/mpi/f/mpi_get_elements.c, src/mpi/f/mpi_get_processor_name.c,
-	  src/mpi/f/mpi_get_version.c, src/mpi/f/mpi_graph_create.c,
-	  src/mpi/f/mpi_graph_get.c, src/mpi/f/mpi_graph_map.c,
-	  src/mpi/f/mpi_graph_neighbors.c,
-	  src/mpi/f/mpi_graph_neighbors_count.c,
-	  src/mpi/f/mpi_graphdims_get.c, src/mpi/f/mpi_group_compare.c,
-	  src/mpi/f/mpi_group_difference.c, src/mpi/f/mpi_group_excl.c,
-	  src/mpi/f/mpi_group_free.c, src/mpi/f/mpi_group_incl.c,
-	  src/mpi/f/mpi_group_intersection.c,
-	  src/mpi/f/mpi_group_range_excl.c,
-	  src/mpi/f/mpi_group_range_incl.c, src/mpi/f/mpi_group_rank.c,
-	  src/mpi/f/mpi_group_size.c,
-	  src/mpi/f/mpi_group_translate_ranks.c,
-	  src/mpi/f/mpi_group_union.c, src/mpi/f/mpi_ibsend.c,
-	  src/mpi/f/mpi_init.c, src/mpi/f/mpi_initialized.c,
-	  src/mpi/f/mpi_intercomm_create.c,
-	  src/mpi/f/mpi_intercomm_merge.c, src/mpi/f/mpi_iprobe.c,
-	  src/mpi/f/mpi_irecv.c, src/mpi/f/mpi_irsend.c,
-	  src/mpi/f/mpi_isend.c, src/mpi/f/mpi_issend.c,
-	  src/mpi/f/mpi_keyval_create.c, src/mpi/f/mpi_keyval_free.c,
-	  src/mpi/f/mpi_op_create.c, src/mpi/f/mpi_op_free.c,
-	  src/mpi/f/mpi_pack.c, src/mpi/f/mpi_pack_size.c,
-	  src/mpi/f/mpi_pcontrol.c, src/mpi/f/mpi_probe.c,
-	  src/mpi/f/mpi_recv.c, src/mpi/f/mpi_recv_init.c,
-	  src/mpi/f/mpi_reduce.c, src/mpi/f/mpi_reduce_scatter.c,
-	  src/mpi/f/mpi_request_free.c, src/mpi/f/mpi_rsend.c,
-	  src/mpi/f/mpi_rsend_init.c, src/mpi/f/mpi_scan.c,
-	  src/mpi/f/mpi_scatter.c, src/mpi/f/mpi_scatterv.c,
-	  src/mpi/f/mpi_send.c, src/mpi/f/mpi_send_init.c,
-	  src/mpi/f/mpi_sendrecv.c, src/mpi/f/mpi_sendrecv_replace.c,
-	  src/mpi/f/mpi_ssend.c, src/mpi/f/mpi_ssend_init.c,
-	  src/mpi/f/mpi_start.c, src/mpi/f/mpi_startall.c,
-	  src/mpi/f/mpi_test.c, src/mpi/f/mpi_test_cancelled.c,
-	  src/mpi/f/mpi_testall.c, src/mpi/f/mpi_testany.c,
-	  src/mpi/f/mpi_testsome.c, src/mpi/f/mpi_topo_test.c,
-	  src/mpi/f/mpi_type_commit.c, src/mpi/f/mpi_type_contiguous.c,
-	  src/mpi/f/mpi_type_create_darray.c,
-	  src/mpi/f/mpi_type_create_subarray.c,
-	  src/mpi/f/mpi_type_extent.c, src/mpi/f/mpi_type_free.c,
-	  src/mpi/f/mpi_type_get_contents.c,
-	  src/mpi/f/mpi_type_get_envelope.c, src/mpi/f/mpi_type_hindexed.c,
-	  src/mpi/f/mpi_type_hvector.c, src/mpi/f/mpi_type_indexed.c,
-	  src/mpi/f/mpi_type_lb.c, src/mpi/f/mpi_type_size.c,
-	  src/mpi/f/mpi_type_struct.c, src/mpi/f/mpi_type_ub.c,
-	  src/mpi/f/mpi_type_vector.c, src/mpi/f/mpi_unpack.c,
-	  src/mpi/f/mpi_wait.c, src/mpi/f/mpi_waitall.c,
-	  src/mpi/f/mpi_waitany.c, src/mpi/f/mpi_waitsome.c,
-	  src/mpi/f/mpi_wtick.c, src/mpi/f/mpi_wtime.c,
-	  src/mpi/f/mpirun.mk, src/mpi/internal/libmpi.mk,
-	  src/mpi/internal/lockFns.c, src/mpi/internal/mpi_attribute.c,
-	  src/mpi/internal/mpi_collective.c,
-	  src/mpi/internal/mpi_errhandler.c, src/mpi/internal/mpi_op.c,
-	  src/mpi/internal/mpi_ptr_table.c, src/mpi/internal/mpi_state.c,
-	  src/mpi/internal/mpi_type.c, src/mpi/internal/mpi_util.c,
-	  src/mpi/internal/mpif_op.c, src/mpi/internal/mpif_request.c,
-	  src/mpi/internal/mpif_state.c, src/mpi/internal/mpif_type.c,
-	  src/mpi/internal/mpirun.mk, src/mpi/profile/mpi_info.c,
-	  src/mpi/profile/mpi_info.h, src/mpi/profile/mpi_profile.c,
-	  src/mpi/profile/mpi_profile.h, src/os/MemoryPolicy.h,
-	  src/os/acquire.h, src/os/atomic.h, src/os/libmpi.mk,
-	  src/os/mpirun.mk, src/os/request.h,
-	  src/os/DARWIN/PlatformBarrierSetup.cc, src/os/DARWIN/libmpi.mk,
-	  src/os/DARWIN/mpirun.mk, src/os/DARWIN/ulm_os.h,
-	  src/os/DARWIN/powerpc/SMPDevParams.h,
-	  src/os/DARWIN/powerpc/atomic.h, src/os/DARWIN/powerpc/libmpi.mk,
-	  src/os/DARWIN/powerpc/mpirun.mk, src/os/IRIX/FreeLists.h,
-	  src/os/IRIX/IRIX_request.cc, src/os/IRIX/IRIX_request_private.cc,
-	  src/os/IRIX/MD_acquire.cc, src/os/IRIX/MD_acquire.h,
-	  src/os/IRIX/MD_acquireGlobals.h, src/os/IRIX/MD_request.h,
-	  src/os/IRIX/MD_request_include.h,
-	  src/os/IRIX/MD_request_private.h,
-	  src/os/IRIX/OsSpecificFreeListInc.h,
-	  src/os/IRIX/ProcessPrivateFreeLists.h,
-	  src/os/IRIX/SMPDevParams.h, src/os/IRIX/SN0BarrierSetup.cc,
-	  src/os/IRIX/Utility.cc, src/os/IRIX/atomic.h,
-	  src/os/IRIX/barrierFunctions.h, src/os/IRIX/fetchAndOp.h,
-	  src/os/IRIX/getCPUSet.cc, src/os/IRIX/libmpi.mk,
-	  src/os/IRIX/lock.s, src/os/IRIX/mpirun.mk,
-	  src/os/IRIX/setMemoryPolicy.cc, src/os/IRIX/ulm_os.h,
-	  src/os/LINUX/PlatformBarrierSetup.cc, src/os/LINUX/libmpi.mk,
-	  src/os/LINUX/mpirun.mk, src/os/LINUX/ulm_os.h,
-	  src/os/LINUX/alpha/SMPDevParams.h, src/os/LINUX/alpha/atomic.h,
-	  src/os/LINUX/alpha/libmpi.mk, src/os/LINUX/alpha/mpirun.mk,
-	  src/os/LINUX/alpha/setMemoryPolicy.cc,
-	  src/os/LINUX/i686/SMPDevParams.h, src/os/LINUX/i686/atomic.h,
-	  src/os/LINUX/i686/libmpi.mk, src/os/LINUX/i686/mpirun.mk,
-	  src/os/TRU64/PlatformBarrierSetup.cc,
-	  src/os/TRU64/SMPDevParams.h, src/os/TRU64/atomic.h,
-	  src/os/TRU64/getCPUSet.cc, src/os/TRU64/libmpi.mk,
-	  src/os/TRU64/mpirun.mk, src/os/TRU64/setMemoryPolicy.cc,
-	  src/os/TRU64/ulm_os.h, src/path/README,
-	  src/path/common/BaseDesc.cc, src/path/common/BaseDesc.h,
-	  src/path/common/InitSendDescriptors.cc,
-	  src/path/common/InitSendDescriptors.h, src/path/common/libmpi.mk,
-	  src/path/common/path.h, src/path/common/pathContainer.h,
-	  src/path/gm/base_state.h, src/path/gm/header.h,
-	  src/path/gm/init.cc, src/path/gm/init.h, src/path/gm/libmpi.mk,
-	  src/path/gm/path.cc, src/path/gm/path.h, src/path/gm/recvFrag.cc,
-	  src/path/gm/recvFrag.h, src/path/gm/sendFrag.cc,
-	  src/path/gm/sendFrag.h, src/path/gm/setupInfo.h,
-	  src/path/gm/state.cc, src/path/gm/state.h,
-	  src/path/quadrics/addrCache.h, src/path/quadrics/dmaThrottle.h,
-	  src/path/quadrics/dmaThrottle_new.h,
-	  src/path/quadrics/dmaThrottle_simple.h,
-	  src/path/quadrics/header.h, src/path/quadrics/init.cc,
-	  src/path/quadrics/libmpi.mk, src/path/quadrics/path.cc,
-	  src/path/quadrics/path.h, src/path/quadrics/peerMemoryTracking.h,
-	  src/path/quadrics/recvFrag.cc, src/path/quadrics/recvFrag.h,
-	  src/path/quadrics/sendFrag.h, src/path/quadrics/sendInfo.h,
-	  src/path/quadrics/state.cc, src/path/quadrics/state.h,
-	  src/path/sharedmem/InitSMPDevs.cc, src/path/sharedmem/SMPDev.h,
-	  src/path/sharedmem/SMPFragDesc.h,
-	  src/path/sharedmem/SMPProcessGroup.cc,
-	  src/path/sharedmem/SMPSendDesc.cc,
-	  src/path/sharedmem/SMPSendDesc.h,
-	  src/path/sharedmem/SMPSharedMemGlobals.h,
-	  src/path/sharedmem/SMPUtil.cc, src/path/sharedmem/SMPfns.h,
-	  src/path/sharedmem/SharedMemJobParams.h,
-	  src/path/sharedmem/libmpi.mk, src/path/sharedmem/mpirun.mk,
-	  src/path/sharedmem/processSMPFrags.cc,
-	  src/path/sharedmem/processUnsentMessages.cc,
-	  src/path/udp/UDPEarlySend.h, src/path/udp/UDPNetwork.cc,
-	  src/path/udp/UDPNetwork.h, src/path/udp/header.h,
-	  src/path/udp/init.cc, src/path/udp/libmpi.mk,
-	  src/path/udp/path.cc, src/path/udp/path.h,
-	  src/path/udp/recvFrag.cc, src/path/udp/recvFrag.h,
-	  src/path/udp/sendFrag.cc, src/path/udp/sendFrag.h,
-	  src/path/udp/sendInfo.h, src/path/udp/setupInfo.h,
-	  src/path/udp/state.cc, src/path/udp/state.h,
-	  src/queue/CollGroupRecv.cc, src/queue/CollGroupSend.cc,
-	  src/queue/Communicator.cc, src/queue/Communicator.h,
-	  src/queue/Group.cc, src/queue/Group.h, src/queue/ProcList.h,
-	  src/queue/Progress.cc, src/queue/Pt2PtGroupMatchFrags.cc,
-	  src/queue/Pt2PtGroupMatchRecv.cc, src/queue/Pt2PtGroupMisc.cc,
-	  src/queue/Pt2PtGroupProgress.cc, src/queue/Pt2PtGroupRecv.cc,
-	  src/queue/Pt2PtGroupRecvFrags.cc, src/queue/Pt2PtGroupSend.cc,
-	  src/queue/Pt2PtGroupTestRecv.cc, src/queue/ReliabilityInfo.cc,
-	  src/queue/ReliabilityInfo.h, src/queue/SeqTrackingList.cc,
-	  src/queue/SeqTrackingList.h, src/queue/SharedMemForCollective.h,
-	  src/queue/barrier.cc, src/queue/barrier.h, src/queue/contextID.h,
-	  src/queue/getNewContextID.cc, src/queue/globals.h,
-	  src/queue/libmpi.mk, src/queue/mpirun.mk,
-	  src/queue/peerExchange.cc, src/queue/sender_ackinfo.h,
-	  src/run/Abort.cc, src/run/AbortAllHosts.cc,
-	  src/run/CheckForControlMsgs.cc, src/run/CheckHeartBeat.cc,
-	  src/run/CmdLineArgs.h, src/run/Daemonize.cc,
-	  src/run/DrainStdioData.cc, src/run/FindStartedClients.cc,
-	  src/run/GetAppDir.cc, src/run/GetAppHostData.cc,
-	  src/run/GetClientApp.cc, src/run/GetClientCpus.cc,
-	  src/run/GetClientProcessCount.cc,
-	  src/run/GetClientWorkingDirectory.cc, src/run/GetDebugData.cc,
-	  src/run/GetLSFResource.cc, src/run/GetNetworkDevList.cc,
-	  src/run/Input.cc, src/run/Input.h, src/run/InstallSigHandler.cc,
-	  src/run/JobParams.h, src/run/KillAppProcs.cc,
-	  src/run/LSFResource.h, src/run/NormalTermination.cc,
-	  src/run/ProcessInput.cc, src/run/RearrangeHostList.cc,
-	  src/run/ResourceSpecs.h, src/run/Run.h,
-	  src/run/ScanStdErrAndOut.cc, src/run/SendInputDataToClients.cc,
-	  src/run/SetCheckArgsFalse.cc, src/run/SetOutputPrefixTrue.cc,
-	  src/run/SetupClientHostInfo.cc, src/run/SetupSTDIOHandling.cc,
-	  src/run/SpawnUserApp.cc, src/run/SpawnUserAppLSF.cc,
-	  src/run/SpawnUserAppRSH.cc, src/run/TV.h, src/run/TVSetUp.cc,
-	  src/run/TVSetUpApp.cc, src/run/TerminateClients.cc,
-	  src/run/VerifyLsfResources.cc, src/run/coprocess.cc,
-	  src/run/coprocess.h, src/run/fix_RunParameters.cc,
-	  src/run/globals.h, src/run/lampirun_init_proc.cc,
-	  src/run/libmpi.mk, src/run/mpirun.cc, src/run/mpirun.mk,
-	  src/run/mpirun_spawn_bproc.cc, src/run/mpirun_spawn_exec.cc,
-	  src/run/mpirun_spawn_prun.cc, src/run/mpirun_spawn_rsh.cc,
-	  src/run/parseEnvironmentSettings.cc,
-	  src/run/parse_cmdln_bproc.cc, src/run/parse_cmdln_bproc.h,
-	  src/run/sigalarm.cc, src/threads/Runnable.cc,
-	  src/threads/Runnable.h, src/threads/Thread.cc,
-	  src/threads/Thread.h, src/threads/libmpi.mk,
-	  src/threads/mpirun.mk, src/util/BitVect.c, src/util/BitVect.h,
-	  src/util/CommandArg.cc, src/util/CommandArg.h,
-	  src/util/DblLinkList.cc, src/util/DblLinkList.h,
-	  src/util/HashNode.cc, src/util/HashNode.h, src/util/HashTable.cc,
-	  src/util/HashTable.h, src/util/Links.h, src/util/Lock.h,
-	  src/util/MemFunctions.cc, src/util/MemFunctions.h,
-	  src/util/ParseString.cc, src/util/ParseString.h,
-	  src/util/ParseTree.cc, src/util/ParseTree.h,
-	  src/util/RCObject.cc, src/util/RCObject.h,
-	  src/util/SharedMemBarrier.cc, src/util/SharedMemBarrier.h,
-	  src/util/Utility.cc, src/util/Utility.h, src/util/bcopy2.cc,
-	  src/util/cbQueue.h, src/util/createDoubleLinkList.cc,
-	  src/util/dclock.cc, src/util/dclock.h, src/util/hostd.mk,
-	  src/util/inline_copy_functions.h, src/util/libmpi.mk,
-	  src/util/linked_list.c, src/util/linked_list.h, src/util/misc.c,
-	  src/util/misc.h, src/util/mpirun.mk, src/util/parsing.c,
-	  src/util/parsing.h, src/util/setupCore.cc, src/util/timing.cc,
-	  src/util/timing.h: Importing LA-MPI version 1.2.X
-
-2003-04-08 17:00  ddd
-
-	* COPYRIGHT, INSTALL, INSTALL.email, LICENSE, Makefile, README,
-	  RELEASE_NOTES, RELEASE_PROCESS, license-update.sh, license.sh,
-	  etc/lampi.conf, man/Makefile, man/lampi.html, man/lampi.man1,
-	  man/lampi_man.tex, man/mpirun.html, man/mpirun.man1,
-	  romio-1.2.4.1/.config_params, romio-1.2.4.1/COPYRIGHT,
-	  romio-1.2.4.1/Makefile.in, romio-1.2.4.1/README,
-	  romio-1.2.4.1/acconfig.h, romio-1.2.4.1/aclocal.m4,
-	  romio-1.2.4.1/configure, romio-1.2.4.1/configure.in,
-	  romio-1.2.4.1/adio/ad_hfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs.h,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_close.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_done.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_flush.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_hints.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_iread.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_open.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_read.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_resize.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_seek.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_wait.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_hfs/ad_hfs_write.c,
-	  romio-1.2.4.1/adio/ad_nfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs.h,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_close.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_done.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_flush.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_getsh.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_hints.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_iread.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_open.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_read.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_resize.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_seek.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_setsh.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_wait.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_nfs/ad_nfs_write.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs.h,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_close.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_done.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_flush.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_hints.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_iread.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_open.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_read.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_resize.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_seek.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_wait.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_ntfs/ad_ntfs_write.c,
-	  romio-1.2.4.1/adio/ad_pfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs.h,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_close.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_done.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_flush.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_hints.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_iread.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_open.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_read.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_resize.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_seek.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_wait.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_pfs/ad_pfs_write.c,
-	  romio-1.2.4.1/adio/ad_piofs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs.h,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_close.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_done.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_flush.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_hints.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_iread.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_open.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_read.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_resize.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_seek.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_wait.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_piofs/ad_piofs_write.c,
-	  romio-1.2.4.1/adio/ad_pvfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs.h,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_close.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_delete.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_done.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_flush.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_hints.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_iread.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_open.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_read.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_resize.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_seek.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_wait.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_pvfs/ad_pvfs_write.c,
-	  romio-1.2.4.1/adio/ad_sfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs.h,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_close.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_done.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_flush.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_hints.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_iread.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_open.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_read.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_resize.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_seek.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_wait.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_sfs/ad_sfs_write.c,
-	  romio-1.2.4.1/adio/ad_testfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs.h,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_close.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_delete.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_done.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_flush.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_getsh.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_hints.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_iread.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_open.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_read.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_resize.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_seek.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_setsh.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_wait.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_testfs/ad_testfs_write.c,
-	  romio-1.2.4.1/adio/ad_ufs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs.h,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_close.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_done.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_flush.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_hints.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_iread.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_open.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_read.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_resize.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_seek.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_wait.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_ufs/ad_ufs_write.c,
-	  romio-1.2.4.1/adio/ad_xfs/Makefile.in,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs.h,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_close.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_done.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_fcntl.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_flush.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_hints.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_iread.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_iwrite.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_open.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_rdcoll.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_read.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_resize.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_seek.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_wait.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_wrcoll.c,
-	  romio-1.2.4.1/adio/ad_xfs/ad_xfs_write.c,
-	  romio-1.2.4.1/adio/common/Makefile.in,
-	  romio-1.2.4.1/adio/common/ad_aggregate.c,
-	  romio-1.2.4.1/adio/common/ad_close.c,
-	  romio-1.2.4.1/adio/common/ad_delete.c,
-	  romio-1.2.4.1/adio/common/ad_end.c,
-	  romio-1.2.4.1/adio/common/ad_flush.c,
-	  romio-1.2.4.1/adio/common/ad_fstype.c,
-	  romio-1.2.4.1/adio/common/ad_get_sh_fp.c,
-	  romio-1.2.4.1/adio/common/ad_hints.c,
-	  romio-1.2.4.1/adio/common/ad_init.c,
-	  romio-1.2.4.1/adio/common/ad_open.c,
-	  romio-1.2.4.1/adio/common/ad_read_coll.c,
-	  romio-1.2.4.1/adio/common/ad_read_str.c,
-	  romio-1.2.4.1/adio/common/ad_read_str_naive.c,
-	  romio-1.2.4.1/adio/common/ad_seek.c,
-	  romio-1.2.4.1/adio/common/ad_set_sh_fp.c,
-	  romio-1.2.4.1/adio/common/ad_write_coll.c,
-	  romio-1.2.4.1/adio/common/ad_write_str.c,
-	  romio-1.2.4.1/adio/common/async_list.c,
-	  romio-1.2.4.1/adio/common/byte_offset.c,
-	  romio-1.2.4.1/adio/common/cb_config_list.c,
-	  romio-1.2.4.1/adio/common/eof_offset.c,
-	  romio-1.2.4.1/adio/common/error.c,
-	  romio-1.2.4.1/adio/common/flatten.c,
-	  romio-1.2.4.1/adio/common/get_fp_posn.c,
-	  romio-1.2.4.1/adio/common/iscontig.c,
-	  romio-1.2.4.1/adio/common/lock.c,
-	  romio-1.2.4.1/adio/common/malloc.c,
-	  romio-1.2.4.1/adio/common/req_malloc.c,
-	  romio-1.2.4.1/adio/common/setfn.c,
-	  romio-1.2.4.1/adio/common/shfp_fname.c,
-	  romio-1.2.4.1/adio/common/status_setb.c,
-	  romio-1.2.4.1/adio/include/BaseIOErrMsgs.msg,
-	  romio-1.2.4.1/adio/include/adio.h,
-	  romio-1.2.4.1/adio/include/adio_cb_config_list.h,
-	  romio-1.2.4.1/adio/include/adio_extern.h,
-	  romio-1.2.4.1/adio/include/adioi.h,
-	  romio-1.2.4.1/adio/include/adioi_errmsg.h,
-	  romio-1.2.4.1/adio/include/adioi_error.h,
-	  romio-1.2.4.1/adio/include/adioi_fs_proto.h,
-	  romio-1.2.4.1/adio/include/mpio_error.h,
-	  romio-1.2.4.1/adio/include/mpipr.h,
-	  romio-1.2.4.1/adio/include/mpisgi2.h,
-	  romio-1.2.4.1/adio/include/romioconf.h.in,
-	  romio-1.2.4.1/adio/sgi/mpi3.1/mpi.h,
-	  romio-1.2.4.1/adio/sgi/mpi3.1/mpif.h, romio-1.2.4.1/doc/Makefile,
-	  romio-1.2.4.1/doc/README, romio-1.2.4.1/doc/users-guide.bbl,
-	  romio-1.2.4.1/doc/users-guide.ps.gz,
-	  romio-1.2.4.1/doc/users-guide.tex,
-	  romio-1.2.4.1/include/mpio.h.in,
-	  romio-1.2.4.1/include/mpiof.h.in,
-	  romio-1.2.4.1/man/man3/MPIO_Request_c2f.3,
-	  romio-1.2.4.1/man/man3/MPIO_Request_f2c.3,
-	  romio-1.2.4.1/man/man3/MPIO_Test.3,
-	  romio-1.2.4.1/man/man3/MPIO_Wait.3,
-	  romio-1.2.4.1/man/man3/MPI_File_c2f.3,
-	  romio-1.2.4.1/man/man3/MPI_File_close.3,
-	  romio-1.2.4.1/man/man3/MPI_File_delete.3,
-	  romio-1.2.4.1/man/man3/MPI_File_f2c.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_amode.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_atomicity.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_byte_offset.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_group.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_info.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_position.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_position_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_size.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_type_extent.3,
-	  romio-1.2.4.1/man/man3/MPI_File_get_view.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iread_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_iwrite_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_open.3,
-	  romio-1.2.4.1/man/man3/MPI_File_preallocate.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_at_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_ordered_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_read_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_seek.3,
-	  romio-1.2.4.1/man/man3/MPI_File_seek_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_atomicity.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_info.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_size.3,
-	  romio-1.2.4.1/man/man3/MPI_File_set_view.3,
-	  romio-1.2.4.1/man/man3/MPI_File_sync.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_at_all_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered_begin.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_ordered_end.3,
-	  romio-1.2.4.1/man/man3/MPI_File_write_shared.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_c2f.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_create.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_delete.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_dup.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_f2c.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_free.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_nkeys.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_nthkey.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_get_valuelen.3,
-	  romio-1.2.4.1/man/man3/MPI_Info_set.3,
-	  romio-1.2.4.1/man/man3/MPI_Type_create_darray.3,
-	  romio-1.2.4.1/man/man3/MPI_Type_create_subarray.3,
-	  romio-1.2.4.1/mpi-io/Makefile.in, romio-1.2.4.1/mpi-io/close.c,
-	  romio-1.2.4.1/mpi-io/delete.c, romio-1.2.4.1/mpi-io/file_c2f.c,
-	  romio-1.2.4.1/mpi-io/file_f2c.c, romio-1.2.4.1/mpi-io/fsync.c,
-	  romio-1.2.4.1/mpi-io/get_amode.c,
-	  romio-1.2.4.1/mpi-io/get_atom.c,
-	  romio-1.2.4.1/mpi-io/get_bytoff.c,
-	  romio-1.2.4.1/mpi-io/get_errh.c,
-	  romio-1.2.4.1/mpi-io/get_extent.c,
-	  romio-1.2.4.1/mpi-io/get_group.c,
-	  romio-1.2.4.1/mpi-io/get_info.c, romio-1.2.4.1/mpi-io/get_posn.c,
-	  romio-1.2.4.1/mpi-io/get_posn_sh.c,
-	  romio-1.2.4.1/mpi-io/get_size.c, romio-1.2.4.1/mpi-io/get_view.c,
-	  romio-1.2.4.1/mpi-io/ioreq_c2f.c,
-	  romio-1.2.4.1/mpi-io/ioreq_f2c.c, romio-1.2.4.1/mpi-io/iotest.c,
-	  romio-1.2.4.1/mpi-io/iowait.c, romio-1.2.4.1/mpi-io/iread.c,
-	  romio-1.2.4.1/mpi-io/iread_at.c, romio-1.2.4.1/mpi-io/iread_sh.c,
-	  romio-1.2.4.1/mpi-io/iwrite.c, romio-1.2.4.1/mpi-io/iwrite_at.c,
-	  romio-1.2.4.1/mpi-io/iwrite_sh.c,
-	  romio-1.2.4.1/mpi-io/mpioimpl.h, romio-1.2.4.1/mpi-io/mpioprof.h,
-	  romio-1.2.4.1/mpi-io/open.c, romio-1.2.4.1/mpi-io/prealloc.c,
-	  romio-1.2.4.1/mpi-io/rd_atallb.c,
-	  romio-1.2.4.1/mpi-io/rd_atalle.c, romio-1.2.4.1/mpi-io/read.c,
-	  romio-1.2.4.1/mpi-io/read_all.c,
-	  romio-1.2.4.1/mpi-io/read_allb.c,
-	  romio-1.2.4.1/mpi-io/read_alle.c, romio-1.2.4.1/mpi-io/read_at.c,
-	  romio-1.2.4.1/mpi-io/read_atall.c,
-	  romio-1.2.4.1/mpi-io/read_ord.c,
-	  romio-1.2.4.1/mpi-io/read_ordb.c,
-	  romio-1.2.4.1/mpi-io/read_orde.c, romio-1.2.4.1/mpi-io/read_sh.c,
-	  romio-1.2.4.1/mpi-io/seek.c, romio-1.2.4.1/mpi-io/seek_sh.c,
-	  romio-1.2.4.1/mpi-io/set_atom.c, romio-1.2.4.1/mpi-io/set_errh.c,
-	  romio-1.2.4.1/mpi-io/set_info.c, romio-1.2.4.1/mpi-io/set_size.c,
-	  romio-1.2.4.1/mpi-io/set_view.c,
-	  romio-1.2.4.1/mpi-io/wr_atallb.c,
-	  romio-1.2.4.1/mpi-io/wr_atalle.c, romio-1.2.4.1/mpi-io/write.c,
-	  romio-1.2.4.1/mpi-io/write_all.c,
-	  romio-1.2.4.1/mpi-io/write_allb.c,
-	  romio-1.2.4.1/mpi-io/write_alle.c,
-	  romio-1.2.4.1/mpi-io/write_at.c,
-	  romio-1.2.4.1/mpi-io/write_atall.c,
-	  romio-1.2.4.1/mpi-io/write_ord.c,
-	  romio-1.2.4.1/mpi-io/write_ordb.c,
-	  romio-1.2.4.1/mpi-io/write_orde.c,
-	  romio-1.2.4.1/mpi-io/write_sh.c,
-	  romio-1.2.4.1/mpi-io/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi-io/fortran/closef.c,
-	  romio-1.2.4.1/mpi-io/fortran/deletef.c,
-	  romio-1.2.4.1/mpi-io/fortran/fsyncf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_amodef.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_atomf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_bytofff.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_errhf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_extentf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_groupf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_infof.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_posn_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_posnf.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_sizef.c,
-	  romio-1.2.4.1/mpi-io/fortran/get_viewf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iotestf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iowaitf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iread_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iread_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/ireadf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwrite_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwrite_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/iwritef.c,
-	  romio-1.2.4.1/mpi-io/fortran/openf.c,
-	  romio-1.2.4.1/mpi-io/fortran/preallocf.c,
-	  romio-1.2.4.1/mpi-io/fortran/rd_atallbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/rd_atallef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_allf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_atallf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordef.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_ordf.c,
-	  romio-1.2.4.1/mpi-io/fortran/read_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/readf.c,
-	  romio-1.2.4.1/mpi-io/fortran/seek_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/seekf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_atomf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_errhf.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_infof.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_sizef.c,
-	  romio-1.2.4.1/mpi-io/fortran/set_viewf.c,
-	  romio-1.2.4.1/mpi-io/fortran/wr_atallbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/wr_atallef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_allf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_atallf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_atf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordbf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordef.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_ordf.c,
-	  romio-1.2.4.1/mpi-io/fortran/write_shf.c,
-	  romio-1.2.4.1/mpi-io/fortran/writef.c,
-	  romio-1.2.4.1/mpi2-other/array/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/array/darray.c,
-	  romio-1.2.4.1/mpi2-other/array/subarray.c,
-	  romio-1.2.4.1/mpi2-other/array/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/array/fortran/darrayf.c,
-	  romio-1.2.4.1/mpi2-other/array/fortran/subarrayf.c,
-	  romio-1.2.4.1/mpi2-other/info/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/info/info_c2f.c,
-	  romio-1.2.4.1/mpi2-other/info/info_create.c,
-	  romio-1.2.4.1/mpi2-other/info/info_delete.c,
-	  romio-1.2.4.1/mpi2-other/info/info_dup.c,
-	  romio-1.2.4.1/mpi2-other/info/info_f2c.c,
-	  romio-1.2.4.1/mpi2-other/info/info_free.c,
-	  romio-1.2.4.1/mpi2-other/info/info_get.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getnks.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getnth.c,
-	  romio-1.2.4.1/mpi2-other/info/info_getvln.c,
-	  romio-1.2.4.1/mpi2-other/info/info_set.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/Makefile.in,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_createf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_deletef.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_dupf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_freef.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getnksf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getnthf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_getvlnf.c,
-	  romio-1.2.4.1/mpi2-other/info/fortran/info_setf.c,
-	  romio-1.2.4.1/objects/README, romio-1.2.4.1/test/Makefile.in,
-	  romio-1.2.4.1/test/README, romio-1.2.4.1/test/async.c,
-	  romio-1.2.4.1/test/atomicity.c, romio-1.2.4.1/test/coll_perf.c,
-	  romio-1.2.4.1/test/coll_test.c, romio-1.2.4.1/test/error.c,
-	  romio-1.2.4.1/test/excl.c, romio-1.2.4.1/test/fcoll_test.f.in,
-	  romio-1.2.4.1/test/file_info.c, romio-1.2.4.1/test/fmisc.f.in,
-	  romio-1.2.4.1/test/fperf.f.in, romio-1.2.4.1/test/i_noncontig.c,
-	  romio-1.2.4.1/test/large_array.c,
-	  romio-1.2.4.1/test/large_file.c.in, romio-1.2.4.1/test/misc.c.in,
-	  romio-1.2.4.1/test/noncontig.c,
-	  romio-1.2.4.1/test/noncontig_coll.c, romio-1.2.4.1/test/perf.c,
-	  romio-1.2.4.1/test/pfcoll_test.f.in,
-	  romio-1.2.4.1/test/psimple.c, romio-1.2.4.1/test/runtests.in,
-	  romio-1.2.4.1/test/shared_fp.c, romio-1.2.4.1/test/simple.c,
-	  romio-1.2.4.1/test/split_coll.c, romio-1.2.4.1/test/status.c,
-	  romio-1.2.4.1/test/std/async.std,
-	  romio-1.2.4.1/test/std/atomicity.std,
-	  romio-1.2.4.1/test/std/coll_test.std,
-	  romio-1.2.4.1/test/std/error.std,
-	  romio-1.2.4.1/test/std/excl.std,
-	  romio-1.2.4.1/test/std/fcoll_test.std,
-	  romio-1.2.4.1/test/std/file_info.std,
-	  romio-1.2.4.1/test/std/fmisc.std,
-	  romio-1.2.4.1/test/std/i_noncontig.std,
-	  romio-1.2.4.1/test/std/misc.std,
-	  romio-1.2.4.1/test/std/noncontig.std,
-	  romio-1.2.4.1/test/std/noncontig_coll.std,
-	  romio-1.2.4.1/test/std/pfcoll_test.std,
-	  romio-1.2.4.1/test/std/psimple.std,
-	  romio-1.2.4.1/test/std/shared_fp.std,
-	  romio-1.2.4.1/test/std/simple.std,
-	  romio-1.2.4.1/test/std/split_coll.std,
-	  romio-1.2.4.1/test/std/status.std,
-	  romio-1.2.4.1/util/romioinstall.in, romio-1.2.4.1/util/tarch,
 	  src/Makefile, src/VERSION, src/install-sh, src/check/Makefile,
 	  src/check/README, src/check/mpi-coll-bench/Makefile,
 	  src/check/mpi-coll-bench/mpi-coll-bench.c,

@@ -80,6 +80,9 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->GDBDebug = 0;
     RunParameters->UseSSH = 0;
 
+    /* stdio input handling */
+    RunParameters->STDINfd = STDIN_FILENO;
+
     /* schedulers to try (determined at compile time) */
 
     RunParameters->UseLSF = OPT_LSF;

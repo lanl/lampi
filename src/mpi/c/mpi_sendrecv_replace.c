@@ -86,59 +86,44 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
 
     } else {
 
-        /*
-         * Call MPI_Sendrecv blockwise, packing and unpacking into
-         * temporary buffers
-         */
-
-        int byte_count;
-        int pack_status;
-        size_t recv_map_index;
-        size_t recv_map_offset;
-        size_t recv_offset;
-        size_t recv_type_index;
-        size_t send_map_index;
-        size_t send_map_offset;
-        size_t send_offset;
-        size_t send_type_index;
+        ULMType_t *type = mtype;
+        size_t type_index = 0;
+        size_t map_index = 0;
+        size_t map_offset = 0;
+        size_t recv_offset = 0;
+        size_t recv_size = count * type->packed_size;
         unsigned char recv_block[BLOCK_SIZE];
-        unsigned char send_block[BLOCK_SIZE];
-
-        byte_count = 0;
-        send_type_index = 0;
-        send_map_index = 0;
-        send_map_offset = 0;
-        recv_type_index = 0;
-        recv_map_index = 0;
-        recv_map_offset = 0;
-        do {
-            send_offset = 0;
-            pack_status = type_pack(TYPE_PACK_PACK,
-                                    send_block, BLOCK_SIZE, &send_offset,
-                                    buf, count, mtype,
-                                    &send_type_index,
-                                    &send_map_index,
-                                    &send_map_offset);
-        
-            rc = MPI_Sendrecv(send_block, send_offset, MPI_BYTE, dest, sendtag,
-                              recv_block, send_offset, MPI_BYTE, source, 
-                              recvtag, comm, status);
-            if (rc != MPI_SUCCESS) {
+        unsigned char *recv_buf = recv_block;
+ 
+        /* if required - allocate a buffer for the receive */
+        if(recv_size > BLOCK_SIZE) {
+            recv_buf = ulm_malloc(recv_size);
+            if(recv_buf == NULL) {
+                rc = MPI_ERR_NO_MEM;
                 goto ERRHANDLER;
             }
-            byte_count += status->_count;
-        
-            recv_offset = 0;
-            pack_status = type_pack(TYPE_PACK_UNPACK,
-                                    recv_block, BLOCK_SIZE, &recv_offset,
-                                    buf, count, mtype,
-                                    &recv_type_index,
-                                    &recv_map_index,
-                                    &recv_map_offset);
+        }
 
-        } while (pack_status != TYPE_PACK_COMPLETE);
-        status->_count = byte_count;
+        rc = MPI_Sendrecv(buf, count, mtype, dest, sendtag,
+                          recv_buf, recv_size, MPI_BYTE, source, recvtag,
+                          comm, status);
+        if (rc != MPI_SUCCESS) {
+            if(recv_buf != recv_block)
+                ulm_free(recv_buf);
+            goto ERRHANDLER;
+        }
 
+        /* unpack the recv buffer into original buffer */
+        rc = type_pack(TYPE_PACK_UNPACK,
+                       recv_buf, status->_count, &recv_offset,
+                       buf, count, mtype,
+                       &type_index,
+                       &map_index,
+                       &map_offset);
+
+        if(recv_buf != recv_block)
+            ulm_free(recv_buf);
+        return MPI_SUCCESS;
     }
 
 ERRHANDLER:

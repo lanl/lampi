@@ -46,25 +46,24 @@
  * to user stderr and stdout of mpirun's session.
  */
 void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
-                      int ToServerStdoutFD, int ToServerStderrFD, int NFDs,
+                      int ServerFD, int NFDs,
                       int MaxDescriptor, PrefixName_t *IOPreFix,
                       int *LenIOPreFix, size_t *StderrBytesWritten,
                       size_t *StdoutBytesWritten, int *NewLineLast,
-                      int ControlSocketToULMRunFD, lampiState_t *state)
+                      lampiState_t *state)
 {
     bool again = true;
     int i;
 
     /* check to see if control socket is still open - if not exit */
+    while (again) {
 #ifndef ENABLE_CT
-    if (ControlSocketToULMRunFD == -1) {
-        exit(5);
-    }
+        if (ServerFD == -1) {
+            exit(5);
+        }
 #endif
 
-    while (again) {
-        ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
-                               ToServerStdoutFD, ToServerStderrFD,
+        ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs, &ServerFD,
                                NFDs, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
                                StdoutBytesWritten, NewLineLast, state);
@@ -84,8 +83,5 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
 
     ClientStdoutFDs[NFDs - 1] = -1;
     ClientStderrFDs[NFDs - 1] = -1;
-#ifndef ENABLE_CT
-    dup2(ToServerStderrFD, STDERR_FILENO);
-    dup2(ToServerStdoutFD, STDOUT_FILENO);
-#endif
 }
+

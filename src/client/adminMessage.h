@@ -271,7 +271,7 @@ public:
     enum {
         MAXHOSTNAMESIZE = 512,
         DEFAULTBUFFERSIZE = 8192,
-        MAXSOCKETS = 4096
+        MAXSOCKETS = 8192
     };
 
 
@@ -915,11 +915,7 @@ public:
             int sockfd = (rank == -1) ? socketToServer_m : clientRank2FD(rank);
             int s;
             struct timeval t;
-#ifdef ENABLE_BPROC
             ulm_fd_set_t fds;
-#else
-            fd_set fds;
-#endif
             ulm_iovec_t iovecs;
 
             reset(RECEIVE);
@@ -942,11 +938,7 @@ public:
                 t.tv_usec = microseconds;
             }
 
-#ifdef ENABLE_BPROC
             bzero(&fds, sizeof(fds));
-#else
-            FD_ZERO(&fds);
-#endif
             FD_SET(sockfd, (fd_set *)&fds);
 
             if ((s = select(sockfd + 1, (fd_set *)&fds, (fd_set *) NULL, (fd_set *) NULL,

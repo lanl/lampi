@@ -383,8 +383,9 @@ public:
     // pointer to barrier control structure
     void *barrierControl;
 
-
-
+    // pointer to buffer for reduce
+    void *reduceBuffer;
+    size_t reduceBufferSize;
 
     
 /*

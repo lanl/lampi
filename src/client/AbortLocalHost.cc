@@ -87,7 +87,7 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
 void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex,
                     pid_t *ChildPIDs, unsigned int MessageType,
                     int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
-                    int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
+                    PrefixName_t *IOPrefix,
                     int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
                     int *NewLineLast, lampiState_t *state)
 {
@@ -130,8 +130,8 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
     if (ServerSocketFD >= 0) {
 #endif
         while (again) {
-            ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
-                ToServerStdoutFD, ToServerStderrFD, NFDs, MaxDesc,
+            ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs, 
+                &ServerSocketFD, NFDs, MaxDesc,
                 IOPrefix, LenIOPreFix, StderrBytesWritten, StdoutBytesWritten,
                 NewLineLast, state);
 
@@ -151,10 +151,6 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
 
     ClientStdoutFDs[NFDs - 1] = -1;
     ClientStderrFDs[NFDs - 1] = -1;
-#ifndef ENABLE_CT
-    dup2(ToServerStderrFD, STDERR_FILENO);
-    dup2(ToServerStdoutFD, STDOUT_FILENO);
-#endif
 
     /* notify server of termination */
     if (Notify) {

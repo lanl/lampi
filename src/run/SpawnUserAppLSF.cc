@@ -70,7 +70,6 @@ struct hostent *NetEntry;
 void AllocateAndFillEnv(int, char *);
 void HostBuildEnvList(int, char *, unsigned int *, int, ULMRunParams_t *);
 void HostBuildExecArg(int, ULMRunParams_t *, int, int, char **);
-/*FILE   *DbgFile=fopen("DBG_LSF", "wb"); */
 
 
 #ifdef ENABLE_LSF
@@ -143,14 +142,6 @@ void handleLsfTasks(int signo)
         for (i = 0; i < lsfRunParameters->NHosts ; i++) {
             if (taskID == lsfTasks[i]) {
                 lsfTasks[i] = -1;
-                if (lsfRunParameters->STDERRfds[i] >= 0) {
-                    close(lsfRunParameters->STDERRfds[i]);
-                    lsfRunParameters->STDERRfds[i] = -1;
-                }
-                if (lsfRunParameters->STDOUTfds[i] >= 0) {
-                    close(lsfRunParameters->STDOUTfds[i]);
-                    lsfRunParameters->STDOUTfds[i] = -1;
-                }
                 break;
             }
         }
@@ -176,9 +167,6 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
     int idx, host;
     int RetVal, dupSTDERRfd, dupSTDOUTfd;
-#ifndef ENABLE_CT
-    int STDERRpipe[2], STDOUTpipe[2];
-#endif
     struct sigaction action;
     int NHostsStarted=0;
 #ifdef ENABLE_LSF
@@ -225,17 +213,13 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     strncpy(LocalHostName, RunParameters->mpirunName,
             ULM_MAX_HOSTNAME_LEN);
 
-    RunParameters->STDERRfds = ulm_new(int, RunParameters->NHosts);
-    RunParameters->STDOUTfds = ulm_new(int, RunParameters->NHosts);
-    for (host = 0; host < RunParameters->NHosts; host++) {
-        RunParameters->STDERRfds[host] = 0;
-        RunParameters->STDOUTfds[host] = 0;
-    }
-
     /* list of hosts for which the ULMRun fork() succeeded - needed for
      *  cleanup after abnormal termination.
      */
     *ListHostsStarted = ulm_new(int, RunParameters->NHosts);
+
+    /* save stdin for forwarding to proc rank 0 */
+    RunParameters->STDINfd = dup(STDIN_FILENO);
 
     /* dup current stderr and stdout so that ULMRun's stderr and stdout can
      * be resored to those before exiting this routines.
@@ -255,6 +239,15 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     fflush(stdout);
     fflush(stderr);
 
+    /* connect stdin/stdout/stderr to /dev/null */
+    int fd = open("/dev/null", 0, 0);
+    if(fd >= 0) {
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+    }
+
     /*
      * Loop through the NHosts and spawn remote job by using ls_rtask().
      */
@@ -264,50 +257,8 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
                          RunParameters);
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
-        /* redirect stderr */
-#ifndef ENABLE_CT
-        RetVal = pipe(STDERRpipe);
-        if (RetVal < 0) {
-            dup2(dupSTDOUTfd, STDOUT_FILENO);
-            printf("Error: creating STDERRpipe pipe.\n");
-            Abort();
-        }
-        RetVal = dup2(STDERRpipe[1], STDERR_FILENO);
-        if (RetVal <= 0) {
-            dup2(dupSTDOUTfd, STDOUT_FILENO);
-            printf("Error: in dup2 STDERRpipe[0], STDERR_FILENO.\n");
-            Abort();
-        }
-        RunParameters->STDERRfds[host] = STDERRpipe[0];
-        close(STDERRpipe[1]);
-
-        /* redirect stdout */
-        RetVal = pipe(STDOUTpipe);
-        if (RetVal < 0) {
-            dup2(dupSTDOUTfd, STDOUT_FILENO);
-            printf("Error: creating STDOUTpipe pipe.\n");
-            Abort();
-        }
-        RetVal = dup2(STDOUTpipe[1], STDOUT_FILENO);
-        if (RetVal <= 0) {
-            dup2(dupSTDOUTfd, STDOUT_FILENO);
-            printf("Error: in dup2 STDOUTpipe[0], STDOUT_FILENO.\n");
-            Abort();
-        }
-        RunParameters->STDOUTfds[host] = STDOUTpipe[0];
-        close(STDOUTpipe[1]);
-#endif
 
 #ifdef  ENABLE_LSF
-/* debug
-   ulm_dbg(("ls_rtaske(%s):\n", RunParameters->HostList[host]));
-   for (int i = 0; i < hostNumEnvs; i++) {
-   ulm_dbg(("\tenv(%d): \"%s\"\n", i, EnvList[i]));
-   }
-   for (int i = 0; i < hostNumExecArgs; i++) {
-   ulm_dbg(("\texec(%d): \"%s\"\n", i, ExecArgs[i]));
-   }
-   end debug */
         if ((RetVal = ls_chdir(RunParameters->HostList[host],
              RunParameters->WorkingDirList[host])) < 0) {
             dup2(dupSTDERRfd, STDERR_FILENO);

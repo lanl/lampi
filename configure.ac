@@ -172,7 +172,6 @@ i?86-pc-linux*)
         # default features for this host
 
         # default paths for this host
-        GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
         IB_PREFIX="${IB_PREFIX:-/usr/mellanox}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
@@ -216,7 +215,6 @@ i?86-pc-cygwin*)
         # default features for this host
 
         # default paths for this host
-        GM_PREFIX="${GM_PREFIX:-/opt/gm-1.6.3}"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
         RMS_PREFIX=""

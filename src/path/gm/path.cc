@@ -67,7 +67,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     int nDescsToAllocate;
     int rc;
     int tmapIndex;
-    int numSent;
+    unsigned numSent;
     size_t leftToSend;
     size_t payloadSize;
     size_t offset;

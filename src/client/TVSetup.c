@@ -31,74 +31,41 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+/*
+ *  This routine does the setup work needed by TotalView on the remote
+ *  hosts.
+ */
 
+#include <stdio.h>
 
-#ifndef _ULM_BUFFER_H_
-#define _ULM_BUFFER_H_
+#include "internal/log.h"
+#include "internal/profiler.h"
+#include "client/TV.h"
 
-#include <sys/types.h>
+volatile int MPIR_debug_gate = 0;
+volatile int MPIR_acquired_pre_main = 1;
+volatile int *PtrToGate;
+volatile int TVDummy = 0;   /* NEVER change this - this is a variable the
+                               MPIR_Breakpoint uses to trick the compiler
+                               thinking that this might be modified, and
+                               therefore not optimize MPIR_Breakpoint away */
 
-#include "internal/linkage.h"
-#include "os/atomic.h"
-#include "ulm/types.h"
-
-CDECL_BEGIN
+void ClientTVSetup()
+{
+    MPIR_acquired_pre_main = 1;
+    PtrToGate = &MPIR_debug_gate;
+    while (*PtrToGate == 0) {
+        /* ulm_dbg(("MPIR_debug_gate %d\n", MPIR_debug_gate));  */
+    }
+    MPIR_Breakpoint();
+}
 
 /*
- * buffered pt-2-pt user supplied buffer
+ * dummy subroutine - need to make sure that compiler will not
+ * optimize this routine away, so that TotalView can set a breakpoint,
+ * and do what it needs to.
  */
-struct ULMBufferRange_t {
-        
-    /* pointer to the next allocated range structure */
-    struct ULMBufferRange_t *next;
-
-    /* offset into buffer */
-    ssize_t offset;
-
-    /* length of allocation */
-    ssize_t len;
-
-    /* pointer to request object that "owns" allocation */
-    ULMRequest_t request;
-
-    /* send descriptor reference count; decremented in ReturnDesc */
-    int refCount;
-
-    /* flag on when to free allocation */
-    int freeAtZeroRefCount;
-};
-
-typedef struct ULMBufferRange_t ULMBufferRange_t;
-
-struct bsendData_t {
-
-    /* is pool in use */
-    volatile int poolInUse;
-
-    /* buffer length in bytes */
-    ssize_t bufferLength;
-
-    /* number of bytes in use */
-    volatile ssize_t bytesInUse;
-
-    /* buffer */
-    void *buffer;
-
-    /* single linked list of allocations */
-    ULMBufferRange_t *allocations;
-
-    /* management lock */
-    lockStructure_t lock[1];
-};
-
-typedef struct bsendData_t  bsendData_t;
-
-ULMBufferRange_t *ulm_bsend_alloc(ssize_t size, int freeAtZero);
-ULMBufferRange_t *ulm_bsend_find_alloc(ssize_t offset, ULMRequest_t request);
-void ulm_bsend_clean_alloc(int wantToDetach);
-int ulm_bsend_increment_refcount(ULMRequest_t request, ssize_t offset);
-int ulm_bsend_decrement_refcount(ULMRequest_t request, ssize_t offset);
-
-CDECL_END
-
-#endif /* _ULM_BUFFER_H_ */
+void MPIR_Breakpoint(void)
+{
+    while (TVDummy == 1);
+}

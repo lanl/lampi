@@ -506,6 +506,9 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
     collective.scatter = ulm_scatter;
     collective.scatterv = ulm_scatterv;
 
+    // reduce buffer
+    reduceBuffer = NULL;
+    reduceBufferSize = 0;
     return ULM_SUCCESS;
 }
 
@@ -740,6 +743,8 @@ int Communicator::freeCommunicator()
     // free resources for collective optimization
     freeCollectivesResources();
 
+    if (reduceBuffer != NULL)
+        ulm_free(reduceBuffer);
     return ULM_SUCCESS;
 }
 

@@ -257,17 +257,13 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                               int NHosts, double *HeartBeatTime,
                               int *HostsNormalTerminated,
                               ssize_t * StderrBytesRead,
-                              ssize_t * StdoutBytesRead, int *STDERRfds,
-                              int *STDOUTfds, int *HostsAbNormalTerminated,
+                              ssize_t * StdoutBytesRead, 
+                              int *HostsAbNormalTerminated,
                               int *ActiveHosts, int *ProcessCnt,
                               pid_t ** PIDsOfAppProcs,
                               double *TimeFirstCheckin, int *ActiveClients)
 {
-#ifdef ENABLE_BPROC
     ulm_fd_set_t ReadSet;
-#else
-    fd_set ReadSet;
-#endif
     int i, j, RetVal, error;
     ssize_t ExpetctedData[2], IOReturn;
     unsigned int *Inp, Tag;
@@ -288,11 +284,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
     WaitTime.tv_usec = 0;
 
 
-#ifdef ENABLE_BPROC
     bzero(&ReadSet, sizeof(ReadSet));
-#else
-    FD_ZERO(&ReadSet);
-#endif
     for (i = 0; i < NHosts; i++)
         if (ClientSocketFDList[i] > 0) {
             FD_SET(ClientSocketFDList[i], (fd_set *)&ReadSet);
@@ -499,23 +491,51 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     if (NumHostPIDsRecved == NHosts)
                         MPIrunTVSetUpApp(PIDsOfAppProcs);
                     break;
+                case STDIOMSG:
+                    {
+                    int StdioFD;
+                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
+                        &StdioFD,
+                        sizeof(StdioFD),
+                        &error);
+                    if (IOReturn != sizeof(StdioFD) || error != ULM_SUCCESS) {
+                        ClientSocketFDList[i] = -1;
+                        ActiveHosts[i] = 0;
+                        break;
+                    }
+
+                    int bytes;
+                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
+                        &bytes,
+                        sizeof(bytes),
+                        &error);
+                    if (IOReturn != sizeof(bytes) || error != ULM_SUCCESS || bytes == 0) {
+                        ClientSocketFDList[i] = -1;
+                        ActiveHosts[i] = 0;
+                        break;
+                    }
+                    
+                    char *buff = (char*)malloc(bytes);
+                    IOReturn = _ulm_Recv_Socket(ClientSocketFDList[i],
+                        buff,
+                        bytes,
+                        &error);
+                    if (IOReturn != bytes || error != ULM_SUCCESS) {
+                        ClientSocketFDList[i] = -1;
+                        ActiveHosts[i] = 0;
+                        free(buff);
+                        break;
+                    }
+                    write(StdioFD, buff, bytes);
+                    free(buff);
+                    break;
+                    }
                 default:
                     ulm_err(("Error: Unrecognized control message : %d ", Tag));
                     Abort();
                 }               /* end switch */
             }
         }                       /* loop over hosts (i) */
-        /* drain stdio after all hosts terminate */
-        if (!(*ActiveClients)) {
-            for (i = 0; i < NHosts; i++) {
-                if ((STDERRfds[i] > 0) || (STDOUTfds[i] > 0))
-                    mpirunDrainStdioData(&(STDERRfds[i]), &(STDOUTfds[i]),
-                                         &(StderrBytesRead[i]),
-                                         &(StdoutBytesRead[i]),
-                                         ExpetctedData[0],
-                                         ExpetctedData[1]);
-            }
-        }
     }
 
     return 0;

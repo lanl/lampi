@@ -100,8 +100,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor,
                               double *HeartBeatTime,
                               int *HostsNormalTerminated,
                               ssize_t *StderrBytesRead,
-                              ssize_t *StdoutBytesRead, int *STDERRfds,
-                              int *STDOUTfds,
+                              ssize_t *StdoutBytesRead, 
                               int *HostsAbNormalTerminated,
                               int *ActiveHosts, int *ProcessCnt,
                               pid_t ** PIDsOfAppProcs,
@@ -138,6 +137,7 @@ void GetInterfaceCount(const char *InfoStream);
 void GetInterfaceList(const char *InfoStream);
 void GetInterfaceNoInput(const char *InfoStream);
 void GetAppHostData(const char *InfoStream);
+void GetAppHostDataFromMachineFile(const char *InfoStream);
 void GetAppHostDataNoInputRSH(const char *InfoStream);
 void GetClientApp(const char *InfoStream);
 void GetClientCpus(const char *InfoStream);
