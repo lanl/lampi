@@ -177,7 +177,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
 
     // fill in other fields
     p->ctxAndMsgType = envelope.msgDataHdr.ctxAndMsgType;
-    p->tag_m = envelope.msgDataHdr.tag_m;
     p->ptrToSendDesc = envelope.msgDataHdr.sendFragDescPtr;
 
     // use incoming ctx and rail!

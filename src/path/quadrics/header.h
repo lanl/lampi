@@ -92,7 +92,6 @@ struct quadricsDataHdr {
 #define DATAACK_PADDING 16
 
 struct quadricsDataAck : public BaseAck_t {
-    ulm_int32_t tag_m;			//!< user tag value for this message
     ulm_uint32_t padding[DATAACK_PADDING];
     ulm_uint32_t checksum;			//!< additive checksum or CRC of all 128 - 4 bytes of the control message
 };
