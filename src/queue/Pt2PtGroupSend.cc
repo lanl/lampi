@@ -136,6 +136,7 @@ int Communicator::isend_start(SendDesc_t **pSendDesc)
     SendDesc->earliestTimeToResend = -1.0;
 #endif
     SendDesc->freeCalled = 0;
+    SendDesc->persistFreeCalled = 0;
 
     if (!(SendDesc->posted_m.length_m)) {
         SendDesc->addr_m = 0;
