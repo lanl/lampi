@@ -211,8 +211,10 @@ libmpiandio.a: $(VERSION) $(OBJ_LIBMPI) $(MPIO_LIB)
 # include dependency files, if we were not invoked as "make clean"
 # or "make distclean"
 
+ifndef NODEPS
 ifneq ($(findstring clean, $(MAKECMDGOALS)),clean)
 -include $(DEPENDENCIES)
+endif
 endif
 
 # rules for calculating dependency files

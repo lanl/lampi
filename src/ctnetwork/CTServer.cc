@@ -38,6 +38,8 @@
  *  Created by Rob Aulwes on Thu Jan 02 2003.
  */
 
+#include <strings.h>
+
 #include "CTServer.h"
 #include "threads/Thread.h"
 #include "util/misc.h"
