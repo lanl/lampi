@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Irecv = PMPI_Irecv
+#endif
+
 int PMPI_Irecv(void *buf, int count, MPI_Datatype type, int source,
 	       int tag, MPI_Comm comm, MPI_Request *request)
 {

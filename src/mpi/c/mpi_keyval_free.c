@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Keyval_free = PMPI_Keyval_free
+#endif
+
 int PMPI_Keyval_free(int *keyval)
 {
     int rc;

@@ -33,7 +33,10 @@
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Reduce_scatter = PMPI_Reduce_scatter
+#endif
+
 int PMPI_Reduce_scatter(void *sendbuf, void *recvbuf,
 			int *recvcount, MPI_Datatype mtype,
 			MPI_Op mop, MPI_Comm comm)

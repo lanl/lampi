@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_create_subarray = PMPI_Type_create_subarray
+#endif
+
 int PMPI_Type_create_subarray(int ndims, int *size_array,
 			      int *subsize_array, int *start_array,
 			      int order, MPI_Datatype mtype_old,

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Pcontrol = PMPI_Pcontrol
+#endif
+
 int PMPI_Pcontrol(const int level, ...)
 {
     return MPI_SUCCESS;

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Attr_delete = PMPI_Attr_delete
+#endif
+
 int PMPI_Attr_delete (MPI_Comm comm, int keyval)
 {
     int rc;

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Scan = PMPI_Scan
+#endif
+
 int PMPI_Scan(void *sendbuf, void *recvbuf, int count,
 	      MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {

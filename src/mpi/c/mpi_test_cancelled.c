@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Test_cancelled = PMPI_Test_cancelled
+#endif
+
 int PMPI_Test_cancelled(MPI_Status *status, int *flag)
 {
     /*

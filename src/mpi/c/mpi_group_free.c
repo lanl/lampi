@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_free = PMPI_Group_free
+#endif
+
 int PMPI_Group_free(MPI_Group *group)
 {
     int rc = MPI_SUCCESS;

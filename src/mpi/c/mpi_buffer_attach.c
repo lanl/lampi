@@ -32,7 +32,10 @@
 #include "internal/buffer.h"
 #include "internal/state.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Buffer_attach = PMPI_Buffer_attach
+#endif
+
 int PMPI_Buffer_attach(void *buffer, int bufferLength)
 {
     int rc = MPI_SUCCESS;

@@ -38,7 +38,10 @@
 
 static int *allocate_prime_factor_array(int n, int *nprime);
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Dims_create = PMPI_Dims_create
+#endif
+
 int PMPI_Dims_create(int nnodes, int ndims, int *dims)
 {
     int nfreeprocs;

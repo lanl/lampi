@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Errhandler_get = PMPI_Errhandler_get
+#endif
+
 int PMPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *handler)
 {
     int rc, index;

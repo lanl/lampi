@@ -33,7 +33,10 @@
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graph_create = PMPI_Graph_create
+#endif
+
 int PMPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index,
 		      int *edges, int reorder, MPI_Comm *comm_new)
 {

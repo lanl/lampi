@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Reduce = PMPI_Reduce
+#endif
+
 int PMPI_Reduce(void *sendbuf, void *recvbuf, int count,
 		MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {

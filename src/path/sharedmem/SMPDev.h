@@ -75,6 +75,10 @@ public:
 #if defined(__linux__) && defined(__ia64)
 #include "os/LINUX/ia64/SMPDevParams.h"
 #endif
+
+#ifdef __CYGWIN__
+#include "os/CYGWIN/SMPDevParams.h"
+#endif
 };
 
 /*
@@ -121,6 +125,10 @@ typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logica
 
 #if defined(__linux__) && defined(__ia64)
 typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
+#endif
+
+#ifdef __CYGWIN__
+typedef SMPSharedMem_log_dev<440*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 
 #undef Log2ChunkSize

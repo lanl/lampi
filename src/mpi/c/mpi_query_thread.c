@@ -33,7 +33,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Query_thread = PMPI_Query_thread
+#endif
+
 int PMPI_Query_thread(int *provided)
 {
     /* return the value of thread usage set at initializaion */

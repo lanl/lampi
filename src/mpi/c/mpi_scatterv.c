@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Scatterv = PMPI_Scatterv
+#endif
+
 int PMPI_Scatterv(void *sendbuf, int *sendcounts, int *displs,
                   MPI_Datatype senddatatype,
 		  void *recvbuf, int recvcount, MPI_Datatype recvdatatype,

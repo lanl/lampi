@@ -42,7 +42,11 @@
  * \param status	MPI status object to be filled in
  * \return		MPI return code
  */
+
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Probe = PMPI_Probe
+#endif
+
 int PMPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
     ULMStatus_t stat;

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Address = PMPI_Address
+#endif
+
 int PMPI_Address(void *location, MPI_Aint *address)
 {
     /*

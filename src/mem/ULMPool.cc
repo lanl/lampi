@@ -159,12 +159,20 @@ int ULMMemoryPool::InitPool()
 
 void ULMMemoryPool::DeletePool()
 {
+#ifdef __CYGWIN__
+    int retval = munmap((caddr_t)PoolBase, PoolSize);
+#else
     int retval = munmap(PoolBase, PoolSize);
+#endif
     if (retval == -1) {
         ulm_err(("Error: unmapping Pool memory.\n"));
     }
     if (isShared) {
+#ifdef __CYGWIN__
+        retval = munmap((caddr_t)PoolChunks, MaxNPoolChunks * sizeof(PoolChunks_t));
+#else
         retval = munmap(PoolChunks, MaxNPoolChunks * sizeof(PoolChunks_t));
+#endif
         if (retval == -1) {
             ulm_err(("Error: unmapping PoolChunks memory.\n"));
         }

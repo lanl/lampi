@@ -36,7 +36,7 @@
 
 #include <stdlib.h>
 
-#ifdef __APPLE__
+#if defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/types.h>		/* for NFDBITS */
 #endif
 
@@ -81,7 +81,7 @@ typedef char PrefixName_t[ULM_MAX_PREFIX];
  * Platform dependent time operations.
  */
 
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined(__CYGWIN__)
 
 typedef struct timeval ulm_timeval_t;
 #define ulm_timeofday(t)	gettimeofday(&(t), NULL)

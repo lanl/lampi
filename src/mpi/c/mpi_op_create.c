@@ -34,7 +34,10 @@
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Op_create = PMPI_Op_create
+#endif
+
 int PMPI_Op_create(MPI_User_function *function, int commute, MPI_Op *mop)
 {
     ULMOp_t *op;

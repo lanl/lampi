@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Request_free = PMPI_Request_free
+#endif
+
 int PMPI_Request_free(MPI_Request *request)
 {
     int rc;

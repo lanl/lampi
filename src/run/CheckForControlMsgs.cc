@@ -75,7 +75,7 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
     int					iofd, len, toWrite;
     FILE				*fd;
 
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -88,7 +88,7 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 		switch (tag) 
 		{  /* process according to message type */
 		case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
 			gettimeofday(&Time, NULL);
 			HeartBeatTime[rank] =
 				(double) (Time.tv_sec) +
@@ -274,7 +274,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
     struct timeval WaitTime;
     char ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
     ulm_iovec_t IOVec;
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -329,7 +329,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                 }
                 switch (Tag) {  /* process according to message type */
                 case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
                     gettimeofday(&Time, NULL);
                     HeartBeatTime[i] =
                         (double) (Time.tv_sec) +

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Allgatherv = PMPI_Allgatherv
+#endif
+
 int PMPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
                     void *recvbuf, int *recvcounts, int *displs,
                     MPI_Datatype recvdatatype, MPI_Comm comm)

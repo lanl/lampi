@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_difference = PMPI_Group_difference
+#endif
+
 int PMPI_Group_difference(MPI_Group group1, MPI_Group group2,
 			  MPI_Group *newGroup)
 {

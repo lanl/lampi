@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Barrier = PMPI_Barrier
+#endif
+
 int PMPI_Barrier(MPI_Comm comm)
 {
     int rc;

@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
 #else
 #include <time.h>
@@ -84,7 +84,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     int		terminateMsgSent = 0;
 #endif
     
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -126,7 +126,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     }
     /* setup initial control data */
     HeartBeatTime = ulm_new(double, NHosts);
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     gettimeofday(&Time, NULL);
     TimeInSeconds =
         (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -173,7 +173,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 	    }
 
         /* send heartbeat */
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
         gettimeofday(&Time, NULL);
         TimeInSeconds =
             (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;

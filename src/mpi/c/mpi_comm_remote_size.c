@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_remote_size = PMPI_Comm_remote_size
+#endif
+
 int PMPI_Comm_remote_size(MPI_Comm comm, int *size)
 {
     int rc;

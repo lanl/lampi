@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_create_darray = PMPI_Type_create_darray
+#endif
+
 int PMPI_Type_create_darray(int size, int rank, int ndims,
 			    int *gsize_array, int *distrib_array,
 			    int *darg_array, int *psize_array, int order,

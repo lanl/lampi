@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_compare = PMPI_Comm_compare
+#endif
+
 int PMPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 {
     int rc;

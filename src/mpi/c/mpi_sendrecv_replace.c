@@ -34,7 +34,10 @@
 #include "internal/type_copy.h"
 #include "internal/malloc.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Sendrecv_replace = PMPI_Sendrecv_replace
+#endif
+
 int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
 			  int dest, int sendtag, int source, int recvtag,
 			  MPI_Comm comm, MPI_Status *status)

@@ -58,6 +58,10 @@ CDECL_BEGIN
 
 #include "os/DARWIN/ulm_os.h"
 
+#elif defined (__CYGWIN__)
+
+#include "os/CYGWIN/ulm_os.h"
+
 #else
 # error
 #endif

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Intercomm_create = PMPI_Intercomm_create
+#endif
+
 int PMPI_Intercomm_create(MPI_Comm localComm, int local_leader,
 			  MPI_Comm peerComm, int remoteLeader, int tag,
 			  MPI_Comm *interComm)

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cancel = PMPI_Cancel
+#endif
+
 int PMPI_Cancel(MPI_Request *request)
 {
     /*

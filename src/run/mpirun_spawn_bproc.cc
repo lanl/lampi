@@ -62,7 +62,7 @@
 #define MAXBUFFERLEN 256
 #define OVERWRITE 2
 
-#ifdef __linux__
+#if defined (__linux__) || defined (__CYGWIN__)
 #define SETENV(NAME,VALUE)  setenv(NAME,VALUE,OVERWRITE);
 #endif
 

@@ -67,7 +67,6 @@ volatile int MPIR_i_am_starter = 1;
 void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
 {
     int HostRank, NumberOfProcsToDebug;
-    struct hostent *Host;
 
     /* check to see if code being debugged */
     if (RunParameters->TVDebug == 0)

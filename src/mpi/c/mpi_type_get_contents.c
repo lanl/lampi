@@ -33,7 +33,10 @@
 #include "internal/mpi.h"
 #include "os/atomic.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_get_contents = PMPI_Type_get_contents
+#endif
+
 int PMPI_Type_get_contents(MPI_Datatype mtype, int max_integers, int max_addresses,
     int max_datatypes, int *array_of_integers, MPI_Aint *array_of_addresses,
     MPI_Datatype *array_of_datatypes)

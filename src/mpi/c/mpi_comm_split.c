@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_split = PMPI_Comm_split
+#endif
+
 int PMPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *comm_out)
 {
     int rc;

@@ -68,7 +68,7 @@ void FixedSharedMemPool::init(ssize_t initialAllocation,
 
     // set minimum allocation size
     minAllocationSize_m = minAllocationSize;
-    if (minAllocationSize_m < getpagesize())
+    if (minAllocationSize_m < (ssize_t)getpagesize())
         minAllocationSize_m = getpagesize();
 
     // set nArrayElementsToAdd_m

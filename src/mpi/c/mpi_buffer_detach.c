@@ -32,7 +32,10 @@
 #include "internal/buffer.h"
 #include "internal/state.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Buffer_detach = PMPI_Buffer_detach
+#endif
+
 int PMPI_Buffer_detach(void *buffer, int *size)
 {
     char **tmpPtr;

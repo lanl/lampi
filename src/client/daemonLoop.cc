@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/uio.h>
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
 #else
 #include <time.h>
@@ -82,7 +82,7 @@ void lampi_daemon_loop(lampiState_t *s)
     double LastTime, HeartBeatTime, DeltaTime, TimeInSeconds;
     unsigned int Message = TERMINATENOW, NotifyServer;
     bool shuttingDown = false;
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -91,7 +91,7 @@ void lampi_daemon_loop(lampiState_t *s)
 
     /* initialize data */
     NChildren = ProcessCount[hostIndex];
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
     gettimeofday(&Time, NULL);
     HeartBeatTime =
         (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -117,7 +117,7 @@ void lampi_daemon_loop(lampiState_t *s)
     numDaemonChildren = 0;
     for (;;) {
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
         gettimeofday(&Time, NULL);
         TimeInSeconds =
             (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;

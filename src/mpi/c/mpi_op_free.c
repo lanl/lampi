@@ -30,7 +30,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Op_free = PMPI_Op_free
+#endif
+
 int PMPI_Op_free(MPI_Op *mop)
 {
     /*

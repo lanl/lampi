@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_sub = PMPI_Cart_sub
+#endif
+
 int PMPI_Cart_sub(MPI_Comm comm_old, int *remain_dims, MPI_Comm * comm_new)
 {
     ULMTopology_t *topology_new=NULL;

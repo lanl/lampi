@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_extent = PMPI_Type_extent
+#endif
+
 int PMPI_Type_extent(MPI_Datatype type, MPI_Aint *extent)
 {
     ULMType_t *datatype = type;

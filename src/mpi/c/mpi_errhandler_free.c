@@ -33,7 +33,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Errhandler_free = PMPI_Errhandler_free
+#endif
+
 int PMPI_Errhandler_free(MPI_Errhandler *index)
 {
     errhandler_t *handler;

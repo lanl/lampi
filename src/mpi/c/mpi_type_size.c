@@ -30,7 +30,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_size = PMPI_Type_size
+#endif
+
 int PMPI_Type_size(MPI_Datatype type, int *size)
 {
     ULMType_t *datatype = type;

@@ -50,7 +50,7 @@
 #include "internal/system.h"
 #include "util/SharedMemBarrier.h"
 
-#if defined (__linux__) || defined(__APPLE__)
+#if defined (__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
 int BarrierSharedMemory=-1;
 char BarrierSMFileName[ULM_MAX_PATH_LEN];
 #endif
@@ -128,7 +128,7 @@ void _ulm_SharedMemBarrier(void)
 void _ulm_BinaryTreeSharedMemBarrierPreForkInit(int TotNum)
 {
     int i, j, Flag;
-#ifndef __linux__
+#if !defined (__linux__) && !defined (__APPLE__) && !defined (__CYGWIN__)
     int shm_descr;
 #endif
 
@@ -157,7 +157,7 @@ void _ulm_BinaryTreeSharedMemBarrierPreForkInit(int TotNum)
 
     ArenaSize = 4 * (1 << HighestRow) * sizeof(_ulm_barrier);
 
-#if defined (__linux__) || defined(__APPLE__)
+#if defined (__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
 
     bzero(BarrierSMFileName, ULM_MAX_PATH_LEN);
     tmpnam(BarrierSMFileName);
@@ -171,7 +171,11 @@ void _ulm_BinaryTreeSharedMemBarrierPreForkInit(int TotNum)
     BarrierStruct =
         (_ulm_barrier *) mmap(0, ArenaSize, MMAP_SHARED_PROT,
                               MMAP_SHARED_FLAGS, BarrierSharedMemory, 0);
+#ifdef __CYGWIN__
+    if ((caddr_t)BarrierStruct == MAP_FAILED) {
+#else
     if (BarrierStruct == MAP_FAILED) {
+#endif
         printf(" Error in mmap\n");
         exit(18);
     }
@@ -229,7 +233,7 @@ void _ulm_BinaryTreeSharedMemBarrierPostForkInit(int MyRank)
  */
 void _ulm_BinaryTreeSharedMemBarrierFini(void)
 {
-#if defined (__linux__) || defined(__APPLE__)
+#if defined (__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
     if (BarrierSharedMemory != -1)
         unlink(BarrierSMFileName);
     BarrierSharedMemory = -1;

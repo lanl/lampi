@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Topo_test = PMPI_Topo_test
+#endif
+
 int PMPI_Topo_test(MPI_Comm comm, int *status)
 {
     ULMTopology_t *topology;

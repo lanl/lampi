@@ -33,7 +33,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Wait = PMPI_Wait
+#endif
+
 int PMPI_Wait(MPI_Request *request, MPI_Status *status)
 {
     ULMStatus_t stat;

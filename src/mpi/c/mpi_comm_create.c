@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_create = PMPI_Comm_create
+#endif
+
 int PMPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *comm_out)
 {
     int rc;

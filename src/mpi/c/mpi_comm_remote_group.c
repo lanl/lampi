@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_remote_group = PMPI_Comm_remote_group
+#endif
+
 int PMPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {
     int rc;

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_coords = PMPI_Cart_coords
+#endif
+
 int PMPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 {
     ULMTopology_t *topology;

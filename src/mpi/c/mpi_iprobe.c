@@ -43,7 +43,11 @@
  * \param status	MPI status object to be filled in
  * \return		MPI return code
  */
+
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Iprobe = PMPI_Iprobe
+#endif
+
 int PMPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 		MPI_Status *status)
 {

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_rank = PMPI_Comm_rank
+#endif
+
 int PMPI_Comm_rank(MPI_Comm comm, int *rank)
 {
     int rc;

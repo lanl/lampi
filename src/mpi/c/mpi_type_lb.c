@@ -30,7 +30,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_lb = PMPI_Type_lb
+#endif
+
 int PMPI_Type_lb(MPI_Datatype mtype, MPI_Aint *disp)
 {
     ULMType_t *dtype = (ULMType_t *) mtype;

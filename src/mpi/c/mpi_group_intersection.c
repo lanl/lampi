@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_intersection = PMPI_Group_intersection
+#endif
+
 int PMPI_Group_intersection(MPI_Group group1, MPI_Group group2,
 			    MPI_Group *newGroup)
 {

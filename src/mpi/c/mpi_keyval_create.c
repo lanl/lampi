@@ -33,7 +33,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Keyval_create = PMPI_Keyval_create
+#endif
+
 int PMPI_Keyval_create(MPI_Copy_function *copyFunction,
 		       MPI_Delete_function *deleteFunction,
 		       int *keyval, void *extraState)

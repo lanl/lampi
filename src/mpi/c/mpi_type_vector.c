@@ -31,7 +31,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_vector = PMPI_Type_vector
+#endif
+
 int PMPI_Type_vector(int count, int blocklen, int stride,
 	             MPI_Datatype olddatatype, MPI_Datatype *newdatatype)
 {

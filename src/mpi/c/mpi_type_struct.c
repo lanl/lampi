@@ -31,7 +31,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_struct = PMPI_Type_struct
+#endif
+
 int PMPI_Type_struct(int count,
                      int *array_of_blocklengths,
                      MPI_Aint *array_of_displacements,

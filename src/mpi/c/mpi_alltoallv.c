@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Alltoallv = PMPI_Alltoallv
+#endif
+
 int PMPI_Alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
 		   MPI_Datatype senddatatype,
 		   void *recvbuf, int *recvcounts, int *recvdispls,

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_get_envelope = PMPI_Type_get_envelope
+#endif
+
 int PMPI_Type_get_envelope(MPI_Datatype mtype, int *num_integers,
     int *num_addresses, int *num_datatypes, int *combiner)
 {

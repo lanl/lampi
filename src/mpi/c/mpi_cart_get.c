@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_get = PMPI_Cart_get
+#endif
+
 int PMPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods,
 		  int *coords)
 {

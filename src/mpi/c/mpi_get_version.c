@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Get_version = PMPI_Get_version
+#endif
+
 int PMPI_Get_version(int *major, int *minor)
 {
     *major = MPI_VERSION;

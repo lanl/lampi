@@ -132,7 +132,10 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
     return keep_going;
 }
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Get_elements = PMPI_Get_elements
+#endif
+
 int PMPI_Get_elements(MPI_Status *status, MPI_Datatype mtype, int *count)
 {
     int rc = MPI_SUCCESS;

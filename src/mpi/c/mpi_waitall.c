@@ -35,7 +35,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Waitall = PMPI_Waitall
+#endif
+
 int PMPI_Waitall(int count,
 		 MPI_Request array_of_requests[],
 		 MPI_Status array_of_statuses[])

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_dup = PMPI_Comm_dup
+#endif
+
 int PMPI_Comm_dup(MPI_Comm comm, MPI_Comm *comm_out)
 {
     int rc;

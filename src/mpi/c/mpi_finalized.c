@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Finalized = PMPI_Finalized
+#endif
+
 int PMPI_Finalized(int *flag)
 {
     if (_mpi.finalized) {

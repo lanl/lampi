@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Gather = PMPI_Gather
+#endif
+
 int PMPI_Gather(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
 		void *recvbuf, int recvcount, MPI_Datatype recvdatatype,
 		int root, MPI_Comm comm)

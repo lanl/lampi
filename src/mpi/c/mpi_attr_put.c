@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Attr_put = PMPI_Attr_put
+#endif
+
 int PMPI_Attr_put (MPI_Comm comm, int keyval, void *attribute_val)
 {
     int rc;

@@ -34,7 +34,10 @@
 #include <sys/times.h>
 #include <unistd.h>
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Wtime = PMPI_Wtime
+#endif
+
 double PMPI_Wtime(void)
 {
     enum { USE_POSIX_CLOCK = 0 };

@@ -35,7 +35,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Get_processor_name = PMPI_Get_processor_name
+#endif
+
 int PMPI_Get_processor_name(char *name, int *resultlen)
 {
     gethostname(name, MPI_MAX_PROCESSOR_NAME - 1);

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Bcast = PMPI_Bcast
+#endif
+
 int PMPI_Bcast (void *buffer, int count, MPI_Datatype type, int root,
 		MPI_Comm comm)
 {

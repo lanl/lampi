@@ -34,7 +34,10 @@
 #include "internal/buffer.h"
 #include "internal/state.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Bsend= PMPI_Bsend
+#endif
+
 int PMPI_Bsend(void *buf, int count, MPI_Datatype type, int dest,
 	       int tag, MPI_Comm comm)
 {

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_rank = PMPI_Cart_rank
+#endif
+
 int PMPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 {
     ULMTopology_t *topology;

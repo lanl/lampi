@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graph_map = PMPI_Graph_map
+#endif
+
 int PMPI_Graph_map(MPI_Comm comm, int nnodes, int *index, int *edges,
 		   int *newrank)
 {

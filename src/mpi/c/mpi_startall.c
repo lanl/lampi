@@ -33,7 +33,10 @@
 #include "internal/mpi.h"
 #include "internal/buffer.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Startall = PMPI_Startall
+#endif
+
 int PMPI_Startall(int count, MPI_Request array_of_requests[])
 {
     int rc = MPI_ERR_INTERN;

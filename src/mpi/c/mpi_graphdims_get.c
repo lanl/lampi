@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graphdims_get = PMPI_Graphdims_get
+#endif
+
 int PMPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 {
     ULMTopology_t *topology;

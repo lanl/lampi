@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graph_neighbors_count = PMPI_Graph_neighbors_count
+#endif
+
 int PMPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 {
     ULMTopology_t *topology;

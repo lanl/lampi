@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_compare = PMPI_Group_compare
+#endif
+
 int PMPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 {
     int rc;

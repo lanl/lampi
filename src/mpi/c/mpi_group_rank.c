@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_rank = PMPI_Group_rank
+#endif
+
 int PMPI_Group_rank(MPI_Group group, int *rank)
 {
     int rc;

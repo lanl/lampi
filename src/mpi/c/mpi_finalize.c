@@ -34,7 +34,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Finalize = PMPI_Finalize
+#endif
+
 int PMPI_Finalize(void)
 {
     int rc;

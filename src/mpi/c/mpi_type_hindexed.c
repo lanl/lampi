@@ -34,7 +34,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_hindexed = PMPI_Type_hindexed
+#endif
+
 int PMPI_Type_hindexed(int count, int *blocklength_array,
 		       MPI_Aint *disp_array, MPI_Datatype mtype_old,
 		       MPI_Datatype *mtype_new)

@@ -35,7 +35,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Testsome = PMPI_Testsome
+#endif
+
 int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
 		  int *outcount, int *array_of_indices,
 		  MPI_Status *array_of_statuses)

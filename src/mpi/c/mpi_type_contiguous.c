@@ -31,7 +31,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_contiguous = PMPI_Type_contiguous
+#endif
+
 int PMPI_Type_contiguous(int count, MPI_Datatype olddatatype,
 			 MPI_Datatype *newdatatype)
 {

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cartdim_get = PMPI_Cartdim_get
+#endif
+
 int PMPI_Cartdim_get(MPI_Comm comm, int *ndims)
 {
     ULMTopology_t *topology;

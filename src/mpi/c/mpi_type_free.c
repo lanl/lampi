@@ -37,7 +37,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_free = PMPI_Type_free
+#endif
+
 int PMPI_Type_free(MPI_Datatype *mtype)
 {
     if (mtype && *mtype != MPI_DATATYPE_NULL) {

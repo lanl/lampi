@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_shift = PMPI_Cart_shift
+#endif
+
 int PMPI_Cart_shift(MPI_Comm comm, int direction, int disp,
 		    int *rank_source, int *rank_dest)
 {

@@ -31,7 +31,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_commit = PMPI_Type_commit
+#endif
+
 int PMPI_Type_commit(MPI_Datatype *datatype)
 {
     ULMType_t *dt = *datatype;

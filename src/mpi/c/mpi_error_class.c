@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Error_class = PMPI_Error_class
+#endif
+
 int PMPI_Error_class(int code, int *class)
 {
     /*

@@ -33,7 +33,10 @@
 /* Ready send Blocking pt-2-pt send */
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Rsend = PMPI_Rsend
+#endif
+
 int PMPI_Rsend(void *buf, int count, MPI_Datatype type, int dest,
 	       int tag, MPI_Comm comm)
 {

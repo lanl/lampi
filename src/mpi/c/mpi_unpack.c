@@ -33,7 +33,10 @@
 #include "internal/mpi.h"
 #include "internal/type_copy.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Unpack = PMPI_Unpack
+#endif
+
 int PMPI_Unpack (void *buf, int size, int *position,
 		 void *typebuf, int count, MPI_Datatype type,
 		 MPI_Comm comm)

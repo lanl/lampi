@@ -30,6 +30,7 @@
 
 
 
+#include <sys/types.h> /* CYGWIN needs this first for netinet/in.h */
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -37,7 +38,6 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <setjmp.h>
 

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graph_get = PMPI_Graph_get
+#endif
+
 int PMPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index,
 		   int *edges)
 {

@@ -34,7 +34,10 @@
 #include "internal/mpi.h"
 #include "internal/mpif.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_indexed = PMPI_Type_indexed
+#endif
+
 int PMPI_Type_indexed(int count, int *blocklength_array, int *disp_array,
 		      MPI_Datatype mtype_old, MPI_Datatype *mtype_new)
 {

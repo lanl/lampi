@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Intercomm_merge = PMPI_Intercomm_merge
+#endif
+
 int PMPI_Intercomm_merge(MPI_Comm interComm, int high, MPI_Comm *intraComm)
 {
     int Comm1 = (int) interComm;

@@ -33,7 +33,10 @@
 #include "internal/malloc.h"
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Cart_create = PMPI_Cart_create
+#endif
+
 int PMPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 		     int reorder, MPI_Comm *comm_new)
 {

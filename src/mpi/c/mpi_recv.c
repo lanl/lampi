@@ -35,7 +35,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Recv = PMPI_Recv
+#endif
+
 int PMPI_Recv(void *buf, int count, MPI_Datatype type, int source,
 	      int tag, MPI_Comm comm, MPI_Status *status)
 {

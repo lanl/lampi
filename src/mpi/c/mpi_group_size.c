@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_size = PMPI_Group_size
+#endif
+
 int PMPI_Group_size(MPI_Group group, int *size)
 {
     int rc;

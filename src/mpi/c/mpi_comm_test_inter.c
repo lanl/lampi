@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_test_inter = PMPI_Comm_test_inter
+#endif
+
 int PMPI_Comm_test_inter(MPI_Comm comm, int *isInterComm)
 {
     int rc;

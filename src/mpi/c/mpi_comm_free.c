@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Comm_free = PMPI_Comm_free
+#endif
+
 int PMPI_Comm_free(MPI_Comm *comm)
 {
     int rc = ulm_comm_free(*comm);

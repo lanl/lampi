@@ -33,7 +33,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Get_count = PMPI_Get_count
+#endif
+
 int PMPI_Get_count(MPI_Status *status, MPI_Datatype type, int *count)
 {
     ULMType_t *datatype = type;

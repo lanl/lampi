@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Initialized = PMPI_Initialized
+#endif
+
 int PMPI_Initialized(int *flag)
 {
     if (_mpi.initialized) {

@@ -178,6 +178,51 @@ i?86-pc-linux*)
 
 	;;
 
+i?86-pc-cygwin*)
+        if test "$CC" = "icc" ; then
+           CXX="$CC"
+           if test "$enable_debug" = "yes" ; then
+              CFLAGS="-g"
+           else
+              CFLAGS="-g -O"
+              CPPFLAGS="$CPPFLAGS -DNDEBUG"
+           fi
+           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
+        else
+           CC="gcc"
+           CXX="g++"
+           if test "$enable_debug" = "yes" ; then
+              CFLAGS="-g"
+           else
+              CFLAGS="-g -O"
+              CPPFLAGS="$CPPFLAGS -DNDEBUG"
+           fi
+           CFLAGS="$CFLAGS -march=i686 -finline-functions"
+           CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+           # link flags with "make rpath=" support
+           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+        fi
+        CXXFLAGS="$CFLAGS"
+
+        # OS defines and modules
+        MODULES_OS="$MODULES_OS src/os"
+        MODULES_OS="$MODULES_OS src/os/CYGWIN"
+
+        # default features for this host
+        enable_shared_memory=${enable_shared_memory:-yes}
+        enable_udp=${enable_udp:-yes}
+        enable_reliability=${enable_reliability:-yes}
+        enable_check_api_args=${enable_check_api_args:-yes}
+
+        # default paths for this host
+        GM_PREFIX="/opt/gm-1.6.3"
+        LSF_LIB="/lsf/lib"
+        LSF_INC="/lsf/share/include"
+        RMS_BROKEN_PREFIX=""
+        RMS_PREFIX=""
+
+	;;
+
 ia64-unknown-linux*)
         if test "$CC" = "ecc" ; then
            CXX="$CC"

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Pack_size = PMPI_Pack_size
+#endif
+
 int PMPI_Pack_size(int incount, MPI_Datatype type, MPI_Comm comm, int *size)
 {
     int rc = MPI_SUCCESS;

@@ -46,8 +46,12 @@
 #  endif
 #endif
 
-#ifdef __i386
+#if defined (__linux__) && defined (__i386)
 #include "os/LINUX/i686/atomic.h"
+#endif
+
+#ifdef __CYGWIN__
+#include "os/CYGWIN/atomic.h"
 #endif
 
 #ifdef __ia64

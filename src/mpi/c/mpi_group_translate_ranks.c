@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_translate_ranks = PMPI_Group_translate_ranks
+#endif
+
 int PMPI_Group_translate_ranks(MPI_Group group1, int numRanks,
 			       int *ranks1, MPI_Group group2, int *ranks2)
 {

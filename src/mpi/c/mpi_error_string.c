@@ -95,7 +95,10 @@ static struct {
     {MPI_ERR_LASTCODE, ""}
 };
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Error_string = PMPI_Error_string
+#endif
+
 int PMPI_Error_string(int code, char *string, int *len)
 {
     int i, not_found = 1;

@@ -34,7 +34,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Errhandler_create = PMPI_Errhandler_create
+#endif
+
 int PMPI_Errhandler_create(MPI_Handler_function *func,
 			   MPI_Errhandler *handler)
 {

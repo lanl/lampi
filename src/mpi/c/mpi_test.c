@@ -35,7 +35,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Test = PMPI_Test
+#endif
+
 int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 {
     ULMStatus_t stat;

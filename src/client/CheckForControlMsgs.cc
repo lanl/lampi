@@ -91,7 +91,7 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
     adminMessage 	*client;
     int 			NotifyServer, NFDs, MaxDesc;
     double 			Message;
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -103,7 +103,7 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
     if (true == client->receiveMessage(&rank, &Tag, &errorCode, 0)) {
         switch (Tag) {          /* process according to message type */
         case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
             gettimeofday(&Time, NULL);
             *HeartBeatTime =
                 (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -235,7 +235,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
     unsigned int Tag;
     ssize_t IOReturn;
     ulm_iovec_t IOVec;
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
     struct timeval Time;
 #else
     struct timespec Time;
@@ -271,7 +271,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
             }
             switch (Tag) {      /* process according to message type */
             case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__)
+#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
                 gettimeofday(&Time, NULL);
                 *HeartBeatTime =
                     (double) (Time.tv_sec) +

@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Graph_neighbors = PMPI_Graph_neighbors
+#endif
+
 int PMPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
 			 int *neighbors)
 {

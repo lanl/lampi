@@ -33,7 +33,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Send = PMPI_Send
+#endif
+
 int PMPI_Send(void *buf, int count, MPI_Datatype type, int dest,
 	      int tag, MPI_Comm comm)
 {

@@ -33,7 +33,10 @@
 #include "internal/mpi.h"
 #include <unistd.h>
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Wtick = PMPI_Wtick
+#endif
+
 double PMPI_Wtick(void)
 {
     return 1.0 / (double) sysconf(_SC_CLK_TCK);

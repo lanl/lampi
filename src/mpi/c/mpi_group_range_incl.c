@@ -32,7 +32,10 @@
 
 #include "internal/mpi.h"
 
+#ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Group_range_incl = PMPI_Group_range_incl
+#endif
+
 int PMPI_Group_range_incl(MPI_Group group, int nTriples, int ranges[][3],
 			  MPI_Group *newGroup)
 {
