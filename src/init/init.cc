@@ -67,6 +67,7 @@
 #include "util/Utility.h"
 #include "util/dclock.h"
 #include "util/if.h"
+#include "util/misc.h"
 #include "init/environ.h"
 #include "init/fork_many.h"
 #include "init/init.h"
@@ -918,6 +919,7 @@ void lampi_init_fork(lampiState_t *s)
                               s->local_pids);
     mb();
 
+    set_sa_restart();
     if (s->local_rank < 0) {
         s->error = ERROR_LAMPI_INIT_AT_FORK;
         return;
