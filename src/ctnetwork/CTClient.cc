@@ -39,6 +39,7 @@
 #include "ctnetwork/CTServer.h"
 #include "ctnetwork/CTNetwork.h"
 #include "internal/Private.h"
+#include "internal/malloc.h"
 #include "util/parsing.h"
 #include "util/misc.h"
 
@@ -217,7 +218,7 @@ CTChannelStatus CTClient::scatterv(int msgType, unsigned int *datalen, const cha
     if ( node_m )
     {
         nnodes = node_m->numberOfNodes();
-        if ( (labels = (unsigned int *)malloc(sizeof(unsigned int)*nnodes)) )
+        if ( (labels = (unsigned int *)ulm_malloc(sizeof(unsigned int)*nnodes)) )
         {
             for ( i = 0; i < nnodes; i++ )
                 labels[i] = i;
@@ -229,7 +230,7 @@ CTChannelStatus CTClient::scatterv(int msgType, unsigned int *datalen, const cha
             for ( i = 0; i < nnodes; i++ )
                 bufsz += datalen[i];
                                 
-            buffer = (char *)malloc(bufsz);
+            buffer = (char *)ulm_malloc(bufsz);
             if ( NULL == buffer )
             {
                 // need error reporting here!
@@ -263,10 +264,10 @@ CTChannelStatus CTClient::scatterv(int msgType, unsigned int *datalen, const cha
                                 
             msg->release();
                         
-            free(buffer);
-            free(ctrl);
+            ulm_free2(buffer);
+            ulm_free2(ctrl);
         }
-        free(labels);
+        ulm_free2(labels);
     }
         
     return status;

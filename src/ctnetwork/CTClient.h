@@ -50,7 +50,7 @@ private:
     unsigned int    nodeLabel_m;
     unsigned int    nodeType_m;
     unsigned int    numNodes_m;
-    CTNode                  *node_m;
+    CTNode          *node_m;
         
 private:
     void getServerInfo();

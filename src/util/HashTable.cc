@@ -99,7 +99,7 @@ HashTable::~HashTable()
         }
         aBucket++;
     }
-    free(buckets);
+    ulm_free2(buckets);
 }
 
 
@@ -209,6 +209,36 @@ void *HashTable::valueForKey(int key)
     HashKeyInteger              ikey(key);
     return this->valueForKey(&ikey);
 }
+
+HashValue **HashTable::allValues()
+{
+    long int    i, cnt;
+    bucket_t    *aBucket;
+    HashNode    *ptr;
+    HashValue 	**values;
+
+    if ( !cnt_m )
+        return NULL;
+    
+    if ( !(values = (HashValue **)ulm_malloc(cnt_m * sizeof(HashValue *))) )
+        return NULL;
+
+    cnt = 0;
+    i = 0;
+    while ( (cnt < cnt_m) && (i < sz_m) )
+    {
+        aBucket = buckets + i;
+        ptr = aBucket->head;
+        while ( (ptr != NULL) && (cnt < cnt_m) )
+        {
+            values[cnt++] = ptr->value();
+            ptr = ptr->nextNode();
+        }
+        i++;
+    }
+    return values;
+}
+
 
 
 void HashTable::removeValueForKey(HashKey *key)

@@ -34,7 +34,7 @@
 #include "path/common/pathContainer.h"
 #include "path/udp/path.h"
 #include "ctnetwork/CTNetwork.h"
-
+#include "internal/Private.h"
 
 void lampi_init_prefork_udp(lampiState_t *s)
 {
@@ -66,7 +66,7 @@ void lampi_init_prefork_udp(lampiState_t *s)
             connected to node label 0, so we need to account for that.
             ASSERT: labels2Rank array has already been exchanged between daemons.
         */
-		rank = s->client->clientDaemon2Rank(0);
+		rank = 0;
 		tag = adminMessage::UDPADDRESSES;
         if ( (s->client->receiveMessage(&rank, &tag, &errorCode) )
 			) 
@@ -144,8 +144,7 @@ void lampi_init_postfork_udp(lampiState_t * s)
             s->error = ERROR_LAMPI_INIT_POSTFORK_UDP;
             return;
         }
-
-
+        
         if (!s->iAmDaemon) {
             /*
              * Add UDP path to global pathContainer

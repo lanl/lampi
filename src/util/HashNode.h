@@ -65,10 +65,13 @@ class HashKeyString : public HashKey
 	public:
 	HashKeyString(const char *val)
 	{
-		kval_m = strdup(val);
+		if ( val )
+            kval_m = strdup(val);
+        else
+            kval_m = strdup("");
 	}
 	
-	virtual ~HashKeyString() {free(kval_m);}
+	virtual ~HashKeyString() {if ( kval_m ) free(kval_m);}
 	
 	long int hashValue();
 	HashKey *copy() {return new HashKeyString(kval_m);}

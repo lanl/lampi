@@ -52,7 +52,7 @@
 
 #define CT_SVR_MAX_COLL         8
 #define CT_SVR_COLL_START       kAllgather
-#define COLL_IDX(x)                     x - CTServer::kAllgather
+#define COLL_IDX(x)             x - CTServer::kAllgather
 
 class CTServer : public CTController
 {
@@ -64,11 +64,11 @@ private:
     volatile bool       hasLinkedNet_m;
     bool                isStarted_m;
     volatile bool       performingChecks_m;
-    bool                collOK_m[CT_SVR_MAX_COLL];
     lockStructure_t     lock_m;
     lockStructure_t     coll_lock_m;
     lockStructure_t     scanlock_m;
     unsigned int        netxtID_m;
+    bool                collOK_m[CT_SVR_MAX_COLL];
     unsigned int        clientCnt_m[CT_SVR_MAX_COLL];
     unsigned int        childCnt_m[CT_SVR_MAX_COLL];
     char                *buffer_m[CT_SVR_MAX_COLL];
@@ -115,7 +115,7 @@ private:
         
     void getServerInfo(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl);
         
-    bool linkNetwork(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl);
+    bool linkNetwork(CTChannel *schnl, char *msg, long int msglen, unsigned int ctrlSize, char *ctrl);
         
     bool allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl);
         
@@ -133,6 +133,8 @@ private:
                   unsigned int *datalen, const char **data, char *ctrl, unsigned int ctrlsz);
         
 protected:
+    void performChecks_old(void *arg);
+    
     void performChecks(void *arg);
     /*
       This method is normally run in a separate thread.  
@@ -200,7 +202,8 @@ public:
     /*
       POST:     sends pt-to-pt message to destination set in  msg.
     */
-        
+
+    void checkForMessages(int to_secs, int to_usecs);
         
     /*
      * Collective Operations

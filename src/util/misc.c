@@ -39,6 +39,7 @@
  */
 
 #include "misc.h"
+#include "internal/malloc.h"
 
 void free_double_carray(char **arr, int len)
 {
@@ -48,8 +49,8 @@ void free_double_carray(char **arr, int len)
         return;
 
     for (i = 0; i < len; i++)
-        free(arr[i]);
-    free(arr);
+        ulm_free2(arr[i]);
+    ulm_free2(arr);
 }
 
 
@@ -61,8 +62,8 @@ void free_double_iarray(int **arr, int len)
         return;
 
     for (i = 0; i < len; i++)
-        free(arr[i]);
-    free(arr);
+        ulm_free2(arr[i]);
+    ulm_free2(arr);
 }
 
 

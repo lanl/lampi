@@ -175,7 +175,10 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 {
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
     int idx, host;
-    int RetVal, STDERRpipe[2], STDOUTpipe[2], dupSTDERRfd, dupSTDOUTfd;
+    int RetVal, dupSTDERRfd, dupSTDOUTfd;
+#ifndef USE_CT
+    int STDERRpipe[2], STDOUTpipe[2];
+#endif
     struct sigaction action;
     int NHostsStarted=0;
 #ifdef LSF
@@ -262,6 +265,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
         /* redirect stderr */
+#ifndef USE_CT
         RetVal = pipe(STDERRpipe);
         if (RetVal < 0) {
             dup2(dupSTDOUTfd, STDOUT_FILENO);
@@ -292,6 +296,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         }
         RunParameters->STDOUTfds[host] = STDOUTpipe[0];
         close(STDOUTpipe[1]);
+#endif
 
 #ifdef  LSF
 /* debug

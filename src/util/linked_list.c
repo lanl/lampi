@@ -93,7 +93,7 @@ link_t *delete_link(link_t *listp, link_t *lp, void (*fn)(void *))
 		ptr = listp->next;
 		if ( fn )
 			fn(listp->data);
-		free(listp);
+		ulm_free2(listp);
 		return ptr;
 	}
 	
@@ -105,7 +105,7 @@ link_t *delete_link(link_t *listp, link_t *lp, void (*fn)(void *))
 			prev->next = ptr->next;
 			if ( fn )
 				fn(ptr->data);
-			free(ptr);
+			ulm_free2(ptr);
 			ptr = NULL;
 		}
 		else
@@ -155,7 +155,7 @@ void *remove_item(link_t *listp, link_t **newlist, int (*fn)(void*, void*), void
 				ptr->next = listp->next;
 			else
 				*newlist = listp->next;
-			free(listp);
+			ulm_free2(listp);
 			break;
 		}
 		ptr = listp;
@@ -180,7 +180,7 @@ void freeall(link_t *listp)
     for ( ; listp!=NULL; listp=next) {
 	next = listp->next;
 	if (listp->data) {
-	    ulm_free(listp->data);
+	    free(listp->data);
 	    listp->data = 0;
 	}
 	ulm_free(listp);

@@ -44,11 +44,13 @@
 
 #include "ctnetwork/CTChannel.h"
 #include "internal/log.h"
+#include "internal/malloc.h"
 #include "util/parsing.h"
+#include "util/linked_list.h"
 #include "util/misc.h"
 
 #define INVALID_SOCKET          -1
-#define LISTENQ                 32
+#define LISTENQ                 SOMAXCONN
 #define _CHNL_BLK_SIZE          10
 
 #define tcpchannel              ((CTTCPChannel *)channel_m)
@@ -94,7 +96,7 @@ static void _handle_sigpipe(int sig)
 
 void _init_factories(void)
 {
-    _chnl_factories = (struct _chnl_cls_info **)malloc(sizeof(struct _chnl_cls_info *)*_CHNL_BLK_SIZE);
+    _chnl_factories = (struct _chnl_cls_info **)ulm_malloc(sizeof(struct _chnl_cls_info *)*_CHNL_BLK_SIZE);
     if ( NULL == _chnl_factories )
     {
         ulm_err(("Error: unable to initialize _chnl_factories array.\n"));
@@ -175,7 +177,7 @@ bool CTChannel::addChannelConstructor(const char *chnlClass, CTChannel *(*factor
 
     if ( ret )
     {
-        item = (struct _chnl_cls_info *)malloc(sizeof(struct _chnl_cls_info));
+        item = (struct _chnl_cls_info *)ulm_malloc(sizeof(struct _chnl_cls_info));
         if ( item )
         {
             item->_name = chnlClass;
@@ -209,7 +211,7 @@ static CTChannelStatus _translate_err(int err)
         return kCTChannelOK;
     else if ( (EPIPE == err)  || (ECONNRESET == err) )
         return kCTChannelConnLost;
-    else if ( ETIMEDOUT == err )
+    else if ( (ETIMEDOUT == err) || (EAGAIN == err) )
         return kCTChannelTimedOut;
     else
         return kCTChannelError;
@@ -233,9 +235,9 @@ CTChannel *CTTCPChannel::createChannel(const char *connectionInfo)
   <host>;<port>
   e.g. "foo.somewhere.com;4444"
 */
-    CTTCPChannel            *chnl = NULL;
-    char                            **list;
-    int                                     cnt;
+    CTTCPChannel    *chnl = NULL;
+    char            **list;
+    int             cnt;
 
     cnt = _ulm_parse_string(&list, connectionInfo, 1, ";");
     if ( 2 == cnt )
@@ -461,9 +463,12 @@ CTChannelStatus CTTCPChannel::receive(char *buffer, long int len, long int *lenr
     if ( slen < 0 )
     {
         status = _translate_err(errno);
-        ulm_err(("Error: in receiving. errno = %d\n", errno));
-        // handle error
-        closeChannel();
+        if ( kCTChannelTimedOut != status )
+        {
+            ulm_err(("Error in receiving. errno = %d\n", errno));
+            // handle error
+            closeChannel();            
+        }
     }
     else if ( 0 == slen )
     {
@@ -567,7 +572,7 @@ CTChannelStatus CTTCPChannel::getMessage(CTMessage **msg)
     if ( kCTChannelOK == status )
     {
         *msg = CTMessage::unpack(buf);
-        free(buf);
+        ulm_free2(buf);
     }
 
     return status;
@@ -586,6 +591,7 @@ CTChannelStatus CTTCPChannel::getPackedMessage(char **buffer, long int *msglen)
       <msg length (long int)><packed msg>
     */
     len = 0;
+    *buffer = NULL;
     status = receive((char *)&len, sizeof(len), &rlen);
     if ( kCTChannelOK == status )
     {
@@ -599,13 +605,13 @@ CTChannelStatus CTTCPChannel::getPackedMessage(char **buffer, long int *msglen)
             return kCTChannelError;
         }
 
-        if ( (msg = (char *)malloc(sizeof(char)*len)) )
+        if ( (msg = (char *)ulm_malloc(sizeof(char)*len)) )
         {
             // Continue receiving until we get entire msg.
             status = receive(msg, len, &rlen);
             if ( kCTChannelOK != status )
             {
-                free(msg);
+                ulm_free2(msg);
                 msg = NULL;
             }
         }
@@ -644,7 +650,7 @@ CTChannelStatus CTTCPChannel::sendMessage(CTMessage *msg)
     if ( true == msg->pack(&buf, &len) )
     {
         status = sendPackedMessage(buf, len);
-        free(buf);
+        ulm_free2(buf);
     }
     else
         status = kCTChannelInvalidMsg;
@@ -665,6 +671,8 @@ CTChannelStatus CTTCPChannel::sendPackedMessage(char *msg, long int msglen)
     // send msg data
     if ( kCTChannelOK == status )
         status = sendData(msg, msglen, &rlen);
+    else
+        ulm_ferr(("Error in sending packed msg. status = %d\n", status));
 
     return status;
 }
@@ -753,7 +761,14 @@ void CTTCPChannel::closeChannel()
 }
 
 
-
+void CTTCPChannel::setSocketfd(int sockfd)
+{
+    if ( INVALID_SOCKET != (sockfd_m = sockfd))
+    {
+        //  assume that we have a valid connection
+        connected_m = true;
+    }    
+}
 
 bool CTTCPChannel::setIsBlocking(bool tf)
 {
@@ -816,18 +831,27 @@ CTTCPSvrChannel::CTTCPSvrChannel(unsigned short portn)
     addr.sin_port = portn;
 
     channel_m = new CTTCPChannel(&addr);
+
+    maxfd_m = 0;
+    selectcnt_m = _CHNL_BLK_SIZE;
+    selected_m = (CTTCPChannel **)ulm_malloc(_CHNL_BLK_SIZE*sizeof(CTTCPChannel *));
+    if ( NULL == selected_m )
+    {
+        ulm_err(("Error in allocating mem for selected_m.\n"));
+        selectcnt_m = 0;
+    }
 }
 
 
 bool CTTCPSvrChannel::setupToAcceptConnections()
 {
     const struct sockaddr_in        *addr;
-    struct sockaddr_in                      socketInfo;
-    int                                                     sockfd, flg;
+    struct sockaddr_in              socketInfo;
+    int                             sockfd, flg;
 #ifdef __linux__
-    socklen_t                                       slen;
+    socklen_t     slen;
 #else
-    int                                                     slen;
+    int           slen;
 #endif
 
     ulm_chk_err((sockfd = socket(AF_INET, SOCK_STREAM, 0)),
@@ -865,14 +889,14 @@ bool CTTCPSvrChannel::setupToAcceptConnections()
 
 CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTChannel **client)
 {
-    bool                            done;
-    int                                     sockfd, clientfd;
+    bool           done;
+    int            sockfd, clientfd;
 #ifdef __linux__
-    socklen_t                       alen;
+    socklen_t      alen;
 #else
-    int                                     alen;
+    int            alen;
 #endif
-    struct sockaddr_in              clientaddr;
+    struct sockaddr_in      clientaddr;
     CTChannelStatus         status;
 
     *client = NULL;
@@ -934,4 +958,148 @@ CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTChannel **
     }
 
     return status;
+}
+
+
+CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTTCPChannel *client)
+{
+    bool           done;
+    int            sockfd, clientfd;
+#ifdef __linux__
+    socklen_t      alen;
+#else
+    int            alen;
+#endif
+    struct sockaddr_in      clientaddr;
+    CTChannelStatus         status;
+
+    status = kCTChannelOK;
+    sockfd = tcpchannel->socketfd();
+    ulm_chk_err(sockfd, ("Invalid socket number."), return kCTChannelError  );
+
+    done = false;
+    while ( false == done )
+    {
+        if ( timeoutSecs )
+        {
+            fd_set          rset;
+            int             err;
+            struct timeval  to;
+            bool            blk;
+
+            // set timeout for connecting.  first, set nonblocking.
+            blk = tcpchannel->isBlocking();
+            tcpchannel->setIsBlocking(false);
+
+            FD_ZERO(&rset);
+            FD_SET(sockfd, &rset);
+            to.tv_sec = timeoutSecs;
+            to.tv_usec = 0;
+            err = select(sockfd + 1, &rset, NULL, NULL, &to);
+            if ( err < 0 )
+            {
+                fprintf(stderr, "Error in accepting connections. errno = %d.\n", errno);
+                status = kCTChannelError;
+                done = true;
+            }
+            else if ( 0 == err )
+            {
+                // timed out
+                status = kCTChannelTimedOut;
+                done = true;
+            }
+            tcpchannel->setIsBlocking(blk);
+        }
+
+        if ( kCTChannelOK == status )
+        {
+            alen = sizeof(clientaddr);
+            clientfd = accept(sockfd, (struct sockaddr *)&clientaddr, &alen);
+            if ( clientfd < 0 )
+            {
+                // check for acceptable err.
+                if ( EINTR != errno )
+                    done = true;
+            }
+            else
+            {
+                client->setSocketfd(clientfd);
+                client->setAddress(&clientaddr);
+                done = true;
+            }
+        }
+    }
+
+    return status;
+}
+
+
+
+
+void CTTCPSvrChannel::setChannelsToCheckForRead(struct link_t *channels)
+{
+    struct link_t	*ptr;
+    CTTCPChannel	*tchnl;
+    
+    FD_ZERO(&readSet_m);
+    maxfd_m = 0;
+    ptr = channels;
+    while ( ptr )
+    {
+        tchnl = (CTTCPChannel *)(ptr->data);
+        if ( tchnl->isConnected() )
+        {
+            if ( tchnl->socketfd() > maxfd_m )
+                maxfd_m = tchnl->socketfd();
+            FD_SET(tchnl->socketfd(), &readSet_m);
+        }
+        ptr = ptr->next;
+    }
+}
+
+bool CTTCPSvrChannel::channelsReadyForReading(int to_secs, int to_usecs)
+{
+    struct timeval 	WaitTime, *tptr;
+    int				RetVal;
+    
+    tptr = NULL;
+    if ( to_secs >= 0 )
+    {
+        WaitTime.tv_sec = to_secs;
+        WaitTime.tv_usec = to_usecs;
+        tptr = &WaitTime;
+    }
+    RetVal = select(maxfd_m + 1, &readSet_m, NULL, NULL, tptr);
+    return ( RetVal > 0 ) ? true : false;
+}
+
+CTChannel **CTTCPSvrChannel::channelsReadable(struct link_t *channels, int *cnt)
+{
+    struct link_t	*ptr;
+    CTTCPChannel	*tchnl;
+    int		lcnt;
+
+    *cnt = 0;
+    lcnt = listsize(channels);
+    if ( selectcnt_m < lcnt )
+    {
+        selected_m = (CTTCPChannel **)realloc(selected_m, lcnt*sizeof(CTTCPChannel *));
+        if ( NULL == selected_m )
+        {
+            ulm_err(("Error in resizing mem for selected_m.\n"));
+            selectcnt_m = 0;
+            return NULL;
+        }
+        selectcnt_m = lcnt;
+    }
+    ptr = channels;
+    while ( ptr )
+    {
+        tchnl = (CTTCPChannel *)(ptr->data);
+        if ( FD_ISSET(tchnl->socketfd(), &readSet_m) )
+            selected_m[(*cnt)++] = tchnl;
+        ptr = ptr->next;
+    }
+
+    return (CTChannel **)selected_m;    
 }

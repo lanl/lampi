@@ -41,6 +41,17 @@
 static const int file_line_max = 255;
 static char file_line[file_line_max + 1] = "";
 
+double timing_cur, timing_stmp;
+char timing_out[100][100];
+int timing_scnt = 0;
+
+extern "C" double second(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec * 1.0e-6;
+}
+
 extern "C" void _ulm_log(FILE *fd, const char *fmt, va_list ap)
 {
     /* Write to a file descriptor and the log file */

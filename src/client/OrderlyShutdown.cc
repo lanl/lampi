@@ -78,8 +78,8 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
     Tag = NORMALTERM;
 #ifdef USE_CT
     // create admin msg to send to mpirun
+    ulm_fdbg(("Node %d: sending NORMALTERM to mpirun.\n", state->client->nodeLabel()));
     state->client->reset(adminMessage::SEND);
-    state->client->pack(STDIOSent, (adminMessage::packType)sizeof(ssize_t), 2);
     if ( false == state->client->sendMessage(0, Tag, state->channelID, &errorCode) )
     {
         ulm_exit((-1, "Error: sending NORMALTERM.  RetVal: %ld\n",

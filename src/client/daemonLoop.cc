@@ -61,10 +61,6 @@ static double HeartBeatTimeOut = (double) HEARTBEATTIMEOUT;
 void daemonSendHeartbeat(lampiState_t *s);
 
 
-void daemonAbortLocalHost(int *ProcessCount, int hostIndex,
-                          pid_t * ChildPIDs, unsigned int MessageType,
-                          int Notify, lampiState_t *s);
-
 void lampi_daemon_loop(lampiState_t *s)
 {
     int *ProcessCount = s->map_host_to_local_size;
@@ -91,7 +87,7 @@ void lampi_daemon_loop(lampiState_t *s)
 #else
     struct timespec Time;
 #endif                          /* LINUX */
-    int NChildren;
+    int NChildren, numDaemonChildren;
 
     /* initialize data */
     NChildren = ProcessCount[hostIndex];
@@ -118,6 +114,7 @@ void lampi_daemon_loop(lampiState_t *s)
     if (s->debug == 1)
         HeartBeatTimeOut = -1;
 
+    numDaemonChildren = 0;
     for (;;) {
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -146,11 +143,11 @@ void lampi_daemon_loop(lampiState_t *s)
                                STDERRfdsFromChildren, StdoutFD, StderrFD,
                                NChildren + 1, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
-                               StdoutBytesWritten, NewLineLast);
+                               StdoutBytesWritten, NewLineLast, s);
 
         /* send heartbeat to Server */
 #ifdef USE_CT
-        if (DeltaTime > HEARTBEATINTERVAL) {
+        if ( (DeltaTime > HEARTBEATINTERVAL) && (!shuttingDown) ){
             daemonSendHeartbeat(s);
             LastTime = TimeInSeconds;
         }
@@ -175,12 +172,10 @@ void lampi_daemon_loop(lampiState_t *s)
             }
         }
 #ifdef USE_CT
-        checkForRunControlMsgs(&ServerSocketFD,
-                               &HeartBeatTime, ProcessCount,
+        checkForRunControlMsgs(&HeartBeatTime, ProcessCount, &numDaemonChildren,
                                hostIndex, ChildPIDs,
                                STDOUTfdsFromChildren,
-                               STDERRfdsFromChildren, StdoutFD,
-                               StderrFD, StderrBytesWritten,
+                               STDERRfdsFromChildren, StderrBytesWritten,
                                StdoutBytesWritten, NewLineLast,
                                IOPreFix, LenIOPreFix, s);
 #else
@@ -192,12 +187,12 @@ void lampi_daemon_loop(lampiState_t *s)
                                   STDERRfdsFromChildren, StdoutFD,
                                   StderrFD, StderrBytesWritten,
                                   StdoutBytesWritten, NewLineLast,
-                                  IOPreFix, LenIOPreFix);
+                                  IOPreFix, LenIOPreFix, s);
 
 #endif
         /* check to see if Server has timed out */
         if ((HeartBeatTimeOut > 0) &&
-            ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut))
+            ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut) && (!shuttingDown) )
         {
             NotifyServer = 0;
 #ifdef USE_CT

@@ -79,6 +79,7 @@
 #include "ctnetwork/CTNetwork.h"
 #include "path/gm/base_state.h"
 
+#include "internal/Private.h"
 /*
  * Global variables instantiated in this file
  */
@@ -440,7 +441,11 @@ int main(int argc, char **argv)
     int ReceivingSocket;
     unsigned int AuthData[3];
     int errorCode = 0;
-
+    double t;
+#ifdef USE_CT
+    FILE	*fp;
+#endif
+    
     /* setup process characteristics */
     lampirun_init_proc();
 
@@ -453,6 +458,7 @@ int main(int argc, char **argv)
     /*
      * initialize admin network
      */
+
 #ifdef USE_CT
     CTNetworkInit();
 #endif
@@ -508,11 +514,14 @@ int main(int argc, char **argv)
      *   is unknown
      */
 
+    t = second();
     /*
      * Finish setting up administrative connections - time out proportional
      *   to number of hosts
      */
     ulm_dbg(("\nmpirun: collecting daemon info...\n"));
+    timing_cur = second();
+    sprintf(timing_out[timing_scnt++], "Collecting daemon info (t = 0).\n");
     connectTimeOut = CONNECT_ALARMTIME * RunParameters.NHosts;
     if (!server->serverConnect(RunParameters.ProcessCount,
                                RunParameters.HostList,
@@ -520,6 +529,11 @@ int main(int argc, char **argv)
         ulm_err(("Error: Server/client connection failed\n"));
         Abort();
     }
+
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Done collecting daemon info (t = %lf).\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+
     if (server->nhosts() < 1) {
         ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
         Abort();
@@ -623,6 +637,19 @@ int main(int argc, char **argv)
     }
 
     /* wait for child prun process to complete */
+    t = second() - t;
+#ifdef USE_CT
+    if ( (fp = fopen("./startup_time.out", "a")) )
+    {
+        for ( int k = 0; k  < timing_scnt; k++ )
+            fprintf(fp, "%s", timing_out[k]);
+            
+        fprintf(fp, "%lf\n", t);
+        fflush(fp);
+        fclose(fp);
+    }
+#endif
+    
     if (RunParameters.Networks.UseQSW) {
         int term_status;
         wait(&term_status);

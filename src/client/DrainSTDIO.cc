@@ -50,22 +50,24 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
                       int MaxDescriptor, PrefixName_t *IOPreFix,
                       int *LenIOPreFix, size_t *StderrBytesWritten,
                       size_t *StdoutBytesWritten, int *NewLineLast,
-                      int ControlSocketToULMRunFD)
+                      int ControlSocketToULMRunFD, lampiState_t *state)
 {
     bool again = true;
     int i;
 
     /* check to see if control socket is still open - if not exit */
+#ifndef USE_CT
     if (ControlSocketToULMRunFD == -1) {
         exit(5);
     }
+#endif
 
     while (again) {
         ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
                                ToServerStdoutFD, ToServerStderrFD,
                                NFDs, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
-                               StdoutBytesWritten, NewLineLast);
+                               StdoutBytesWritten, NewLineLast, state);
 
         again = false;
         /* scan again only if pipes to children are still open; note
@@ -82,6 +84,8 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
 
     ClientStdoutFDs[NFDs - 1] = -1;
     ClientStderrFDs[NFDs - 1] = -1;
+#ifndef USE_CT
     dup2(ToServerStderrFD, STDERR_FILENO);
     dup2(ToServerStdoutFD, STDOUT_FILENO);
+#endif
 }

@@ -89,11 +89,15 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
                     int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
                     int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
                     int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
-                    int *NewLineLast)
+                    int *NewLineLast, lampiState_t *state)
 {
     int i, NumChildren, MaxDesc, NFDs;
+#ifndef USE_CT
     ulm_iovec_t IOVec;
     ssize_t IOReturn;
+#else
+    int	errorCode;
+#endif
     bool again = true;
 
     /*
@@ -120,12 +124,16 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
     MaxDesc++;
 
     /* drain standard I/O of children */
+#ifdef USE_CT
+    if ( 1 ) {
+#else
     if (ServerSocketFD >= 0) {
+#endif
         while (again) {
             ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs,
                 ToServerStdoutFD, ToServerStderrFD, NFDs, MaxDesc,
                 IOPrefix, LenIOPreFix, StderrBytesWritten, StdoutBytesWritten,
-                NewLineLast);
+                NewLineLast, state);
 
             again = false;
             /* scan again only if pipes to children are still open; note
@@ -143,11 +151,23 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
 
     ClientStdoutFDs[NFDs - 1] = -1;
     ClientStderrFDs[NFDs - 1] = -1;
+#ifndef USE_CT
     dup2(ToServerStderrFD, STDERR_FILENO);
     dup2(ToServerStdoutFD, STDOUT_FILENO);
+#endif
 
     /* notify server of termination */
     if (Notify) {
+#ifdef USE_CT
+        state->client->reset(adminMessage::SEND);
+        if (false ==
+            state->client->sendMessage(0, MessageType, state->channelID,
+                                   &errorCode)) {
+            ulm_exit((-1,
+                      "Error: reading Tag in AbortLocalHost.  "
+                      "RetVal: %ld\n", errorCode));
+        }
+#else        
         IOVec.iov_base = (char *) &MessageType;
         IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
         IOReturn = _ulm_Send_Socket(ServerSocketFD, 1, &IOVec);
@@ -156,6 +176,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
                       "Error: reading Tag in AbortAndDrainLocalHost.  "
                       "RetVal: %ld\n", IOReturn));
         }
+#endif
     }
 
     exit(2);

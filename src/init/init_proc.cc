@@ -80,6 +80,26 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
      */
 #ifdef USE_CT	 
 	CTNetworkInit();
+
+    // set up pipes to redirect stderr/stdout so that even the daemon's
+    // output is directed through the admin network.
+    if ( s->useDaemon )
+    {
+        if ( (pipe(s->daemonSTDERR) < 0) || (pipe(s->daemonSTDOUT) < 0) )
+        {
+            ulm_ferr(("Host %s (pid = %d): Unable to create pipes for daemon.\n", _ulm_host(),
+                      getpid()));
+        }
+        else
+        {
+            if ( (dup2(s->daemonSTDERR[1], STDERR_FILENO) < 0) ||
+                 (dup2(s->daemonSTDOUT[1], STDOUT_FILENO) < 0) )
+            {
+                ulm_ferr(("Host %s (pid = %d): Unable to redirect stdio for daemon.\n", _ulm_host(),
+                          getpid()));
+            }
+        }
+    }
 #endif
 
     /* 

@@ -216,9 +216,10 @@ class HypercubeNode : public CTNode
      */
 
 private:
-    unsigned int    ghost_m;                        /* label of ghost node for incomplete hypercube. */
+    unsigned int    ghost_m;         /* label of ghost node for incomplete hypercube. */
     unsigned int    subcubesz_m;
-    unsigned int    hsz_m;                  /* hsz_m = log2(# nodes in network) */
+    unsigned int    hsz_m;           /* hsz_m = log2(# nodes in network) */
+    
 protected:
     void                    *faults_m;
 

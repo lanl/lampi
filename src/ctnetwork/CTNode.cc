@@ -41,6 +41,7 @@
 #include <strings.h>
 
 #include "CTNode.h"
+#include "internal/malloc.h"
 #include "util/misc.h"
 
 
@@ -146,11 +147,11 @@ static void _free_cache_item(void *arg)
 {
     _cache_item_t   *item = (_cache_item_t *)arg;
         
-    free(item->_list);
-    free(item->_listCounts);
-    free(item->_labels);
+    ulm_free2(item->_list);
+    ulm_free2(item->_listCounts);
+    ulm_free2(item->_labels);
         
-    free(item);
+    ulm_free2(item);
 }
 
 
@@ -257,7 +258,7 @@ unsigned int *HypercubeNode::subcube(unsigned int numNodes, unsigned int subdim,
     if ( (numNodes-1) < chk )
         return NULL;
                 
-    if ( NULL == (subcube = (unsigned int *)malloc(sizeof(unsigned int)*nsnodes)) )
+    if ( NULL == (subcube = (unsigned int *)ulm_malloc(sizeof(unsigned int)*nsnodes)) )
     {
         return NULL;
     }
@@ -287,7 +288,7 @@ char *HypercubeNode::initialControlData(unsigned int *ctrlSize)
     unsigned int    *ctl;
         
     *ctrlSize = 0;
-    if ( (ctl = (unsigned int *)malloc(sizeof(unsigned int))) )
+    if ( (ctl = (unsigned int *)ulm_malloc(sizeof(unsigned int))) )
     {
         *ctl = (1 << hsz_m) - 1;
         *ctrlSize = sizeof(unsigned int);
@@ -379,7 +380,7 @@ char *HypercubeNode::controlForLinking(char *controlData, unsigned int link, uns
       algorithm by Katseff.
     */
     *sz = 0;
-    if ( (newControl = (unsigned int *)malloc(sizeof(unsigned int))) )
+    if ( (newControl = (unsigned int *)ulm_malloc(sizeof(unsigned int))) )
     {               
         /*
           Scan the links j such that j >= link.   bit j is 1 if
@@ -432,7 +433,7 @@ unsigned int *HypercubeNode::broadcastList(char *controlData, unsigned int *cnt)
         return list;
     }
 
-    list = (unsigned int *)malloc(sizeof(unsigned int)*HCUBE_MAX_SZ);
+    list = (unsigned int *)ulm_malloc(sizeof(unsigned int)*HCUBE_MAX_SZ);
     if ( list )
     {
         /* loop scans from highest link number to lowest. We want to schedule
@@ -452,7 +453,7 @@ unsigned int *HypercubeNode::broadcastList(char *controlData, unsigned int *cnt)
         }
                 
         /* store list in cache. */
-        if ( (item = (_cache_item_t *)malloc(sizeof(_cache_item_t))) )
+        if ( (item = (_cache_item_t *)ulm_malloc(sizeof(_cache_item_t))) )
         {
             item->_list = NULL;
             item->_listCounts = NULL;
@@ -480,7 +481,7 @@ unsigned int *HypercubeNode::children(unsigned int source, unsigned int *cnt)
     // would be a parent.  Current node is a parent if it is in the path for
     // a pt-to-pt message to source.
     *cnt = 0;
-    if ( NULL == (children = (unsigned int *)malloc(sizeof(unsigned int)*hsz_m)) )
+    if ( NULL == (children = (unsigned int *)ulm_malloc(sizeof(unsigned int)*hsz_m)) )
         return NULL;
         
     if ( (unsigned int)(1 << (hsz_m-1)) == numNodes_m )
@@ -635,13 +636,13 @@ unsigned int **HypercubeNode::scatterList(unsigned int **links, unsigned int **c
     nsnodes = (1 << subcubesz_m);
     nsubcubes = (numNodes_m / nsnodes) + ((numNodes_m & (nsnodes-1)) > 0);
     sz = sizeof(unsigned int *) * nsubcubes;
-    scatterList = (unsigned int **)malloc(sz);
+    scatterList = (unsigned int **)ulm_malloc(sz);
     if ( !scatterList )
         return NULL;
-    listCounts = (unsigned int *)malloc(sz);
+    listCounts = (unsigned int *)ulm_malloc(sz);
     if ( !listCounts )
     {
-        free(scatterList);
+        ulm_free2(scatterList);
         return NULL;
     }
         
@@ -665,10 +666,10 @@ unsigned int **HypercubeNode::scatterList(unsigned int **links, unsigned int **c
         if ( (numNodes_m-1) < chk )
             continue;
                         
-        if ( NULL == (scatterList[idx] = (unsigned int *)malloc(sizeof(unsigned int)*nsnodes)) )
+        if ( NULL == (scatterList[idx] = (unsigned int *)ulm_malloc(sizeof(unsigned int)*nsnodes)) )
         {
             free_double_iarray((int **)scatterList, *arrayCnt);
-            free(listCounts);
+            ulm_free2(listCounts);
             return NULL;
         }
         offset = (i << subcubesz_m);
@@ -685,7 +686,7 @@ unsigned int **HypercubeNode::scatterList(unsigned int **links, unsigned int **c
     }
         
     /* cache scatter list. */
-    if ( (cached = (_scatter_t *)malloc(sizeof(_scatter_t))) )
+    if ( (cached = (_scatter_t *)ulm_malloc(sizeof(_scatter_t))) )
     {
         bzero(cached, sizeof(_scatter_t));
         cached->_listCounts = listCounts;
@@ -744,13 +745,16 @@ unsigned int **HypercubeNode::scatterList(char *controlData, unsigned int *label
         *arrayCnt = item->cnt_m;
         return item->_list;
     }
-        
-    scatterList =  (unsigned int **)malloc(sizeof(unsigned int  *)*ncnt);
-    listCounts =  (unsigned int *)malloc(sizeof(unsigned int)*ncnt);
+
+    if ( 0 == ncnt )
+        return NULL;
+    
+    scatterList =  (unsigned int **)ulm_malloc(sizeof(unsigned int  *)*ncnt);
+    listCounts =  (unsigned int *)ulm_malloc(sizeof(unsigned int)*ncnt);
     if ( !scatterList || !listCounts )
     {
-        free(scatterList);
-        free(listCounts);
+        ulm_free2(scatterList);
+        ulm_free2(listCounts);
         return NULL;
     }
         
@@ -765,15 +769,15 @@ unsigned int **HypercubeNode::scatterList(char *controlData, unsigned int *label
         newctrl = (unsigned int *)controlDataForSending(controlData, list[i], &csz);
         msk = (~(*newctrl)) &  ( (1 << hsz_m) - 1) ;
         chk = rlabel & msk;
-        free(newctrl);
+        ulm_free2(newctrl);
                 
         // determine max size of subtree with root rlabel. 
         // This will be 2^(hsz_m - Hamming weight of chk)
         treesz = 1 << (hsz_m -  _hamming_weight(chk));
-        if ( NULL == (scatterList[i] = (unsigned int *)malloc(sizeof(unsigned int)*treesz)) )
+        if ( NULL == (scatterList[i] = (unsigned int *)ulm_malloc(sizeof(unsigned int)*treesz)) )
         {
             free_double_iarray((int**)scatterList, i);
-            free(listCounts);
+            ulm_free2(listCounts);
             return NULL;
         }
                 
@@ -793,7 +797,7 @@ unsigned int **HypercubeNode::scatterList(char *controlData, unsigned int *label
         
                 
     /* store list in cache. */
-    if ( (item = (_cache_item_t *)malloc(sizeof(_cache_item_t))) )
+    if ( (item = (_cache_item_t *)ulm_malloc(sizeof(_cache_item_t))) )
     {
         item->_list = scatterList;
         item->_listCounts = listCounts;
@@ -828,7 +832,7 @@ char *HypercubeNode::controlDataForSending(char *controlData, unsigned int link,
       algorithm by Katseff.
     */
     *sz = 0;
-    if ( (newControl = (unsigned int *)malloc(sizeof(unsigned int))) )
+    if ( (newControl = (unsigned int *)ulm_malloc(sizeof(unsigned int))) )
     {               
         /*
           Scan the links j such that j >= link.   bit j is 1 if

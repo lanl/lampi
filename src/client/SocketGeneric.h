@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "internal/types.h"
+#include "internal/lampi_state.h"
 
 /* function prototypes */
 
@@ -46,6 +47,10 @@ ssize_t _ulm_Send_Socket(int DestinationFD, int NumRecordsToSend,
                          ulm_iovec_t *InputSendData);
 ssize_t _ulm_Recv_Socket(int SourceFD, void *OutputBuffer,
                          size_t SizeOfInputBuffer, int *errorReturn);
+ssize_t ClientWriteIOToServer(char *String, char *PrependString,
+                              int lenPrependString, int *NewLineLast,
+                              int Writefd, ssize_t lenString,
+                              bool startWithNewLine, lampiState_t *state);
 ssize_t ClientWriteToServer(char *String, char *PrependString,
                             int lenPrependString, int *NewLineLast,
                             int Writefd, ssize_t lenString,

@@ -31,7 +31,7 @@ HashValueString::HashValueString(const char *str) : HashValue(NULL)
 
 HashValueString::~HashValueString()
 {
-	free((char *)value_m);
+	if ( value_m ) free((char *)value_m);
 }
 
 

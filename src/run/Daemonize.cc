@@ -154,6 +154,11 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 
     HostsNormalTerminated = 0;
     HostsAbNormalTerminated = 0;
+
+#ifdef USE_CT
+    RunParameters->handleSTDio = false;
+#endif
+
     /* loop over work */
     for (;;) {
 
@@ -178,7 +183,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
             LastTime = TimeInSeconds;
 			
 #ifdef USE_CT
-			runSendHeartbeat(RunParameters);
+            if ( HostsNormalTerminated + HostsAbNormalTerminated < NHosts )
+                runSendHeartbeat(RunParameters);
 #else
             RetVal =
                 _ulm_SendHeartBeat(ClientSocketFDList, NHosts,
@@ -244,8 +250,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                           &ActiveClients);
 #endif
             // Terminate all hosts
+            ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));
             Abort();
-            ulm_dbg(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));
             exit(15);
         }
 
@@ -274,12 +280,12 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
          *  timeout period expired - abort */
         if (TimeFirstCheckin > 0
             && TimeInSeconds - TimeFirstCheckin > STARTUPINTERVAL) {
-            ulm_err(("Error: mpirun terminating abnormally\n"));
-            printf("Clients did not startup.  List:");
+            ulm_err(("Error:  mpirun terminating abnormally.\n"));
+            ulm_err(("  Clients did not startup.  List: "));
             for (i = 0; i < NHosts; i++)
                 if (ActiveHosts[i] == -1)
-                    printf(" %d", i);
-            printf("\n");
+                    ulm_err((" %d ", i));
+            ulm_err(("\n"));
             Abort();
         }
     }                           /* end for loop */

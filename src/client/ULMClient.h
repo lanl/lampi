@@ -44,6 +44,9 @@ void ClientAbnormalChildTermination(pid_t PIDofChild, int NChildren,
 void daemonAbnormalChildTermination(pid_t PIDofChild, int NChildren,
                                     pid_t *ChildPIDs, int *IAmAlive,
                                     lampiState_t *s);
+void daemonAbortLocalHost(int *ProcessCount, int hostIndex,
+                          pid_t * ChildPIDs, unsigned int MessageType,
+                          int Notify, lampiState_t *s);
 void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
                     pid_t *ChildPIDs, unsigned int MessageType,
                     int Notify);
@@ -52,14 +55,13 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_Host
                     int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
                     int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
                     int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
-                    int *NewLineLast);
+                    int *NewLineLast, lampiState_t *state);
 int CheckIfChildrenAlive(int *ProcessCount, int _ulm_HostID,
                          int *IAmAlive);
-int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *ProcessCount,
+int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *numberDaemonChildren,
                               int hostIndex, pid_t *ChildPIDs,
                               int *STDOUTfdsFromChildren,
-                              int *STDERRfdsFromChildren, int StdoutFD,
-                              int StderrFD, size_t *StderrBytesWritten,
+                              int *STDERRfdsFromChildren, size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state);
@@ -71,13 +73,14 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               int StderrFD, size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
-                              int *LenIOPreFix);
+                              int *LenIOPreFix, lampiState_t *state);
 int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            int ToServerStdoutFD, int ToServerStderrFD,
                            int NFDs, int MaxDescriptor,
                            PrefixName_t *IOPreFix, int *LenIOPreFix,
                            size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten, int *NewLineLast);
+                           size_t *StdoutBytesWritten, int *NewLineLast,
+                           lampiState_t *state);
 void ClientOrderlyShutdown(size_t *StderrBytesWritten,
                            size_t *StdoutBytesWritten,
                            int ControlSocketToULMRunFD,
@@ -87,7 +90,7 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
                       int MaxDescriptor, PrefixName_t *IOPreFix,
                       int *LenIOPreFix, size_t *StderrBytesWritten,
                       size_t *StdoutBytesWritten, int *NewLineLast,
-                      int ControlSocketToULMRunFD);
+                      int ControlSocketToULMRunFD, lampiState_t *state);
 void ClientWaitForSetUpToComplete(volatile int *HostDoneWithSetup,
                                   volatile int *Wait, int NHosts,
                                   int IAmDaemon, int ServerSocketFD);

@@ -53,6 +53,57 @@ static int lastInputFDToServerStderr = -1;
 static int lastNewLineLastToServerStdout = 0;
 static int lastNewLineLastToServerStderr = 0;
 
+
+static int readFromDescriptor(int fd, int *NewLineLast,
+                              int ToServerFD, int lastInputFD,
+                              int lastNewLine, char *IOPreFix,
+                              int LenIOPreFix, ssize_t *lenWritten, lampiState_t *state)
+{
+    ssize_t lenR;
+    char 	ReadBuffer[ULM_MAX_TMP_BUFFER];
+    bool 	startWithNewLine;
+
+    do {
+        lenR = read(fd, ReadBuffer, ULM_MAX_TMP_BUFFER - 1);
+    } while ((lenR < 0) && (errno == EINTR));
+
+    if (lenR > 0)
+    {
+        startWithNewLine = false;
+        ReadBuffer[lenR] = '\0';
+        if ((lastInputFD != fd) && (lastInputFD >= 0))
+        {
+            if (!lastNewLine)
+                startWithNewLine = true;
+            else
+                *NewLineLast = 1;
+        }
+#ifdef USE_CT
+        *lenWritten =
+            ClientWriteIOToServer(ReadBuffer,
+                                  (char *) IOPreFix,
+                                  LenIOPreFix,
+                                  NewLineLast,
+                                  ToServerFD, lenR,
+                                  startWithNewLine, state);
+#else
+        *lenWritten =
+            ClientWriteToServer(ReadBuffer,
+                                (char *) IOPreFix,
+                                LenIOPreFix,
+                                NewLineLast,
+                                ToServerFD, lenR,
+                                startWithNewLine);
+#endif
+    }
+
+    return lenR;
+}
+
+
+
+
+
 /*
  * This routine is used to scan the stdout/stderr pipes from the
  * children on this particular Client host, and forward the data to
@@ -63,15 +114,14 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            int NFDs, int MaxDescriptor,
                            PrefixName_t *IOPreFix, int *LenIOPreFix,
                            size_t *StderrBytesWritten,
-                           size_t *StdoutBytesWritten, int *NewLineLast)
+                           size_t *StdoutBytesWritten, int *NewLineLast,
+                           lampiState_t *state)
 {
     int i, RetVal, NumberReads, nfds;
     fd_set ReadSet;
     ssize_t lenR, lenW;
     struct timeval WaitTime;
-    char ReadBuffer[ULM_MAX_TMP_BUFFER];
-    bool again;
-
+    int		*daemonNewLineLast = state->daemonNewLineLast;
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 10000;
     NumberReads = 0;
@@ -91,127 +141,151 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
             nfds++;
         }
     }
+
+    if (state->daemonSTDERR[0] >= 0)
+    {
+        FD_SET(state->daemonSTDERR[0], &ReadSet);
+        nfds++;
+        if ( state->daemonSTDERR[0] > MaxDescriptor )
+            MaxDescriptor = state->daemonSTDERR[0] + 1;
+    }
+
+    if (state->daemonSTDOUT[0] >= 0)
+    {
+        FD_SET(state->daemonSTDOUT[0], &ReadSet);
+        nfds++;
+        if ( state->daemonSTDOUT[0] > MaxDescriptor )
+            MaxDescriptor = state->daemonSTDOUT[0] + 1;
+    }
+
     if (nfds == 0)
         return 0;
 
-    
     RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
     if (RetVal <= 0)
         return RetVal;
 
     /*!!!! NewLineLast should really be 2*NFDs long to have a separate flag for
-     * the standard output and error descriptors! -Mitch
-     */
+        * the standard output and error descriptors! -Mitch
+        */
+#ifdef USE_CT
+    ToServerStderrFD = STDERR_FILENO;
+    ToServerStdoutFD = STDOUT_FILENO;
+#endif
 
     /* read data from standard error */
-    if (RetVal > 0) {
-        for (i = 0; i < NFDs; i++) {
-            if ((ClientStderrFDs[i] > 0)
-                && (FD_ISSET(ClientStderrFDs[i], &ReadSet))) {
-                /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
-                FD_CLR(ClientStderrFDs[i], &ReadSet);
-                do {
-                    again = false;
-                    lenR =
-                        read(ClientStderrFDs[i], ReadBuffer,
-                             ULM_MAX_TMP_BUFFER - 1);
-                    if (lenR == 0) {
-                        close(ClientStderrFDs[i]);
-                        ClientStderrFDs[i] = -1;
-                        lampiState.IAmAlive[i] = 0;
-                    }
-                    else if (lenR < 0) {
-                        if (errno == EINTR) {
-                            again = true;
-                        }
-                        else {
-                            close(ClientStderrFDs[i]);
-                            ClientStderrFDs[i] = -1;
-                            lampiState.IAmAlive[i] = 0;
-                        }
-                    }
-                } while (again);
-                if (lenR > 0) {
-                    bool startWithNewLine = false;
-                    ReadBuffer[lenR] = '\0';
-                    if ((lastInputFDToServerStderr != ClientStderrFDs[i]) && 
-                        (lastInputFDToServerStderr >= 0)) {
-                        if (!lastNewLineLastToServerStderr) {
-                            startWithNewLine = true;
-                        } else {
-                            NewLineLast[i] = 1;
-                        }
-                    }
-
-                    NumberReads++;
-                    lenW =
-                        ClientWriteToServer(ReadBuffer,
-                                            (char *) IOPreFix[i],
-                                            LenIOPreFix[i],
-                                            NewLineLast + i,
-                                            ToServerStderrFD, lenR,
-                                            startWithNewLine);
-                    if (lenW > 0) {
-                        (*StderrBytesWritten) += lenW;
-                        lastInputFDToServerStderr = ClientStderrFDs[i];
-                        lastNewLineLastToServerStderr = NewLineLast[i];
-                    }
+    for (i = 0; i < NFDs; i++)
+    {
+        if ((ClientStderrFDs[i] > 0)
+            && (FD_ISSET(ClientStderrFDs[i], &ReadSet)))
+        {
+            /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+            FD_CLR(ClientStderrFDs[i], &ReadSet);
+            lenR = readFromDescriptor(ClientStderrFDs[i], NewLineLast + i,
+                                      ToServerStderrFD, lastInputFDToServerStderr,
+                                      lastNewLineLastToServerStderr, IOPreFix[i],
+                                      LenIOPreFix[i], &lenW, state);
+            if (lenR > 0)
+            {
+                NumberReads++;
+                if (lenW > 0)
+                {
+                    (*StderrBytesWritten) += lenW;
+                    lastInputFDToServerStderr = ClientStderrFDs[i];
+                    lastNewLineLastToServerStderr = NewLineLast[i];
                 }
+            }
+            else
+            {
+                // lenR <= 0
+                close(ClientStderrFDs[i]);
+                ClientStderrFDs[i] = -1;
+                lampiState.IAmAlive[i] = 0;
             }
         }
     }
+
     /* read data from standard out */
-    if (RetVal > 0) {
-        for (i = 0; i < NFDs; i++) {
-            if ((ClientStdoutFDs[i] > 0)
-                && (FD_ISSET(ClientStdoutFDs[i], &ReadSet))) {
-                do {
-                    again = false;
-                    lenR =
-                        read(ClientStdoutFDs[i], ReadBuffer,
-                             ULM_MAX_TMP_BUFFER - 1);
-                    if (lenR == 0) {
-                        close(ClientStdoutFDs[i]);
-                        ClientStdoutFDs[i] = -1;
-                        lampiState.IAmAlive[i] = 0;
-                    }
-                    else if (lenR < 0) {
-                        if (errno == EINTR) {
-                            again = true;
-                        }
-                        else {
-                            close(ClientStdoutFDs[i]);
-                            ClientStdoutFDs[i] = -1;
-                            lampiState.IAmAlive[i] = 0;
-                        }
-                    }
-                } while (again);
-                if (lenR > 0) {
-                    bool startWithNewLine = false;
-                    ReadBuffer[lenR] = '\0';
-                    if ((lastInputFDToServerStdout != ClientStdoutFDs[i]) &&
-                        (lastInputFDToServerStdout >= 0)) {
-                        if (!lastNewLineLastToServerStdout) {
-                            startWithNewLine = true;
-                        } else {
-                            NewLineLast[i] = 1;
-                        }
-                    }
-                    NumberReads++;
-                    lenW =
-                        ClientWriteToServer(ReadBuffer,
-                                            (char *) IOPreFix[i],
-                                            LenIOPreFix[i],
-                                            NewLineLast + i,
-                                            ToServerStdoutFD, lenR,
-                                            startWithNewLine);
-                    if (lenW > 0) {
-                        (*StdoutBytesWritten) += lenW;
-                        lastInputFDToServerStdout = ClientStdoutFDs[i];
-                        lastNewLineLastToServerStdout = NewLineLast[i];
-                    }
+    for (i = 0; i < NFDs; i++)
+    {
+        if ((ClientStdoutFDs[i] > 0)
+            && (FD_ISSET(ClientStdoutFDs[i], &ReadSet)))
+        {
+            /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+            FD_CLR(ClientStdoutFDs[i], &ReadSet);
+            lenR = readFromDescriptor(ClientStdoutFDs[i], NewLineLast + i,
+                                      ToServerStdoutFD, lastInputFDToServerStdout,
+                                      lastNewLineLastToServerStdout, IOPreFix[i],
+                                      LenIOPreFix[i], &lenW, state);
+            if (lenR > 0)
+            {
+                NumberReads++;
+                if (lenW > 0)
+                {
+                    (*StdoutBytesWritten) += lenW;
+                    lastInputFDToServerStdout = ClientStdoutFDs[i];
+                    lastNewLineLastToServerStdout = NewLineLast[i];
                 }
             }
+            else
+            {
+                close(ClientStdoutFDs[i]);
+                ClientStdoutFDs[i] = -1;
+                lampiState.IAmAlive[i] = 0;
+            }
+        }
+    }
+
+    /* process daemon output. */
+    if ((state->daemonSTDERR[0] > 0)
+        && (FD_ISSET(state->daemonSTDERR[0], &ReadSet)))
+    {
+        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+        FD_CLR(state->daemonSTDERR[0], &ReadSet);
+        lenR = readFromDescriptor(state->daemonSTDERR[0], &daemonNewLineLast[0],
+                                  ToServerStderrFD, lastInputFDToServerStdout,
+                                  lastNewLineLastToServerStderr, NULL,
+                                  0, &lenW, state);
+        if (lenR > 0)
+        {
+            NumberReads++;
+            if (lenW > 0)
+            {
+                (*StderrBytesWritten) += lenW;
+                lastInputFDToServerStderr = state->daemonSTDERR[0];
+                lastNewLineLastToServerStderr = daemonNewLineLast[0];
+            }
+        }
+        else
+        {
+            close(state->daemonSTDERR[0]);
+            state->daemonSTDERR[0] = -1;
+        }
+    }
+
+    if ((state->daemonSTDOUT[0] > 0)
+        && (FD_ISSET(state->daemonSTDOUT[0], &ReadSet)))
+    {
+        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
+        FD_CLR(state->daemonSTDOUT[0], &ReadSet);
+        lenR = readFromDescriptor(state->daemonSTDOUT[0], &daemonNewLineLast[1],
+                                  ToServerStdoutFD, lastInputFDToServerStdout,
+                                  lastNewLineLastToServerStdout, NULL,
+                                  0, &lenW, state);
+        if (lenR > 0)
+        {
+            NumberReads++;
+            if (lenW > 0)
+            {
+                (*StdoutBytesWritten) += lenW;
+                lastInputFDToServerStdout = state->daemonSTDOUT[0];
+                lastNewLineLastToServerStdout = daemonNewLineLast[1];
+            }
+        }
+        else
+        {
+            close(state->daemonSTDOUT[0]);
+            state->daemonSTDOUT[0] = -1;
         }
     }
 

@@ -96,7 +96,7 @@ static int dupSTDOUTfd;
 static int *StderrPipes;
 static int *StdoutPipes;
 
-
+#include "internal/Private.h"
 /*
  * Entry point for LA-MPI initialization.
  *
@@ -133,15 +133,22 @@ void lampi_init(void)
     /*
      * connect back to mpirun
      */
-    ulm_dbg(("host %s: daemon %d: connecting to mpirun...\n",
-             _ulm_host(), getpid()));
+#ifdef USE_CT
+    ulm_dbg( ("host %s: daemon %d: connecting to mpirun...\n", _ulm_host(), getpid()) );
+    timing_cur = second();
+    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_connect_to_mpirun (t = 0)\n");
+#endif
     lampi_init_prefork_connect_to_mpirun(&lampiState);
 
     /*
      * receive initial input parameters
      */
-    ulm_dbg(("host %s: node %u: recving setup params...\n",
-             _ulm_host(), lampiState.client->nodeLabel()));
+#ifdef USE_CT
+    ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_receive_setup_params (t = %lf)\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+#endif
     lampi_init_prefork_receive_setup_params(&lampiState);
 
     if (lampiState.hostid == 0) {
@@ -157,14 +164,23 @@ void lampi_init(void)
      * path initialization that needs to happen before the child
      * processes are created
      */
-    ulm_dbg(("host %s: node %u: calling lampi_init_paths_prefork...\n",
-              _ulm_host(), lampiState.client->nodeLabel()));
+#ifdef USE_CT
+    ulm_fdbg( ("host %s: node %u: calling lampi_init_paths_prefork...\n", _ulm_host(), lampiState.client->nodeLabel()) );
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_paths (t = %lf)\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+#endif
     lampi_init_prefork_paths(&lampiState);
 
     /* if library is to handle stdio, prefork data is set up */
     lampi_init_prefork_stdio(&lampiState);
 
     /* fork the rest of the la-mpi processes */
+#ifdef USE_CT
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Calling lampi_init_fork (t = %lf)\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+#endif
     lampi_init_fork(&lampiState);
     /*
      * all la-mpi procs have been created at this stage
@@ -182,13 +198,57 @@ void lampi_init(void)
     //lampi_init_debug(&lampiState);
 
     /* post fork path setup */
+#ifdef USE_CT
+    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
+        (!lampiState.useDaemon && (local_myproc() == 0)))
+    {
+        timing_stmp = second();
+        sprintf(timing_out[timing_scnt++], "Calling lampi_init_postfork_paths (t = %lf)\n", timing_stmp - timing_cur);
+        timing_cur = timing_stmp;
+        ulm_fdbg(("node %u: calling lampi_init_postfork_paths...\n", lampiState.client->nodeLabel()));
+    }
+#endif
     lampi_init_postfork_paths(&lampiState);
 
     /* barrier until all procs - local and remote - have started up */
+#ifdef USE_CT
+    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
+        (!lampiState.useDaemon && (local_myproc() == 0)))
+    {
+        timing_stmp = second();
+        sprintf(timing_out[timing_scnt++], "Calling lampi_init_wait_for_start_message (t = %lf)\n", timing_stmp - timing_cur);
+        timing_cur = timing_stmp;
+    }
+#endif
     lampi_init_wait_for_start_message(&lampiState);
 
+#ifdef USE_CT
+    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
+        (!lampiState.useDaemon && (local_myproc() == 0)))
+    {
+        timing_stmp = second();
+        sprintf(timing_out[timing_scnt++], "Done with init (t = %lf)\n", timing_stmp - timing_cur);
+        timing_cur = timing_stmp;
+    }
+#endif
     lampi_init_check_for_error(&lampiState);
 
+#ifdef USE_CT
+    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
+        (!lampiState.useDaemon && (local_myproc() == 0)))
+    {
+        FILE *fp;
+        if ( (fp = fopen("./timing.out", "a")) )
+        {
+            fprintf(fp, "\n");
+            for ( int k=0; k<timing_scnt; k++ )
+                fprintf(fp, "%s", timing_out[k]);
+            fflush(fp);
+            fclose(fp);
+        }
+    }
+#endif
+    
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )
     {
@@ -1037,11 +1097,21 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
+#ifdef USE_CT
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+#endif
     if (!s->client->clientConnect(s->local_size, s->hostid)) {
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
+
 #ifdef USE_CT
+    timing_stmp = second();
+    sprintf(timing_out[timing_scnt++], "Done connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
+    timing_cur = timing_stmp;
+
 	// Now wait until network has been linked
 	while ( false == s->client->clientNetworkHasLinked() )
 		usleep(10);
@@ -1301,7 +1371,7 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
 void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
 {
     int 	errorCode, h,i,p;
-	int		*labelsToRank, tag, rank;
+	int		tag, rank;
 	
     if (s->error) {
         return;
@@ -1311,47 +1381,32 @@ void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
     }
 
 	// Get broadcasted setup data.
-	rank = -1;
+    ulm_fdbg(("Node %d: recving bcast setup data...\n", s->client->nodeLabel()));
+	rank = 0;
 	tag = adminMessage::RUNPARAMS;
     if ( false == s->client->receiveMessage(&rank, &tag, &errorCode) )
 	{
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
+
     lampi_init_prefork_parse_setup_data(s);
     if (s->error) {
         return;
     }
 	
 	// Get scattered setup data.
+    ulm_fdbg(("Node %d: recving scatterv setup data...\n", s->client->nodeLabel()));
     if ( false == s->client->scatterv(-1, adminMessage::RUNPARAMS, &errorCode) )
 	{
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
+    ulm_fdbg(("Node %d: parsing scatterv setup data...\n", s->client->nodeLabel()));
     lampi_init_prefork_parse_setup_data(s);
     if (s->error) {
         return;
     }
-
-	/* exchange our node label <-> host rank map. */
-	labelsToRank = (int *)ulm_malloc(s->nhosts * sizeof(int));
-	if  ( NULL == labelsToRank )
-	{
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-        return;
-	}
-	
-	s->client->exchange(&(s->hostid), labelsToRank, sizeof(int));        
-	//ASSERT: labelsToRank[i] is the host rank of daemon node i.
-	s->client->setLabelsToRank(labelsToRank);
-	
-    /* decide if a daemon will be used */
-#ifdef USE_RMS
-    s->useDaemon=0;
-#else
-    s->useDaemon=1;
-#endif
 
     /* set local size */
     s->local_size = s->map_host_to_local_size[s->hostid];
@@ -1401,13 +1456,17 @@ void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
         for (i = 0; i < s->map_host_to_local_size[h]; ++i)
             s->map_global_rank_to_host[p++] = h;
 
-    s->client->synchronize(s->nhosts + 1);
+    //ulm_fdbg(("Node %d: syncing %d members...\n", s->client->nodeLabel(), s->nhosts+1));
+    //s->client->synchronize(s->nhosts + 1);
 
     /*
      * receive path specific information
      */
+    ulm_fdbg(("Node %d: recving shared mem setup data...\n", s->client->nodeLabel()));
     lampi_init_prefork_receive_setup_params_shared_memory(s);
+    ulm_fdbg(("Node %d: recving quadrics setup data...\n", s->client->nodeLabel()));
     lampi_init_prefork_receive_setup_params_quadrics(s);
+    ulm_fdbg(("Node %d: recving GM setup data...\n", s->client->nodeLabel()));
     lampi_init_prefork_receive_setup_params_gm(s);
 
     return;
@@ -1788,6 +1847,7 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
         (!s->useDaemon && (local_myproc() == 0))) {
 #ifdef USE_CT
 
+        ulm_fdbg(("node %u: syncing %d members...\n", s->client->nodeLabel(), s->nhosts+1));
         s->client->synchronize(s->nhosts + 1);
 
 #else
@@ -2066,6 +2126,17 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->gm = 0;
     s->udp = 0;
 
+#ifdef USE_CT
+    /* decide if a daemon will be used */
+#ifdef USE_RMS
+    s->useDaemon = 0;
+#else
+    s->useDaemon = 1;
+#endif
+#endif
+
+    s->daemonSTDERR[0] = s->daemonSTDERR[1] = -1;
+    s->daemonSTDOUT[0] = s->daemonSTDOUT[1] = -1;
 
     /* MPI buffered send data */
     s->bsendData = (bsendData_t *) ulm_malloc((sizeof(bsendData_t)));

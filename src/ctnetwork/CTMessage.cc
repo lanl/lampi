@@ -41,6 +41,8 @@
 #include <strings.h>
 
 #include "CTMessage.h"
+#include "internal/malloc.h"
+#include "internal/log.h"
 
 typedef struct
 {
@@ -69,7 +71,7 @@ static char *_pack_ctrl(msg_control_t *ctrl, long int *len)
         sizeof(ctrl->_sendingNode) +
         sizeof(ctrl->_clientID);
 
-    if ( NULL != (buf = (char *)malloc(sz)) )
+    if ( NULL != (buf = (char *)ulm_malloc(sz)) )
     {
         *len = 0;
         memcpy(buf + (*len), &(ctrl->_destination), tmp = sizeof(ctrl->_destination));
@@ -97,7 +99,7 @@ static msg_control_t *_unpack_ctrl(const char *buf, int *clen)
     const char              *ptr;
 
     *clen = 0;
-    if ( NULL == (ctrl = (msg_control_t *)malloc(sizeof(msg_control_t)))  )
+    if ( NULL == (ctrl = (msg_control_t *)ulm_malloc(sizeof(msg_control_t)))  )
         return NULL;
 
     ptr = buf;
@@ -125,7 +127,8 @@ static const char *_skip_control(const char *ptrToControl)
       packed layout is:
       _destination : _destinationID : _sourceNode : _sendingNode : _clientID
     */
-    ptrToControl += 5*sizeof(unsigned int);         // skip _destination : _destinationID : _sourceNode : _sendingNode : _clientID
+    // skip _destination : _destinationID : _sourceNode : _sendingNode : _clientID
+    ptrToControl += 5*sizeof(unsigned int);         
 
     return ptrToControl;
 }
@@ -141,13 +144,21 @@ CTMessage::CTMessage(int type, const char *data, long int datalen, bool copyData
     : type_m(type), rtype_m(kPointToPoint), netcmd_m(0),
       control_m(NULL), data_m(NULL), datalen_m(datalen), copy_m(copyData)
 {
-    control_m = (msg_control_t *)malloc(sizeof(msg_control_t));
+    control_m = (msg_control_t *)ulm_malloc(sizeof(msg_control_t));
     bzero(control_m, sizeof(msg_control_t));
 
     if ( copy_m )
     {
-        data_m = (char *)malloc(sizeof(char)*datalen);
-        memcpy(data_m, data, datalen);
+        if ( datalen )
+        {
+            if ( (data_m = (char *)ulm_malloc(sizeof(char)*datalen)) )
+                memcpy(data_m, data, datalen);
+            else
+            {
+                datalen = 0;
+                ulm_err(("Error: Unable to alloc memory for msg data.\n"));
+            }            
+        }
     }
     else
         data_m = (char *)data;
@@ -156,8 +167,8 @@ CTMessage::CTMessage(int type, const char *data, long int datalen, bool copyData
 CTMessage::~CTMessage()
 {
     if ( copy_m )
-        free(data_m);
-    free(control_m);
+        ulm_free2(data_m);
+    ulm_free2(control_m);
 }
 
 
@@ -219,7 +230,7 @@ bool CTMessage::getDestination(char *packedMsg, unsigned int *dst)
     {
         // there is only a destination if pt-to-pt
         //  skip over type (char) : routing type (char) : net cmd (char)
-        memcpy(dst, packedMsg + 3*sizeof(char), sizeof(dst));
+        memcpy(dst, packedMsg + 3*sizeof(char), sizeof(unsigned int));
         found = true;
     }
     return found;
@@ -291,6 +302,7 @@ CTMessage *CTMessage::unpack(const char *buffer)
     char    *data;
 
     ctrl = NULL;
+    data = NULL;
     ptr = buffer;
     memcpy(&mtp, ptr, sz = sizeof(mtp));
     ptr += sz;
@@ -305,9 +317,16 @@ CTMessage *CTMessage::unpack(const char *buffer)
     memcpy(&datalen, ptr, sz = sizeof(datalen));
     ptr += sz;
 
-    if ( (data = (char *)malloc(sizeof(char)*datalen)) )
+    if ( datalen > 100000 )
+        ulm_ferr(("Warning: Unpacking msg with size > 100000: src = %d, dest = %d.\n",
+                  ctrl->_sourceNode, ctrl->_destination));
+
+    if ( datalen )
     {
-        memcpy(data, ptr, datalen);
+        if ( (data = (char *)ulm_malloc(sizeof(char)*datalen)) )
+        {
+            memcpy(data, ptr, datalen);
+        }        
     }
 
     /*
@@ -317,11 +336,13 @@ CTMessage *CTMessage::unpack(const char *buffer)
       fprintf(stderr, "\n");
     */
 
-    msg = new CTMessage(mtp, data, datalen);
+    msg = new CTMessage(mtp, NULL, 0);
     msg->netcmd_m = cmd;
     msg->rtype_m = rtp;
     msg->control_m = ctrl;
-
+    msg->data_m = data;
+    msg->datalen_m = datalen;
+        
     return msg;
 }
 
@@ -336,37 +357,38 @@ bool CTMessage::pack(char **buffer, long int *len)
       type (char) : routing type (char) : net cmd (char) : packed cntrl : datalen (long int) : data
     */
     char            *ctrl, *ptr;
-    long int                        clen;
-    bool                            success = true;
+    long int        clen;
+    bool            success = true;
 
     *buffer = NULL;
     *len = 0;
     clen = 0;
     ctrl = _pack_ctrl((msg_control_t*)control_m, &clen);
 
-    *len += ( clen + sizeof(type_m) + sizeof(rtype_m) + sizeof(netcmd_m) + sizeof(datalen_m) + datalen_m );
-    if ( NULL == (*buffer = (char *)malloc(sizeof(char)*(*len))) )
+    *len += ( clen + sizeof(type_m) + sizeof(rtype_m) + sizeof(netcmd_m)
+              + sizeof(datalen_m) + datalen_m );
+    if ( NULL == (*buffer = (char *)ulm_malloc(sizeof(char)*(*len))) )
     {
         *len = 0;
-        free(ctrl);
+        ulm_free2(ctrl);
         return false;
     }
 
     ptr = *buffer;
     memcpy(ptr, &type_m, sizeof(type_m));           /* msg type. */
     ptr += sizeof(type_m);
-    memcpy(ptr, &rtype_m, sizeof(rtype_m)); /* routing type. */
+    memcpy(ptr, &rtype_m, sizeof(rtype_m));         /* routing type. */
     ptr += sizeof(rtype_m);
     memcpy(ptr, &netcmd_m, sizeof(netcmd_m));       /* net cmd. */
     ptr += sizeof(netcmd_m);
     if ( ctrl )
     {
-        memcpy(ptr, ctrl, clen);                                /* control struct. */
+        memcpy(ptr, ctrl, clen);                    /* control struct. */
         ptr += clen;
     }
-    memcpy(ptr, &datalen_m, sizeof(datalen_m));                             /* data len. */
+    memcpy(ptr, &datalen_m, sizeof(datalen_m));     /* data len. */
     ptr += sizeof(datalen_m);
-    memcpy(ptr, data_m, datalen_m);                         /* user data. */
+    memcpy(ptr, data_m, datalen_m);                 /* user data. */
     ptr += datalen_m;
 
     /*
@@ -375,7 +397,7 @@ bool CTMessage::pack(char **buffer, long int *len)
       fprintf(stderr, "\n");
     */
 
-    free(ctrl);
+    ulm_free2(ctrl);
 
     return success;
 }

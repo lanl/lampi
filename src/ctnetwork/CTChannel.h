@@ -149,15 +149,19 @@ public:
 class CTChannelServer
 {
 protected:
-        CTChannel    *channel_m;
-        
+        CTChannel    	*channel_m;
+
 public:
         /*
         * Server related methods.
         */
     virtual bool setupToAcceptConnections() = 0;
     virtual CTChannelStatus acceptConnections(int timeoutSecs, CTChannel **client) = 0;
-    
+
+    virtual void setChannelsToCheckForRead(struct link_t *channels) = 0;
+    virtual bool channelsReadyForReading(int to_secs, int to_usecs) = 0;
+    virtual CTChannel **channelsReadable(struct link_t *channels, int *cnt) = 0;
+
     virtual CTChannel *channel() {return channel_m;}
 };
 
@@ -224,7 +228,10 @@ public:
     const char *className() {return "CTTCPChannel";}
     
     int socketfd() {return sockfd_m;}
-    void setSocketfd(int sockfd) {sockfd_m = sockfd;}
+    void setSocketfd(int sockfd);
+
+    struct sockaddr_in address()  {return addr_m;}
+    void setAddress(struct sockaddr_in *addr) {addr_m = *addr;}
     
     unsigned short port() {return ntohs(addr_m.sin_port);}
     void setPort(unsigned short port) {addr_m.sin_port = htons(port);}
@@ -239,14 +246,25 @@ public:
 
 
 class CTTCPSvrChannel : public CTChannelServer
-{               
+{
+protected:
+    CTTCPChannel 	**selected_m;
+    int				selectcnt_m;
+    fd_set 			readSet_m;
+    int				maxfd_m;
+    
 public:
     CTTCPSvrChannel(unsigned short portn);
                 
     /* server-side methods. */
     virtual bool setupToAcceptConnections();
     virtual CTChannelStatus acceptConnections(int timeoutSecs, CTChannel **client);
-        
+    CTChannelStatus acceptConnections(int timeoutSecs, CTTCPChannel *client);
+
+    void setChannelsToCheckForRead(struct link_t *channels);
+    bool channelsReadyForReading(int to_secs, int to_usecs);
+    CTChannel **channelsReadable(struct link_t *channels, int *cnt);
+
 };
 
 #endif

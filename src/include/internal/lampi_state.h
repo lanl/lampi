@@ -128,6 +128,13 @@ typedef struct {
 
 
     /*
+     * daemon stdio
+     */
+    int daemonSTDERR[2];
+    int daemonSTDOUT[2];
+    int daemonNewLineLast[2];
+
+    /*
      * abnormal exit handling
      */
 

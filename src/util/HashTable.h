@@ -43,11 +43,11 @@ typedef void    (*free_value_fn)(void *);
 class HashTable
 {
 protected:
-    void                            *buckets_m;
-    long int                        cnt_m;
-    long int                        mask_m;
-    long int                        sz_m;
-    free_value_fn           freeFunc_m;
+    void            *buckets_m;
+    long int        cnt_m;
+    long int        mask_m;
+    long int        sz_m;
+    free_value_fn   freeFunc_m;
         
 public:
     HashTable();
@@ -62,11 +62,17 @@ public:
     void *valueForKey(const char *key);
     void *valueForKey(int key);
     void *valueForKey(HashKey *key);
-        
+
+    HashValue **allValues();
+    /*
+     POST:	Returns an array of all hash table values.  User is
+     responsible for freeing array.
+     */
+    
     void removeValueForKey(HashKey *key);
         
     void setFreeFunction(free_value_fn fn) {freeFunc_m = fn;}
-        
+    
     long int count() {return cnt_m;}
 };
 

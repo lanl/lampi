@@ -242,6 +242,149 @@ ssize_t _ulm_Recv_Socket(int SourceFD, void *OutputBuffer,
     return TotalRead;
 }
 
+ssize_t ClientWriteIOToServer(char *String, char *PrependString,
+                              int lenPrependString, int *NewLineLast,
+                              int Writefd, ssize_t lenString,
+                              bool startWithNewLine, lampiState_t *state)
+{
+    int 		buffLen = state->client->sendBufferSize();
+    int 		len, LeftToWrite, LenToWrite, buffSpace;
+    caddr_t 	PtrToNewLine, PtrToStartWrite;
+    ssize_t 	TotalBytesSent, n;
+    int			errorCode, tag;
+    bool		done, bufferFull, shouldReset, prepend;
+    char		nl;
+
+    LenToWrite = 0;
+    TotalBytesSent = 0;
+    tag = STDIOMSG;
+    if (startWithNewLine) {
+        nl = '\n';
+        tag = STDIOMSG;
+        state->client->reset(adminMessage::SEND);
+        state->client->pack(&Writefd, adminMessage::INTEGER, 1);
+        state->client->pack(&nl, adminMessage::BYTE, 1);
+        TotalBytesSent++;
+        if (false == state->client->sendMessage(0, tag, state->channelID, &errorCode)) {
+            ulm_err(("Error in sending STDIOMSG.  errorCode = %ld\n",
+                     (long) errorCode));
+            return -1;
+        }
+        *NewLineLast = 1;
+    }
+
+    if (lenPrependString <= 0)
+    {
+        n = (ssize_t) strlen(String);
+        if (n > lenString)
+            n = (ssize_t) lenString;
+
+        LeftToWrite = n;
+        while ( LeftToWrite )
+        {
+            LenToWrite = (LeftToWrite > buffLen) ? buffLen : LeftToWrite;
+            state->client->reset(adminMessage::SEND);
+            state->client->pack(&Writefd, adminMessage::INTEGER, 1);
+            state->client->pack(String, adminMessage::BYTE, LenToWrite);
+            if (false == state->client->sendMessage(0, tag, state->channelID, &errorCode)) {
+                ulm_err(("Error in sending STDIOMSG.  errorCode = %ld\n",
+                         (long) errorCode));
+                return -1;
+            }
+            LeftToWrite -= LenToWrite;
+        }
+
+        return (ssize_t) n + TotalBytesSent;
+
+    }
+
+    /* if last character to print out was new line - startout with new-line */
+    shouldReset = true;
+    if ( *NewLineLast )
+    {
+        prepend = true;
+    }
+    *NewLineLast = 0;
+
+    /* write out buffer */
+    len = strlen(String);
+    if ((ssize_t) len > lenString)
+        len = lenString;
+    LeftToWrite = len;
+    PtrToStartWrite = (caddr_t) String;
+
+    LenToWrite = 0;
+    done = false;
+    prepend = false;
+    while ( !done )
+    {
+
+        state->client->reset(adminMessage::SEND);
+        state->client->pack(&Writefd, adminMessage::INTEGER, 1);
+        buffSpace = buffLen - 1;
+
+        if ( prepend )
+        {
+            state->client->pack(PrependString, adminMessage::BYTE, lenPrependString);
+            TotalBytesSent += lenPrependString;
+            buffSpace -= lenPrependString;
+            prepend = false;
+        }
+
+        bufferFull = false;
+        while ( (LeftToWrite > 0) && !bufferFull )
+        {
+            PtrToNewLine = strchr(String + (len - LeftToWrite), '\n');
+            if (PtrToNewLine != NULL)
+            {
+                // check first if we need to add prepend string.
+                if ( LeftToWrite - LenToWrite > 0 )
+                    prepend = true;
+                LenToWrite = PtrToNewLine - PtrToStartWrite + 1;
+                if (PtrToStartWrite == (caddr_t) (String + len))
+                    *NewLineLast = 1;
+            }
+            else
+            {
+                LenToWrite = (size_t) (String + len - PtrToStartWrite);
+            }
+
+            if ( LenToWrite > buffSpace )
+            {
+                LenToWrite = buffSpace;
+                bufferFull = true;
+            }
+
+            state->client->pack(PtrToStartWrite, adminMessage::BYTE, LenToWrite);
+            TotalBytesSent += LenToWrite;
+            LeftToWrite -= LenToWrite;
+            buffSpace -= LenToWrite;
+
+            if ( prepend && (lenPrependString < buffSpace) )
+            {
+                state->client->pack(PrependString, adminMessage::BYTE, lenPrependString);
+                TotalBytesSent += lenPrependString;
+                buffSpace -= lenPrependString;
+                prepend = false;
+            }
+        }	/* while ( (LeftToWrite > 0) && !bufferFull ) */
+
+        if (false == state->client->sendMessage(0, tag, state->channelID, &errorCode)) {
+            ulm_err(("Error in sending STDIOMSG.  errorCode = %ld\n",
+                     (long) errorCode));
+            return -1;
+        }
+
+        if (LeftToWrite <= 0)
+            done = true;
+    }	/* while (!done) */
+
+
+    /* return total bytes sent */
+    return TotalBytesSent;
+}
+
+
 
 /*
  *  This routine interupts data sent from the "application" processes

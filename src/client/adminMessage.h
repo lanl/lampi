@@ -290,24 +290,23 @@ private:
 
     bool client_m, server_m;
 
-    CTServer *daemon_m;
-    CTTCPChannel *tcpChannel_m; // used by mpirun for initial connection by the daemon processes
-    CTTCPSvrChannel *svrChannel_m;
-    CTClient *netconn_m;        // connection to node 0 in the admin network
-    char **connectInfo_m;
-    Locks qlock_m;
-    link_t *msgQueue_m;
-    int *labels2Rank_m;         //ASSERT: labels2Rank_m[i] maps rank of daemon with node label i
-    int curHost_m;
-    unsigned char **scatterHosts_m;
-    int *scatterLen_m;
-    int hostRank_m;
-    int totalNProcesses_m;
-    int nhosts_m;
-    int *recvlens_m;            // array of data lengths for allgatherv
-    pid_t daemonPIDs_m[MAXSOCKETS];
-
-
+	CTServer		*daemon_m;
+	CTTCPChannel	*tcpChannel_m;		// used by mpirun for initial connection by the daemon processes
+	CTTCPSvrChannel	*svrChannel_m;
+	CTClient		*netconn_m;			// connection to node 0 in the admin network
+	char			**connectInfo_m;
+	Locks			qlock_m;
+	link_t			*msgQueue_m;
+	int				curHost_m;
+	unsigned char	**scatterHosts_m;
+	int				*scatterLen_m;
+    int 			hostRank_m;
+    int 			totalNProcesses_m;
+    int 			nhosts_m;
+    int				*recvlens_m;		// array of data lengths for allgatherv
+    pid_t 			daemonPIDs_m[MAXSOCKETS];
+	
+	
     static struct sigaction oldSignals, newSignals;
     static jmp_buf savedEnv;
 
@@ -324,6 +323,7 @@ private:
     int sendOffset_m;
     int recvOffset_m;
     int recvBufferBytes_m;
+    int recvMessageBytes_m;
     int sendBufferSize_m;
     int recvBufferSize_m;
 
@@ -347,10 +347,6 @@ private:
     callbackFunction callbacks_m[NUMMSGTYPES];
 
 public:
-    int clientRank2Daemon(int rank);
-
-    int clientDaemon2Rank(int label);
-
     int clientRank2FD(int rank) {
         int returnValue = -1;
 
@@ -412,6 +408,8 @@ private:
             return returnValue;
         }
 
+    void sortNodeLabels(int *labels2Rank);
+    
     bool getRecvBytes(int bytes, int timeout)
         {
             int bytesReceived = 0;
@@ -1034,6 +1032,17 @@ public:
      *  Accessor methods.
      */
 
+    int sendBufferSize();
+
+    int receivedMessageSize();
+    // Returns size of received message.  Only meaningful after calling receiveMessage().
+
+    int parentHostRank();
+    // Returns the hostrank of daemon that is parent of current daemon in a spanning tree.
+    
+    int numberOfDaemonChildren();
+    // Returns the number of daemons that are children of this daemon in a spanning tree.
+    
     unsigned short serverPort();
 
     unsigned int channelID();

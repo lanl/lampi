@@ -45,19 +45,19 @@
 #include "client/SocketGeneric.h"
 #include "queue/globals.h"
 
-int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *ProcessCount,
+int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *numberDaemonChildren,
                               int hostIndex, pid_t *ChildPIDs,
                               int *STDOUTfdsFromChildren,
-                              int *STDERRfdsFromChildren, int StdoutFD,
-                              int StderrFD, size_t *StderrBytesWritten,
+                              int *STDERRfdsFromChildren, size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state)
 {
-    int rank, Tag, i, errorCode;
-    adminMessage *client;
-    int NotifyServer, NFDs, MaxDesc;
-    double Message;
+    int 			rank, Tag, i, errorCode, parent;
+    int				cid;
+    adminMessage 	*client;
+    int 			NotifyServer, NFDs, MaxDesc;
+    double 			Message;
 #if defined (__linux__) || defined (__APPLE__)
     struct timeval Time;
 #else
@@ -82,7 +82,7 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
             break;
         case ACKNORMALTERM:
             Tag = ACKACKNORMALTERM;
-            ulm_dbg(("(pid=%d): recvd ACKNORMALTERM. sending ACKACKNORMALTERM to mpirun (channelID=%d).\n", getpid(), state->channelID));
+            ulm_fdbg(("(pid=%d): recvd ACKNORMALTERM. sending ACKACKNORMALTERM to mpirun (channelID=%d).\n", getpid(), state->channelID));
             client->reset(adminMessage::SEND);
             if (false ==
                 client->sendMessage(0, Tag, state->channelID,
@@ -96,12 +96,12 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
             /* recieve request to teminate immediately */
             Message = ACKTERMINATENOW;
             NotifyServer = 1;
-            AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
+            AbortAndDrainLocalHost(-1, ProcessCount, hostIndex,
                            ChildPIDs, (unsigned int) Message,
                            NotifyServer, STDOUTfdsFromChildren,
-                           STDERRfdsFromChildren, StdoutFD, StderrFD,
+                           STDERRfdsFromChildren, -1, -1,
                            IOPreFix, LenIOPreFix, StderrBytesWritten, 
-                           StdoutBytesWritten, NewLineLast);
+                           StdoutBytesWritten, NewLineLast, state);
             break;
         case ACKABNORMALTERM:
             Tag = ACKACKABNORMALTERM;
@@ -124,25 +124,16 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
             }
             MaxDesc++;
             ClientDrainSTDIO(STDOUTfdsFromChildren,
-                             STDERRfdsFromChildren, StdoutFD, StderrFD,
+                             STDERRfdsFromChildren, -1, -1,
                              NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                              StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, *ServerSocketFD);
-            ulm_exit((-1, "Abnormal termination\n"));
+                             NewLineLast, -1, state);
+            ulm_exit((-1, "Abnormal termination \n"));
             break;
         case ALLHOSTSDONE:
             // set flag indicating "app" process can terminate
-            ulm_dbg(("client ALLHOSTSDONE arrived on host %d\n",
+            ulm_fdbg(("client ALLHOSTSDONE arrived on host %d\n",
                      hostIndex));
-            /*
-               Tag = ACKALLHOSTSDONE;
-               client->reset(adminMessage::SEND);
-               if ( false == client->sendMessage(0, Tag, state->channelID, &errorCode) )
-               {
-               ulm_exit((-1, "Error: sending ACKALLHOSTSDONE.  "
-               "RetVal: %ld\n", errorCode));
-               }
-             */
             /* drain stdio */
             MaxDesc = 0;
             NFDs = ProcessCount[hostIndex] + 1;
@@ -154,15 +145,80 @@ int checkForRunControlMsgs(int *ServerSocketFD, double *HeartBeatTime, int *Proc
             }
             MaxDesc++;
             ClientDrainSTDIO(STDOUTfdsFromChildren,
-                             STDERRfdsFromChildren, StdoutFD, StderrFD,
+                             STDERRfdsFromChildren, -1, -1,
                              NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                              StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, *ServerSocketFD);
+                             NewLineLast, -1, state);
+
+            /* To help ensure that all stdio has been sent to host 0, we
+            do a rolling daemon shutdown process.  Each daemon waits for a
+            ACKALLHOSTSDONE from its children in a spanning tree.  When all children have sent
+            an ACKALLHOSTSDONE, then forward to this daemon's parent and
+            exit.
+            */
+            if ( 0 == *numberDaemonChildren )
+            {
+                if ( 0 == client->nodeLabel() )
+                {
+                    parent = 0;
+                    cid = state->channelID;
+                }
+                else
+                {
+                    cid = 0;
+                    parent = client->parentHostRank();                    
+                }
+                Tag = ACKALLHOSTSDONE;
+                ulm_fdbg(("Node %d: Leaf sending ACKALLHOSTSDONE to host rank %d.\n",
+                          client->nodeLabel(), parent));
+                client->reset(adminMessage::SEND);
+                if (false ==
+                    client->sendMessage(parent, Tag, cid, &errorCode)) {
+                    ulm_exit((-1,
+                              "Error: sending ACKACKABNORMALTERM.  "
+                              "RetVal: %ld\n", errorCode));
+                }
+                // ok, the client daemon can now exit...
+                ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
+                exit(0);
+            }
+                
+            // check if we should send ACKALLHOSTSDONE immediately;daemon is a leaf node.
             *lampiState.sync.AllHostsDone = 1;
-            // ok, the client daemon can now exit...
-            _ulm_err("Node %s: exiting...\n", client->nodeLabel());
-            exit(0);
             break;
+            
+        case ACKALLHOSTSDONE:
+            ulm_fdbg(("Node %d: Recvd ACKALLHOSTSDONE from host rank %d.\n",
+                      client->nodeLabel(), rank));
+            (*numberDaemonChildren)--;
+            if ( 0 == *numberDaemonChildren )
+            {
+                if ( 0 == client->nodeLabel() )
+                {
+                    parent = 0;
+                    cid = state->channelID;
+                }
+                else
+                {
+                    cid = 0;
+                    parent = client->parentHostRank();
+                }
+                Tag = ACKALLHOSTSDONE;
+                client->reset(adminMessage::SEND);
+                ulm_fdbg(("Node %d: Sending ACKALLHOSTSDONE to host rank %d.\n",
+                          client->nodeLabel(), parent));
+                if (false ==
+                    client->sendMessage(parent, Tag, cid, &errorCode)) {
+                    ulm_exit((-1,
+                              "Error: sending ACKACKABNORMALTERM.  "
+                              "RetVal: %ld\n", errorCode));
+                }
+                // ok, the client daemon can now exit...
+                ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
+                exit(0);
+            }                
+            break;
+            
         default:
             ulm_exit((-1, "Client: Unrecognized control "
                       "Message : %u\n", Tag));
@@ -186,7 +242,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               int StderrFD, size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
-                              int *LenIOPreFix)
+                              int *LenIOPreFix, lampiState_t *state)
 {
     fd_set ReadSet;
     int i, RetVal, NotifyServer, NFDs, MaxDesc, error;
@@ -264,7 +320,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                                        NotifyServer, STDOUTfdsFromChildren,
                                        STDERRfdsFromChildren, StdoutFD, StderrFD,
                                        IOPreFix, LenIOPreFix, StderrBytesWritten, 
-                                       StdoutBytesWritten, NewLineLast);
+                                       StdoutBytesWritten, NewLineLast, state);
                 break;
             case ACKABNORMALTERM:
                 Tag = ACKACKABNORMALTERM;
@@ -286,8 +342,8 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                                  STDERRfdsFromChildren, StdoutFD, StderrFD,
                                  NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                                  StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, *ServerSocketFD);
-                ulm_exit((-1, "Abnormal termination\n"));
+                                 NewLineLast, *ServerSocketFD, state);
+                ulm_exit((-1, "Abnormal termination \n"));
                 break;
             case ALLHOSTSDONE:
                 // set flag indicating "app" process can terminate
@@ -315,7 +371,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                                  STDERRfdsFromChildren, StdoutFD, StderrFD,
                                  NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                                  StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, *ServerSocketFD);
+                                 NewLineLast, *ServerSocketFD, state);
                 *lampiState.sync.AllHostsDone = 1;
                 // ok, the client daemon can now exit...
                 exit(0);

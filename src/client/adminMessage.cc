@@ -42,6 +42,8 @@
 #include "queue/globals.h"
 #include "util/misc.h"
 #include "util/MemFunctions.h"
+#include "util/parsing.h"
+#include "internal/Private.h"
 
 typedef struct {
     int                 tag;
@@ -62,7 +64,7 @@ static void free_qitem(void *arg)
     if ( item )
     {
         item->msg->release();
-        free(item);
+        ulm_free2(item);
     }
 }
 
@@ -162,7 +164,6 @@ adminMessage::adminMessage()
     server_m = false;
     connectInfo_m = NULL;
     msgQueue_m = NULL;
-    labels2Rank_m = NULL;
     scatterHosts_m = NULL;
     scatterLen_m = NULL;
     daemon_m = NULL;
@@ -245,46 +246,10 @@ adminMessage::~adminMessage()
         
     free_double_carray(connectInfo_m, nhosts_m);
     freeall_with(msgQueue_m, free_qitem);
-    free(labels2Rank_m);
         
     terminate();
 }
 
-
-int adminMessage::clientRank2Daemon(int rank)
-{
-    int             label;
-    int             i;
-
-    /* This is somewhat of a kludge to handle the initial wire up since
-       we do not know the label of the node to which mpirun is attached.
-       NOTE: So we assume that mpirun is attached to node 0.
-    */
-    if ( NULL == labels2Rank_m )
-        return -1;
-                
-    label = -1;
-    for ( i = 0; i < nhosts_m; i++ )
-        if ( labels2Rank_m[i] == rank  )
-        {
-            label = i;
-            break;
-        }
-
-    return label;
-}
-
-
-int adminMessage::clientDaemon2Rank(int label)
-{
-    if ( NULL == labels2Rank_m )
-        return 0;
-                
-    if ( label < nhosts_m )
-        return labels2Rank_m[label];
-    else
-        return -1;
-}
 
 bool adminMessage::clientInitialize(int *authData, char *hostname, int port) 
 {
@@ -320,7 +285,6 @@ bool adminMessage::clientInitialize(int *authData, char *hostname, int port)
 
 bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
 {
-#ifdef USE_CT
     int             sockbuf = 1, tag = INITMSG;
     int             authOK;
     struct          sockaddr_in server;
@@ -422,10 +386,8 @@ bool adminMessage::connectToRun(int nprocesses, int hostrank, int timeout)
         success = false;
     }
     delete chnl;
-        
+    
     return success;
-#endif
-    return false;
 }
 
 
@@ -587,13 +549,12 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
 
 bool adminMessage::clientNetworkHasLinked()
 {
-#ifdef USE_CT
     if ( daemon_m )
-        return daemon_m->networkHasLinked();
+    {
+        return daemon_m->networkHasLinked();        
+    }
     else
         return false;
-#endif
-    return false;
 }
 
 
@@ -660,12 +621,37 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
 }
 
 
+void adminMessage::sortNodeLabels(int *labels2Rank)
+{
+    // reorder node labeling so that the node label is the same as the hostrank
+    char	*ptr;
+    int		i, j, rank;
+    
+    for ( i = 0; i < nhosts_m; i++ )
+    {
+        if ( labels2Rank[i] != i )
+        {
+            rank = labels2Rank[i];
+            while ( labels2Rank[rank] != i )
+                rank = labels2Rank[rank];
+            // swap the connection info so that connectInfo_m[i] is for hostrank i
+            ptr = connectInfo_m[i];
+            connectInfo_m[i] = connectInfo_m[rank];
+            connectInfo_m[rank] = ptr;
+
+            j = labels2Rank[i];
+            labels2Rank[i] = labels2Rank[rank];
+            labels2Rank[rank] = j;
+        }
+    }
+
+}
 
 bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int numHosts,
                                      int timeout)
 {
     int             np = 0, tag, hostrank, nprocesses, recvAuthData[3], authOK;
-    int             cnt, hostcnt;
+    int             cnt, hostcnt, *ranks;
     ulm_iovec_t iovecs[6], riov[1];
     int             *hostsAssigned = 0,assignNewId, daemon_to;
     long int        rcvdlen, sent;
@@ -678,6 +664,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         
     /* initialization "stuff" */
     hostsAssigned = NULL;
+    ranks = NULL;
     if( numHosts > 0 ) 
     {
         /*
@@ -686,17 +673,18 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         */
         hostsAssigned = (int *)ulm_malloc(numHosts*sizeof(int));
         connectInfo_m = (char **)ulm_malloc(numHosts*sizeof(char *));
-        labels2Rank_m = (int *)ulm_malloc(numHosts*sizeof(int));
+        ranks = (int *)ulm_malloc(numHosts*sizeof(int));
         scatterHosts_m = (unsigned char **)ulm_malloc(numHosts*sizeof(unsigned char *));
         scatterLen_m = (int *)ulm_malloc(numHosts*sizeof(int));
-        if( !hostsAssigned || !connectInfo_m || !labels2Rank_m 
+        if( !hostsAssigned || !connectInfo_m || !ranks
             || !scatterHosts_m || !scatterLen_m ) 
         {
-            ulm_err(("Error: Can't allocate memory for hostsAssigned list\n"));
-            free(hostsAssigned);
-            free(connectInfo_m);
-            free(scatterHosts_m);
-            free(scatterLen_m);
+            ulm_err((" Unable to allocate memory for hostsAssigned list \n"));
+            ulm_free2(hostsAssigned);
+            ulm_free2(connectInfo_m);
+            ulm_free2(scatterHosts_m);
+            ulm_free2(scatterLen_m);
+            ulm_free2(ranks);
             return false;
         }
 
@@ -707,7 +695,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         for(int i=0 ; i < numHosts ; i++ )
         {
             hostsAssigned[i] = 0;
-            labels2Rank_m[i] = -1;
+            ranks[i] = -1;
         }
     }
 
@@ -751,9 +739,12 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     success = true;
     didtimeout = false;
     hostcnt = 0;
+
+    daemon = new CTTCPChannel((struct sockaddr_in *)NULL);
+    daemon->setTimeout(daemon_to);
     while ( (np < totalNProcesses_m) && (true == success) )
     {
-        status = svrChannel_m->acceptConnections(daemon_to, (CTChannel **)&daemon);
+        status = svrChannel_m->acceptConnections(daemon_to, daemon);
                 
         if ( kCTChannelOK != status )
         {
@@ -775,8 +766,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             continue;
         }
                         
-        /* sockfd = daemon->socketfd(); */
-        daemon->setTimeout(daemon_to);
+        //daemon->setTimeout(daemon_to);
         // get daemon info: 
         //      tag: auth data : host rank : nprocesses : daemon PID : connection info string           
         status = daemon->receive(iovecs, 6, &rcvdlen);
@@ -798,7 +788,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             }                       
             continue;
         }
-
+                
         // set hostrank. For RMS/Q hostrank should not be UNKNOWN_HOST_ID.
         if( hostrank == UNKNOWN_HOST_ID ) {
             assignNewId = 1;
@@ -845,19 +835,42 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             // check the global host rank to make sure it is unique
             for (int i = 0; (i < hostcnt) && success; i++)
             {
-                if ( labels2Rank_m[i] == hostrank ) 
+                if ( ranks[i] == hostrank ) 
                 {
                     ulm_err(("adminMessage::serverConnect duplicate host rank %d\n", hostrank));
                     success = false;
                 }
             }
-        
+            
             authOK = false;
             // store the information about this socket
             if ( success ) 
             {
-                connectInfo_m[hostcnt] = strdup(buffer);
-                labels2Rank_m[hostcnt] = hostrank;
+                cnt = (hostrank > hostcnt) ? hostrank : hostcnt;
+                if ( cnt > (numHosts - 1) )
+                {
+                    // make good estimate about resize value
+                    numHosts = cnt + (totalNProcesses_m >> 2);
+
+                    hostsAssigned = (int *)realloc(hostsAssigned, numHosts*sizeof(int));
+                    ranks = (int *)realloc(ranks, numHosts*sizeof(int));
+                    connectInfo_m = (char **)realloc(connectInfo_m, numHosts*sizeof(char *));
+                    scatterHosts_m = (unsigned char **)realloc(scatterHosts_m, numHosts*sizeof(unsigned char *));
+                    scatterLen_m = (int *)realloc(scatterLen_m, numHosts*sizeof(int));
+                    if( !hostsAssigned || !connectInfo_m || !ranks
+                        || !scatterHosts_m || !scatterLen_m )
+                    {
+                        ulm_err((" Unable to allocate memory for hostsAssigned list \n"));
+                        ulm_free2(hostsAssigned);
+                        ulm_free2(connectInfo_m);
+                        ulm_free2(scatterHosts_m);
+                        ulm_free2(scatterLen_m);
+                        ulm_free2(ranks);
+                        return false;
+                    }
+                }
+                connectInfo_m[hostrank] = strdup(buffer);
+                ranks[hostcnt] = hostrank;
                                 
                 hostcnt++;
                 np += nprocesses;
@@ -886,35 +899,11 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                 }                       
             }
 
-            // realloc arrays if necessary
-            if ( hostcnt > (numHosts - 1) )
-            {
-                // make good estimate about resize value
-                numHosts += (totalNProcesses_m >> 2);
-                
-                hostsAssigned = (int *)realloc(hostsAssigned, numHosts*sizeof(int));
-                connectInfo_m = (char **)realloc(connectInfo_m, numHosts*sizeof(char *));
-                labels2Rank_m = (int *)realloc(labels2Rank_m, numHosts*sizeof(int));
-                scatterHosts_m = (unsigned char **)realloc(scatterHosts_m, numHosts*sizeof(unsigned char *));
-                scatterLen_m = (int *)realloc(scatterLen_m, numHosts*sizeof(int));
-                if( !hostsAssigned || !connectInfo_m || !labels2Rank_m
-                    || !scatterHosts_m || !scatterLen_m )
-                {
-                    ulm_err(("Error: Can't allocate memory for hostsAssigned list\n"));
-                    free(hostsAssigned);
-                    free(connectInfo_m);
-                    free(scatterHosts_m);
-                    free(scatterLen_m);
-                    return false;
-                }
-                
-            }
         }       // if ( true == success )
-        delete daemon;
+        //delete daemon;
     }       // while ( (np < totalNProcesses_m) && (false == done) )
 
-
-    //nhosts_m = clientSocketCount();
+    
     nhosts_m = hostcnt;
     
     // check on timeout status
@@ -924,7 +913,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
                  " %d client sockets account for %d processes!\n",
                  timeout, hostcnt, np));
         for (int i = 0; i < nhosts_m; i++) {
-            if (labels2Rank_m[i] >= 0)
+            if (ranks[i] >= 0)
             {
                 char    hostn[50];
                 
@@ -936,8 +925,9 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             }
         }
     }
-        
-    free(hostsAssigned);
+
+    ulm_free2(hostsAssigned);
+    ulm_free2(ranks);
 
     svrChannel_m->channel()->closeChannel();
     
@@ -948,22 +938,29 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
 
 bool adminMessage::linkNetwork()
 {
-#ifdef USE_CT    
     CTTCPChannel            *chnl;
     unsigned int            ctrl, *labels, i;
-    CTMessage                       *msg;
+    CTMessage               *msg;
     CTChannelStatus         status;
-        
+    
     /* find connection for node 0 and send linkup info. */
-    labels = (unsigned int *)ulm_malloc(nhosts_m * sizeof(unsigned int));
-    if ( NULL == labels )
-    {
-        ulm_err( ("Error: Unable to alloc labels array.\n") );
-        return false;
-    }
-        
     if ( NULL ==  netconn_m )
     {
+        timing_stmp = second();
+        sprintf(timing_out[timing_scnt++], "Linking network (t = %lf).\n", timing_stmp - timing_cur);
+        timing_cur = timing_stmp;
+
+        // linking the network MUST begin with node 0.  Once connected, then
+        // establish connection to host rank 0 and not node 0.
+        // ASSERT: node 0 is hostrank 0
+        labels = (unsigned int *)ulm_malloc(nhosts_m * sizeof(unsigned int));
+        if ( NULL == labels )
+        {
+            ulm_err( ("Error: Unable to alloc labels array.\n") );
+            return false;
+        }
+        
+        //  connect to host rank 0 and not node 0.
         chnl = (CTTCPChannel *)CTChannel::createChannel("CTTCPChannel", connectInfo_m[0]);
         if ( !chnl )
         {
@@ -971,32 +968,35 @@ bool adminMessage::linkNetwork()
             return false;
         }
         netconn_m = new CTClient(chnl);
+
+        if ( false == netconn_m->connect(10) )
+        {
+            ulm_err( ("Unable to connect to node 0 ( connectInfo = %s).\n", connectInfo_m[0]) );
+            return false;
+        }
+        for ( i = 0; i < (unsigned int)nhosts_m; i++ )
+            labels[i] = i;
+
+        msg = CTServer::linkNetworkMessage(CTNode::kHypercube, nhosts_m, labels, (const char **)connectInfo_m);
+        ctrl = HypercubeNode::initialControlData(nhosts_m);
+        status = netconn_m->sendMessage(msg, sizeof(ctrl), (char *)&ctrl);
+
+        msg->release();
+        ulm_free2(labels);
+
+        if ( kCTChannelOK != status)
+        {
+            ulm_err( ("Unable to broadcast msg to link network. status = %d.\n", status) );
+            return false;
+        }
+
+        timing_stmp = second();
+        sprintf(timing_out[timing_scnt++], "Done linking network (t = %lf).\n", timing_stmp - timing_cur);
+        timing_cur = timing_stmp;
+
     }
-    if ( false == netconn_m->connect(10) )
-    {
-        ulm_err( ("Error: Can't connect to node 0.\n") );
-        return false;
-    }
-        
-    for ( i = 0; i < (unsigned int)nhosts_m; i++ )
-        labels[i] = i;
-                
-    msg = CTServer::linkNetworkMessage(CTNode::kHypercube, nhosts_m, labels, (const char **)connectInfo_m);
-    ctrl = HypercubeNode::initialControlData(nhosts_m);
-    status = netconn_m->sendMessage(msg, sizeof(ctrl), (char *)&ctrl);
-        
-    msg->release();
-    free(labels);
-        
-    if ( kCTChannelOK != status)
-    {
-        ulm_err( ("Error: Can't broadcast msg to link network. status = %d.\n", status) );
-        return false;
-    }
-#endif
 
     return true;
-
 }
         
 
@@ -1030,7 +1030,7 @@ void adminMessage::messageDidArrive(CTServer *server, CTMessage *msg)
     {
         ulm_err( ("Error: Unable to create queue item for msg.\n") );
         free_qitem(item);
-        free(litem);
+        ulm_free2(litem);
                 
     }
 }
@@ -1078,7 +1078,6 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
     int             nHostsArrived,host,hst;
 #ifdef USE_CT
     int                 bytesToSend;
-    int                 label;
 #endif
     ssize_t         totalBytes, bytesToCopy = 0;
     void *RESTRICT_MACRO recvBuff = recvbuf;
@@ -1125,7 +1124,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
         totalBytes = nLocalProcs * recvCount;
         bytesLeftPerHost[host] = totalBytes;
 #ifdef USE_CT
-        recvlens_m[clientRank2Daemon(host)] = (bytesPerProc > perRankStripeSize) ? 
+        recvlens_m[host] = (bytesPerProc > perRankStripeSize) ? 
             nLocalProcs*perRankStripeSize : nLocalProcs*bytesPerProc;
 #endif
         if (totalBytes == 0) {
@@ -1231,9 +1230,9 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
             for (host = 0; host < nhosts_m ; host++)
             {
                 nLocalProcs = groupHostData_m[host].nGroupProcIDOnHost;
-                bytesLeftPerHost[host] -= recvlens_m[clientRank2Daemon(host)];
+                bytesLeftPerHost[host] -= recvlens_m[host];
                 if ( bytesLeftPerHost[host] < nLocalProcs*perRankStripeSize )
-                    recvlens_m[clientRank2Daemon(host)] = bytesLeftPerHost[host];
+                    recvlens_m[host] = bytesLeftPerHost[host];
             }
 #else
             /* send data to mpirun */
@@ -1296,12 +1295,8 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
             
             sharedMemBufOffset = 0;
             //ASSERT: nhosts_m == number of nodes 
-            for ( label = 0; (unsigned int)label <  daemon_m->node()->numberOfNodes(); label++ ) 
+            for ( host = 0; (unsigned int)host <  daemon_m->node()->numberOfNodes(); host++ ) 
             {
-                // The data in put in buffer from allgatherv is based on hypercube labels,
-                // so we need to translate to host rank.
-                host = clientDaemon2Rank(label);
-                
                 // sharedMemBufOffset points to start of host data in buffer
                 for (int lProc=0 ; lProc < groupHostData_m[host].nGroupProcIDOnHost ; 
                      lProc++ )
@@ -1314,7 +1309,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf,
                     src = (void *) ((char *) sharedBuffer_m + sharedMemBufOffset + lProc*bytesToCopy);
                     MEMCOPY_FUNC(src, dest, bytesToCopy);
                 }
-                sharedMemBufOffset += recvlens_m[label];
+                sharedMemBufOffset += recvlens_m[host];
             }
         }  /* end if ( recvBuff ) */
 #else
@@ -1953,7 +1948,7 @@ bool adminMessage::getMessageFromQueue(int *rank, int *tag, int routingType, int
         
     // if tag == -1 then grab msg with any tag
     // if label == -1 then grab msg with any source
-    keys.label = clientRank2Daemon(*rank);
+    keys.label = *rank;
     keys.tag = *tag;
     keys.rtype = routingType;
         
@@ -1971,22 +1966,31 @@ bool adminMessage::getMessageFromQueue(int *rank, int *tag, int routingType, int
         {
             // copy data to buffer; skip tag when copying
             msg = item->msg;
-            *rank = clientDaemon2Rank(msg->sourceNode());
+            *rank = msg->sourceNode();
             if ( recvBufferSize_m < msg->dataLength() )
+            {
                 recvBuffer_m = (unsigned char *)realloc(recvBuffer_m, msg->dataLength());
+                if ( NULL == recvBuffer_m )
+                {
+                    ulm_err(("Unable to alloc memory for recv buffer.\n"));
+                    free_qitem(item);
+                    return false;
+                }                
+            }
                         
             // copy tag
             *tag = *((int *)msg->data());
             // skip tag
             recvBufferBytes_m = msg->dataLength() - sizeof(int);
             memcpy(recvBuffer_m, msg->data() + sizeof(int), recvBufferBytes_m);
+            recvMessageBytes_m = recvBufferBytes_m;
             free_qitem(item);
                         
             done = true;
         }
         else
         {
-            usleep(1);
+            usleep(100);
             if ( timeout >= 0 )
             {
                 gettimeofday(&curtime, NULL);
@@ -2018,9 +2022,9 @@ bool adminMessage::receiveMessage(int *rank, int *tag, int *errorCode, int timeo
     bool                    returnValue = true, getmsg = true;
     int                             to;
 
+    reset(RECEIVE);
     if ( client_m )
     {
-        reset(RECEIVE);
         return getMessageFromQueue(rank, tag, 0, errorCode, timeout);
     }
     else
@@ -2050,9 +2054,11 @@ bool adminMessage::receiveMessage(int *rank, int *tag, int *errorCode, int timeo
                 memcpy(tag, msg->data(), sizeof(int));
                                 
                 // get data
-                memcpy(recvBuffer_m, msg->data() + sizeof(int), msg->dataLength() - sizeof(int));
+                recvBufferBytes_m = msg->dataLength() - sizeof(int);	// do not include tag size
+                memcpy(recvBuffer_m, msg->data() + sizeof(int), recvBufferBytes_m);
+                recvMessageBytes_m = recvBufferBytes_m;
         
-                *rank = clientDaemon2Rank(msg->sourceNode());
+                *rank = msg->sourceNode();
                                 
                 msg->release();
             }
@@ -2079,7 +2085,6 @@ bool adminMessage::receiveMessage(int *rank, int *tag, int *errorCode, int timeo
 
 bool adminMessage::sendMessage(int rank, int tag, unsigned int channelID, int *errorCode) 
 {
-#ifdef USE_CT    
     CTMessage                       *msg;
     CTChannelStatus         status;
     unsigned int            ctrl;
@@ -2096,7 +2101,7 @@ bool adminMessage::sendMessage(int rank, int tag, unsigned int channelID, int *e
         
     if ( msg )
     {
-        msg->setDestination((unsigned int)clientRank2Daemon(rank));
+        msg->setDestination((unsigned int)rank);
         if (client_m)
         {
             msg->setDestinationClientID(channelID);
@@ -2123,8 +2128,6 @@ bool adminMessage::sendMessage(int rank, int tag, unsigned int channelID, int *e
         return false;
     }
     return success;
-#endif
-    return false;
 }
 
 
@@ -2197,6 +2200,7 @@ bool adminMessage::reset(direction dir, int size)
     if ((dir == RECEIVE) || (dir == BOTH)) {
         recvOffset_m = 0;
         recvBufferBytes_m = 0;
+        recvMessageBytes_m = 0;
         if (size && (size > recvBufferSize_m)) {
             unsigned char *tmp = (unsigned char *)realloc(recvBuffer_m, size);
             if (tmp) {
@@ -2762,7 +2766,7 @@ int adminMessage::allgatherv(void *sendbuf, void *recvbuf, ssize_t *bytesPerProc
 bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
 
 #ifdef USE_CT
-    int             label, cnt;
+    int     cnt;
     char    **list;
     bool    success = true;
         
@@ -2770,21 +2774,15 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
     dst[0] = '\0';
     if ( client_m )
         return false;
-                
-    label = clientRank2Daemon(hostrank);
-    if ( label >= 0 )
+
+    //connectInfo_m contains host name for node label.
+    cnt = _ulm_parse_string(&list, connectInfo_m[hostrank], 1, ";");
+    if ( 2 == cnt )
     {
-        //connectInfo_m contains host name for node label.
-        cnt = _ulm_parse_string(&list, connectInfo_m[label], 1, ";");
-        if ( 2 == cnt )
-        {
-            strcpy(dst, list[0]);
-        }
-        free_double_carray(list, cnt);
+        strcpy(dst, list[0]);
     }
-    else
-        success = false;
-                
+    free_double_carray(list, cnt);
+    
     return success;
 #endif
 
@@ -2827,6 +2825,40 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes) {
     }
 
     return true;
+}
+
+int adminMessage::sendBufferSize() {return sendBufferSize_m;}
+
+int adminMessage::receivedMessageSize() {return recvMessageBytes_m;}
+
+int adminMessage::parentHostRank()
+{
+    int		parent;
+    
+    if ( client_m && daemon_m )
+    {
+        daemon_m->node()->parent(0, (unsigned int *)&parent);
+        return parent;
+    }
+    else
+        return -1;
+}
+
+
+int adminMessage::numberOfDaemonChildren()
+{
+    //NOTE: since we could have node failures, then this number could change
+    unsigned int		*children, cnt;
+
+    if ( client_m && daemon_m )
+    {
+        children = daemon_m->node()->children(0, &cnt);
+        ulm_free2(children);
+
+        return cnt;
+    }
+    else
+        return 0;
 }
 
 
@@ -2873,8 +2905,8 @@ void adminMessage::setGroupHostData(admin_host_info_t *groupHostData)
 {
     if ( groupHostData_m )
     {
-        free(groupHostData_m->groupProcIDOnHost);
-        free(groupHostData_m);
+        ulm_free2(groupHostData_m->groupProcIDOnHost);
+        ulm_free2(groupHostData_m);
     }
     groupHostData_m = groupHostData;
 }
@@ -2901,8 +2933,3 @@ void adminMessage::setTotalNumberOfProcesses(int nprocs)
 }
 
     
-void adminMessage::setLabelsToRank(int *labelsToRank)
-{
-    free(labels2Rank_m);
-    labels2Rank_m = labelsToRank;
-}

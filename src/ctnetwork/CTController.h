@@ -71,8 +71,7 @@ public:
     virtual CTChannelStatus sendMessage(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSize, char *control);
     virtual CTChannelStatus sendMessage(CTMessage *, unsigned int, char *) = 0;
     virtual CTChannelStatus sendMessage(CTMessage *) = 0;
-
-        
+    
     virtual CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);
         
     virtual CTChannelStatus allgather(unsigned int numParticipants, unsigned int datalen, 
@@ -94,12 +93,6 @@ public:
       NOTE: This does not account for CTClients that are attached to the nodes.
     */
         
-    /*
-      virtual void scatter() = 0;
-        
-      virtual void gather() = 0;
-      virtual void gatherv() = 0;
-    */
         
     virtual CTChannelStatus synchronize(unsigned int numParticipants) = 0;
     /* barrier-like method. */

@@ -41,7 +41,7 @@
 #ifndef _ULM_MISC_H_
 #define _ULM_MISC_H_
 
-#include <internal/MPIIncludes.h>
+#include "internal/MPIIncludes.h"
 
 #ifdef __cplusplus
 extern "C" {

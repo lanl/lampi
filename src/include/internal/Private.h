@@ -13,6 +13,12 @@
 #include <internal/MPIIncludes.h>
 #include <internal/log.h>
 
+extern "C" double second(void);
+
+extern double timing_cur, timing_stmp;
+extern char timing_out[200][100];
+extern int timing_scnt;
+
 /*
  *		MACRO Definitions
  */

@@ -108,6 +108,7 @@ enum {
     STDIOFDS,
     APPPIDS,                    /* PIDsOfAppProcs */
     HEARTBEAT,                  /* Heart-Beat message */
+    STDIOMSG,					/* Msg containing stdio output. */
     ABORTCHILDPROC,
     CONFIRMABORTCHILDPROC,      /* confirms server request to abort */
     ABORTALL,

@@ -65,8 +65,10 @@ int SpawnUserAppRSH(unsigned int *AuthData,
                     int FirstAppArgument, int argc, char **argv)
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
-    int i, RetVal, offset, LenList, STDERRpipe[2], STDOUTpipe[2],
-   	dupSTDERRfd, dupSTDOUTfd;
+    int i, RetVal, offset, LenList, dupSTDERRfd, dupSTDOUTfd;
+#ifndef USE_CT
+    int STDERRpipe[2], STDOUTpipe[2];
+#endif
     int AlarmReturn;
     size_t len, MaxSize;
     pid_t Child;
@@ -363,6 +365,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         sprintf(ExecArgs[(CDEntry + 3) + offset + 2], "\"");
 
         /* redirect stderr */
+#ifndef USE_CT
         RetVal = pipe(STDERRpipe);
         if (RetVal < 0) {
             printf("Error: creating STDERRpipe pipe.\n");
@@ -389,7 +392,8 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         }
         RunParameters->STDOUTfds[i] = STDOUTpipe[0];
         close(STDOUTpipe[1]);
-
+#endif
+        
         /* fork() failed */
         if ((Child = fork()) == -1) {
             printf(" Error forking child\n");
