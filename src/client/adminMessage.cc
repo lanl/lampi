@@ -806,7 +806,6 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             if(nprocesses != UNKNOWN_N_PROCS )
             {
                 processCount[hostrank]=nprocesses;
-                procList[hostrank] = nprocesses;
             }
             else {
                 processCount[hostrank]=procList[hostrank];
