@@ -96,7 +96,7 @@ inline void ibPath::checkSendCQs(void)
             }
             cq_empty_cnt = 0;
 
-            if (usethreads()) {
+            if (usethreads() && !locked_here) {
                 ib_state.lock.lock();
                 locked_here = true;
             }

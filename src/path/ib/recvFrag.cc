@@ -151,8 +151,10 @@ bool ibRecvFragDesc::AckData(double timeNow)
     list->AppendNoLock((Links_t *)sfd);
     ib_state.hca[hca_index].ctlMsgsToSendFlag |= (1 << MESSAGE_DATA_ACK);
 
-    path->sendCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode, locked_here);
-    path->cleanCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, &errorCode, locked_here);
+    path->sendCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, 
+        &errorCode, false, locked_here);
+    path->cleanCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, 
+        &errorCode, false, locked_here);
 
     if (locked_here) {
         ib_state.lock.unlock();
@@ -293,7 +295,16 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
         // ACKs from processing simultaneously
 
         if (bsd) {
+            // release IB state lock to avoid potential livelock
+            if (already_locked) {
+                ib_state.lock.unlock();
+            }
             ((SendDesc_t *)bsd)->Lock.lock();
+            // reacquire IB state lock after send desc. lock to
+            // avoid livelock with main send logic...
+            if (already_locked) {
+                ib_state.lock.lock();
+            }
             if (bsd != sfd->parentSendDesc_m) {
                 ((SendDesc_t *)bsd)->Lock.unlock();
                 ReturnDescToPool(getMemPoolIndex());
