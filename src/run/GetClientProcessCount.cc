@@ -371,7 +371,14 @@ void GetClientProcessCount(const char *InfoStream)
             Abort();
         }
 #ifdef ENABLE_RMS
-        RunParameters.ProcessCount[0] = totalProcs;
+        /* distribute totalProcs across the hosts */
+        for (int host = 0; host < RunParameters.NHosts; host++) {
+            RunParameters.ProcessCount[host] = 0;
+        }
+        for (int proc = 0, host = 0; proc < totalProcs; proc++) {
+            RunParameters.ProcessCount[host] += 1;
+            host = (host + 1) % RunParameters.NHosts;
+        }
 #else
         if (RunParameters.NHosts == 1) {
             RunParameters.ProcessCount[0] = totalProcs;

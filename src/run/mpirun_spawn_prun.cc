@@ -254,9 +254,9 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
     int child;
     int skip_arg_count = 0;
     char buf[512];
-	adminMessage	*server;
-	
-	server = RunParameters->server;
+    adminMessage *server;
+
+    server = RunParameters->server;
     /* set up environment variables */
     if (RunParameters->nEnvVarsToSet > 0) {
         env_vars = (char **)
@@ -322,7 +322,7 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
         }
     }
 
-/* BEGIN: ugly fix for broken rmsloader on certain Q systems */ 
+/* BEGIN: ugly fix for broken rmsloader on certain Q systems */
 #define UGLY_FIX_FOR_BROKEN_RMSLOADER
 #if defined(__osf__) && defined(UGLY_FIX_FOR_BROKEN_RMSLOADER)
     struct stat statbuf;
@@ -334,7 +334,7 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
         }
     }
 #endif
-/* END: ugly fix for broken rmsloader on certain Q systems */ 
+/* END: ugly fix for broken rmsloader on certain Q systems */
 
 
     /* allocate array of exec arguments */
@@ -372,6 +372,17 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
         (char *) ulm_malloc(sizeof(buf) + 4);
     sprintf(exec_args[PROCS - skip_arg_count], "-n %s", buf);
 
+    if (0) { // DEBUG
+        printf(">>>>> NHosts = %d, NHostsSet = %d, nprocs = %d\n",
+               RunParameters->NHosts, RunParameters->NHostsSet, nprocs);
+        printf(">>>>> ProcessCount =");
+        for (i = 0; i < RunParameters->NHosts; i++) {
+            printf(" %d", RunParameters->ProcessCount[i]);
+        }
+        printf("\n");
+        fflush(stdout);
+    }
+
     /* rms flag to tag stdout/stderr with process id */
     if (RunParameters->OutputPrefix) {
         exec_args[RMS_TAG - skip_arg_count] =
@@ -380,17 +391,17 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
     } else {
         skip_arg_count++;
     }
-    
+
     /* rms flag to spawn one proc per node */
     exec_args[RMS_SPAWN - skip_arg_count] = (char *)
-        ulm_malloc(strlen("-Rone-process-per-node,rails=XX,railmask=XX") + 1);
+        ulm_malloc(strlen("-Rone-process-per-node,rails=XX,railmask=XX") +
+                   1);
     if (RunParameters->quadricsRailMask) {
         sprintf(exec_args[RMS_SPAWN - skip_arg_count],
-                "-Rone-process-per-node,rails=%d,railmask=%d", 
+                "-Rone-process-per-node,rails=%d,railmask=%d",
                 quadricsNRails(RunParameters->quadricsRailMask),
                 RunParameters->quadricsRailMask);
-    }
-    else {
+    } else {
         sprintf(exec_args[RMS_SPAWN - skip_arg_count],
                 "-Rone-process-per-node");
     }
@@ -454,7 +465,14 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
             ulm_free(admin_vars);
             admin_vars = 0;
         }
-        
+
+    }
+
+    /* check if prun already returned with error */
+
+    sleep(1);
+    if (waitpid(-1, NULL, WNOHANG) == child) {
+        return -1;
     }
 
     return 0;

@@ -563,8 +563,10 @@ void FillIntData(ParseString * InputObj, int SizeOfArray, int *Array,
     /* make sure the correct amount of data is present */
     cnt = InputObj->GetNSubStrings();
     if ((cnt != 1) && (cnt != SizeOfArray)) {
-        ulm_err(("Error: Wrong number of data elements specified for %s, or %s\n", ULMInputOptions[OptionIndex].AbreviatedName, ULMInputOptions[OptionIndex].FileName));
-        ulm_err(("Number or arguments specified (%d) should be either 1 or %d\n", cnt, SizeOfArray));
+        ulm_err(("Error: Wrong number of data elements specified for %s. "
+                 "Number or arguments specified (%d) should be either 1 or %d\n",
+                 ULMInputOptions[OptionIndex].AbreviatedName,
+                 cnt, SizeOfArray));
         Abort();
     }
 
