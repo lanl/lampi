@@ -314,10 +314,11 @@ void gmSetup(lampiState_t *s)
                 break;
 
         }                           /* end dev loop */
+
+        if ( 0 == gmState.nDevsAllocated )
+            ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n",myproc()));
     }
 
-    if ( 0 == gmState.nDevsAllocated )
-        ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n",myproc()));
 
     /*
      * gather hostID, nodeID, portID, and MAC address for
