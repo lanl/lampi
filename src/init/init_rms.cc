@@ -97,8 +97,13 @@ void lampi_init_prefork_rms(lampiState_t *s)
 
 #endif // QSNETLIBS_VERSION_STRING
 
-
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
+    if (s->local_size <= 0) {
+        ulm_err(("fatal libelan3 error: elan3_nlocal(devinfo=%d, cap=%p) = %d\n",
+                 elan_nodeId, &cap, s->local_size));
+        s->error = ERROR_LAMPI_INIT_PREFORK_RMS;
+    }
+    
     /*
      * RMS_NODEIDs are allocated contiguously from zero;
      * ELAN3_DEVINFO.NodeIds are not.
