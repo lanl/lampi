@@ -34,7 +34,11 @@
 
 #ifdef __linux__
 
+#ifdef __INTEL_COMPILER
+#define RESTRICT_MACRO restrict
+#else
 #define RESTRICT_MACRO __restrict__
+#endif
 
 #ifdef __i386
 #define PAGESIZE    4096

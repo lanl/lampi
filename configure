@@ -9577,7 +9577,7 @@ ia64-unknown-linux*)
               CFLAGS="-g -O"
               CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
-           CFLAGS="$CFLAGS -ansi -restrict"
+           CFLAGS="$CFLAGS -restrict"
         else
            CC="gcc"
            CXX="g++"
