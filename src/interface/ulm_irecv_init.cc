@@ -58,7 +58,6 @@ extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
                               ULMRequestHandle_t *request, int persistent)
 {
     int errorCode;
-    int listIndex = 0;
     RequestDesc_t *ulmRequest;
     RecvDesc_t *RecvDescriptor;
 
