@@ -1,0 +1,46 @@
+Subject: Re: .spec file
+From: "Daryl W. Grunau" <dwg@lanl.gov>
+Date: Tue, 21 Oct 2003 17:00:04 -0600
+To: David Daniel <ddd@lanl.gov>
+
+> Date: Tue, 21 Oct 2003 16:36:03 -0600
+> From: David Daniel <ddd@lanl.gov>
+> To: dwg@lanl.gov
+> Subject: .spec file
+>
+> Hi Daryl,
+>
+> You said you had made some improvements to our .spec file.  Could you
+> let me have your version?
+
+David, yes.  Let me say a few things about it as well:
+
+1. It slightly breaks the RedHat model for filesystem structure since, by
+default, everything gets installed into subdirectories of
+
+   /usr/lampi-<compiler>-<version>/<device>
+
+where 'compiler' may be absoft, intel, lahey, nag, pgi or empty for gcc (the
+default).  Version is your revision number, and device is either gm or p4
+(the default).  You can specify 'compiler' and 'device' on your rpmbuild
+line as follows:
+
+   rpmbuild --rebuild --with absoft --with gm lampi-1.3.5-1.src.rpm
+
+FYI, I've been successful in building a GCC version of the lampi mpi, while
+linking/running codes built with other compilers.  You can change the
+install prefix by specifying --with root=<alternate root prefix>.  You
+still get a subdirectory called lampi-<compiler>-<version>/<device> when
+you do this.
+
+2.  I stuck in '--with' and '--without'  processing for all of your other
+config switches (i.e.  your --enable-reliability switch can be thrown by
+rpmbuild --rebuild --with reliability lampi-1.3.5-1.src.rpm)
+
+On the lightning machine, I built lampi with the following commands:
+
+   rpmbuild --rebuild --with gm --with bproc --with romio lampi-1.3.5-1.src.rpm
+
+3.  Change it or throw it away if you don't like it :)
+
+Daryl
