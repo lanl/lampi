@@ -129,11 +129,17 @@ public:
     /* flag on whether to do checksumming */
     bool doChecksum;
 
+    /* flag to indicate whether gmSetup() has already been called */
+    bool inited;
+
     /* free list of GM send fragments */
     FreeListPrivate_t <gmSendFragDesc> sendFragList;
 
     /* free list of GM receive fragments */
     FreeListPrivate_t <gmRecvFragDesc> recvFragList;
+
+    /* global lock to provide thread safety in GM */
+    Locks gmLock;
 
     gmState_t()
 	{
@@ -147,6 +153,7 @@ public:
             maxGMDevs = MAX_GM_DEVICES;
             doAck = false;
             doChecksum = false;
+            inited = false;
         }
 };
 

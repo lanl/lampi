@@ -191,6 +191,15 @@ void gmSetup(lampiState_t *s)
     bool enforceMemAffinity, Abort, freeMemPool;
     MemoryPoolPrivate_t *inputPool;
 
+    if (usethreads())
+        gmState.gmLock.lock();
+
+    if (gmState.inited) {
+        if (usethreads())
+            gmState.gmLock.unlock();
+        return;
+    }
+
     if (!s->iAmDaemon) {
         // Initialize gm
 
@@ -198,6 +207,7 @@ void gmSetup(lampiState_t *s)
         if (returnValue != GM_SUCCESS) {
             ulm_err(("Error: Can't initialize GM (%d)\n", (int) returnValue));
             s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+            return;
         }
         // open local devices
 
@@ -495,4 +505,9 @@ void gmSetup(lampiState_t *s)
     ulm_free(nDevsPerProc);
     ulm_free(allBaseDevInfo);
     ulm_free(localBaseDevInfo);
+
+    gmState.inited = true;
+
+    if (usethreads())
+       gmState.gmLock.unlock();
 }

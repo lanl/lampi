@@ -201,6 +201,8 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 
             void *addr = &(((gmFragBuffer *) sfd->currentSrcAddr_m)->header);
 
+            if (usethreads())
+                gmState.gmLock.lock();
             gm_send_with_callback(sfd->gmPort(),
                                   addr,
                                   gmState.log2Size,
@@ -210,6 +212,9 @@ bool gmPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
                                   sfd->gmDestPortID(),
                                   callback,
                                   (void *) sfd);
+            if (usethreads())
+                gmState.gmLock.unlock();
+
             if (0) { // debug
                 ulm_warn(("%d sent frag %p: gmPort %p addr %p size %d length %ld node_id %d port_id %d\n",
                           myproc(), sfd,  sfd->gmPort(), addr, gmState.log2Size, 
@@ -273,7 +278,11 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 }
             }
 
+            if (usethreads())
+                gmState.gmLock.lock();
             event = gm_receive(devInfo->gmPort);
+            if (usethreads())
+                gmState.gmLock.unlock();
 
             switch (GM_RECV_EVENT_TYPE(event)) {
             case GM_NO_RECV_EVENT:
@@ -313,7 +322,11 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     ulm_warn(("%d received event of type %d\n",
                               myproc(), GM_RECV_EVENT_TYPE(event)));
                 }
+                if (usethreads())
+                    gmState.gmLock.lock();
                 gm_unknown(devInfo->gmPort, event);
+                if (usethreads())
+                    gmState.gmLock.unlock();
                 break;
             }
 
@@ -339,10 +352,14 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 // give it to GM...
                 buf->me = buf;
                 void *addr = &(buf->header);
+                if (usethreads())
+                    gmState.gmLock.lock();
                 gm_provide_receive_buffer_with_tag(devInfo->gmPort,
                                                    addr,
                                                    gmState.log2Size,
                                                    GM_LOW_PRIORITY, i);
+                if (usethreads())
+                    gmState.gmLock.unlock();
 
                 // decrement recvTokens
                 (devInfo->recvTokens)--;
