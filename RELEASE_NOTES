@@ -283,12 +283,14 @@ Version 1.4.13
 
 Version 1.4.14
 
-- Fixes to read STDIN from mpirun and direct it to proccess 0 of the application
+- Fixes to read STDIN from mpirun and direct it to proccess 0 of the
+  application
 
 Version 1.4.15
 
-- There were some problems w/ the stdin forwarding in the 1.4.14 release. Specifically
-, bproc support for LSF/RSH and LSF/RSH appears to have been incomplete.
+- There were some problems w/ the stdin forwarding in the 1.4.14
+  release. Specifically , bproc support for LSF/RSH and LSF/RSH appears
+  to have been incomplete.
 
 Version 1.4.16
 
@@ -296,6 +298,25 @@ Version 1.4.16
 
 Version 1.4.17
 
-- Fixed issue with processes hanging that used Pthreads. Changed MPI_Reduce to allow non-root 
-proccess to provide a null receive buffer.
+- Fixed issue with processes hanging that used Pthreads. Changed
+  MPI_Reduce to allow non-root proccess to provide a null receive
+  buffer.
 
+Version 1.4.18
+
+- Cleaned header files up, fixed for ICC (intel) compiler, fixed
+  memory leak, Fixed parser error, lampi.conf now allows spaces in the
+  file.
+
+========================= Minor Release 1.5 =========================
+
+1.5.0
+
+- InfiniBand support.
+
+- Standard I/O uses pseudo-terminals for output to avoid runtime
+  buffering.
+
+- Thread safety improved.
+
+- General code clean-up.
