@@ -75,6 +75,7 @@ typedef struct errhandler_t errhandler_t;
 struct mpi_state_t {
     ptr_table_t *errhandler_table;
     ptr_table_t *free_table;
+#if 0
     struct {
         ulm_allgather_t *allgather;
         ulm_allgatherv_t *allgatherv;
@@ -92,6 +93,7 @@ struct mpi_state_t {
         ulm_scatter_t *scatter;
         ulm_scatterv_t *scatterv;
     } collective;
+#endif
     MPI_Request proc_null_request;
     int fortran_layer_enabled;
     int threadsafe;
@@ -251,7 +253,6 @@ ULMFunc_t *_mpi_get_reduction_function(MPI_Op, MPI_Datatype);
 int _mpi_error(int ulm_error);
 int _mpi_finalize(void);
 int _mpi_init(void);
-int _mpi_init_collectives(void);
 int _mpi_init_datatypes(void);
 int _mpi_init_operations(void);
 int _mpi_ptr_table_add(ptr_table_t *table, void *ptr);

@@ -1,6 +1,5 @@
 SRC_LIBMPI += \
 	src/mpi/internal/mpi_attribute.c \
-	src/mpi/internal/mpi_collective.c \
 	src/mpi/internal/mpi_errhandler.c \
 	src/mpi/internal/mpi_op.c \
 	src/mpi/internal/mpi_ptr_table.c \

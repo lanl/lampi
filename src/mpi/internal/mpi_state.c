@@ -95,10 +95,6 @@ int _mpi_init(void)
         _mpi.finalized = 0;
         _mpi.proc_null_request = &dummy_proc_null_request;
 
-        rc = _mpi_init_collectives();
-        if (rc < 0) {
-            return rc;
-        }
 
         rc = _mpi_init_datatypes();
         if (rc < 0) {
