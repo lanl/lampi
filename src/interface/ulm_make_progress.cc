@@ -75,7 +75,11 @@ extern "C" int ulm_make_progress(void)
     TIMESTAMP(0);
 
     // check for completed sends
+#ifdef ENABLE_RELIABILITY
     now = dclock();
+#else
+    now = 0;
+#endif
     CheckForAckedMessages(now);
 
     TIMESTAMP(1);
