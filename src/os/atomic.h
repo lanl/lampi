@@ -53,6 +53,10 @@
 #include "os/LINUX/ia64/atomic.h"
 #endif
 
+#ifdef __x86_64
+#include "os/LINUX/x86_64/atomic.h" 
+#endif 
+
 #ifdef __mips
 #include "os/IRIX/atomic.h"
 #endif
