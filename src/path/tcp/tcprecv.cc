@@ -204,7 +204,7 @@ bool TCPRecvFrag::recvHeader(int sd)
             case EWOULDBLOCK:
                 return false;
             default:
-                ulm_err(("TCPRecvFrag[%d,%d]::recvHeader(%d): recv() failed with errno=%d\n", 
+                ulm_warn(("TCPRecvFrag[%d,%d]::recvHeader(%d): recv() failed with errno=%d\n", 
                     thisProc,peerProc,sd,errno));
                 tcpPeer->recvFailed(this);
                 ReturnDescToPool(getMemPoolIndex());
