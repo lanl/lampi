@@ -38,13 +38,21 @@
 #include "init/init.h"
 #include "client/ULMClient.h"
 #include "util/dclock.h"
+#include "util/misc.h"
 
 #include "ctnetwork/CTNetwork.h"
+
+
+
+
 /*
  * This routine is used to set up initial process parameters
  */
 void lampi_init_prefork_process_resources(lampiState_t *s)
 {
+    /* set system calls to restart after signals */
+    set_sa_restart();
+
     /*
      * Reset the max number of file descriptors which may be used by
      * the client daemon
@@ -105,3 +113,4 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
     }
 #endif
 }
+
