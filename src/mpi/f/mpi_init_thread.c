@@ -32,6 +32,11 @@
 
 #include "internal/mpif.h"
 
+void mpi_init_thread_f(MPI_Fint *required, MPI_Fint *provided, MPI_Fint *rc)
+{
+    *rc = MPI_Init_thread(NULL, NULL, *required, provided);
+}
+
 #if defined(HAVE_PRAGMA_WEAK)
 
 #pragma weak PMPI_INIT_THREAD = mpi_init_thread_f
@@ -43,11 +48,6 @@
 #pragma weak mpi_init_thread = mpi_init_thread_f
 #pragma weak mpi_init_thread_ = mpi_init_thread_f
 #pragma weak mpi_init_thread__ = mpi_init_thread_f
-
-void mpi_init_thread_f(MPI_Fint *required, MPI_Fint *provided, MPI_Fint *rc)
-{
-    *rc = MPI_Init_thread(NULL, NULL, *required, provided);
-}
 
 #else
 
