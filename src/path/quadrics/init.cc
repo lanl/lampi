@@ -447,7 +447,7 @@ void quadricsInitQueueInfo()
 
         // initialize the main memory queue fields, etc.
         p->elanQAddr = elan3_sdram2elan(p->ctx, p->ctx->sdram, p->sdramQAddr);
-        p->nSlots = 320; // 5 8KB pages
+        p->nSlots = 512; 
         p->queueSlots = (quadricsCtlHdr_t *)elan3_allocMain(p->ctx, E3_BLK_ALIGN,
                                                             sizeof(quadricsCtlHdr_t) * p->nSlots);
         if (p->queueSlots == (quadricsCtlHdr_t *)NULL) {
@@ -462,6 +462,7 @@ void quadricsInitQueueInfo()
         // lock the queue
         elan3_write32_sdram(p->ctx->sdram, p->sdramQAddr + offsetof(E3_Queue, q_state),
                             E3_QUEUE_LOCKED);
+        mb();
 
         // initialize Elan E3_Queue fields
         elan3_write32_sdram(p->ctx->sdram, p->sdramQAddr + offsetof(E3_Queue, q_size),
@@ -480,12 +481,28 @@ void quadricsInitQueueInfo()
                               p->doneBlk, (E3_Event_Blk *)p->rcvBlk);
         E3_RESET_BCOPY_BLOCK(p->rcvBlk);
 
+        mb();
+
         // prime the event so it fires on the first receive
         elan3_primeevent(p->ctx, p->sdramQAddr + offsetof(E3_Queue, q_event), 1);
 
+        /* There is a bug in the current device driver that means if the block-copy event
+         * traps on the QDMA arrival things get messed up. So we workaround this by setting
+         * the event first to make sure it doesn't trap subsequential
+         */
+        elan3_setevent(p->ctx, p->sdramQAddr + offsetof(E3_Queue, q_event));
+                                                                                                                         
+        /* Wait for it to fire */
+        elan3_waitevent_blk(p->ctx, p->sdramQAddr + offsetof(E3_Queue, q_event), (E3_Event_Blk*)p->rcvBlk, ELAN_POLL_EVENT);
+                                                                                                                         
+        /* Reset and prime it again */
+        E3_RESET_BCOPY_BLOCK(p->rcvBlk);
+        elan3_primeevent(p->ctx, p->sdramQAddr + offsetof(E3_Queue, q_event), 1);
+
+        mb();
+
         // unlock the queue
-        elan3_write32_sdram(p->ctx->sdram, p->sdramQAddr + offsetof(E3_Queue, q_state),
-                            0);
+        elan3_write32_sdram(p->ctx->sdram, p->sdramQAddr + offsetof(E3_Queue, q_state), 0);
     }
 
 #ifdef USE_ELAN_COLL
@@ -509,10 +526,15 @@ void quadricsInitBeforeFork() {
         exit(1);
     }
 
-    // calculate quadricsNRails
 #if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+    // calculate quadricsNRails
     quadricsNRails = elan_nrails(&quadricsCap);
+    if (quadricsNRails <= 0) {
+        ulm_err(("quadricsInitBeforeFork: elan_nrails returned %d rails!\n", quadricsNRails));
+        exit(1);
+    }
 #else
+    // calculate quadricsNRails
     quadricsNRails = elan3_nrails(&quadricsCap);
 #endif
     if (quadricsNRails <= 0) {
