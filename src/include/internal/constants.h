@@ -56,7 +56,8 @@
  */
 
 #define ALARMTIME         300
-#define CONNECT_ALARMTIME 10
+#define MIN_CONNECT_ALARMTIME 30
+#define PERPROC_CONNECT_ALARMTIME 2
 #define HEARTBEATINTERVAL (double)(1)
 #define HEARTBEATTIMEOUT  (double)(10*HEARTBEATINTERVAL)
 /* time to allow for orderly shutdown (abort on expiry) */
