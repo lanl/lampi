@@ -196,7 +196,6 @@ enum QueueType_t {
     POSTEDIRECV,
     POSTEDWILDIRECV,
     MATCHEDIRECV,
-    WILDMATCHEDIRECV,
 
     /* utrecv headers */
     POSTEDUTRECVS,
