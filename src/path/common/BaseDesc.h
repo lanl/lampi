@@ -36,7 +36,6 @@
 #include <sys/types.h>          // For fd_set in BaseRecvFragDesc_t
 
 #include "client/ULMClientTypes.h"
-#include "util/BitVect.h"
 #include "util/DblLinkList.h"
 #include "util/MemFunctions.h"
 #include "internal/constants.h"
@@ -50,8 +49,6 @@
 
 #define REQUEST_TYPE_SEND   1
 #define REQUEST_TYPE_RECV   2
-#define REQUEST_TYPE_UTRECV 3
-#define REQUEST_TYPE_UTSEND 4
 
 // forward declarations
 class SMPFragDesc_t;
@@ -65,7 +62,7 @@ class BasePath_t;
 // It stores a pointer to the data structures actually used to send
 // data, and to monitor the progress of this specific message.
 
-class BaseSendDesc_t : public Links_t
+class BaseSendDesc_t : public RequestDesc_t
 {
 public:
 
@@ -150,7 +147,7 @@ public:
 //
 // Descriptor used to track posted receives.
 
-class RecvDesc_t :  public Links_t
+class RecvDesc_t :  public RequestDesc_t
 {
 public:
     
@@ -158,7 +155,6 @@ public:
 
     volatile unsigned long DataReceived;    // Amount of data received
     volatile unsigned long DataInBitBucket; // Amount of data ignored if PostedLength < ReceivedMessageLength
-    RequestDesc_t *requestDesc;             // Pointer to associated request object
     unsigned long PostedLength;             // length of the data -posted on receive side
     unsigned long ReceivedMessageLength;    // total received message length
     unsigned long actualAmountToRecv_m;     // actual amount to receive (min of send and recv)
@@ -170,10 +166,6 @@ public:
     int ctx_m;                              // context ID
     void *AppAddr;                          // pointer to the base of the data
     Locks Lock;                             // lock
-    BitVect fragsProcessed;                 // fd_set for tracking which frags have already been
-                                            // processed - for collective communications
-    bool fragMatched;                       // boolean value indicating that at least one frag has
-                                            // been received - for collective communications
 
 #ifdef DEBUG_DESCRIPTORS
     double t0;
@@ -198,29 +190,20 @@ public:
                      void *fragAddr, unsigned long sendMessageLength, int *recvDone);
 #endif // SHARED_MEMORY
 
-    // cleanup function
-    void ReturnDesc();
-
     // set request object and return descriptor to pool
     void setRequestReturnDesc()
         {
-            requestDesc->reslts_m.proc.source_m = srcProcID_m;
-            requestDesc->reslts_m.UserTag_m = tag_m;
-            requestDesc->reslts_m.length_m = ReceivedMessageLength;
-            requestDesc->reslts_m.lengthProcessed_m = DataReceived;
-            requestDesc->messageDone = MESSAGE_COMPLETE;
-            // return element to pool
-            ReturnDesc();
+            reslts_m.UserTag_m = tag_m;
+            reslts_m.length_m = ReceivedMessageLength;
+            reslts_m.lengthProcessed_m = DataReceived;
+            messageDone = MESSAGE_COMPLETE;
         }
 
     // default constructor
     RecvDesc_t()
         {
             WhichQueue = IRECVFREELIST;
-            // initialize bitvector and zero it out
-            bv_init(&fragsProcessed, 128);
-            bv_clearall(&fragsProcessed);
-            fragMatched = false;
+            Lock.init();
         }
 
     // constructor that initializes locks
@@ -228,16 +211,11 @@ public:
         {
             WhichQueue = IRECVFREELIST;
             Lock.init();
-            // initialize bitvector and zero it out
-            bv_init(&fragsProcessed, 128);
-            bv_clearall(&fragsProcessed);
-            fragMatched = false;
         }
 
     // d'tor
     virtual ~RecvDesc_t()
         {
-            bv_free(&fragsProcessed);
         }
 };
 

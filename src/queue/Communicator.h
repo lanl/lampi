@@ -472,26 +472,6 @@ public:
     // by the init method
     int isend_start(ULMRequestHandle_t *request);
 
-    // off host send
-    int isend_start_network(ULMRequestHandle_t *request);
-
-    // initialize request object for utrecv
-    int utrecv_init(int tag, void *data, size_t dataLength,
-                    ULMType_t *dtype, RequestDesc_t *&request);
-
-    // start utrecv
-    int utrecv_start(RequestDesc_t *request);
-
-    // initialize request object for utsend
-    int utsend_init(int tag, void *data, int dataLen, ULMType_t *dtype,
-                    ULMMcastInfo_t *mcastInfo, int mcastInfoLen, RequestDesc_t *&request);
-
-    // start utsend
-    int utsend_start(RequestDesc_t *request, ULMMcastInfo_t *mcastInfo, int mcastInfoLen);
-
-    // match posted receives against the frags present
-    int processCollectiveFrags();
-
     // check to see if there is any data to be received
     int iprobe(int sourceProc, int tag, int *found, ULMStatus_t *status);
 

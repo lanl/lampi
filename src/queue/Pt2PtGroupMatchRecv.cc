@@ -154,7 +154,7 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
     unsigned long SendingSequenceNumber = 0;
     long SendingProc = 0;
     int tag = IRDesc->tag_m;
-    RequestDesc_t *requestDesc = IRDesc->requestDesc;
+    RequestDesc_t *requestDesc = (RequestDesc_t *) IRDesc;
     // loop over list of frags - upper level manages thread safety
 
     // lock for thread safety

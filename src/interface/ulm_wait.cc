@@ -110,7 +110,6 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
     switch (tmpRequest->requestType) {
 
     case REQUEST_TYPE_RECV:
-    case REQUEST_TYPE_UTRECV:
         while (!(tmpRequest->messageDone)) {
             errorCode = ulm_make_progress();
             if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)
@@ -139,7 +138,6 @@ extern "C" int ulm_wait(ULMRequestHandle_t *request, ULMStatus_t *status)
         break;
 
     case REQUEST_TYPE_SEND:
-    case REQUEST_TYPE_UTSEND:
 	while (!(tmpRequest->messageDone)) {
 	    errorCode = ulm_make_progress();
 	    if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)

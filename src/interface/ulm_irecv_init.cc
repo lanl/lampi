@@ -60,18 +60,18 @@ extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
     int errorCode;
     int listIndex = 0;
     RequestDesc_t *ulmRequest;
+    RecvDesc_t *RecvDescriptor;
 
     if (usethreads()) {
-        ulmRequest = ulmRequestDescPool.getElement(listIndex, errorCode);
+        RecvDescriptor = IrecvDescPool.getElement(0, errorCode);
+        if (errorCode != ULM_SUCCESS)
+            return errorCode;
     } else {
-        ulmRequest =
-            ulmRequestDescPool.getElementNoLock(listIndex, errorCode);
+        RecvDescriptor = IrecvDescPool.getElementNoLock(0, errorCode);
+        if (errorCode != ULM_SUCCESS)
+            return errorCode;
     }
-    if (errorCode != ULM_SUCCESS) {
-        return errorCode;
-    }
-
-    assert(ulmRequest->WhichQueue == REQUESTFREELIST);
+    ulmRequest=(RequestDesc_t *)RecvDescriptor;
 
     // set done flag to false
     ulmRequest->messageDone = false;

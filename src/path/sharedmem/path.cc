@@ -588,23 +588,18 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
         if (receiver->DataReceived + receiver->DataInBitBucket >=
             receiver->ReceivedMessageLength) {
             // fill in request object
-            receiver->requestDesc->reslts_m.proc.source_m =
-                receiver->srcProcID_m;
-            receiver->requestDesc->reslts_m.length_m =
-                receiver->ReceivedMessageLength;
-            receiver->requestDesc->reslts_m.lengthProcessed_m =
-                receiver->DataReceived;
-            receiver->requestDesc->reslts_m.UserTag_m =
-                receiver->tag_m;
+            receiver->reslts_m.proc.source_m =receiver->srcProcID_m;
+            receiver->reslts_m.length_m = receiver->ReceivedMessageLength;
+            receiver->reslts_m.lengthProcessed_m = receiver->DataReceived;
+            receiver->reslts_m.UserTag_m = receiver->tag_m;
             //mark recv request as complete
-            receiver->requestDesc->messageDone = true;
+            receiver->messageDone = true;
             wmb();
             Comm = communicators[receiver->ctx_m];
             Comm->privateQueues.MatchedRecv[receiver->srcProcID_m]->
                 RemoveLink(receiver);
             if (usethreads())
                 receiver->Lock.unlock();
-            receiver->ReturnDesc();
         } else if (usethreads()) {
             receiver->Lock.unlock();
         }
@@ -660,23 +655,22 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         matchedRecv->DataInBitBucket >=
                         matchedRecv->ReceivedMessageLength) {
                         // fill in request object
-                        matchedRecv->requestDesc->reslts_m.proc.
+                        matchedRecv->reslts_m.proc.
                             source_m = matchedRecv->srcProcID_m;
-                        matchedRecv->requestDesc->reslts_m.length_m =
+                        matchedRecv->reslts_m.length_m =
                             matchedRecv->ReceivedMessageLength;
-                        matchedRecv->requestDesc->reslts_m.
+                        matchedRecv->reslts_m.
                             lengthProcessed_m = matchedRecv->DataReceived;
-                        matchedRecv->requestDesc->reslts_m.UserTag_m =
+                        matchedRecv->reslts_m.UserTag_m =
                             matchedRecv->tag_m;
                         //mark recv request as complete
-                        matchedRecv->requestDesc->messageDone = true;
+                        matchedRecv->messageDone = true;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
                                                         srcProcID_m]->
                             RemoveLink(matchedRecv);
                         matchedRecv->Lock.unlock();
-                        matchedRecv->ReturnDesc();
                     } else {
                         matchedRecv->Lock.unlock();
                     }
@@ -723,22 +717,21 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         matchedRecv->DataInBitBucket >=
                         matchedRecv->ReceivedMessageLength) {
                         // fill in request object
-                        matchedRecv->requestDesc->reslts_m.proc.
+                        matchedRecv->reslts_m.proc.
                             source_m = matchedRecv->srcProcID_m;
-                        matchedRecv->requestDesc->reslts_m.length_m =
+                        matchedRecv->reslts_m.length_m =
                             matchedRecv->ReceivedMessageLength;
-                        matchedRecv->requestDesc->reslts_m.
+                        matchedRecv->reslts_m.
                             lengthProcessed_m = matchedRecv->DataReceived;
-                        matchedRecv->requestDesc->reslts_m.UserTag_m =
+                        matchedRecv->reslts_m.UserTag_m =
                             matchedRecv->tag_m;
                         //mark recv request as complete
-                        matchedRecv->requestDesc->messageDone = true;
+                        matchedRecv->messageDone = true;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
                         Comm->privateQueues.MatchedRecv[matchedRecv->
                                                         srcProcID_m]->
                             RemoveLink(matchedRecv);
-                        matchedRecv->ReturnDesc();
                     }
 
                     SMPFragDesc_t *tmp = (SMPFragDesc_t *)
@@ -992,17 +985,15 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 	} else {
 		/* zero byte message */
 		// fill in request object
-    		matchedRecv->requestDesc->reslts_m.proc.source_m = sourceRank;
-		matchedRecv->requestDesc->reslts_m.length_m =
+    		matchedRecv->reslts_m.proc.source_m = sourceRank;
+		matchedRecv->reslts_m.length_m =
 			matchedRecv->ReceivedMessageLength;
-	    	matchedRecv->requestDesc->reslts_m.lengthProcessed_m =
+	    	matchedRecv->reslts_m.lengthProcessed_m =
 			matchedRecv->DataReceived;
-	    	matchedRecv->requestDesc->reslts_m.UserTag_m = 
+	    	matchedRecv->reslts_m.UserTag_m = 
 			matchedRecv->tag_m;
-    		matchedRecv->requestDesc->messageDone = true;
+    		matchedRecv->messageDone = true;
     		matchedSender->NumAcked = 1;
-		// return receive descriptor to pool
-    		matchedRecv->ReturnDesc();
 		return ULM_SUCCESS;
 	}
 
@@ -1054,18 +1045,17 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 			matchedRecv->DataInBitBucket >=
 			matchedRecv->ReceivedMessageLength) {
 		// fill in request object
-		matchedRecv->requestDesc->reslts_m.proc.
+		matchedRecv->reslts_m.proc.
 	    		source_m = matchedRecv->srcProcID_m;
-		matchedRecv->requestDesc->reslts_m.length_m =
+		matchedRecv->reslts_m.length_m =
 	    		matchedRecv->ReceivedMessageLength;
-		matchedRecv->requestDesc->reslts_m.lengthProcessed_m = 
+		matchedRecv->reslts_m.lengthProcessed_m = 
 			matchedRecv->DataReceived;
-		matchedRecv->requestDesc->reslts_m.UserTag_m =
+		matchedRecv->reslts_m.UserTag_m =
 	    		matchedRecv->tag_m;
 		//mark recv request as complete
-		matchedRecv->requestDesc->messageDone = true;
+		matchedRecv->messageDone = true;
 		wmb();
-		matchedRecv->ReturnDesc();
     	} else {
 		//  add this descriptor to the matched ireceive list
                 Comm = communicators[incomingFrag->ctx_m];

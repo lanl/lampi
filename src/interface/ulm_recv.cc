@@ -56,50 +56,51 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
                         ULMStatus_t *status)
 {
     ULMRequestHandle_t requestPtr;
-    RequestDesc_t request;
+    RecvDesc_t recvDesc;
+    RequestDesc_t *request=(RequestDesc_t *)(&recvDesc);
     Communicator *commPtr;
     int errorCode;
 
     commPtr = communicators[comm];
 
     // set done flag to false
-    request.messageDone = false;
+    recvDesc.messageDone = false;
 
     // sanity check
-    request.WhichQueue = REQUESTINUSE;
+    recvDesc.WhichQueue = REQUESTINUSE;
 
     // set data type
-    request.datatype = dtype;
+    recvDesc.datatype = dtype;
 
     // set receive address
     if ((dtype != NULL) && (dtype->layout == CONTIGUOUS) && (dtype->num_pairs != 0)) {
-        request.pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
+        recvDesc.pointerToData = (void *)((char *)buf + dtype->type_map[0].offset);
     }
     else {
-        request.pointerToData = buf;
+        recvDesc.pointerToData = buf;
     }
 
     // set destination process (need to check for completion)
-    request.posted_m.proc.source_m = sourceProc;
+    recvDesc.posted_m.proc.source_m = sourceProc;
 
     // set communicator
-    request.ctx_m = comm;
+    recvDesc.ctx_m = comm;
 
     // set tag
-    request.posted_m.UserTag_m = tag;
+    recvDesc.posted_m.UserTag_m = tag;
 
     // set posted length
     if (dtype == NULL) {
-        request.posted_m.length_m = size;
+        recvDesc.posted_m.length_m = size;
     } else {
-        request.posted_m.length_m = dtype->packed_size * size;
+        recvDesc.posted_m.length_m = dtype->packed_size * size;
     }
 
     // set request state to inactive
-    request.status = ULM_STATUS_INITED;
+    recvDesc.status = ULM_STATUS_INITED;
 
     // start the recv
-    requestPtr = &request;
+    requestPtr=request;
     errorCode = commPtr->irecv_start(&requestPtr);
     if (errorCode != ULM_SUCCESS) {
         return errorCode;
@@ -107,7 +108,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
 
     // wait  - no need to call progress engine here, since irecv_start
     //   just called it
-    while (!(request.messageDone)) {
+    while (!(recvDesc.messageDone)) {
         errorCode = ulm_make_progress();
         if ((errorCode == ULM_ERR_OUT_OF_RESOURCE)
             || (errorCode == ULM_ERR_FATAL)
@@ -117,10 +118,10 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     }
 
     // fill in status object
-    status->tag = request.reslts_m.UserTag_m;
-    status->proc.source = request.reslts_m.proc.source_m;
-    if (request.posted_m.length_m != request.reslts_m.length_m) {
-        if (request.posted_m.length_m > request.reslts_m.length_m) {
+    status->tag = recvDesc.reslts_m.UserTag_m;
+    status->proc.source = recvDesc.reslts_m.proc.source_m;
+    if (recvDesc.posted_m.length_m != recvDesc.reslts_m.length_m) {
+        if (recvDesc.posted_m.length_m > recvDesc.reslts_m.length_m) {
             status->error = ULM_ERR_RECV_LESS_THAN_POSTED;
         } else {
             // truncation error
@@ -129,7 +130,7 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     } else {
         status->error = ULM_SUCCESS;
     }
-    status->matchedSize = request.reslts_m.lengthProcessed_m;
+    status->matchedSize = recvDesc.reslts_m.lengthProcessed_m;
     status->persistent = false;
 
     // fill in remainder of status object

@@ -117,7 +117,6 @@ extern "C" int ulm_test(ULMRequestHandle_t *request, int *completed,
     switch (tmpRequest->requestType) {
 
     case REQUEST_TYPE_RECV:
-    case REQUEST_TYPE_UTRECV:
         if (!(tmpRequest->messageDone)) {
             return ULM_SUCCESS;
         }
@@ -146,7 +145,6 @@ extern "C" int ulm_test(ULMRequestHandle_t *request, int *completed,
         break;
 
     case REQUEST_TYPE_SEND:
-    case REQUEST_TYPE_UTSEND:
         if (!(tmpRequest->messageDone)) {
             return ULM_SUCCESS;
         }

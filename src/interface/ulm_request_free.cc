@@ -60,8 +60,6 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
     Communicator *commPtr = communicators[tmpRequest->ctx_m];
 
     if (OPT_CHECK_API_ARGS) {
-        // sanity check
-        assert(tmpRequest->WhichQueue == REQUESTINUSE);
         // commPtr should still be valid...
         if (commPtr == 0) {
             return ULM_ERR_COMM;
@@ -101,18 +99,38 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
     tmpRequest->WhichQueue = REQUESTFREELIST;
     tmpRequest->status = ULM_STATUS_INVALID;
 
-    if (incomplete) {
-        if (usethreads())
-            _ulm_incompleteRequests.Append(tmpRequest);
-        else
-            _ulm_incompleteRequests.AppendNoLock(tmpRequest);
+    /* send */
+    if( tmpRequest->requestType == REQUEST_TYPE_SEND) {
+	    if (incomplete) {
+		    RecvDesc_t *recvDesc=(RecvDesc_t *)tmpRequest;
+	    	    if (usethreads())
+			    _ulm_incompleteRequests.Append(recvDesc);
+	    	    else
+			    _ulm_incompleteRequests.AppendNoLock(recvDesc);
+	    } else {
+		    // return request to free list
+	    	    if (usethreads()) {
+			    ulmRequestDescPool.returnElement(tmpRequest);
+	    	    } else {
+			    ulmRequestDescPool.returnElementNoLock(tmpRequest);
+	    	    }
+	    }
     } else {
-        // return request to free list
-        if (usethreads()) {
-            ulmRequestDescPool.returnElement(tmpRequest);
-        } else {
-            ulmRequestDescPool.returnElementNoLock(tmpRequest);
-        }
+    /* recv */
+	    if (incomplete) {
+		    RecvDesc_t *recvDesc=(RecvDesc_t *)tmpRequest;
+	    	    if (usethreads())
+			    _ulm_incompleteRequests.Append(recvDesc);
+	    	    else
+			    _ulm_incompleteRequests.AppendNoLock(recvDesc);
+	    } else {
+		    // return request to free list
+	    	    if (usethreads()) {
+			    IrecvDescPool.returnElement(tmpRequest);
+	    	    } else {
+			    IrecvDescPool.returnElementNoLock(tmpRequest);
+	    	    }
+	    }
     }
 
     // set request object to NULL

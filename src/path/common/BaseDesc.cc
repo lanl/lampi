@@ -57,45 +57,6 @@ extern bool startCount;
 extern double tt0;
 #endif
 
-//void BaseSendDesc_t::ReturnDesc(int poolIndex)
-//{
-//    // sanity check - list must be empty
-//#ifndef _DEBUGQUEUES
-//    assert(FragsToSend.size() == 0);
-//    assert(FragsToAck.size() == 0);
-//#else
-//    if (FragsToSend.size() != 0L) {
-//        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
-//                  "FragsToSend.size() %ld numfrags %d numsent %d "
-//                  "numacked %d list %d\n", this, FragsToSend.size(),
-//                  this->numfrags, this->NumSent, this->NumAcked,
-//                  this->WhichQueue));
-//    }
-//    if (FragsToAck.size() != 0L) {
-//        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
-//                  "FragsToAck.size() %ld numfrags %d numsent %d "
-//                  "numacked %d list %d\n", this, FragsToAck.size(),
-//                  this->numfrags, this->NumSent, this->NumAcked,
-//                  this->WhichQueue));
-//    }
-//#endif                          // _DEBUGQUEUES
-//
-//    // if this was a bsend (or aborted bsend), then decrement the reference
-//    // count for the appropriate buffer allocation
-//    if (sendType == ULM_SEND_BUFFERED) {
-//        if (PostedLength > 0) {
-//            ulm_bsend_decrement_refcount((ULMRequestHandle_t) requestDesc,
-//                                         bsendOffset);
-//        }
-//    }
-//    // mark descriptor as beeing in the free list
-//    WhichQueue = SENDDESCFREELIST;
-//    // return descriptor to pool -- always freed by allocating process!
-//    int i = poolIndex < 0 ? getMemPoolIndex() : poolIndex;
-//    _ulm_SendDescriptors.returnElement(this, i);
-//}
-
-
 // copied frag data to processor address space using a non-contiguous
 // datatype as a format
 int non_contiguous_copy(BaseRecvFragDesc_t *frag,
@@ -217,7 +178,7 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     // make sure we don't overflow app buffer
     ssize_t AppBufferLen = PostedLength - Offset;
 
-    datatype = this->requestDesc->datatype;
+    datatype = this->datatype;
 
     if (AppBufferLen <= 0) {
     	    FragDesc->MarkDataOK(true);
@@ -256,13 +217,13 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
     //   as such
     if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
         // fill in request object
-        requestDesc->reslts_m.proc.source_m = srcProcID_m;
-        requestDesc->reslts_m.length_m = ReceivedMessageLength;
-        requestDesc->reslts_m.lengthProcessed_m = DataReceived;
-        requestDesc->reslts_m.UserTag_m = tag_m;
+        reslts_m.proc.source_m = srcProcID_m;
+        reslts_m.length_m = ReceivedMessageLength;
+        reslts_m.lengthProcessed_m = DataReceived;
+        reslts_m.UserTag_m = tag_m;
 
         // mark recv as complete
-        requestDesc->messageDone = true;
+        messageDone = true;
         if (recvDone)
             *recvDone = true;
         wmb();
@@ -274,8 +235,6 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         } else if (WhichQueue == POSTEDUTRECVS) {
             Comm->privateQueues.PostedUtrecvs.RemoveLinkNoLock(this);
         }
-
-        ReturnDesc();
     }
 
     return lengthToCopy;
@@ -309,7 +268,7 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     ssize_t AppBufferLen = PostedLength - Offset;
 
     //Contiguous Data
-    datatype = this->requestDesc->datatype;
+    datatype = this->datatype;
 
     if (AppBufferLen <= 0) {
     	    FragDesc->MarkDataOK(true);
@@ -354,10 +313,10 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
     // object as such
     if ((DataReceived + DataInBitBucket) >= ReceivedMessageLength) {
         // fill in request object
-        requestDesc->reslts_m.proc.source_m = srcProcID_m;
-        requestDesc->reslts_m.length_m = ReceivedMessageLength;
-        requestDesc->reslts_m.lengthProcessed_m = DataReceived;
-        requestDesc->reslts_m.UserTag_m = tag_m;
+        reslts_m.proc.source_m = srcProcID_m;
+        reslts_m.length_m = ReceivedMessageLength;
+        reslts_m.lengthProcessed_m = DataReceived;
+        reslts_m.UserTag_m = tag_m;
         // mark recv as complete - the request descriptor will be marked
 	// later on.  This is to avoid a race condition with another thread
 	// waiting to complete a recv, completing, and try to free the
@@ -370,40 +329,10 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         // remove receive descriptor from list
         Comm = communicators[ctx_m];
         Comm->privateQueues.MatchedRecv[srcProcID_m]->RemoveLink(this);
-
-        // return posted receive descriptor to free list
-        ReturnDesc();
     }
 
     return lengthToCopy;
 }
-
-
-void RecvDesc_t::ReturnDesc()
-{
-    assert(WhichQueue != IRECVFREELIST);
-    WhichQueue = IRECVFREELIST;
-    if (fragsProcessed.size != 0) {
-        bv_free(&fragsProcessed);
-    }
-    if (usethreads())
-        IrecvDescPool.returnElement(this);
-    else
-        IrecvDescPool.returnElementNoLock(this);
-
-#ifdef DEBUG_DESCRIPTORS
-    if (startCount) {
-        times[0] += (t1 - t0);
-        times[1] += (t2 - t1);
-        times[2] += (t3 - t2);
-        times[3] += (t4 - t3);
-        times[4] += (t5 - t4);
-        times[5] += (dclock() - t5);
-        sendCount++;
-    }
-#endif
-}
-
 
 #ifdef SHARED_MEMORY
 
@@ -420,7 +349,7 @@ int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
 
     *recvDone = 0;
 
-    datatype = requestDesc->datatype;
+    datatype = this->datatype;
 
     if (datatype == NULL || datatype->layout == CONTIGUOUS) {
         // compute frag offset

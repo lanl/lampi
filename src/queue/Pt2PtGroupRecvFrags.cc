@@ -71,7 +71,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	//! if match found, process data
 	if (MatchedPostedRecvHeader) {
             /* process received data */
-            request=MatchedPostedRecvHeader->requestDesc;
+            request=(RequestDesc_t*)MatchedPostedRecvHeader;
             ProcessMatchedData(MatchedPostedRecvHeader,DataHeader, 
                                timeNow, &recvDone);
 
@@ -202,7 +202,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
    end debug */
 
             /* process received data */
-		request=MatchedPostedRecvHeader->requestDesc;
+		request=(RequestDesc_t *)MatchedPostedRecvHeader;
 		ProcessMatchedData(MatchedPostedRecvHeader,DataHeader, 
 				timeNow, &recvDone);
 
@@ -251,7 +251,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	 *   this communicator
 	 */
 	if( recvDone ){
-		request->messageDone = true;
+		MatchedPostedRecvHeader->messageDone = true;
 	}
     } else if (fragSendSeqID < nextSeqIDToProcess) {
 
@@ -297,11 +297,11 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 
 	if (MatchedPostedRecvHeader) {
 		//! copy data into specified buffer - DataHeader is also
-		request=MatchedPostedRecvHeader->requestDesc;
+		request=(RequestDesc_t *)MatchedPostedRecvHeader;
 		ProcessMatchedData(MatchedPostedRecvHeader,
 		 		DataHeader, timeNow, &recvDone);
 		if( recvDone ){
-		    	request->messageDone = true;
+		    	MatchedPostedRecvHeader->messageDone = true;
 		}
 	}
     } else {

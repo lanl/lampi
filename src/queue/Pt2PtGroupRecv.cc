@@ -59,23 +59,17 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
     tmpRequest->messageDone = MESSAGE_INCOMPLETE;
 
     // get pointer to send descriptor base class
-    RecvDesc_t *RecvDescriptor;
+    RecvDesc_t *RecvDescriptor=(RecvDesc_t *)tmpRequest;
 
     // actually get the descriptor
     unsigned long long seq;
     int errorCode;
     if (usethreads()) {
-        RecvDescriptor = IrecvDescPool.getElement(0, errorCode);
-        if (errorCode != ULM_SUCCESS)
-            return errorCode;
         // Generate a new sequence number for this irecv.
         seq =
             fetchNaddLong((bigAtomicUnsignedInt *) & next_irecv_id_counter,
                           1);
     } else {
-        RecvDescriptor = IrecvDescPool.getElementNoLock(0, errorCode);
-        if (errorCode != ULM_SUCCESS)
-            return errorCode;
         // Generate a new sequence number for this irecv.
         seq = fetchNaddLongNoLock(&next_irecv_id_counter, 1);
     }

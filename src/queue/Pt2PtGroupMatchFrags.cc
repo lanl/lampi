@@ -259,7 +259,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 
                 // process the frag
                 if (MatchedPostedRecvHeader) {
-			request=MatchedPostedRecvHeader->requestDesc;
+			request=(RequestDesc_t *)MatchedPostedRecvHeader;
 			ProcessMatchedData(MatchedPostedRecvHeader, RecvDesc,
 			 		timeNow, &recvDone);
 			if( recvDone ){
@@ -300,7 +300,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 
                         // process the frag
                         if (MatchedPostedRecvHeader) {
-				request=MatchedPostedRecvHeader->requestDesc;
+				request=(RequestDesc_t *)MatchedPostedRecvHeader;
 				ProcessMatchedData(MatchedPostedRecvHeader,
 				 		RDesc, timeNow, &recvDone);
 				if( recvDone ){
