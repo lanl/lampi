@@ -122,3 +122,10 @@ Version 1.1.12
   configurations.
 
 
+========================= Minor Release 1.2 =========================
+
+Version 1.2.0
+
+- Myrinet GM Port.
+- Extensive reorganization of source directory structure and naming.
+- Some more thread-safety problems addressed.
