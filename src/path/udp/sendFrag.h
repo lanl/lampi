@@ -45,7 +45,7 @@
 
 // Send fragment descriptor for UDP path
 
-class udpSendFragDesc : public Links_t
+class udpSendFragDesc : public BaseSendFragDesc_t
 {
 public:
 
@@ -62,10 +62,8 @@ public:
         }
 
     // initialize the send frag
-    void init();
+    bool init();
 
-    // Pointer to the send descriptor owning this frag
-    SendDesc_t *parentSendDesc;
 
     int sendSockfd;		// socket descriptor for sendmsg
     struct msghdr msgHdr;		// udp message header for sendmsg
@@ -75,7 +73,6 @@ public:
     int  earlySend_type;		// what type of early send frag are we pointing to;
     struct sockaddr_in toAddr;	// sockaddr of receiver
     int fragIndex;		// frag frag index
-    unsigned int len;		// length of entire frag (header + data)
     udp_message_header header;	// header for this message frag
 
     //
@@ -85,15 +82,10 @@ public:
     //
     int flags;
 
-    double timeSent;		// time that frag was sent
-    int numTransmits;		// number of times frag's been transmitted
     int ctx_m;			// index of communicator
     int msgType_m;		// type ID (point-to-point, collective, etc.)
-    int tmap_index;	// typemap index for datatypes
-    size_t seqOffset_m; // "contiguous" byte offset as if all data was packed
-    unsigned long long frag_seq;
-    int globalDestID;
 
+    void freeResources(double timeNow, SendDesc_t *bsd);
 
     void copyHeader(udp_message_header& to);
 } ;

@@ -111,18 +111,15 @@ public:
     virtual bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
 
 #ifdef ENABLE_RELIABILITY
-    virtual bool retransmitP(SendDesc_t *message) {
-        if (RETRANS_TIME == -1 || message->earliestTimeToResend == -1
-            || message->FragsToAck.size() == 0)
-            return false;
-        else if (dclock() >= message->earliestTimeToResend) {
-            return true;
-        } else
-            return false;
-    }
-
-    virtual bool resend(SendDesc_t *message, int *errorCode);
+    
+    bool doAck() { return true; }
+    
+    int fragSendQueue() {return UDPFRAGSTOSEND;}
+    
+    int toAckQueue() {return UDPFRAGSTOACK;}
+    
 #endif
+    
 };
 
 #endif

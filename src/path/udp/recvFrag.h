@@ -105,9 +105,39 @@ public:
     ssize_t handleLongSocket();
     void processMessage(udp_message_header& hdr);
     void processAck(udp_ack_header& ack);
-#ifdef ENABLE_RELIABILITY
-    bool checkForDuplicateAndNonSpecificAck(udpSendFragDesc *Frag, udp_ack_header &ack);
-#endif
+    
+    unsigned long long ackFragSequence()
+    {
+        udp_ack_header     *p = &(header.ack);
+        return p->thisFragSeq;
+    }
+    
+    unsigned long long ackDeliveredFragSeq()
+    {
+        udp_ack_header     *p = &(header.ack);
+        return p->deliveredFragSeq;
+    }
+    
+    unsigned long long ackReceivedFragSeq()
+    {
+        udp_ack_header     *p = &(header.ack);
+        return p->receivedFragSeq;
+    }
+    
+    /* returns the global Proc ID of sending process */
+    int ackSourceProc()
+    {
+        udp_ack_header     *p = &(header.ack);
+        return p->src_proc;
+    }
+    
+    bool ackStatus()
+    {
+        udp_ack_header     *p = &(header.ack);
+        return p->ackStatus;
+    }
+    
+    
     void handlePt2PtMessageAck(SendDesc_t *sendDesc,
                                udpSendFragDesc *Frag, udp_ack_header &ack);
 

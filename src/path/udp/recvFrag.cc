@@ -237,7 +237,7 @@ ssize_t udpRecvFragDesc::handleShortSocket()
 	    	header.ack.deliveredFragSeq=ulm_ntohl(header.ack.deliveredFragSeq);
 	    	header.ack.ackStatus=ulm_ntohi(header.ack.ackStatus);
 #endif
-                processAck(header.ack);
+                    processAck(header.ack);
                 break;
 
             default:
@@ -398,14 +398,14 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
     //  memory is freed, we still have valid pointers.
     //  volatile udpSendFragDesc* fragDesc = (udpSendFragDesc*) ack.udpio.ptr;
     udpSendFragDesc *Frag = (udpSendFragDesc *) ack.ptrToSendDesc.ptr;
-    volatile SendDesc_t *sendDesc = (volatile SendDesc_t *) Frag->parentSendDesc;
+    volatile SendDesc_t *sendDesc = (volatile SendDesc_t *) Frag->parentSendDesc_m;
 
 	// lock frag through send descriptor to prevent two
 	// ACKs from processing simultaneously
 
 	if (sendDesc) {
 	    ((SendDesc_t *)sendDesc)->Lock.lock();
-	    if (sendDesc != Frag->parentSendDesc) {
+	    if (sendDesc != Frag->parentSendDesc_m) {
 		((SendDesc_t *)sendDesc)->Lock.unlock();
 		ReturnDescToPool(getMemPoolIndex());
 		return;
@@ -416,7 +416,7 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
 	}
 
 #ifdef ENABLE_RELIABILITY
-	if (checkForDuplicateAndNonSpecificAck(Frag, ack)) {
+    if (checkForDuplicateAndNonSpecificAck(Frag)) {
 	    ((SendDesc_t *)sendDesc)->Lock.unlock();
 	    ReturnDescToPool(getMemPoolIndex());
 	    return;
@@ -429,129 +429,11 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
     return;
 }
 
-#ifdef ENABLE_RELIABILITY
-bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag, udp_ack_header & ack)
-{
-    sender_ackinfo_control_t *sptr;
-    sender_ackinfo_t *tptr;
-
-    // update sender ACK info -- largest in-order delivered and received frag sequence
-    // numbers received by our peers (or peer box, in the case of collective communication)
-    // from ourself or another local process
-    if (msgType_m == MSGTYPE_PT2PT) {
-	sptr = &(reliabilityInfo->sender_ackinfo[global_to_local_proc(ack.dest_proc)]);
-	tptr = &(sptr->process_array[ack.src_proc]);
-    } else {
-	ulm_err(("udpRecvFragDesc::check...Ack received ack of unknown communication type %d\n", msgType_m));
-	return true;
-    }
-
-    sptr->Lock.lock();
-    if (ack.deliveredFragSeq > tptr->delivered_largest_inorder_seq) {
-	tptr->delivered_largest_inorder_seq = ack.deliveredFragSeq;
-    }
-    // received is not guaranteed to be a strictly increasing series...
-    tptr->received_largest_inorder_seq = ack.receivedFragSeq;
-    sptr->Lock.unlock();
-
-    // check to see if this ACK is for a specific frag or not (== 0/null/invalid)
-    // if not, then we don't need to do anything else...
-    if (ack.thisFragSeq == 0) {
-	return true;
-  } else if ((Frag->frag_seq != ack.thisFragSeq)
-               || ((ulm_int32_t)Frag->header.src_proc != ack.dest_proc)
-               || ((ulm_int32_t)Frag->header.dest_proc != ack.src_proc)
-               || ((ulm_int32_t)Frag->header.ctxAndMsgType != ack.ctxAndMsgType)) {
-        // this ACK is a duplicate...or just screwed up...just ignore it...
-#ifdef _DEBUG_RECVACK
-        fprintf(stderr, "udpRecvFragDesc::checkForDuplicateAndNonSpecificAck() processed a bad/duplicate ACK...\n");
-        fprintf(stderr,
-                "Frag: seq=%lld, sproc=%d, dproc=%d, comm=%d\n",
-                Frag->frag_seq,
-                Frag->header.src_proc, Frag->header.dest_proc,
-                Frag->header.ctxAndMsgType);
-        fprintf(stderr,
-                "ACK: seq=%lld, sproc=%d, dproc=%d, comm=%d\n",
-                ack.thisFragSeq, ack.src_proc, ack.dest_proc, ack.ctxAndMsgType);
-        fflush(stderr);
-#endif                          /* _DEBUG_RECVACK */
-        return true;
-    }
-
-    return false;
-}
-#endif
-
 void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDesc * Frag, udp_ack_header & ack)
 {
-    int DescPoolIndex = 0;
-
     if (ack.ackStatus == ACKSTATUS_DATAGOOD) {
-
-	// register frag as acked
-	sendDesc->clearToSend_m = true;
-	(sendDesc->NumAcked)++;
-
-	// find out which queue this frag is on
-	short whichQueue = Frag->WhichQueue;
-
-	// reset WhichQueue flag
-	Frag->WhichQueue = UDPFRAGFREELIST;
-
-	// remove frag descriptor from list of frags to be acked
-	if (whichQueue == UDPFRAGSTOACK) {
-	    sendDesc->FragsToAck.RemoveLinkNoLock((Links_t *) Frag);
-	}
-#ifdef ENABLE_RELIABILITY
-	else if (whichQueue == UDPFRAGSTOSEND) {
-	    sendDesc->FragsToSend.RemoveLinkNoLock((Links_t *) Frag);
-	    // increment NumSent since we were going to send this again...
-	    (sendDesc->NumSent)++;
-	}
-#endif
-	else {
-	    ulm_exit((-1, "udpRecvFragDesc::processAck: Frag on %d queue\n",
-                      whichQueue));
-	}
-
-#ifdef ENABLE_RELIABILITY
-	// set frag_seq value to 0/null/invalid to detect duplicate ACKs
-	Frag->frag_seq = 0;
-#endif
-
-	// reset send descriptor pointer
-	Frag->parentSendDesc = 0;
-
-	//  the header holds the global proc id
-        DescPoolIndex = global_to_local_proc((Frag->header.src_proc));
-
-        // free iovecs array possibly associated with the send frag descriptor;
-	if (Frag->nonContigData) {
-	    free(Frag->nonContigData);
-	    Frag->nonContigData = 0;
-	}
-
-	 if (Frag->earlySend != NULL && Frag->earlySend_type != -9 ) {
-             int index = getMemPoolIndex();
-             if (Frag->earlySend_type ==  EARLY_SEND_SMALL) { 
-		     Frag->earlySend_type = -9; 
-                 UDPEarlySendData_small.returnElement((Links_t*)(Frag->earlySend), index);
-             } else if (Frag->earlySend_type ==  EARLY_SEND_MED) {
-		     Frag->earlySend_type = -9; 
-                 UDPEarlySendData_med.returnElement((Links_t*)(Frag->earlySend), index);
-             } else if (Frag->earlySend_type ==  EARLY_SEND_LARGE) {
-		     Frag->earlySend_type = -9; 
-                 UDPEarlySendData_large.returnElement((Links_t*)(Frag->earlySend), index);
-             } else {
-                 ulm_warn(("no size match 2\n"));
-                 return;
-             }
-        }
-
-	// return frag descriptor to free list
-	//   the header holds the global proc id
-	udpSendFragDescs.returnElement(Frag, DescPoolIndex);
-
+        (sendDesc->NumAcked)++;
+        Frag->freeResources(dclock(), sendDesc);
     } 
     else if (myproc() == (ulm_int32_t)(Frag->header.src_proc)) {
         /*
@@ -581,6 +463,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	    IncompletePostedSends.Append(sendDesc);
 	}
 	// reset frag and send desc. NumSent as though this frag has not been sent
+    Frag->setSendDidComplete(false);
 	(sendDesc->NumSent)--;
     }				// end NACK/ACK processing
 }

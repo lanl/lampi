@@ -45,14 +45,14 @@ bool udpPath::packData(SendDesc_t *message, udpSendFragDesc *frag)
     size_t len_to_copy, len_copied, payloadSize;
     ULMType_t *dtype = message->datatype;
     ULMTypeMapElt_t *tmap = dtype->type_map;
-    int tm_init = frag->tmap_index;
+    int tm_init = frag->tmapIndex_m;
     int init_cnt = frag->seqOffset_m / dtype->packed_size;
     int tot_cnt = message->posted_m.length_m / dtype->packed_size;
     unsigned char *start_addr = ((unsigned char *) message->addr_m)
 	+ init_cnt * dtype->extent;
     int dtype_cnt, ti;
 
-    payloadSize = frag->len - sizeof(udp_header);
+    payloadSize = frag->length_m - sizeof(udp_header);
     frag->nonContigData = (char *)ulm_malloc(payloadSize);
     if (!frag->nonContigData) {
 	return false;
@@ -170,9 +170,9 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	// initialize send frag
 	//
 
-	sendFragDesc->parentSendDesc = message;
-	sendFragDesc->numTransmits = 0;
-	sendFragDesc->timeSent = -1;
+	sendFragDesc->parentSendDesc_m = message;
+	sendFragDesc->numTransmits_m = 0;
+	sendFragDesc->timeSent_m = -1;
 	sendFragDesc->fragIndex = message->NumFragDescAllocated;
 	sendFragDesc->flags = 0;
 	sendFragDesc->ctx_m = message->ctx_m;
@@ -272,20 +272,20 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 sendFragDesc->msgHdr.msg_iov = (struct iovec *)sendFragDesc->ioVecs;
                 sendFragDesc->msgHdr.msg_iovlen = 2;    // message header + contiguous data
                 sendFragDesc->flags |= UDP_IO_IOVECSSETUP;
-                sendFragDesc->tmap_index = 0;	    
+                sendFragDesc->tmapIndex_m = 0;	    
             }
-	    // calculate tmap_index for non-zero non-contiguous data
+	    // calculate tmapIndex_m for non-zero non-contiguous data
 	    else {
 		int dtype_cnt = offset / message->datatype->packed_size;
 		size_t data_copied = dtype_cnt * message->datatype->packed_size;
 		ssize_t data_remaining = (ssize_t)(offset - data_copied);
-		sendFragDesc->tmap_index = message->datatype->num_pairs - 1;
+		sendFragDesc->tmapIndex_m = message->datatype->num_pairs - 1;
 		for (int ti = 0; ti < message->datatype->num_pairs; ti++) {
 		    if (message->datatype->type_map[ti].seq_offset == data_remaining) {
-			sendFragDesc->tmap_index = ti;
+			sendFragDesc->tmapIndex_m = ti;
 			break;
 		    } else if (message->datatype->type_map[ti].seq_offset > data_remaining) {
-			sendFragDesc->tmap_index = ti - 1;
+			sendFragDesc->tmapIndex_m = ti - 1;
 			break;
 		    }
 		}
@@ -294,10 +294,10 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	    sendFragDesc->msgHdr.msg_iov = (struct iovec *)sendFragDesc->ioVecs;
 	    sendFragDesc->msgHdr.msg_iovlen = 1;	// just the message header
 	    sendFragDesc->flags |= UDP_IO_IOVECSSETUP;
-	    sendFragDesc->tmap_index = 0;
+	    sendFragDesc->tmapIndex_m = 0;
 	}
 
-	sendFragDesc->len = payloadSize + sizeof(udp_header);
+	sendFragDesc->length_m = payloadSize + sizeof(udp_header);
 
 	//
 	// fill in header
@@ -320,22 +320,17 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	header.refCnt = 0;
 
 	// save global destination process ID for later use (resend, etc.)
-	sendFragDesc->globalDestID = header.dest_proc;
+	sendFragDesc->globalDestProc_m = header.dest_proc;
 
 	// thread-safe allocation of frag sequence number in header
 
-#ifdef ENABLE_RELIABILITY
-	    
-	// thread-safe allocation of frag sequence number in header
-	reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].lock();
-	sendFragDesc->frag_seq =
-		(reliabilityInfo->next_frag_seqs[sendFragDesc->globalDestID])++;
-	sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
-	reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].unlock();
+#ifdef ENABLE_RELIABILITY    
+    sendFragDesc->parentSendDesc_m->path_m->initFragSeq(sendFragDesc);
 #else
-	sendFragDesc->frag_seq = 0;
-	sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
+    sendFragDesc->setFragSequence(0);
 #endif
+    
+	sendFragDesc->header.frag_seq = sendFragDesc->fragSequence();
 
 #ifdef HEADER_ON
         sendFragDesc->copyHeader(sendFragDesc->header);
@@ -367,21 +362,22 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	    if (errno != EAGAIN)
                 ulm_warn(("UDPSendDesc::Send, ERROR sending frag, error = %d, count = %d\n", errno, count));
 	    if (errno == EMSGSIZE) {
-		ulm_warn(("UDPSendDesc:: EMSGSIZE returned by sendmsg() for %d bytes\n", sendFragDesc->len));
+		ulm_warn(("UDPSendDesc:: EMSGSIZE returned by sendmsg() for %d bytes\n", sendFragDesc->length_m));
 	    }
 	    continue;
 	}
-
+    sendFragDesc->setSendDidComplete(true);
+    
 #ifdef ENABLE_RELIABILITY
-	sendFragDesc->timeSent = dclock();
+	sendFragDesc->timeSent_m = dclock();
 	unsigned long long max_multiple =
-	    (sendFragDesc->numTransmits <
+	    (sendFragDesc->numTransmits_m <
 	     MAXRETRANS_POWEROFTWO_MULTIPLE) ? (1 << sendFragDesc->
-						numTransmits) : (1 <<
+						numTransmits_m) : (1 <<
 								 MAXRETRANS_POWEROFTWO_MULTIPLE);
-	(sendFragDesc->numTransmits)++;
+	(sendFragDesc->numTransmits_m)++;
 
-	double timeToResend = sendFragDesc->timeSent + (RETRANS_TIME * max_multiple);
+	double timeToResend = sendFragDesc->timeSent_m + (RETRANS_TIME * max_multiple);
 	if (message->earliestTimeToResend == -1) {
 	    message->earliestTimeToResend = timeToResend;
 	} else if (timeToResend < message->earliestTimeToResend) {
@@ -415,117 +411,3 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     return true;
 }
 
-#ifdef ENABLE_RELIABILITY
-
-bool udpPath::resend(SendDesc_t *message, int *errorCode)
-{
-    bool returnValue = false;
-
-    // move the timed out frags from FragsToAck back to
-    // FragsToSend
-    udpSendFragDesc *FragDesc = 0;
-    udpSendFragDesc *TmpDesc = 0;
-    double curTime = 0;
-
-    *errorCode = ULM_SUCCESS;
-
-    // reset send descriptor earliestTimeToResend
-    message->earliestTimeToResend = -1;
-
-    for (FragDesc = (udpSendFragDesc *) message->FragsToAck.begin();
-	 FragDesc != (udpSendFragDesc *) message->FragsToAck.end();
-	 FragDesc = (udpSendFragDesc *) FragDesc->next) {
-
-	// reset TmpDesc
-	TmpDesc = 0;
-
-	// obtain current time
-	curTime = dclock();
-
-	// retrieve received_largest_inorder_seq
-	unsigned long long received_seq_no, delivered_seq_no;
-
-	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].received_largest_inorder_seq;
-	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].delivered_largest_inorder_seq;
-
-	bool free_send_resources = false;
-
-	// move frag if timed out and not sitting at the
-	// receiver
-	if (delivered_seq_no >= FragDesc->frag_seq) {
-	    // an ACK must have been dropped somewhere along the way...or
-	    // it hasn't been processed yet...
-	    FragDesc->WhichQueue = UDPFRAGFREELIST;
-	    TmpDesc = (udpSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-	    // set frag_seq value to 0/null/invalid to detect duplicate ACKs
-	    FragDesc->frag_seq = 0;
-	    // reset send descriptor pointer
-	    FragDesc->parentSendDesc = 0;
-	    // free all of the other resources after we unlock the frag
-	    free_send_resources = true;
-	} else {
-	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    if ((curTime - FragDesc->timeSent) >= (RETRANS_TIME * max_multiple)) {
-            // resend this frag...
-            returnValue = true;
-            FragDesc->WhichQueue = UDPFRAGSTOSEND;
-            TmpDesc = (udpSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-            message->FragsToSend.AppendNoLock(FragDesc);
-                    (message->NumSent)--;
-                    FragDesc=TmpDesc;
-            continue;
-        } else {
-            double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
-            if (message->earliestTimeToResend == -1) {
-                message->earliestTimeToResend = timeToResend;
-            } else if (timeToResend < message->earliestTimeToResend) {
-                message->earliestTimeToResend = timeToResend;
-            } 
-        }
-    }
-    
-	if (free_send_resources) {
-	    message->clearToSend_m=true;
-	    (message->NumAcked)++;
-
-	    // free memory for iovec array if allocated
-	    if (FragDesc->nonContigData) {
-		free(FragDesc->nonContigData);
-		FragDesc->nonContigData = 0;
-            }    
-	 
-            if (FragDesc->earlySend != NULL && FragDesc->earlySend_type != -9 ) {
-                int index = getMemPoolIndex();
-                if (FragDesc->earlySend_type ==  EARLY_SEND_SMALL) {
-                    UDPEarlySendData_small.returnElement((Links_t *) FragDesc->earlySend, index);
-                } else if (FragDesc->earlySend_type ==  EARLY_SEND_MED)
-                    UDPEarlySendData_med.returnElement((Links_t *) FragDesc->earlySend, index);
-                else if (FragDesc->earlySend_type ==  EARLY_SEND_LARGE) {
-                    UDPEarlySendData_large.returnElement((Links_t *) FragDesc->earlySend, index);
-                } else {
-                    ulm_warn(("no size match\n"));
-                    return false; 
-                }
-                FragDesc->earlySend_type = -9;
-            }	    
-
-
-            // return fragment descriptor to free list
-
-            // the header holds the global proc id
-	    udpSendFragDescs.returnElement(FragDesc, getMemPoolIndex());
-	}
-	// reset FragDesc to previous value, if appropriate, to iterate over list correctly...
-	if (TmpDesc) {
-	    FragDesc = TmpDesc;
-	}
-        // end FragsToAck fragment descriptor loop
-    }
-    // return
-    return returnValue;
-}
-
-#endif
