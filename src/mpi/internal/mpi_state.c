@@ -55,6 +55,13 @@ static int called = 0;
 static int dummy_proc_null_request;
 
 /*
+ * Some null objects
+ */
+void *ulm_datatype_null_location;
+void *ulm_op_null_location;
+void *ulm_request_null_location;
+
+/*
  * MPI layer initialization
  */
 int _mpi_init(void)

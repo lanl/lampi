@@ -46,13 +46,17 @@ extern "C"
 /*
  * Null objects
  */
+extern void *ulm_datatype_null_location;
+extern void *ulm_op_null_location;
+extern void *ulm_request_null_location;
+
 #define MPI_BOTTOM              ((MPI_Aint) NULL)
 #define MPI_COMM_NULL           ((MPI_Comm) -1)
 #define MPI_GROUP_NULL          ((MPI_Group) -1)
 #define MPI_GROUP_EMPTY         ((MPI_Group) -2)
-#define MPI_DATATYPE_NULL       ((MPI_Datatype) NULL)
-#define MPI_OP_NULL             ((MPI_Op) NULL)
-#define MPI_REQUEST_NULL        ((MPI_Request) NULL)
+#define MPI_DATATYPE_NULL       ((MPI_Datatype) &ulm_datatype_null_location)
+#define MPI_OP_NULL             ((MPI_Op) &ulm_op_null_location)
+#define MPI_REQUEST_NULL        ((MPI_Request) &ulm_request_null_location)
 #define MPI_ERRHANDLER_NULL     ((MPI_Errhandler) -1)
 #define MPI_STATUS_IGNORE       ((MPI_Status *) NULL)
 #define MPI_IN_PLACE            ((void *) -1)
