@@ -41,7 +41,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <stdio.h>
+#include <sys/utsname.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -220,17 +220,17 @@ void lampi_init(void)
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )
     {
-        if (0) {
-            fprintf(stderr, "*** LA-MPI: Daemon initialized (stderr)\n");
-            fprintf(stdout, "*** LA-MPI: Daemon initialized (stdout)\n");
+        if (lampiState.verbose) {
+            fprintf(stderr, "LA-MPI: *** Daemon initialized (stderr)\n");
+            fprintf(stdout, "LA-MPI: *** Daemon initialized (stdout)\n");
             fflush(stdout);
         }
         lampi_daemon_loop(&_ulm);
     }
     else if (lampiState.global_rank == 0)
     {
-        fprintf(stderr, "*** LA-MPI: libmpi (" PACKAGE_VERSION ")\n");
-        fprintf(stderr, "*** LA-MPI: Copyright 2001-2004, ACL, Los Alamos National Laboratory\n");
+        fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
+        fprintf(stderr, "LA-MPI: *** Copyright 2001-2004, ACL, Los Alamos National Laboratory\n");
     }
 }
 
@@ -1965,9 +1965,16 @@ void lampi_init_postfork_stdio(lampiState_t *s)
 
         if (s->output_prefix) {
             /* activate prefix */
+
+            struct utsname utsname;
+
+            uname(&utsname);
+ 
             for (int i = 0; i < s->local_size; i++) {
-                sprintf(s->IOPreFix[i], "%d[%d.%d] ",
-                        i + s->global_to_local_offset, s->hostid, i);
+                sprintf(s->IOPreFix[i], "%d[%d.%d.%s] ",
+                        i + s->global_to_local_offset,
+                        s->hostid, i,
+                        utsname.nodename);
                 s->LenIOPreFix[i] = (int) strlen(s->IOPreFix[i]);
             }
             sprintf(s->IOPreFix[s->local_size], "daemon[%d] ", s->hostid);

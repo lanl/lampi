@@ -489,7 +489,7 @@ int mpirun(int argc, char **argv)
     lampirun_init_proc();
     
     /* print out banner message */
-    fprintf(stderr, "*** LA-MPI: mpirun (" PACKAGE_VERSION ")\n");
+    fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
 
     /*
      * Read in environment

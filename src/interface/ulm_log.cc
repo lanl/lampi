@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "internal/state.h"
 
@@ -85,7 +86,15 @@ extern "C" void _ulm_print(FILE * fd, const char *fmt, va_list ap)
 
 extern "C" void _ulm_set_file_line(const char *name, int line)
 {
-    sprintf(file_line, "LA-MPI:%s:%d: ", name, line);
+    char *p;
+
+    p = strstr(name, "src/");
+    if (p) {
+        p += strlen("src/");
+        sprintf(file_line, "LA-MPI:%s:%d: ", p, line);
+    } else {
+        sprintf(file_line, "LA-MPI:%s:%d: ", name, line);
+    }
 }
 
 extern "C" void _ulm_err(const char *fmt, ...)
