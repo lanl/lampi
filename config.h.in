@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 3 or 4 if BPROC is enabled. */
+#undef BPROC_MAJOR_VERSION
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -16,6 +19,9 @@
 
 /* Define to 1 if copious debug output is enabled. */
 #undef ENABLE_DBG
+
+/* Define to 1 if compiled with debugging. */
+#undef ENABLE_DEBUG
 
 /* Define to 1 if the Myrinet GM path is enabled. */
 #undef ENABLE_GM

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.5.4,lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.5-rc1,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -485,6 +485,9 @@ AC_ARG_ENABLE(debug,
 echo "debug build... ${enable_debug:-no}"
 if test "$enable_debug" = "no" ; then
    AC_DEFINE(NDEBUG, 1)
+   AC_DEFINE(ENABLE_DEBUG, 0)
+else
+   AC_DEFINE(ENABLE_DEBUG, 1)
 fi
 
 AC_ARG_ENABLE(static,
@@ -684,6 +687,9 @@ AH_TEMPLATE([ENABLE_RMS],
 AH_TEMPLATE([ENABLE_BPROC],
             [Define to 1 if BPROC is enabled.])
 
+AH_TEMPLATE([BPROC_MAJOR_VERSION],
+            [Define to 3 or 4 if BPROC is enabled.])
+
 AH_TEMPLATE([ENABLE_UDP],
             [Define to 1 if the UDP/IP path is enabled.])
 
@@ -707,6 +713,9 @@ AH_TEMPLATE([ENABLE_PTY_STDIO],
 
 AH_TEMPLATE([ENABLE_CHECK_API_ARGS],
             [Define to 1 if MPI argument checking is enabled.])
+
+AH_TEMPLATE([ENABLE_DEBUG],
+            [Define to 1 if compiled with debugging.])
 
 AH_TEMPLATE([ENABLE_DBG],
             [Define to 1 if copious debug output is enabled.])
