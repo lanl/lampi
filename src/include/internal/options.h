@@ -106,10 +106,6 @@ enum { OPT_MEMPROFILE = 0 };
  * Systems
  */
 
-#ifdef __osf__
-#define USE_RMS
-#endif
-
 #ifdef USE_BPROC
 enum { OPT_BPROC = 1 };
 #else

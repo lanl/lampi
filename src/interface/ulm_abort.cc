@@ -74,7 +74,7 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
 
     fflush(stdout);
     fflush(stderr);
-#ifdef __osf__
+#ifdef USE_RMS
     raise(SIGHUP);
 #else
     exit(error);

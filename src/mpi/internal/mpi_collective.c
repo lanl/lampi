@@ -51,7 +51,7 @@ int _mpi_init_collectives(void)
     _mpi.collective.scatter = ulm_scatter;
     _mpi.collective.scatterv = ulm_scatterv;
 
-#ifdef __osf__
+#ifdef QUADRICS
     if (ULM_HW_BARRIER) {
         _mpi.collective.barrier = ulm_barrier_quadrics;
     }

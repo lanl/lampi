@@ -72,7 +72,7 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                                  ListHostsStarted, RunParameters,
                                  FirstAppArgument, argc, argv);
     }
-#ifdef __osf__
+#ifdef USE_RMS
     return mpirun_spawn_prun(AuthData, ReceivingSocket,
                              RunParameters, FirstAppArgument, argc, argv);
 #endif

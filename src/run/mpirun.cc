@@ -97,7 +97,7 @@ ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
 
 static adminMessage *server = NULL;
 
-#ifdef __osf__
+#ifdef USE_RMS
 bool broadcastQuadricsFlags(int *errorCode)
 {
     bool returnValue = true;

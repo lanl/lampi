@@ -33,7 +33,7 @@
 #include <strings.h>
 #include <new>
 
-#ifdef __osf__
+#ifdef QUADRICS
 #include <elan3/elan3.h>
 #include "path/quadrics/state.h"
 #endif
@@ -60,20 +60,6 @@
 /*
  * some auxiliary functions used to initialize the communicator
  */
-
-static int cmp(const void *p1, const void *p2)
-{
-    int *i1, *i2;
-    i1 = (int *) p1;
-    i2 = (int *) p2;
-    if (*i1 < *i2) {
-        return -1;
-    } else if (*i1 == *i2) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
 
 /*
  * This routine is used to compute the send/recv pairs for the
@@ -502,7 +488,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 // of the method.  In case of error, zero is returned.
 void* Communicator::getMcastBuf(int rail, size_t *sz)
 {
-#ifndef __osf__
+#ifndef QUADRICS
     *sz = 0;
     return 0;
 #else
@@ -558,7 +544,7 @@ void* Communicator::getMcastBuf(int rail, size_t *sz)
 // and, if no such vpid is available, then *vp = -1.
 int Communicator::getMcastVpid(int rail, int *vp)
 {
-#ifndef __osf__
+#ifndef QUADRICS
     *vp = -1;
     return ULM_SUCCESS;
 #else

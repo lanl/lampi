@@ -53,10 +53,6 @@
 #include "run/globals.h"
 //#include "queue/globals.h"
 
-#ifdef __osf__
-#define USE_RMS
-#endif
-
 extern int MPIR_being_debugged;
 
 /*
@@ -163,7 +159,7 @@ int MPIrunProcessInput(int argc, char **argv,
      */
     RunParameters->DaemonPIDs = ulm_new(pid_t,  RunParameters->NHosts);
 
-#ifndef __osf__
+#ifndef USE_RMS
     /* disallow network setup if only 1 host */
     if (RunParameters->NHosts == 1)
         RunParameters->NPathTypes[0] = 0;

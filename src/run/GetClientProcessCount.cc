@@ -237,7 +237,7 @@ void GetClientProcessCount(const char *InfoStream)
         if (RunParameters.HostListSize == 0) {
             nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
             if (nhosts > LSFNumHosts) {
-#ifndef __osf__
+#ifndef USE_RMS
                 ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                     nhosts, LSFNumHosts));
                 Abort();
@@ -293,7 +293,7 @@ void GetClientProcessCount(const char *InfoStream)
     }
     else {
         if (RunParameters.HostListSize == 0) {
-#ifdef __osf__
+#ifdef USE_RMS
             if (!RunParameters.NHostsSet) {
                 RunParameters.NHosts = 1;
             }
@@ -327,7 +327,7 @@ void GetClientProcessCount(const char *InfoStream)
             ulm_err(("Error: -np/-n option must specify at least one process.\n"));
             Abort();
         }
-#ifdef __osf__
+#ifdef USE_RMS
         RunParameters.ProcessCount[0] = totalProcs;
 #else
         if (RunParameters.NHosts == 1) {
@@ -407,7 +407,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     if (RunParameters.HostListSize == 0) {
         nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : LSFNumHosts;
         if (nhosts > LSFNumHosts) {
-#ifndef __osf__
+#ifndef USE_RMS
             ulm_err(("Error: -N option specifies more hosts (%d) than are available via LSF (%d).\n",
                 nhosts, LSFNumHosts));
             Abort();
