@@ -17,7 +17,7 @@
 ! COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
 ! PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
 ! OWNED RIGHTS.
-!
+
 ! Additionally, this program is free software; you can distribute it and/or 
 ! modify it under the terms of the GNU Lesser General Public License as 
 ! published by the Free Software Foundation; either version 2 of the License, 
@@ -29,5 +29,5 @@
 
 
 
+      include "mpiof.h"
       include "mpi/mpif.h"
-

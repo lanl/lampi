@@ -187,6 +187,7 @@ install: all
 	(cd ../src/include/ulm ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir)/ulm; done) ; \
 	if [ -f $(includedir)/mpio.h ] ; then \
 		mv $(includedir)/mpiandio.h $(includedir)/mpi.h; \
+		mv $(includedir)/mpiandiof.h $(includedir)/mpif.h; \
 	fi
 
 $(VERSION): VERSION
