@@ -1,0 +1,7 @@
+This is a basic implementation of a scatter that
+uses a bcast to distribute ALL the data to each
+node.  Each node than grabs its bit.  Nothing fancy.
+Hopeful once we have the hardware bcast working
+this should be very fast.
+4/10/2004
+nehal
