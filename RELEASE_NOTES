@@ -257,3 +257,12 @@ Version 1.4.10
 
 - Added generic --enable-large-file-support option, rather than
   coupling this to the type of system or file system detected.
+
+Version 1.4.11
+
+- Change in client/server wire-up for linux/bproc systems to avoid
+  start-up problems when run under totalview.
+
+- Minor fixes.
+
+
