@@ -128,6 +128,10 @@ int MPIrunProcessInput(int argc, char **argv,
     if (OPT_RELIABILITY) {
         RunParameters->quadricsDoAck = 1;
         RunParameters->quadricsDoChecksum = 1;
+#ifdef ENABLE_GM
+        RunParameters->Networks.GMSetup.doAck = 1;
+        RunParameters->Networks.GMSetup.doChecksum = 1;
+#endif
     } else {
         RunParameters->quadricsDoAck = 0;
         RunParameters->quadricsDoChecksum = 0;
