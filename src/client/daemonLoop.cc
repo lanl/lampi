@@ -70,8 +70,6 @@ void lampi_daemon_loop(lampiState_t *s)
     int *STDINfdToChild = &s->STDINfdToChild;
     int *STDOUTfdsFromChildren = s->STDOUTfdsFromChildren;
     int *STDERRfdsFromChildren = s->STDERRfdsFromChildren;
-    int StdoutFD = s->STDOUTfdToMPIrun;
-    int StderrFD = s->STDERRfdToMPIrun;
     PrefixName_t *IOPreFix = s->IOPreFix;
     int *LenIOPreFix = s->LenIOPreFix;
     size_t *StderrBytesWritten = &(s->StderrBytesWritten);
@@ -148,7 +146,8 @@ void lampi_daemon_loop(lampiState_t *s)
         }
         /* handle stdio */
         ClientScanStdoutStderr(STDOUTfdsFromChildren,
-                               STDERRfdsFromChildren, StdoutFD, StderrFD,
+                               STDERRfdsFromChildren, 
+                               &ServerSocketFD, 
                                NChildren + 1, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
                                StdoutBytesWritten, NewLineLast, s);
@@ -193,8 +192,8 @@ void lampi_daemon_loop(lampiState_t *s)
                                   hostIndex, ChildPIDs,
                                   STDINfdToChild,
                                   STDOUTfdsFromChildren,
-                                  STDERRfdsFromChildren, StdoutFD,
-                                  StderrFD, StderrBytesWritten,
+                                  STDERRfdsFromChildren, 
+                                  StderrBytesWritten,
                                   StdoutBytesWritten, NewLineLast,
                                   IOPreFix, LenIOPreFix, s);
 

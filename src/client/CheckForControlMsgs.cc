@@ -131,8 +131,7 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
             NotifyServer = 0;
             AbortAndDrainLocalHost(-1, ProcessCount, hostIndex,
                            ChildPIDs, (unsigned int) Message,
-                           NotifyServer, STDOUTfdsFromChildren,
-                           STDERRfdsFromChildren, -1, -1,
+                           NotifyServer, STDOUTfdsFromChildren, STDERRfdsFromChildren, 
                            IOPreFix, LenIOPreFix, StderrBytesWritten, 
                            StdoutBytesWritten, NewLineLast, state);
             doRollingShutdown(ACKTERMINATENOW, numberDaemonChildren, state);
@@ -157,11 +156,10 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
                     MaxDesc = STDERRfdsFromChildren[i];
             }
             MaxDesc++;
-            ClientDrainSTDIO(STDOUTfdsFromChildren,
-                             STDERRfdsFromChildren, -1, -1,
+            ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, -1,
                              NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                              StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, -1, state);
+                             NewLineLast, state);
             ulm_exit((-1, "Abnormal termination \n"));
             break;
         case ALLHOSTSDONE:
@@ -178,11 +176,10 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
                     MaxDesc = STDERRfdsFromChildren[i];
             }
             MaxDesc++;
-            ClientDrainSTDIO(STDOUTfdsFromChildren,
-                             STDERRfdsFromChildren, -1, -1,
+            ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, -1,
                              NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                              StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, -1, state);
+                             NewLineLast, state);
 
             /* To help ensure that all stdio has been sent to host 0, we
             do a rolling daemon shutdown process.  Each daemon waits for a
@@ -223,8 +220,8 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               int hostIndex, pid_t *ChildPIDs,
                               int *STDINfdToChild,
                               int *STDOUTfdsFromChildren,
-                              int *STDERRfdsFromChildren, int StdoutFD,
-                              int StderrFD, size_t *StderrBytesWritten,
+                              int *STDERRfdsFromChildren, 
+                              size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state)
@@ -302,8 +299,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                 NotifyServer = 1;
                 AbortAndDrainLocalHost(*ServerSocketFD, ProcessCount, hostIndex,
                                        ChildPIDs, (unsigned int) Message,
-                                       NotifyServer, STDOUTfdsFromChildren,
-                                       STDERRfdsFromChildren, StdoutFD, StderrFD,
+                                       NotifyServer, STDOUTfdsFromChildren, STDERRfdsFromChildren,
                                        IOPreFix, LenIOPreFix, StderrBytesWritten, 
                                        StdoutBytesWritten, NewLineLast, state);
                 break;
@@ -323,11 +319,10 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                         MaxDesc = STDERRfdsFromChildren[i];
                 }
                 MaxDesc++;
-                ClientDrainSTDIO(STDOUTfdsFromChildren,
-                                 STDERRfdsFromChildren, StdoutFD, StderrFD,
+                ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, *ServerSocketFD,
                                  NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                                  StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, *ServerSocketFD, state);
+                                 NewLineLast, state);
                 ulm_exit((-1, "Abnormal termination \n"));
                 break;
             case ALLHOSTSDONE:
@@ -352,11 +347,10 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                         MaxDesc = STDERRfdsFromChildren[i];
                 }
                 MaxDesc++;
-                ClientDrainSTDIO(STDOUTfdsFromChildren,
-                                 STDERRfdsFromChildren, StdoutFD, StderrFD,
+                ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, *ServerSocketFD,
                                  NFDs, MaxDesc, IOPreFix, LenIOPreFix,
                                  StderrBytesWritten, StdoutBytesWritten,
-                                 NewLineLast, *ServerSocketFD, state);
+                                 NewLineLast, state);
                 *lampiState.sync.AllHostsDone = 1;
                 // ok, the client daemon can now exit...
                 exit(0);

@@ -53,8 +53,7 @@ void AbortLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
 void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int _ulm_HostID,
                     pid_t *ChildPIDs, unsigned int MessageType,
                     int Notify, int *ClientStdoutFDs, int *ClientStderrFDs,
-                    int ToServerStdoutFD, int ToServerStderrFD, PrefixName_t *IOPrefix,
-                    int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
+                    PrefixName_t *IOPrefix, int *LenIOPreFix, size_t *StderrBytesWritten, size_t *StdoutBytesWritten,
                     int *NewLineLast, lampiState_t *state);
 int CheckIfChildrenAlive(int *ProcessCount, int _ulm_HostID,
                          int *IAmAlive);
@@ -70,14 +69,14 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               int _ulm_HostID, pid_t *ChildPIDs,
                               int *STDINfdToChild,
                               int *STDOUTfdsFromChildren,
-                              int *STDERRfdsFromChildren, int StdoutFD,
-                              int StderrFD, size_t *StderrBytesWritten,
+                              int *STDERRfdsFromChildren, 
+                              size_t *StderrBytesWritten,
                               size_t *StdoutBytesWritten,
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state);
 int ClientSendStdin(int *ServerFD, int* ClientFD);
 int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
-                           int ToServerStdoutFD, int ToServerStderrFD,
+                           int *ServerFD,
                            int NFDs, int MaxDescriptor,
                            PrefixName_t *IOPreFix, int *LenIOPreFix,
                            size_t *StderrBytesWritten,
@@ -88,11 +87,11 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
                            int ControlSocketToULMRunFD,
 						   lampiState_t *state);
 void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
-                      int ToServerStdoutFD, int ToServerStderrFD, int NFDs,
+                      int ServerFD, int NFDs,
                       int MaxDescriptor, PrefixName_t *IOPreFix,
                       int *LenIOPreFix, size_t *StderrBytesWritten,
                       size_t *StdoutBytesWritten, int *NewLineLast,
-                      int ControlSocketToULMRunFD, lampiState_t *state);
+                      lampiState_t *state);
 void ClientWaitForSetUpToComplete(volatile int *HostDoneWithSetup,
                                   volatile int *Wait, int NHosts,
                                   int IAmDaemon, int ServerSocketFD);

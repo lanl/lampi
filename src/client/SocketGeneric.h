@@ -51,7 +51,7 @@ ssize_t ClientWriteIOToServer(char *String, char *PrependString,
                               int lenPrependString, int *NewLineLast,
                               int Writefd, ssize_t lenString,
                               bool startWithNewLine, lampiState_t *state);
-ssize_t ClientWriteToServer(char *String, char *PrependString,
+ssize_t ClientWriteToServer(int *ServerFD, char *String, char *PrependString,
                             int lenPrependString, int *NewLineLast,
                             int Writefd, ssize_t lenString,
                             bool startWithNewLine);

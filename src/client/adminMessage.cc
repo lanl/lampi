@@ -49,7 +49,7 @@
 #include "util/misc.h"
 #include "util/parsing.h"
 
-#define MAX_RETRY		10
+#define MAX_RETRY		100
 
 typedef struct {
     int                 tag;
@@ -126,6 +126,10 @@ int socketToHostRank(int numHosts, HostName_t* hostList,
     int hostIndex=adminMessage::UNKNOWN_HOST_ID;
     TmpHost =
         gethostbyaddr((char *) &(client->sin_addr.s_addr), 4, AF_INET);
+    if(TmpHost == NULL) {
+        ulm_err(("socketToHostRank: unable to resolve: %s\n", inet_ntoa(client->sin_addr)));
+        return hostIndex;
+    }
     /* find order in list */
     for (j = 0; j < numHosts ; j++) {
         RetVal =
@@ -1869,8 +1873,10 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
                 break;
             }
         }
-        if (sockfd < 0)
+        if (sockfd < 0) {
+            sleep(1);
             continue;
+        }
 
         // now do the authorization handshake...receive info
         iovecs[0].iov_base = &tag;
@@ -1913,7 +1919,7 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
                 sigaction(SIGALRM, &oldSignals, (struct sigaction *)NULL);
             }
             pthread_cancel(sca_thread);
-            return false;
+           return false;
         }
 
         if (use_random_mapping==1) {
@@ -2883,11 +2889,7 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
     recvResult returnValue = OK;
     int sockfd = -1, maxfd = 0,s;
     struct timeval t;
-#ifdef ENABLE_BPROC
     ulm_fd_set_t fds;
-#else
-    fd_set fds;
-#endif
     ulm_iovec_t iovecs;
 
     reset(RECEIVE);
@@ -2902,11 +2904,7 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
         t.tv_usec = microseconds;
     }
 
-#ifdef ENABLE_BPROC
     bzero(&fds, sizeof(fds));
-#else
-    FD_ZERO(&fds);
-#endif
     if ((client_m) && (socketToServer_m >= 0)) {
         FD_SET(socketToServer_m, (fd_set *)&fds);
         maxfd = socketToServer_m;

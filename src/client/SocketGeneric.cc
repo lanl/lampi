@@ -392,9 +392,9 @@ ssize_t ClientWriteIOToServer(char *String, char *PrependString,
  *  prepends a prefix at the begining of each line, and forwards the
  *  string to mpirun.
  */
-ssize_t ClientWriteToServer(char *String, char *PrependString,
+ssize_t ClientWriteToServer(int *ServerFD, char *String, char *PrependString,
                             int lenPrependString, int *NewLineLast,
-                            int Writefd, ssize_t lenString,
+                            int StdioFD, ssize_t lenString,
                             bool startWithNewLine)
 {
 #define MAXIOVEC 100
@@ -403,19 +403,29 @@ ssize_t ClientWriteToServer(char *String, char *PrependString,
     caddr_t PtrToNewLine, PtrToStartWrite;
     ulm_iovec_t send[MAXIOVEC];
     ssize_t TotalBytesSent, n, nsend;
+    unsigned int tag = STDIOMSG;
+    int bytes = 0;
     bool again;
 
     TotalBytesSent = 0;
 
+    niov = 0;
+    send[niov].iov_base = &tag;
+    send[niov].iov_len = sizeof(tag);
+    niov++;
+    send[niov].iov_base = &StdioFD;
+    send[niov].iov_len = sizeof(StdioFD);
+    niov++;
+    send[niov].iov_base = &bytes;
+    send[niov].iov_len = sizeof(bytes);
+    niov++;
+
     if (startWithNewLine) {
         char newline_char = '\n';
-        send[0].iov_base = (void *) &newline_char;
-        send[0].iov_len = (ssize_t) sizeof(newline_char);
-        nsend = ulm_writev(Writefd, send, 1);
-        if (nsend < 0) {
-            return nsend;
-        }
-        TotalBytesSent += sizeof(char);
+        send[niov].iov_base = (void *) &newline_char;
+        send[niov].iov_len = (ssize_t) sizeof(newline_char);
+        niov++;
+        bytes += sizeof(char);
         *NewLineLast = 1;
     }
 
@@ -423,13 +433,12 @@ ssize_t ClientWriteToServer(char *String, char *PrependString,
         goto NOPREPEND;
 
     /* initialize data */
-    niov = 0;
     /* if last character to print out was new line - startout with new-line */
     if ((*NewLineLast)) {
         send[niov].iov_base = (void *) PrependString;
         send[niov].iov_len = lenPrependString;
-        TotalBytesSent += lenPrependString;
         niov++;
+        bytes += lenPrependString;
     }
     *NewLineLast = 0;
 
@@ -449,8 +458,8 @@ CONTINUE:;
             LenToWrite = PtrToNewLine - PtrToStartWrite + 1;
             send[niov].iov_base = (void *) PtrToStartWrite;
             send[niov].iov_len = LenToWrite;
-            TotalBytesSent += LenToWrite;
             niov++;
+            bytes += LenToWrite;
             PtrToStartWrite += LenToWrite;
             LeftToWrite -= LenToWrite;
             if (PtrToStartWrite == (caddr_t) (String + len))
@@ -458,15 +467,15 @@ CONTINUE:;
             if (LeftToWrite > 0) {
                 send[niov].iov_base = (void *) PrependString;
                 send[niov].iov_len = lenPrependString;
-                TotalBytesSent += lenPrependString;
                 niov++;
+                bytes += lenPrependString;
             }
         } else {
             LenToWrite = (size_t) (String + len - PtrToStartWrite);
             send[niov].iov_base = (void *) PtrToStartWrite;
             send[niov].iov_len = LenToWrite;
-            TotalBytesSent += LenToWrite;
             niov++;
+            bytes += LenToWrite;
             LeftToWrite -= LenToWrite;
         }
     }
@@ -474,18 +483,22 @@ CONTINUE:;
     do {
         again = false;
         /* write out data */
-        nsend = ulm_writev(Writefd, send, niov);
+        nsend = ulm_writev(*ServerFD, send, niov);
         if ((nsend < 0) && (errno == EINTR)) {
             again = true;
         }
     } while (again);
 
-    if (nsend < 0)
+    if (nsend <= 0) {
+        close(*ServerFD);
+        *ServerFD = -1;
         return nsend;
+    }
 
-    /*  */
+    TotalBytesSent += bytes;
     if (LeftToWrite > 0) {
-        niov = 0;
+        niov = 3;
+        bytes = 0;
         goto CONTINUE;
     }
 
@@ -496,22 +509,25 @@ NOPREPEND:;
     n = (ssize_t) strlen(String);
     if (n > lenString)
         n = (ssize_t) lenString;
-/*
-  send[0].iov_base=(void *)&AuthorizationData[0];
-  send[0].iov_len=(ssize_t)(3*sizeof(unsigned int));
-  send[1].iov_base=(void *)&n;
-  send[1].iov_len=(ssize_t)(sizeof(ssize_t ));
-*/
-    send[0].iov_base = (void *) String;
-    send[0].iov_len = (ssize_t) (n);
+
+    send[niov].iov_base = (void *) String;
+    send[niov].iov_len = (ssize_t) (n);
+    niov++;
+    bytes += n;
 
     do {
         again = false;
-        nsend = ulm_writev(Writefd, send, 1);
+        nsend = ulm_writev(*ServerFD, send, niov);
         if ((nsend < 0) && (errno == EINTR)) {
             again = true;
         }
     } while (again);
+
+    if (nsend <= 0) {
+        close(*ServerFD);
+        *ServerFD = -1;
+        return nsend;
+    }
 
     return (ssize_t) n;
 }
