@@ -66,24 +66,20 @@ URL: http://www.acl.lanl.gov/la-mpi/
 Provides: mpi
 
 %description 
-The Los Alamos Message Passing Interface (LA-MPI) project provides an
-end-to-end network fault-tolerant message passing system for
-tera-scale clusters. Our objective is to deliver to the application
-developer a production quality open-source software implementation of
-a message passing library with leading edge technology underpinnings.
-The current API supported being MPI 1.2 (C and Fortran bindings).
+The Los Alamos Message Passing Interface is an open-source, portable
+implementation of MPI designed for large clusters of multiprocessor nodes.
+LA-MPI offers high performance, network fault tolerance, thread safety,
+and implements MPI version 1.2 with MPI-IO supported via ROMIO.
 
 %package %{compiler}%{dev}
 Summary: LA-MPI - %{dev} device
 Group: System Environment/Libraries
 
 %description  %{compiler}%{dev}
-The Los Alamos Message Passing Interface (LA-MPI) project provides an
-end-to-end network fault-tolerant message passing system for
-tera-scale clusters. Our objective is to deliver to the application
-developer a production quality open-source software implementation of
-a message passing library with leading edge technology underpinnings.
-The current API supported being MPI 1.2 (C and Fortran bindings).
+The Los Alamos Message Passing Interface is an open-source, portable
+implementation of MPI designed for large clusters of multiprocessor nodes.
+LA-MPI offers high performance, network fault tolerance, thread safety,
+and implements MPI version 1.2 with MPI-IO supported via ROMIO.
 
 %prep
 
@@ -175,7 +171,7 @@ export PATH CC CFLAGS CXX CXXFLAGS FC F77 FFLAGS F90 F90FLAGS
 %{?_with_check-api-args:--enable-check-api-args}%{?_without_check-api-args:--disable-check-api-args} \
 %{?_with_dbg:		--enable-dbg}		%{?_without_dbg:	--disable-dbg} \
 %{?_with_memprofile:	--enable-memprofile}	%{?_without_memprofile:	--disable-memprofile} \
-%{?_with_romio:		--enable-romio}		%{?_without_romio:	--disable-romio} \
+%{?_with_romio:		--with-romio}		%{?_without_romio:	--without-romio} \
 
 %{__make}
 
