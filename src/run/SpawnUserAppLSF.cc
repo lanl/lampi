@@ -70,7 +70,6 @@ struct hostent *NetEntry;
 void AllocateAndFillEnv(int, char *);
 void HostBuildEnvList(int, char *, unsigned int *, int, ULMRunParams_t *);
 void HostBuildExecArg(int, ULMRunParams_t *, int, int, char **);
-/*FILE   *DbgFile=fopen("DBG_LSF", "wb"); */
 
 
 #ifdef ENABLE_LSF
@@ -166,7 +165,8 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
                     int FirstAppArgument, int argc, char **argv)
 {
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
-    int idx, host, RetVal;
+    int idx, host;
+    int RetVal, dupSTDERRfd, dupSTDOUTfd;
     struct sigaction action;
     int NHostsStarted=0;
 #ifdef ENABLE_LSF
@@ -218,19 +218,19 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
      */
     *ListHostsStarted = ulm_new(int, RunParameters->NHosts);
 
+    /* save stdin for forwarding to proc rank 0 */
+    RunParameters->STDINfd = dup(STDIN_FILENO);
+
     /* dup current stderr and stdout so that ULMRun's stderr and stdout can
      * be resored to those before exiting this routines.
      */
-    
-    /* setup stdin forwarding */
-    RunParameters->STDINfd = dup(STDIN_FILENO);
 
-    int dupSTDERRfd = dup(STDERR_FILENO);
+    dupSTDERRfd = dup(STDERR_FILENO);
     if (dupSTDERRfd <= 0) {
         printf("Error: duping STDERR_FILENO.\n");
         Abort();
     }
-    int dupSTDOUTfd = dup(STDOUT_FILENO);
+    dupSTDOUTfd = dup(STDOUT_FILENO);
     if (dupSTDOUTfd <= 0) {
         printf("Error: duping STDOUT_FILENO.\n");
         Abort();
@@ -238,13 +238,15 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 
     fflush(stdout);
     fflush(stderr);
+
+    /* connect stdin/stdout/stderr to /dev/null */
     int fd = open("/dev/null", 0, 0);
-    if(fd > 0) {
+    if(fd >= 0) {
+        dup2(fd, STDIN_FILENO);
         dup2(fd, STDOUT_FILENO);
         dup2(fd, STDERR_FILENO);
         close(fd);
     }
-    close(STDIN_FILENO);
 
     /*
      * Loop through the NHosts and spawn remote job by using ls_rtask().
@@ -256,10 +258,10 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         HostBuildExecArg(host, RunParameters, FirstAppArgument, argc,
                          argv);
 
-
 #ifdef  ENABLE_LSF
         if ((RetVal = ls_chdir(RunParameters->HostList[host],
              RunParameters->WorkingDirList[host])) < 0) {
+            dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: can't LSF remote change directory, ls_chdir(\"%s\",\"%s\") returned %d lserrno %d (error: %s)!\n", 
                 RunParameters->HostList[host], RunParameters->WorkingDirList[host], RetVal, lserrno, ls_sysmsg()));
             Abort();
@@ -267,16 +269,19 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 
         if (ls_rstat(RunParameters->HostList[host],
             RunParameters->ExeList[host], &rstat) < 0) {
+            dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s (error: %s)\n",
                 RunParameters->ExeList[host], RunParameters->HostList[host], strerror(errno)));
             Abort();
         }
         else if (!S_ISREG(rstat.st_mode)) {
+            dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s shows that the file is not a regular file!\n",
                 RunParameters->ExeList[host], RunParameters->HostList[host]));
             Abort();
         }
         else if (!canExecute(&rstat)) {
+            dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: LSF remote stat of executable %s on host %s -- no execute permission!\n",
                 RunParameters->ExeList[host], RunParameters->HostList[host]));
             Abort();
@@ -284,6 +289,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
 
         if ((lsfTasks[host] = ls_rtaske(RunParameters->HostList[host], ExecArgs,
                       REXF_CLNTDIR, EnvList)) < 0) {
+            dup2(dupSTDERRfd, STDERR_FILENO);
             ulm_err(("Error: can't start job on host %s\n",
                      RunParameters->HostList[host]));
             Abort();
@@ -304,12 +310,11 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         ulm_delete(EnvList);
     }                           /* end of for loop for each remote host */
 
-
     /* restore STDERR_FILENO and STDOUT_FILENO to state when this
      *   routine was entered
      */
     RetVal = dup2(dupSTDERRfd, STDERR_FILENO);
-    if (RetVal <= 0) { 
+    if (RetVal <= 0) {
         printf("Error: in dup2 dupSTDERRfd, STDERR_FILENO.\n");
         Abort();
     }
@@ -318,6 +323,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
         printf("Error: in dup2 dupSTDOUTfd, STDOUT_FILENO.\n");
         Abort();
     }
+
     return 0;
 }
 
