@@ -28,13 +28,12 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include "internal/constants.h"
@@ -322,6 +321,21 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
             return -1;
         }
     }
+
+/* BEGIN: ugly fix for broken rmsloader on certain Q systems */ 
+#define UGLY_FIX_FOR_BROKEN_RMSLOADER
+#if defined(__osf__) and defined(UGLY_FIX_FOR_BROKEN_RMSLOADER)
+    struct stat statbuf;
+
+    if (stat("/usr/local/compaq/test/rmsloader", &statbuf) == 0) {
+        putenv("RMS_PATH=/usr/local/compaq/test");
+        if (getenv("PRINT_RMS")) {
+            system("env | grep RMS_ | sort");
+        }
+    }
+#endif
+/* END: ugly fix for broken rmsloader on certain Q systems */ 
+
 
     /* allocate array of exec arguments */
     exec_args = (char **) ulm_malloc((PROG_ARGS + argc - FirstAppArgument)
