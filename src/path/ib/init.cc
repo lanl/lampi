@@ -196,6 +196,10 @@ void ibSetup(lampiState_t *s)
         goto exchange_info;
     }
 
+    // initialize ib_memory_allocator
+    if (0 == ib_state.chunk_size) { ib_state.mem_alloc.init(); }
+    else { ib_state.mem_alloc.init(ib_state.chunk_size); }
+
     authdata = s->client->getAuthData();
     // set Q_Key to timestamp from mpirun...
     ib_state.qkey = (VAPI_qkey_t)authdata[2];

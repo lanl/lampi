@@ -44,6 +44,7 @@ extern "C" {
 #include "util/Lock.h"
 #undef PAGESIZE
 #include "path/ib/header.h"
+#include "path/ib/memory.h"
 
 #define LAMPI_MAX_IB_HCA_PORTS  2
 #define LAMPI_MAX_IB_HCAS       2
@@ -278,6 +279,10 @@ typedef struct {
 typedef struct {
     /* thread lock for all IB state access... */
     Locks lock;
+    /* memory registration cache object for RDMA support */
+    ib_memory_registration_cache mr_cache;
+    /* memory allocator for registered memory */
+    ib_memory_allocator mem_alloc;
     /* set if thread lock is held -- to prevent recursive locking only */
     bool locked;
     /* total number of HCAs */
@@ -305,6 +310,10 @@ typedef struct {
     bool ack;
     /* true if we do some final memory checksumming */
     bool checksum;
+    /* true if we are doing any RDMA (RC) communication */
+    bool do_rdma;
+    /* size of chunk_size used by ib_memory_allocator */
+    unsigned long long chunk_size;
 } ib_state_t;
 
 extern ib_state_t ib_state;

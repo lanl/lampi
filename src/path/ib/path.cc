@@ -862,6 +862,10 @@ void ibPath::finalize(void)
         locked_here = true;
     }
 
+    // free resources associated with RC communication
+    ib_state.mr_cache.deregister_all_mr();
+
+    // free resources associated with UD communication
     for (i = 0; i < ib_state.num_active_hcas; i++) {
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
         if (!h->usable) {
