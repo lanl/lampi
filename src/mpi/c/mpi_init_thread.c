@@ -84,5 +84,10 @@ int PMPI_Init_thread(int *argc, char ***argv, int required, int *provided)
         }
     }
 
+    if ( required == MPI_THREAD_MULTIPLE )
+    {
+        _mpi.threadsafe = 1;
+    }
+    
     return MPI_SUCCESS;
 }

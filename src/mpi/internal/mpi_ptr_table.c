@@ -85,6 +85,7 @@ int _mpi_ptr_table_add(ptr_table_t *table, void *ptr)
 
 	p = realloc(table->addr, TABLE_GROW * table->size * sizeof(void *));
 	if (p == NULL) {
+        _mpi_unlock(&(table->lock));
 	    return -1;
 	}
 	table->lowest_free = table->size;
