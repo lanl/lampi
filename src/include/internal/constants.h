@@ -75,7 +75,7 @@
 /* maximum power of two multiple of RETRANS_TIME for exponential backoff */
 #define MAXRETRANS_POWEROFTWO_MULTIPLE (int)(15)
 /* minimum of RETRANS_TIME and CTL_RETRANS_TIME */
-#define MIN_RETRANS_TIME RETRANS_TIME
+#define MIN_RETRANS_TIME (double)(1.0)
 
 
 

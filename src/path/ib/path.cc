@@ -495,10 +495,10 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 sfd->timeSent_m = timeNow;
                 (sfd->numTransmits_m)++;
                 unsigned long long max_multiple =
-                    (sfd->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+                    (sfd->numTransmits_m < ib_state.maxretrans_poweroftwo_multiple) ?
                     (1 << sfd->numTransmits_m) :
-                    (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-                double timeToResend = sfd->timeSent_m + (RETRANS_TIME * max_multiple);
+                    (1 << ib_state.maxretrans_poweroftwo_multiple);
+                double timeToResend = sfd->timeSent_m + (ib_state.retrans_time * max_multiple);
                 if (message->earliestTimeToResend == -1) {
                     message->earliestTimeToResend = timeToResend;
                 } else if (timeToResend < message->earliestTimeToResend) {
@@ -768,12 +768,23 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 bool ibPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
+    bool resent_one = false;
 
     // move the timed out frags from FragsToAck back to
     // FragsToSend
     ibSendFragDesc *FragDesc = 0;
     ibSendFragDesc *TmpDesc = 0;
-    double curTime = 0;
+
+	// obtain current time
+    double curTime = dclock();
+
+	// retrieve received_largest_inorder_seq
+	unsigned long long received_seq_no, delivered_seq_no;
+
+	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		[FragDesc->globalDestID_m].received_largest_inorder_seq;
+	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
 
     *errorCode = ULM_SUCCESS;
 
@@ -786,17 +797,6 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 
 	// reset TmpDesc
 	TmpDesc = 0;
-
-	// obtain current time
-	curTime = dclock();
-
-	// retrieve received_largest_inorder_seq
-	unsigned long long received_seq_no, delivered_seq_no;
-
-	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].received_largest_inorder_seq;
-	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
 
 	bool free_send_resources = false;
 
@@ -814,18 +814,36 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	    // free all of the other resources after we unlock the frag
 	    free_send_resources = true;
 	} else {
-	    unsigned long long max_multiple = (FragDesc->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
-		// resend this frag...
-		returnValue = true;
-		FragDesc->WhichQueue = IBFRAGSTOSEND;
-		TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-		message->FragsToSend.AppendNoLock(FragDesc);
-        (message->NumSent)--;
-        FragDesc=TmpDesc;
-		continue;
+	    unsigned long long max_multiple = 
+        (FragDesc->numTransmits_m < ib_state.maxretrans_poweroftwo_multiple) ?
+		(1 << FragDesc->numTransmits_m) : (1 << ib_state.maxretrans_poweroftwo_multiple);
+        double timeToResend = FragDesc->timeSent_m + (ib_state.retrans_time * max_multiple);
+	    if (curTime >= timeToResend) {
+		    // resend this frag...
+            if (ib_state.ack && (0 == message->NumAcked)) {
+                if (resent_one) {
+                    // just update earliestTimeToResend
+                    if ((message->earliestTimeToResend == -1) || 
+                        (timeToResend < message->earliestTimeToResend)) {
+                        message->earliestTimeToResend = timeToResend;
+                    }
+                    continue;
+                }
+            }
+		    returnValue = true;
+		    FragDesc->WhichQueue = IBFRAGSTOSEND;
+		    TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+		    message->FragsToSend.AppendNoLock(FragDesc);
+            (message->NumSent)--;
+            FragDesc=TmpDesc;
+            resent_one = true;
+		    continue;
 	    }
+        else if ((message->earliestTimeToResend == -1) || 
+            (timeToResend < message->earliestTimeToResend)) {
+            // update earliestTimeToResend...
+            message->earliestTimeToResend = timeToResend;
+        }
     }
     
 	if (free_send_resources) {
@@ -839,6 +857,7 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	if (TmpDesc) {
 	    FragDesc = TmpDesc;
 	}
+
     } // end FragsToAck frag descriptor loop
 
     return returnValue;

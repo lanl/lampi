@@ -55,6 +55,56 @@ extern "C" {
 
 extern FixedSharedMemPool SharedMemoryPools;
 
+/*
+ * Utility function:
+ *
+ * Get a long value from the environment, or supply the default value
+ * if the environment variable is not set (or is not an integer, or is
+ * out of range).
+ */
+static int getenv_int(const char *name, int default_value)
+{
+    int value;
+    char *tail;
+
+    if (getenv(name) == NULL) {
+        return default_value;
+    }
+
+    errno = 0;
+    value = (int) strtol(getenv(name), &tail, 0);
+    if (errno || *tail != '\0') {
+        return default_value;
+    }
+
+    return value;
+}
+
+/*
+ * Utility function:
+ *
+ * Get a double value from the environment, or supply the default
+ * value if the environment variable is not set (or is not an integer,
+ * or is out of range).
+ */
+static double getenv_double(const char *name, double default_value)
+{
+    double value;
+    char *tail;
+
+    if (getenv(name) == NULL) {
+        return default_value;
+    }
+
+    errno = 0;
+    value = strtod(getenv(name), &tail);
+    if (errno || *tail != '\0') {
+        return default_value;
+    }
+
+    return value;
+}
+
 void ibSetup(lampiState_t *s)
 {
     VAPI_ret_t vapi_result;
@@ -91,8 +141,10 @@ void ibSetup(lampiState_t *s)
     ib_state.num_active_hcas = 0;
 
     // set some defaults here...
-    ib_state.max_ud_2k_buffers = 2048;
-    ib_state.max_outst_frags = 100;
+    ib_state.max_ud_2k_buffers = getenv_int("LAMPI_IB_MAX_UD_2K_BUFFERS", 2048);
+    ib_state.max_outst_frags = getenv_int("LAMPI_IB_MAX_OUTST_FRAGS", 10);
+    ib_state.retrans_time = getenv_double("LAMPI_IB_RETRANS_TIME", 1.0);
+    ib_state.maxretrans_poweroftwo_multiple = getenv_int("LAMPI_IB_MAXRETRANS_POWEROFTWO_MULTIPLE", 5);
 
     // client daemon does info exchanges only
     if (s->iAmDaemon) {

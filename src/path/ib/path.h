@@ -86,7 +86,7 @@ class ibPath : public BasePath_t {
 
 #ifdef ENABLE_RELIABILITY
         bool retransmitP(SendDesc_t *message) {
-            if (!ib_state.ack || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
+            if (!ib_state.ack || (ib_state.retrans_time == -1) || (message->earliestTimeToResend == -1)
                 || (message->FragsToAck.size() == 0))
                 return false;
             else if (dclock() >= message->earliestTimeToResend) {

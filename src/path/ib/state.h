@@ -312,6 +312,10 @@ typedef struct {
     bool do_rdma;
     /* size of chunk_size used by ib_memory_allocator */
     unsigned long long chunk_size;
+    /* the base retransmit time */
+    double retrans_time;
+    /* the maximum power of two to multiply the retransmit time by */
+    int maxretrans_poweroftwo_multiple;
 } ib_state_t;
 
 extern ib_state_t ib_state;
