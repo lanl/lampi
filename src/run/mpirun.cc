@@ -88,17 +88,13 @@ static void getAuthData(unsigned int *auth)
 
 /*
  * Collect PIDs of application processes
- *
- * TODO:
- * - collect daemon pid (as last element in packed array)
- * - allocate space inside this function 
  */
 static bool getClientPids(pid_t **hostarray, int *errorCode)
 {
     adminMessage *s = RunParams.server;
     bool returnValue = true;
     int rank, tag, contacted = 0;
-    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME;
+    int alarm_time = RunParams.dbg.Spawned ? -1 : ALARMTIME;
     char version[ULM_MAX_VERSION_STRING];
     int bad_versions = 0;
 
@@ -107,9 +103,7 @@ static bool getClientPids(pid_t **hostarray, int *errorCode)
     }
 
     while (contacted < RunParams.NHosts) {
-        int recvd = s->receiveFromAny(&rank, &tag, errorCode,
-                                      (alarm_time ==
-                                       -1) ? -1 : alarm_time * 1000);
+        int recvd = s->receiveFromAny(&rank, &tag, errorCode, alarm_time * 1000);
         switch (recvd) {
         case adminMessage::OK:
             if ((tag == adminMessage::CLIENTPIDS) &&
@@ -179,15 +173,14 @@ static bool releaseClients(int *errorCode)
     adminMessage *s = RunParams.server;
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
+    int alarm_time = RunParams.dbg.Spawned ? -1 : ALARMTIME * 1000;
 
     if (RunParams.Verbose) {
         ulm_err(("*** releaseClients\n"));
     }
 
     while (contacted < RunParams.NHosts) {
-        int recvd = s->receiveFromAny(&rank, &tag, errorCode,
-                                      (RunParams.dbg.Spawned) ?
-                                      -1 : ALARMTIME * 1000);
+        int recvd = s->receiveFromAny(&rank, &tag, errorCode, alarm_time);
         switch (recvd) {
         case adminMessage::OK:
             if (tag == adminMessage::BARRIER) {
@@ -299,10 +292,10 @@ static bool exchangeUDPPorts(int *errorCode)
     }
     if (udphosts != 0) {
         rc = s->allgather((void *) NULL, (void *) NULL,
-                          UDPGlobals::NPortsPerProc *
-                          sizeof(unsigned short));
+                          UDPGlobals::NPortsPerProc * sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error: exchangeUDPPorts() - allgather failed with error %d\n", rc));
+            ulm_err(("Error: exchangeUDPPorts() - allgather failed with error %d\n", 
+                     rc));
             returnValue = false;
             *errorCode = rc;
         }
@@ -335,10 +328,10 @@ static bool exchangeTCPPorts(int *errorCode)
         }
     }
     if (tcphosts != 0) {
-        rc = s->allgather((void *) NULL, (void *) NULL,
-                          sizeof(unsigned short));
+        rc = s->allgather((void *) NULL, (void *) NULL, sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n", rc));
+            ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n",
+                     rc));
             returnValue = false;
             *errorCode = rc;
         }
@@ -353,7 +346,7 @@ static bool exchangeIBInfo(int *errorCode)
     bool returnValue = true;
     int ibhosts = 0, i, j;
     int rc, active[3], tag;
-    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME * 1000;
+    int alarm_time = RunParams.dbg.Spawned ? -1 : ALARMTIME * 1000;
 
     if (RunParams.Verbose) {
         ulm_err(("*** exchangeIBInfo\n"));
@@ -437,7 +430,7 @@ static bool exchangeGMInfo(int *errorCode)
     bool returnValue = true;
     int gmhosts = 0, i, j;
     int rc, maxDevs, tag;
-    int alarm_time = (RunParams.dbg.Spawned) ? -1 : ALARMTIME * 1000;
+    int alarm_time = RunParams.dbg.Spawned ? -1 : ALARMTIME * 1000;
 
     if (RunParams.Verbose) {
         ulm_err(("*** exchangeGMInfo\n"));
@@ -502,7 +495,8 @@ static bool exchangeGMInfo(int *errorCode)
         rc = s->allgather((void *) NULL, (void *) NULL,
                           maxDevs * sizeof(localBaseDevInfo_t));
         if (rc != ULM_SUCCESS) {
-            ulm_err(("Error: exchangeGMInfo() - second allgather failed (%d)\n", rc));
+            ulm_err(("Error: exchangeGMInfo() - second allgather failed (%d)\n",
+                     rc));
             returnValue = false;
             *errorCode = rc;
             return returnValue;
@@ -530,23 +524,22 @@ static void *connectThread(void *arg)
 {
     adminMessage *s = RunParams.server;
     int nprocs = RunParams.TotalProcessCount;
-    int connectTimeOut =
-        MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
+    int timeout = MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
     int rc = 0;
 
     if (RunParams.ConnectTimeout > 0) {
-        connectTimeOut = RunParams.ConnectTimeout;
+        timeout = RunParams.ConnectTimeout;
         if (RunParams.Quiet == 0) {
             fprintf(stderr,
                     "LA-MPI: *** connection timeout = %d seconds\n",
-                    connectTimeOut);
+                    timeout);
         }
     }
 
     if (!s->serverConnect(RunParams.ProcessCount,
                           RunParams.HostList,
                           RunParams.NHosts,
-                          connectTimeOut)) {
+                          timeout)) {
         rc = -1;
     }
 

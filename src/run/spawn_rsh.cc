@@ -70,11 +70,9 @@ int SpawnRsh(unsigned int *AuthData,
 {
     char TMP[ULM_MAX_CONF_FILELINE_LEN];
     int i, offset, LenList;
-    int AlarmReturn;
     size_t len, MaxSize;
     pid_t Child;
     char **ExecArgs;
-    jmp_buf JumpBufferCheckClients; // longjmp buf for VerifyClientStartup
     int NHostsStarted = 0;
 
     /* compute size of execvp argv[] , and max space needed to store the strings */
@@ -377,21 +375,5 @@ int SpawnRsh(unsigned int *AuthData,
         waitpid(rsh_pid[index], &status, 0);
     }
         
-    /*
-     * Check that clients have started up normally
-     */
-    alarm(ALARMTIME);
-
-    /*
-     * Check for alarm expirations
-     */
-    AlarmReturn = setjmp(JumpBufferCheckClients);
-    if (AlarmReturn != 0) {
-        goto VerifyClientStartupTag;
-    }
-
-VerifyClientStartupTag:
-    alarm(0);
-
     return 0;
 }
