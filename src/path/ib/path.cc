@@ -48,8 +48,6 @@ extern "C" {
 #include "client/ULMClient.h"
 #include "queue/globals.h"
 
-static unsigned int cq_empty_cnt = 0;
-
 #define IB_MIN_SEND_FRAGS_FOR_ACK  10
 
 bool ibPath::canReach(int globalDestProcessID)
@@ -80,23 +78,15 @@ inline void ibPath::checkSendCQs(void)
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
 
         do {
-            if (cq_empty_cnt != 0) {
-                // yield the processor to Mellanox completion
-                // queue and event handler threads, etc....
-                pthread_yield();
-            }
-
             // poll completion queue
             vapi_result = VAPI_poll_cq(h->handle, h->send_cq, &wc_desc);
             if (vapi_result == VAPI_CQ_EMPTY) {
-                cq_empty_cnt++;
                 break;
             }
             else if (vapi_result != VAPI_OK) {
                 ulm_exit((-1, "ibPath::checkSendCQs VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
-            cq_empty_cnt = 0;
 
             if (usethreads() && !locked_here) {
                 ib_state.lock.lock();
@@ -619,12 +609,6 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
         ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
 
         do {
-            if (cq_empty_cnt != 0) {
-                // yield the processor to Mellanox completion
-                // queue and event handler threads, etc....
-                pthread_yield();
-            }
-
             // poll completion queue for receive
             vapi_result = VAPI_poll_cq(h->handle, h->recv_cq, &wc_desc);
             if (vapi_result == VAPI_CQ_EMPTY) {
@@ -634,7 +618,6 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 ulm_exit((-1, "ibPath::receive VAPI_poll_cq() for HCA %d returned %s\n",
                     ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             }
-            cq_empty_cnt = 0;
 
             if (usethreads() && !locked_here) {
                 ib_state.lock.lock();
