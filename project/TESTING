@@ -1,0 +1,103 @@
+------------------------------------------------------------------------
+                        LA-MPI Testing Process
+------------------------------------------------------------------------
+                        
+                             -- Draft --
+
+First draft based on a meeting on, October 15, 2003
+attendees: Rich Graham, David Daniel, Laura Casswell
+Topic: LAMPI testing
+
+We discussed the current and future testing needs for LAMPI.
+
+General:
+1. We need to run both unit tests and higher level tests on a daily,
+weekly and release basis.
+2. We need to decide on a standard structure for location and type of
+tests in the repository.
+2. We need to establish a set of performance tests.
+3. We need to be able to store information on a per test basis
+(especially so that changes in performance can be seen).
+4. We need to choose a means of tracking bugs that can: tell us the
+frequency of bugs, tell us the types of bugs being seen, tell us how
+long they take to resolve, and  give us a list of the outstanding
+bugs.
+
+We currently have a set of tests in mpitest which consist of a subset
+of the Intel mpi tests (currently we do not test cancel). We also have
+some performance tests and the CCN-7 SGI test suites.
+
+The current repository contains tests in a number of different places.
+We need to decide on a standard convention for location of tests. We
+need to consider two types of tests: unit tests and higher level tests
+(such as the Intel test suite).
+
+UNIT TESTS:
+
+We need to develop a list of functions to guide development of unit
+tests.
+
+The following suggestions have been made for unit tests convention:
+1) Clear documentation of what is being tested must be added with the
+tests.
+2) it should be possible to run a subset of unit tests in addition to
+running all unit tests.
+3) a unit test suite should be run nightly on the most recent version
+of the repository,.
+4) a standard structure should be applied to the form of all unit
+tests.
+
+Possible forms for unit tests:
+1) Unit tests are kept in a test directory under each major component.
+For example, we would have lampi/src/collective/test, where the test
+directory would contain the unit tests and drivers for the unit tests.
+
+2) Unit tests are kept in the same file as the routine(s) to be
+tested, with a conditional compile. For example:
+int func()
+.
+.
+.
+#ifndef DISABLE_UNIT_TEST
+int utest_func() {}
+#endif
+
+The unit test functions would follow a standard interface so that they
+could be run by a higher level test driver. This would have the
+advantage making it clear which unit tests had been done, and
+conditional compilation would limit adding to the size of the
+executable for the delivered product.
+
+We need to select one of these two approaches by this Thursday
+(10/16), as this decision will have some effect on current work.
+
+HIGHER LEVEL TESTS:
+mpitest: We should run a subset of these tests daily, with a larger
+test set weekly. Denis has already written a script that will check
+out the mpitest suite, build and run it, and generate a report. We
+need to make sure we add scripts to check out and build the most
+recent version of LAMPI from the repository. Laura has written a
+script to do this, but it needs to be integrated into an overall
+system for testing.
+
+Performance tests: We should run a performance test suite on a large
+enough number of processors to show significant performance problems
+or improvements. This should be run weekly rather than daily, to avoid
+overuse of resources.
+
+SGI test suites: There are different versions for different platforms;
+we need a current list of these. The SGI test suite should be run
+before a release. Current platforms of interest:
+lambda
+qsc
+qa/qb
+lightning
+pink
+wopr (when it is fixed)
+orange (later)
+
+Summary:
+To Do List in prioritized order:
+1. Choose a unit test convention
+2. Get mpitest running (a subset nightly, a larger set weekly).
+3. Set up SGI test suite to be run for releases.

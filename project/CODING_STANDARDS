@@ -1,0 +1,28 @@
+------------------------------------------------------------------------
+                       LA-MPI Coding Standards
+------------------------------------------------------------------------
+
+                             -- Draft --
+
+The coding standards for LA-MPI development are based on a loose
+interpretation of the GNU Coding Standards,
+
+    http://www.gnu.org/prep/standards_toc.html
+
+with the following exceptions and additions:
+
+1. K&R or BSD indentation styles are preferred to GNU indentation style,
+   with 4 spaces as the unit of indentation.
+
+2. Spaces are preferred to tabs for indentation, since tabs are
+   visually represented differently by different editors.
+
+3. For historical reasons, the core of LA-MPI is written in C++.  To
+   enhance portability, avoid using advanced C++ features such as
+   exceptions, deep templates, multiple inheritance.
+
+4. For memory management, use wrapper functions ulm_malloc(), ulm_new().
+
+5. For error reporting, use ulm_err() and its relatives.
+
+etc.

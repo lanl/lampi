@@ -1,0 +1,62 @@
+------------------------------------------------------------------------
+                        LA-MPI Change Control
+------------------------------------------------------------------------
+
+                             -- Draft --
+
+1. Small changes
+
+Description: Minor bug fixes, comments, cosmetic changes.
+
+- Typically changes are made on the patch (release) branch, and merged
+  into the main (development) branch, but may be made on the main
+  branch only if this is not a major bug.
+
+- Code need not be reviewed.
+
+- Before commiting to CVS, a subset (lampi_regression) of the Intel
+  MPI Test Suite should be run on at least one platform.
+
+
+2. Bug fixes
+
+Description: Fixes to bugs found in a release
+
+- Changes should be made on the patch (release) branch, and merged
+  into the main (development) branch.
+
+- Code should be reviewed by at least one other developer.
+
+- Before commiting to CVS, the complete (lampi_complete) Intel MPI
+  Test Suite should be run on all platforms.
+
+
+3. Enhancements
+
+Description: Small algorithmic changes, data structure changes,
+enhancements to existing functionality, etc.
+
+- Changes should be made on the main (development) branch.
+
+- Code should be reviewed by at least one other developer.
+
+- Before commiting to CVS, a subset (lampi_regression) of the Intel
+  MPI Test Suite should be run on at least one platform.
+
+
+4. New functionality
+
+Description: New functionality, large algorithmic changes, large-scale
+code reorganization, etc.
+
+- Design document distributed and discussed at a meeting of the
+  interested parties.
+
+- Changes should be made on the main (development) branch.
+
+- Code should be reviewed by at least one other developer.
+
+- Before commiting to CVS, the complete (lampi_complete) Intel MPI
+  Test Suite should be run on all platforms.
+
+

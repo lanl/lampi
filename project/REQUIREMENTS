@@ -1,0 +1,31 @@
+------------------------------------------------------------------------
+                        LA-MPI Requirements
+------------------------------------------------------------------------
+
+                             -- Draft --
+
+Provide a message-passing library for high-performance scientific
+applications which:
+
+1. Implements the Message Passing Interface (MPI) standard version 1.2
+   as defined in
+
+     http://www.mpi-forum.org/docs/mpi-20-html/mpi2-report.html
+
+   Compliance with this standard must be verified using the Intel MPI
+   Test suite.
+
+2. Guarantees the end-to-end integrity of delivered data.
+
+3. Is portable to all systems of interest to ASCI, except where
+   required proprietary information is unavailable.
+
+4. Provides performance comparable to or better than alternative MPI
+   implementations.
+
+
+In future LA-MPI may be required to
+
+1. Implement all or part of the MPI standard version 2.
+
+2. Implement process fault tolerance.
