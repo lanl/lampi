@@ -33,6 +33,10 @@
 
 #include <stdlib.h>
 
+#ifdef __APPLE__
+#include <sys/types.h>		/* for NFDBITS */
+#endif
+
 #include "internal/constants.h"
 
 /**********************************************************************/
@@ -69,6 +73,24 @@ typedef char DirName_t[ULM_MAX_PATH_LEN];
 typedef char FileName_t[ULM_MAX_PATH_LEN];
 typedef char ExeName_t[ULM_MAX_PATH_LEN];
 typedef char PrefixName_t[ULM_MAX_PREFIX];
+
+/*
+ * Platform dependent time operations.
+ */
+
+#if defined (__linux__) || defined (__APPLE__)
+
+typedef struct timeval ulm_timeval_t;
+#define ulm_timeofday(t)	gettimeofday(&(t), NULL)
+#define ulm_timesec(t)		(double)(t).tv_sec + ((double)(t).tv_usec)*1e-6
+
+#else
+
+typedef struct timespec ulm_timeval_t;
+#define ulm_timeofday(t)	clock_gettime(CLOCK_REALTIME, &(t))
+#define ulm_timesec(t)		(double)(t).tv_sec + ((double)(t).tv_nsec)*1e-9
+
+#endif                          /* LINUX */
 
 /*
  * For Apple/darwin, we have to explicitly define the iovec since the
