@@ -41,12 +41,7 @@
  * Configuration macros
  */
 
-#ifdef __osf__
-#define USE_RMS
-#endif
-
 #include "internal/state.h"
-
 
 /*
  * error states during initialization
