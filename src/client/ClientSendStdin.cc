@@ -110,6 +110,8 @@ int ClientSendStdin(int *server, int *client)
     int size = write(*client, stdin_buff + stdin_offset,
                      stdin_size - stdin_offset);
     if (size < 0) {
+        if(errno == EAGAIN)
+            return (0);
         close(*client);
         *client = -1;
         return (-1);
@@ -127,8 +129,7 @@ int ClientSendStdin(int *server, int *client)
         ack.iov_base = &tag;
         ack.iov_len = sizeof(tag);
         if (ulm_writev(*server, &ack, 1) != sizeof(tag)) {
-            ulm_err(("ClientScanStdin: write to server failed, errno=%d\n",
-                     errno));
+            ulm_err(("ClientScanStdin: write to server failed, errno=%d\n", errno));
             close(*server);
             *server = -1;
             return (-1);
