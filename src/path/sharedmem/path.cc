@@ -598,6 +598,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
             Comm = communicators[receiver->ctx_m];
             Comm->privateQueues.MatchedRecv[receiver->srcProcID_m]->
                 RemoveLink(receiver);
+            // if ulm_request_free() has already been called, then
+            // we free the recv/request obj. here...
+            if (receiver->freeCalled)
+                receiver->requestFree();
             if (usethreads())
                 receiver->Lock.unlock();
         } else if (usethreads()) {
@@ -670,6 +674,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         Comm->privateQueues.MatchedRecv[matchedRecv->
                                                         srcProcID_m]->
                             RemoveLink(matchedRecv);
+                        // if ulm_request_free has already been called, then
+                        // we free the recv/request obj. here
+                        if (matchedRecv->freeCalled)
+                            matchedRecv->requestFree();
                         matchedRecv->Lock.unlock();
                     } else {
                         matchedRecv->Lock.unlock();
@@ -732,6 +740,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                         Comm->privateQueues.MatchedRecv[matchedRecv->
                                                         srcProcID_m]->
                             RemoveLink(matchedRecv);
+                        // if ulm_request_free has already been called, then
+                        // we free the recv/request obj. here...
+                        if (matchedRecv->freeCalled)
+                            matchedRecv->requestFree();
                     }
 
                     SMPFragDesc_t *tmp = (SMPFragDesc_t *)
@@ -994,6 +1006,8 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 			matchedRecv->tag_m;
     		matchedRecv->messageDone = true;
     		matchedSender->NumAcked = 1;
+            if (matchedRecv->freeCalled)
+                matchedRecv->requestFree();
 		return ULM_SUCCESS;
 	}
 
@@ -1055,6 +1069,8 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 	    		matchedRecv->tag_m;
 		//mark recv request as complete
 		matchedRecv->messageDone = true;
+        if (matchedRecv->freeCalled) 
+            matchedRecv->requestFree();
 		wmb();
     	} else {
 		//  add this descriptor to the matched ireceive list

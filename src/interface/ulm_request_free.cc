@@ -48,6 +48,7 @@
 extern "C" int ulm_request_free(ULMRequestHandle_t *request)
 {
     bool incomplete;
+    RecvDesc_t *recvDesc;
 
     if (OPT_CHECK_API_ARGS) {
         // if request is NULL - return error
@@ -65,6 +66,35 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
             return ULM_ERR_COMM;
         }
     }
+
+    incomplete = ((tmpRequest->status == ULM_STATUS_INCOMPLETE) &&
+                  (!tmpRequest->messageDone));
+
+    if ((tmpRequest->requestType == REQUEST_TYPE_RECV) && incomplete) {
+        // lock receive descriptor to doublecheck incomplete and prevent a thread 
+        // race to avoid multiple frees or prevent this request from not being 
+        // freed at all
+		    recvDesc=(RecvDesc_t *)tmpRequest;
+            if (usethreads())
+                recvDesc->Lock.lock();
+            incomplete = ((tmpRequest->status == ULM_STATUS_INCOMPLETE) &&
+                  (!tmpRequest->messageDone));
+            // set the freeCalled flag so that ulm_recv_request_free() will
+            // be called by any of the various copy to app functions when they 
+            // are done with this receive descriptor
+            if (incomplete) {
+                tmpRequest->freeCalled = true;
+            }
+            if (usethreads())
+                recvDesc->Lock.unlock();
+            // do nothing else at this time, if...
+            if (tmpRequest->freeCalled) {
+                // set request object to NULL
+                *request = ULM_REQUEST_NULL;
+                return ULM_SUCCESS;
+            }
+    }
+
     // decrement request reference count
     if (tmpRequest->persistent) {
         commPtr->refCounLock.lock();
@@ -89,11 +119,6 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
         if (usethreads())
             unlock(&(lampiState.bsendData->Lock));
     }
-    // if request is started and incomplete, store on
-    // incomplete request object list (until messageDone becomes true); otherwise
-    // store on freelist 0 (it's safe to be reallocated)
-    incomplete = ((tmpRequest->status == ULM_STATUS_INCOMPLETE) &&
-                  (!tmpRequest->messageDone));
 
     // reset which list
     tmpRequest->WhichQueue = REQUESTFREELIST;
@@ -102,11 +127,10 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
     /* send */
     if( tmpRequest->requestType == REQUEST_TYPE_SEND) {
 	    if (incomplete) {
-		    RecvDesc_t *recvDesc=(RecvDesc_t *)tmpRequest;
 	    	    if (usethreads())
-			    _ulm_incompleteRequests.Append(recvDesc);
+			    _ulm_incompleteRequests.Append(tmpRequest);
 	    	    else
-			    _ulm_incompleteRequests.AppendNoLock(recvDesc);
+			    _ulm_incompleteRequests.AppendNoLock(tmpRequest);
 	    } else {
 		    // return request to free list
 	    	    if (usethreads()) {
@@ -117,20 +141,13 @@ extern "C" int ulm_request_free(ULMRequestHandle_t *request)
 	    }
     } else {
     /* recv */
-	    if (incomplete) {
-		    RecvDesc_t *recvDesc=(RecvDesc_t *)tmpRequest;
-	    	    if (usethreads())
-			    _ulm_incompleteRequests.Append(recvDesc);
-	    	    else
-			    _ulm_incompleteRequests.AppendNoLock(recvDesc);
-	    } else {
-		    // return request to free list
-	    	    if (usethreads()) {
-			    IrecvDescPool.returnElement(tmpRequest);
-	    	    } else {
-			    IrecvDescPool.returnElementNoLock(tmpRequest);
-	    	    }
-	    }
+		recvDesc=(RecvDesc_t *)tmpRequest;
+        // return request to free list
+        if (usethreads()) {
+            IrecvDescPool.returnElement(recvDesc);
+        } else {
+            IrecvDescPool.returnElementNoLock(recvDesc);
+        }
     }
 
     // set request object to NULL

@@ -190,6 +190,9 @@ public:
                      void *fragAddr, unsigned long sendMessageLength, int *recvDone);
 #endif // SHARED_MEMORY
 
+    // called by copy to app routine
+    void requestFree(void);
+
     // set request object and return descriptor to pool
     void setRequestReturnDesc()
         {

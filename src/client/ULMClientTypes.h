@@ -90,6 +90,7 @@ struct RequestDesc_t : public Links_t {
     int status;			// indicates request status
 
     bool persistent;		// persistence flag
+    bool freeCalled;        // true when ulm_request_free is called before recv. request complete
     volatile bool messageDone;	// message completion flag
 
     msgRequest posted_m;	// set by send/recv_init - never modified afterwards

@@ -235,6 +235,11 @@ ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)
         } else if (WhichQueue == POSTEDUTRECVS) {
             Comm->privateQueues.PostedUtrecvs.RemoveLinkNoLock(this);
         }
+
+        // if ulm_request_free has already been called, then 
+        // we free the recv/request obj. here
+        if (freeCalled)
+            requestFree();
     }
 
     return lengthToCopy;
@@ -329,6 +334,15 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
         // remove receive descriptor from list
         Comm = communicators[ctx_m];
         Comm->privateQueues.MatchedRecv[srcProcID_m]->RemoveLink(this);
+
+        // if ulm_request_free() has already been called, then we
+        // free the recv/request object here...
+        if (usethreads()) 
+            Lock.lock();
+        if (freeCalled)
+            requestFree();
+        if (usethreads())
+            Lock.unlock();
     }
 
     return lengthToCopy;
@@ -382,3 +396,30 @@ int RecvDesc_t::SMPCopyToApp(unsigned long sequentialOffset,
 }
 
 #endif                          // SHARED_MEMORY
+
+void RecvDesc_t::requestFree(void) 
+{
+    Communicator *commPtr = communicators[ctx_m];
+
+    // decrement request reference count
+    if (persistent) {
+        commPtr->refCounLock.lock();
+        (commPtr->requestRefCount)--;
+        commPtr->refCounLock.unlock();
+    }
+
+    // reset request parameters
+    WhichQueue = REQUESTFREELIST;
+    status = ULM_STATUS_INVALID;
+    freeCalled = false;
+    
+    // return request to free list
+    if (usethreads()) {
+	    IrecvDescPool.returnElement(this);
+    } else {
+	    IrecvDescPool.returnElementNoLock(this);
+    }
+
+    return;
+}
+

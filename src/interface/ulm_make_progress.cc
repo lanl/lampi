@@ -112,25 +112,12 @@ extern "C" int ulm_make_progress(void)
                     if (req->messageDone) {
                         // safe to move to allocation freelist
                         list->RemoveLinkNoLock(req);
-			if( req->requestType == REQUEST_TYPE_SEND ) {
-				/* send */
-				if (usethreads()) {
-					ulmRequestDescPool.returnElement
-						((RecvDesc_t *)req);
-				} else {
-		   			ulmRequestDescPool.returnElementNoLock
-						((RecvDesc_t *)req);
-				}
-			} else {
-				/* receive */
-				if (usethreads()) {
-					IrecvDescPool.returnElement
-						((RecvDesc_t *)req);
-				} else {
-		   			IrecvDescPool.returnElementNoLock
-						((RecvDesc_t *)req);
-				}
-			}
+				        /* send requests only */
+				        if (usethreads()) {
+					        ulmRequestDescPool.returnElement(req);
+				        } else {
+		   			        ulmRequestDescPool.returnElementNoLock(req);
+				        }
                     }
                 }
                 if (usethreads())

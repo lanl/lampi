@@ -75,6 +75,9 @@ extern "C" int ulm_irecv_init(void *buf, size_t size, ULMType_t *dtype,
     // set done flag to false
     ulmRequest->messageDone = false;
 
+    // set ulm_free_request() called flag to false
+    ulmRequest->freeCalled = false;
+
     ulmRequest->WhichQueue = REQUESTINUSE;
 
     // set value of pointer

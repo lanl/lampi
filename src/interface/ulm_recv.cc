@@ -66,6 +66,9 @@ extern "C" int ulm_recv(void *buf, size_t size, ULMType_t *dtype,
     // set done flag to false
     recvDesc.messageDone = false;
 
+    // set ulm_free_request() called flag to false
+    recvDesc.freeCalled = false;
+
     // sanity check
     recvDesc.WhichQueue = REQUESTINUSE;
 
