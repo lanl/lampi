@@ -62,9 +62,9 @@ void mpirunDrainStdioData(int *STDERRfds, int *STDOUTfds,
     else
         MaxDescriptor = (*STDOUTfds) + 1;
 
-    /* check to see if there is still stdio data to write out */
     while ((*STDERRfds >= 0) || (*STDOUTfds >= 0)) {
             mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, 1, MaxDescriptor,
-                                   StderrBytesRead, StdoutBytesRead);
+                            StderrBytesRead, StdoutBytesRead);
     }
 }
+

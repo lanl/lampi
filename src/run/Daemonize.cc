@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <termio.h>
 #if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
 #else
@@ -67,6 +68,29 @@ void runSendHeartbeat(ULMRunParams_t *RunParameters)
 		ulm_err( ("Error: sending HEARTBEAT.  RetVal: %ld\n",
 				(long) errorCode) );
 	}
+}
+
+
+/*
+ * Read from stdin and copy to socket descriptor connected
+ * to process zero.
+ */
+int mpirunScanStdIn(int fdin, int fdout)
+{
+    char buff[512];
+    int rc = read(fdin, buff, sizeof(buff));
+    if(rc == 0)
+        return ULM_SUCCESS;
+    if(rc < 0) {
+        switch(errno) {
+        case EINTR:
+        case EAGAIN:
+            return ULM_SUCCESS;
+        default:
+            return ULM_ERROR;
+        }
+    }
+    return (write(fdout, buff, rc) == rc) ? ULM_SUCCESS : ULM_ERROR;
 }
 
 
@@ -163,11 +187,54 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     RunParameters->handleSTDio = false;
 #endif
 
+    /* setup stdin file descriptor to be non-blocking */
+    if(RunParameters->STDINsrc >= 0) {
+        /* input from terminal */
+        if(isatty(RunParameters->STDINsrc)) {
+         
+            struct termio term;
+            if(ioctl(RunParameters->STDINsrc, TCGETA, &term) != 0) {
+                ulm_err(("ioctl(%d,TCGETA) failed with errno=%d\n", 
+                    RunParameters->STDINsrc,errno));
+                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+            }
+            term.c_lflag &= ~ICANON;
+            term.c_cc[VMIN] = 0;
+            term.c_cc[VTIME] = 0;
+            if(ioctl(RunParameters->STDINsrc, TCSETA, &term) != 0) {
+                ulm_err(("ioctl(%d,TCSETA) failed with errno=%d\n", 
+                    RunParameters->STDINsrc,errno));
+                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+            }
+        /* input from pipe */
+        } else {
+            int flags;
+            if(fcntl(RunParameters->STDINsrc, F_GETFL, &flags) != 0) {
+                ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n", 
+                    RunParameters->STDINsrc,errno));
+                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+            }
+            flags |= O_NONBLOCK;
+            if (fcntl(RunParameters->STDINsrc, F_SETFL, flags) != 0) {
+                ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", 
+                    RunParameters->STDINsrc,errno));
+                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+            }
+        }
+    }
+
     /* loop over work */
     for (;;) {
 
-        /* check to see if there is any stdout/stderr data to read and then write */
+        /* check to see if there is any stdin/stdout/stderr data to read and then write */
 	    if( RunParameters->handleSTDio ) {
+                    if(RunParameters->STDINsrc >= 0 && RunParameters->STDINdst >= 0) {
+                        RetVal = mpirunScanStdIn(RunParameters->STDINsrc,RunParameters->STDINdst);
+                        if(RetVal != ULM_SUCCESS) {
+                            close(RunParameters->STDINdst);
+                            RunParameters->STDINdst = -1;
+                        }
+                    }
 		    RetVal = mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, NHosts,
 			     	    MaxDescriptorSTDIO, StderrBytesRead, StdoutBytesRead);
 	    }

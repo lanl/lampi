@@ -77,6 +77,10 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->HeartBeatTimeOut = int (HEARTBEATTIMEOUT);
     RunParameters->quadricsRailMask = 0;
 
+    /* stdio input handling */
+    RunParameters->STDINsrc = STDIN_FILENO;
+    RunParameters->STDINdst = -1;
+
     /* schedulers to try (determined at compile time) */
 
     RunParameters->UseLSF = OPT_LSF;

@@ -159,7 +159,7 @@ static int setup_socket(struct sockaddr_in *listenaddr)
 }
 
 static int *pids = 0;
-static int iosock_fd[2];
+static int iosock_fd[3];
 static int max_sock_fd = -1;
 
 static void *accept_thread(void *arg)
@@ -185,14 +185,14 @@ static void *accept_thread(void *arg)
         tmo.tv_sec = 0;
         tmo.tv_usec = 10000;
         /* set the sockets to listen on */
-        for (int fdIndex = 0; fdIndex < 2; fdIndex++) {
+        for (int fdIndex = 0; fdIndex < 3; fdIndex++) {
             FD_SET(iosock_fd[fdIndex], &rset);
         }
 
         /* see if any sockets to accept */
         int nRead = select(max_sock_fd + 1, &rset, NULL, NULL, &tmo);
         if (nRead > 0) {
-            for (int sock = 0; sock < 2; sock++) {
+            for (int sock = 0; sock < 3; sock++) {
                 if (FD_ISSET(iosock_fd[sock], &rset)) {
                     int fd = -1, pid = -1, rfd = -1;
                     socklen_t sa_size;
@@ -224,6 +224,14 @@ static void *accept_thread(void *arg)
                             }
                     }
                     switch (rfd) {
+                    case STDIN_FILENO:
+                        if(hostID == 0) {
+                            RunParameters->STDINsrc = STDIN_FILENO;
+                            RunParameters->STDINdst = fd;
+                        } else {
+                            close(fd);
+                        }
+                        break;
                     case STDOUT_FILENO:
                         if (RunParameters->STDOUTfds[hostID] != -1) {
                             ulm_err(("mpirun_spawn_bproc: "
@@ -284,7 +292,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     char LAMPI_SERVER[MAXBUFFERLEN];
 
 #ifndef ENABLE_CT
-    struct bproc_io_t io[2];
+    struct bproc_io_t io[3];
     struct sockaddr_in addr;
     pthread_t a_thread;
     void *a_thread_return;
@@ -386,8 +394,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      * setup stdio sockets for the exec'ed processes to connect back
      * to
      */
-    for (int iofd = 0; iofd < 2; iofd++) {
-        io[iofd].fd = iofd + 1;
+    for (int iofd = 0; iofd < 3; iofd++) {
+        io[iofd].fd = iofd;
         io[iofd].type = BPROC_IO_SOCKET;
 #ifdef BPROC_IO_SEND_INFO
         io[iofd].flags = BPROC_IO_SEND_INFO;
@@ -422,7 +430,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
      * ugly fix is to add sleep() to catch the SIGSTOP.
      */
     sleep(1);
-    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 2,
+    if (bproc_vexecmove_io(nHosts, nodes, pids, io, 3,
                            exec_args[EXEC_NAME],
                            argv + (FirstAppArgument - 1), environ) < 0) {
         ulm_err(("mpirun_spawn_bproc: bproc_vexecmove_io: error %s\n",
