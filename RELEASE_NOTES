@@ -332,3 +332,22 @@ Version 1.5.1
 
 - Improved error messages
 
+Version 1.5.2
+
+- More file descriptor fixes.
+
+- Pipe to daemon children added for better detection the all-exited
+  condition.
+
+- Fall back to pipe() for stdio redirection if openpty() fails.
+
+- Introduced TotalView debug gate reference in a separate file
+  installed to $(MPI_ROOT)/lib/debug_gate.o.  Users of the latest
+  TotalView on lightning (and similar systems??)  should link this
+  object file with their application to ensure that TotalView can find
+  the MPIR_debug_gate symbol.
+
+- Fixed ia64 atomic operation support.
+
+
+

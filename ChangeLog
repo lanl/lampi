@@ -1,3 +1,56 @@
+2004-05-26 15:35  ddd
+
+	* RELEASE_NOTES, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating for 1.5.2
+
+2004-05-26 15:26  ddd
+
+	* Makefile.in, src/include/mpi/mpi.h, src/init/debug_gate.c:
+	  TotalView symbol mapping problem:
+
+	  Moving TotalView debug gate kludge from mpi.h to a separate file
+	  debug_gate.c.  This is compiled as a separate target and
+	  installed to
+
+		 $(MPI_ROOT)/lib/debug_gate.o
+
+	  Users of the latest TotalView on lightning (and similar
+	  systems??) should link this object file with their application to
+	  ensure that TotalView can find the MPIR_debug_gate symbol.
+
+2004-05-26 15:21  ddd
+
+	* src/init/init.cc: Fall back to pipe() if openpty() fails.
+
+2004-05-26 13:33  twoodall
+
+	* src/os/LINUX/ia64/atomic.h: changes from Rice U. for IA64 support
+
+2004-05-26 13:29  ddd
+
+	* src/init/init.cc, src/init/init.h, src/init/libmpi.mk,
+	  src/init/tty.cc, src/path/ib/init.cc, src/path/ib/path.cc,
+	  src/path/ib/state.h, src/run/spawn_bproc.cc, configure,
+	  configure.ac, src/client/ScanStdoutStderr.cc,
+	  src/client/daemonLoop.cc, src/include/internal/lampi_state.h:
+	  Merging in changes from the main branch
+
+2004-04-15 17:22  ddd
+
+	* src/init/: init.cc, init.h: merging
+	  lampi_init_prefork_check_stdio from trunk
+
+2004-04-15 16:45  ddd
+
+	* src/util/Reactor.cc: Setting timeout back to zero.  Non-zero
+	  value (which helps on linux 2.6) is disastrous on linux-2.4.18).
+
+2004-04-15 16:03  ddd
+
+	* ChangeLog, RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for release 1.5.1
+
 2004-04-14 16:15  ddd
 
 	* src/init/: init_proc.cc, init.cc: changes for tracing
