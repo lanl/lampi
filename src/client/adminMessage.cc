@@ -1874,7 +1874,6 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             }
         }
         if (sockfd < 0) {
-            sleep(1);
             continue;
         }
 
