@@ -67,6 +67,18 @@ int MPIR_being_debugged = 0;
 volatile int MPIR_debug_gate = 0;
 volatile int MPIR_debug_state = 0;
 
+/*
+ * add this apparently unnecessary code to make some versions of
+ * Totalview happy
+ */
+struct MPIR_PROCDESC {
+    char *host_name;        /* something that can be passed to inet_addr */
+    char *executable_name;  /* name of binary */
+    int pid;                /* process pid */
+};
+MPIR_PROCDESC *MPIR_proctable = NULL;
+
+
 static void wait_for_debugger(void)
 {
     while (MPIR_debug_gate == 0) {
