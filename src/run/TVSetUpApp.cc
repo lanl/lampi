@@ -57,12 +57,20 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
 {
     int cnt, HostID, ProcID;
 
-    /* return if no need for anything here - e.g. no debugging, or just
-     *   debugging the startup, and the daemons */
-    if (!((RunParams.TVDebug) && (RunParams.TVDebugApp)))
-        return;
+    /*
+     * return if no need for anything here - e.g. no debugging, or
+     * just debugging the startup, and the daemons
+     */
 
-    /* fill in MPIR_proctable */
+    if (RunParams.TVDebug == 1 && RunParams.TVDebugApp == 0) {
+        /* debugging daemons -- nothing to do here */
+        return;
+    }
+
+    /*
+     * fill in MPIR_proctable for application processes
+     */
+
     cnt = 0;
     /* loop over hosts */
     for (HostID = 0; HostID < RunParams.NHosts; HostID++) {
@@ -75,56 +83,50 @@ void MPIrunTVSetUpApp(pid_t ** PIDsOfAppProcs)
             MPIR_proctable[cnt].executable_name =
                 (char *) (RunParams.ExeList[HostID]);
             MPIR_proctable[cnt].pid = PIDsOfAppProcs[HostID][ProcID];
-#if ENABLE_BPROC
-            /* spawn xterm/gdb session to attach to remote process -- works in bproc env. only! */
-            if (RunParams.GDBDebug) {
+            if (ENABLE_BPROC && RunParams.GDBDebug) {
+                /* spawn xterm/gdb session to attach to remote process -- works in bproc env. only! */
                 char title[64];
                 char command[256];
                 bool use_gdbserver = (getenv("LAMPI_USE_GDBSERVER") != 0) ? true : false;
 
                 sprintf(title, "rank: %d (pid: %ld host: %s)", cnt, 
-                    (long)MPIR_proctable[cnt].pid,
-                    MPIR_proctable[cnt].host_name);
+                        (long)MPIR_proctable[cnt].pid,
+                        MPIR_proctable[cnt].host_name);
 
                 if (use_gdbserver) {
                     sprintf(command, "xterm -title \"%s\" -e gdb %s &", title,
-                        MPIR_proctable[cnt].executable_name);
+                            MPIR_proctable[cnt].executable_name);
                     ulm_warn(("spawning: \"%s\"\n", command));
                     system(command);
                     sprintf(command, "bpsh %s gdbserver localhost:%d --attach %ld &",
-                        (MPIR_proctable[cnt].host_name + 1), (9000 + cnt), 
-                        (long)MPIR_proctable[cnt].pid);
+                            (MPIR_proctable[cnt].host_name + 1), (9000 + cnt), 
+                            (long)MPIR_proctable[cnt].pid);
                     ulm_warn(("spawning: \"%s\"\n", command));
                     system(command);
 
                 }
                 else {
                     sprintf(command, "xterm -title \"%s\" -e bpsh %s gdb %s %ld &", title, 
-                        (MPIR_proctable[cnt].host_name + 1),
-                        MPIR_proctable[cnt].executable_name,
-                        (long)MPIR_proctable[cnt].pid);
+                            (MPIR_proctable[cnt].host_name + 1),
+                            MPIR_proctable[cnt].executable_name,
+                            (long)MPIR_proctable[cnt].pid);
                     ulm_warn(("spawning: \"%s\"\n",command));
                     system(command);
                 }
             }
-#endif
             cnt++;
         }
     }
 
-#if ENABLE_BPROC
-    /* if debugging with xterm/gdb in bproc env., then continue on... */
-    if (RunParams.GDBDebug) {
+    if(ENABLE_BPROC && RunParams.GDBDebug) {
         return;
     }
-#endif
-
-    /*  set flag indicating TotalView is going to be used */
-    MPIR_acquired_pre_main = 1;
 
     /* set debug state */
     MPIR_debug_state = MPIR_DEBUG_SPAWNED;
 
     /* provide function in which TotalView will set a breakpoint */
-    MPIR_Breakpoint();
+    if (RunParams.TVDebug) {
+        MPIR_Breakpoint();
+    }
 }

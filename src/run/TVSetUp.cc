@@ -74,19 +74,13 @@ void MPIrunTVSetUp(void)
     adminMessage *server = RunParams.server;
     int HostRank, NumberOfProcsToDebug;
 
-    /* check to see if code being debugged */
-    if (RunParams.TVDebug == 0)
-        return;
-
     /* compute size of MPIR_proctable */
-    NumberOfProcsToDebug = RunParams.NHosts;
     if (RunParams.TVDebugApp != 0) {
-        /* no daemon processes */
-        NumberOfProcsToDebug = 0;
         /* app processes */
-        for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++)
-            NumberOfProcsToDebug +=
-                ((RunParams.ProcessCount)[HostRank]);
+        NumberOfProcsToDebug = RunParams.TotalProcessCount;
+    } else {
+        /* daemon processes */
+        NumberOfProcsToDebug = RunParams.NHosts;
     }
 
     /* allocate memory for process table */
@@ -95,15 +89,16 @@ void MPIrunTVSetUp(void)
         (MPIR_PROCDESC *) ulm_malloc(sizeof(MPIR_PROCDESC) *
                                      MPIR_proctable_size);
     if (MPIR_proctable == NULL) {
-        printf("Unable to allocate MPIR_proctable.\n");
+        ulm_err(("Out of memory\n"));
         Abort();
     }
+
     /* allocate memory for list of hosts used by TotalView */
     RunParams.TVHostList =
         (HostName_t *) ulm_malloc(sizeof(HostName_t) *
                                   RunParams.NHosts);
     if (RunParams.TVHostList == NULL) {
-        printf("Unable to allocate TVHostList array.\n");
+        ulm_err(("Out of memory\n"));
         Abort();
     }
     for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++) {
@@ -111,42 +106,44 @@ void MPIrunTVSetUp(void)
         strcpy((RunParams.TVHostList)[HostRank], (char *)(RunParams.HostList[HostRank]));
     }
 
-/* debug */
-    printf
-        (" IN MPIrunTVSetUp ::  MPIR_proctable_size %d RunParams.TVDebugApp %d\n",
-         MPIR_proctable_size, RunParams.TVDebugApp);
-    fflush(stdout);
-/* end debug */
-    /* if app being debugged, setup will be finished after the fork() */
-    if (RunParams.TVDebugApp != 0)
+    if (RunParams.TVDebug == 1 && RunParams.TVDebugApp == 0) {
+
+        ulm_dbg(("debugging daemons\n"));
+
+        /* set flag indicating TotalView is going to be used */
+        MPIR_being_debugged = 1;
+
+        /* fill in MPIR_proctable */
+        for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++) {
+            MPIR_proctable[HostRank].host_name =
+                (char *) &((RunParams.TVHostList)[HostRank]);
+            MPIR_proctable[HostRank].executable_name =
+                (char *) (RunParams.ExeList[HostRank]);
+            MPIR_proctable[HostRank].pid = server->daemonPIDForHostRank(HostRank);
+        }
+
+        /* set debug state */
+        MPIR_debug_state = MPIR_DEBUG_SPAWNED;
+
+        /* provide function in which TotalView will set a breakpoint */
+        MPIR_Breakpoint();
+
+    } else {
+        
+        /*
+         * Either debugging applications or not being debugged.  The
+         * proc table for the application processes will be filled in
+         * after the
+         */
+
         return;
-    /* debug */
-    fprintf(stderr," debugging deamons\n");
-    fflush(stderr);
-    /* end debug */
-
-    /* set flag indicating TotalView is going to be used */
-    MPIR_being_debugged = 1;
-
-    /* fill in MPIR_proctable */
-    for (HostRank = 0; HostRank < RunParams.NHosts; HostRank++) {
-        MPIR_proctable[HostRank].host_name =
-            (char *) &((RunParams.TVHostList)[HostRank]);
-        MPIR_proctable[HostRank].executable_name =
-            (char *) (RunParams.ExeList[HostRank]);
-        MPIR_proctable[HostRank].pid = server->daemonPIDForHostRank(HostRank);
     }
-
-    /* set debug state */
-    MPIR_debug_state = MPIR_DEBUG_SPAWNED;
-
-    /* provide function in which TotalView will set a breakpoint */
-    MPIR_Breakpoint();
 }
 
-/* dummy subroutine - need to make sure that compiler will
- *   not optimize this routine away, so that TotalView can set
- *   a breakpoint, and do what it needs to.
+/*
+ * dummy subroutine - need to make sure that compiler will not
+ * optimize this routine away, so that TotalView can set a breakpoint,
+ * and do what it needs to.
  */
 extern "C" void MPIR_Breakpoint(void)
 {

@@ -111,8 +111,11 @@ void Daemonize(void)
 {
     int ActiveClients;
     int i, MaxDescriptorCtl, RetVal;
-    double *HeartBeatTime, LastTime, DeltaTime, TimeInSeconds,
-        TimeFirstCheckin;
+    double *HeartBeatTime = NULL;
+    double LastTime = 0.0;
+    double DeltaTime = 0.0;
+    double TimeInSeconds = 0.0;
+    double TimeFirstCheckin = 0.0;
     int *ClientSocketFDList, NHosts, *ProcessCnt;
     HostName_t *HostList;
     adminMessage *server;
