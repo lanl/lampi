@@ -270,7 +270,6 @@ int CheckForControlMsgs(int MaxDescriptor,
 
                 case STDIOMSG_CTS:
                     StdInCTS = true;
-                    ulm_err(("Received STDIOMSG_CTS\n"));
                     break;
                 default:
                     ulm_err(("Error: Unknown control message: %d\b", tag));
