@@ -53,51 +53,145 @@ static bool gotClientProcessCount = false;
 #include "init/environ.h"
 #endif
 
-int getBprocNodes(void) 
+void getBJSNodes(void) 
 {
-    int nNodes = 0;
 #ifdef BPROC
+    int *nodes = 0;
+    int nNodes = 0;
     char *bproc_states[BPROC_NODE_NSTATES] = BPROC_NODE_STATE_STRINGS;
     char *node_str = 0, *p;
-    char tmp_str[512];
-    int i, tmp_node;
+    char tmp_str[1024];
+    int i, j, tmp_node;
 
     lampi_environ_find_string("NODES", &node_str);
-    tmp_str[511] = '\0';
-    strncpy(tmp_str, node_str, 511);
-    p = tmp_str;
-    while (p && *p != '\0') {
-        tmp_node = bproc_getnodebyname(strsep(&p, ","));
-        if ((bproc_nodestatus(tmp_node) != bproc_node_up)) {
-		    ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
-			    tmp_node, bproc_states[bproc_nodestatus(tmp_node)]));
-            Abort();
+
+    if (strlen(node_str) > 0) {
+        /* nodes allocated via BJS */
+        nodes = ulm_new(int, bproc_numnodes() + 1);
+        tmp_str[1023] = '\0';
+        strncpy(tmp_str, node_str, 1023);
+        p = tmp_str;
+        while (p && *p != '\0') {
+            tmp_node = bproc_getnodebyname(strsep(&p, ","));
+            if (bproc_nodestatus(tmp_node) != bproc_node_up) {
+		        ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
+			        tmp_node, bproc_states[bproc_nodestatus(tmp_node)]));
+                Abort();
+            }
+            if (bproc_access(tmp_node, BPROC_X_OK) != 0) {
+                ulm_err(("Error: can not execute on a BJS reserved node (%i)\n", tmp_node));
+                Abort();
+            }
+            nodes[nNodes++] = tmp_node;
         }
-        nNodes++;
     }
 
     if (nNodes) {
-        if (RunParameters.NHostsSet) {
-            /* limit the number of hosts to a smaller specified value (option -N) */
-            nNodes = (nNodes > RunParameters.NHosts) ? RunParameters.NHosts : nNodes;
-        }
-        /* use the BJS reserved nodes specified */
-        RunParameters.HostList = ulm_new(HostName_t, nNodes);
-        RunParameters.HostListSize = nNodes;
-        /* fill in host information */
-        for (i = 0; i < nNodes; i++) {
-            strcpy(RunParameters.HostList[i], strsep(&node_str, ","));
-        }
+       if (RunParameters.HostListSize > 0) {
+           /* compare each host entry against nodes list */
+           for (i = 0; i < RunParameters.HostListSize; i++) {
+               bool found = false;
+               tmp_node = bproc_getnodebyname(RunParameters.HostList[i]);
+               for (j = 0; j < nNodes; j++) {
+                   if (tmp_node == nodes[j])
+                       found = true;
+               }
+               if (!found)
+                   strcpy(RunParameters.HostList[i], "");
+           }
+           nNodes = 0;
+           j = 0;
+           for (i = 0; i < RunParameters.HostListSize; i++) {
+               if (RunParameters.HostList[i][0] != '\0') {
+                   if (i == j) {
+                       j++;
+                   }
+                   else {
+                       strcpy(RunParameters.HostList[j++], RunParameters.HostList[i]);
+                   }
+               }
+           }
+           if (j == 0) {
+               ulm_delete(RunParameters.HostList);
+               RunParameters.HostList = 0;
+           }
+           RunParameters.HostListSize = j;
+       }
+       else {
+           /* store each host entry of nodes list */
+           RunParameters.HostList = ulm_new(HostName_t, nNodes);
+           RunParameters.HostListSize = nNodes;
+           for (i = 0; i < nNodes ; i++) {
+               sprintf(RunParameters.HostList[i], "%d", nodes[i]);
+           }
+       } 
     } 
-    else {
-        /* use the current node only */
-        RunParameters.HostList = ulm_new(HostName_t, 1);
-        RunParameters.HostListSize = 1;
-        tmp_node = bproc_currnode();
-        sprintf(RunParameters.HostList[0], "%d", tmp_node);
+
+    if (nodes) {
+        ulm_delete(nodes);
     }
 #endif
-    return nNodes;
+    return;
+}
+
+void pickNodesFromList(int cnt)
+{
+#ifdef BPROC
+    int i, j = 0, tmp_node;
+
+    if (RunParameters.HostListSize > 0) {
+        /* find cnt nodes among the already listed nodes */
+        for (i = 0; i < RunParameters.HostListSize; i++) {
+            tmp_node = bproc_getnodebyname(RunParameters.HostList[i]);
+            if ((bproc_nodestatus(tmp_node) == bproc_node_up) && 
+                (bproc_access(tmp_node, BPROC_X_OK) == 0)) {
+                    if (i == j) {
+                        j++;
+                    }
+                    else {
+                        strcpy(RunParameters.HostList[j++], RunParameters.HostList[i]);
+                    }
+            }
+            if (j == cnt)
+                break;
+        }
+    }
+    else {
+        /* find cnt nodes among all nodes, master last */
+        RunParameters.HostList = ulm_new(HostName_t, cnt);
+        RunParameters.HostListSize = cnt;
+        for (i = 0; i < bproc_numnodes(); i++) {
+            if ((bproc_nodestatus(i) == bproc_node_up) && 
+                (bproc_access(i, BPROC_X_OK) == 0)) {
+                sprintf(RunParameters.HostList[j++], "%d", i);
+            }
+            if (j == cnt)
+                break;
+        }
+        /* use the master node as a last resort */
+        if ((j == (cnt - 1)) && (bproc_nodestatus(BPROC_NODE_MASTER) == bproc_node_up) && 
+            (bproc_access(BPROC_NODE_MASTER, BPROC_X_OK) == 0))
+                sprintf(RunParameters.HostList[j++], "%d", BPROC_NODE_MASTER);
+    }
+    if (RunParameters.HostListSize && (j == 0)) {
+        ulm_delete(RunParameters.HostList);
+        RunParameters.HostList = 0;
+    }
+    RunParameters.HostListSize = j;
+#endif
+    return;
+}
+
+void pickCurrentNode(void)
+{
+#ifdef BPROC
+    /* use the current node only */
+    RunParameters.HostList = ulm_new(HostName_t, 1);
+    RunParameters.HostListSize = 1;
+    int tmp_node = bproc_currnode();
+    sprintf(RunParameters.HostList[0], "%d", tmp_node);
+#endif
+    return;
 }
 
 /*
@@ -174,18 +268,28 @@ void GetClientProcessCount(const char *InfoStream)
         }
     }
     else if (RunParameters.UseBproc) {
-        if (RunParameters.HostListSize == 0) {
-            // is BJS NODES environment variable set?
-            nhosts = getBprocNodes();
-            if (RunParameters.NHostsSet && (nhosts < RunParameters.NHosts)) {
-                ulm_err(("Error: -N option specifies more hosts (%d) than are reserved via BJS (%d).\n",
-                    RunParameters.NHosts, nhosts));
-                Abort();
-            }
+        /* check BJS and reconcile nodes with -H specified nodes */
+        getBJSNodes();
+        if (RunParameters.HostListSize > 0) {
+            nhosts = (RunParameters.NHostsSet) ? ((RunParameters.NHosts > RunParameters.HostListSize) ? 
+                RunParameters.HostListSize : RunParameters.NHosts) : RunParameters.HostListSize;
+            pickNodesFromList(nhosts);
         }
-        if (!RunParameters.NHostsSet) {
-            RunParameters.NHosts = RunParameters.HostListSize;
+        else {
+            nhosts = (RunParameters.NHostsSet) ? RunParameters.NHosts : 1;
+            pickNodesFromList(nhosts);
+            if ((nhosts == 1) && (RunParameters.HostListSize == 0))
+                pickCurrentNode();
         }
+        if (RunParameters.NHostsSet && (RunParameters.HostListSize < RunParameters.NHosts)) {
+            ulm_err(("Error: %d nodes found, %d requested\n", RunParameters.HostListSize, RunParameters.NHosts));
+            Abort();
+        }
+        else if (RunParameters.HostListSize == 0) {
+            ulm_err(("Error: no available nodes found\n"));
+            Abort();
+        }
+        RunParameters.NHosts = RunParameters.HostListSize;
     }
     else {
         if (RunParameters.HostListSize == 0) {

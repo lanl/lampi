@@ -207,9 +207,11 @@ void GetMpirunHostname(const char *InfoStream)
 void GetAppHostData(const char *InfoStream)
 {
     struct hostent *NetEntry;
-    int NSeparators = 2, cnt;
+    int NSeparators = 2, cnt = 0;
+    int first, last, scan_cnt;
     char SeparatorList[] = { " , " };
     size_t len;
+    ParseString::iterator i;
 
     /* find HostList index in database */
     int OptionIndex =
@@ -223,30 +225,69 @@ void GetAppHostData(const char *InfoStream)
     ParseString HostData(ULMInputOptions[OptionIndex].InputData,
                          NSeparators, SeparatorList);
 
+    /* count the number of hosts if Bproc is being used */
+    if (RunParameters.UseBproc) {
+       for (i = HostData.begin(); i != HostData.end(); i++) {
+           scan_cnt = sscanf(*i, "%d - %d", &first, &last);
+           switch (scan_cnt) {
+               case 1:
+                   cnt++;
+                   break;
+               case 2:
+                   cnt += (last >= first) ? ((last - first) + 1) : 0;
+                   break;
+               default:
+                   break;
+           }
+       } 
+       if (cnt == 0) {
+           ulm_err(("Error: No hostnames for BPROC nodes parsed from %d -H substrings\n",
+               HostData.GetNSubStrings()));
+           Abort();
+       }
+    }
+
     /* set number of Host in job */
-    RunParameters.HostListSize = HostData.GetNSubStrings();
+    RunParameters.HostListSize = (cnt == 0) ? HostData.GetNSubStrings() : cnt;
 
     /* allocate memory for List of Hosts */
     RunParameters.HostList = ulm_new(HostName_t,  RunParameters.HostListSize);
 
     cnt = 0;
     /* fill in host data */
-    for (ParseString::iterator i = HostData.begin(); i != HostData.end();
-         i++) {
-        NetEntry = gethostbyname(*i);
-        if (NetEntry == NULL) {
-            ulm_err(("Error: Hostname look-up failed for %s\n", *i));
-            Abort();
+    for (i = HostData.begin(); i != HostData.end(); i++) {
+        if (RunParameters.UseBproc) {
+           scan_cnt = sscanf(*i, "%d - %d", &first, &last);
+           switch (scan_cnt) {
+               case 1:
+                   sprintf(RunParameters.HostList[cnt++], "%d", first);
+                   break;
+               case 2:
+                   if (last >= first) {
+                       for (scan_cnt = first ; scan_cnt <= last; scan_cnt++) {
+                           sprintf(RunParameters.HostList[cnt++], "%d", scan_cnt);
+                       }
+                   }
+                   break;
+               default:
+                   break;
+           }
         }
-        len = strlen(NetEntry->h_name);
-        if (len > ULM_MAX_HOSTNAME_LEN) {
-            ulm_err(("Error: Hostname too long for library buffer, length = %ld\n", len));
-            Abort();
-        }
-        sprintf((char *) RunParameters.HostList[cnt], NetEntry->h_name,
+        else {
+            NetEntry = gethostbyname(*i);
+            if (NetEntry == NULL) {
+                ulm_err(("Error: Hostname look-up failed for %s\n", *i));
+                Abort();
+            }
+            len = strlen(NetEntry->h_name);
+            if (len >= ULM_MAX_HOSTNAME_LEN) {
+                ulm_err(("Error: Hostname too long for library buffer, length = %ld\n", len));
+                Abort();
+            }
+            strncpy((char *) RunParameters.HostList[cnt], NetEntry->h_name,
                 len);
-        RunParameters.HostList[cnt][len] = '\0';
-        cnt++;
+            cnt++;
+        }
     }
 }
 
