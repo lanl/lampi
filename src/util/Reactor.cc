@@ -70,12 +70,12 @@ bool Reactor::insertListener(int sd, Listener* listener, int flags)
     }
 #endif
 
-    sd_lock.lock(); 
+    if(usethreads()) sd_lock.lock(); 
     Descriptor *descriptor = (Descriptor*)sd_table.valueForKey(sd);
     if(descriptor == 0) {
         descriptor = getDescriptor(sd);
         if(descriptor == 0) {
-            sd_lock.unlock();
+            if(usethreads()) sd_lock.unlock();
             return false;
         }
         sd_pending.AppendNoLock(descriptor);
@@ -96,7 +96,7 @@ bool Reactor::insertListener(int sd, Listener* listener, int flags)
         ULM_FD_SET(sd, &sd_except_set);
     }
     sd_changes++;
-    sd_lock.unlock();
+    if(usethreads()) sd_lock.unlock();
     return true;
 }
 
@@ -110,11 +110,11 @@ bool Reactor::removeListener(int sd, Listener* listener, int flags)
     }
 #endif
 
-    sd_lock.lock();
+    if(usethreads()) sd_lock.lock();
     Descriptor* descriptor = (Descriptor*)sd_table.valueForKey(sd);
     if(descriptor == 0) {
         ulm_err(("Reactor::removeListener(%d): invalid descriptor.\n", sd));
-        sd_lock.unlock();
+        if(usethreads()) sd_lock.unlock();
         return false;
     }
     descriptor->flags &= ~flags;
@@ -131,7 +131,7 @@ bool Reactor::removeListener(int sd, Listener* listener, int flags)
         ULM_FD_CLR(sd, &sd_except_set);
     }
     sd_changes++;
-    sd_lock.unlock();
+    if(usethreads()) sd_lock.unlock();
     return true;
 }
 
@@ -199,11 +199,14 @@ void Reactor::dispatch(int cnt, ulm_fd_set_t& rset, ulm_fd_set_t& sset, ulm_fd_s
         if(flags) cnt--;
     }
 
-    sd_lock.lock();
-    if(sd_changes == 0) {
-        sd_lock.unlock();
+    if(usethreads()) {
+        sd_lock.lock();
+        if(sd_changes == 0) {
+            sd_lock.unlock();
+            return;
+        }
+    } else if (sd_changes == 0)
         return;
-    }
 
     // cleanup any pending deletes while holding the lock
     descriptor = (Descriptor*)sd_active.begin();
@@ -239,7 +242,7 @@ void Reactor::dispatch(int cnt, ulm_fd_set_t& rset, ulm_fd_set_t& sset, ulm_fd_s
     }
 
     sd_changes = 0;
-    sd_lock.unlock();
+    if(usethreads()) sd_lock.unlock();
 }
 
 

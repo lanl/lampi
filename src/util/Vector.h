@@ -56,11 +56,11 @@ public:
    Vector(const Vector<TYPE>&);
   ~Vector();
 
-   size_t size() const;
+   inline size_t size() const { return len; }
 
    // index operations
-   TYPE  operator[](size_t) const;
-   TYPE& operator[](size_t);
+   inline TYPE  operator[](size_t index) const  { return ptr[index]; }
+   inline TYPE& operator[](size_t index) { return ptr[index]; }
 
    TYPE* base() { return ptr; }
    const TYPE* base() const { return ptr; }
@@ -194,33 +194,6 @@ Vector<TYPE>& Vector<TYPE>::operator=(const TYPE& element)
    ptr[0] = element;
    return *this;
    }
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  operator[]
-//
-
-template<class TYPE>
-TYPE& Vector<TYPE>::operator[](size_t index)
-   {
-#if !defined(NDEBUG)
-   if(index >= len)
-       ulm_exit((-1, "Vector<TYPE>::operator[](%d) invalid index", index));
-#endif
-   return ptr[index];
-   }
-
-template<class TYPE>
-TYPE Vector<TYPE>::operator[](size_t index) const
-   {
-#if !defined(NDEBUG)
-   if(index >= len) 
-       ulm_exit((-1, "Vector<TYPE>::operator[](%d) invalid index", index));
-#endif
-   return ptr[index];
-   }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -395,17 +368,6 @@ void Vector<TYPE>::remove_all()
    allocated = 0;
    }
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  size()
-//
-
-template<class TYPE>
-size_t Vector<TYPE>::size() const
-   {
-   return (size_t)len;
-   }
 
 
 /////////////////////////////////////////////////////////////////////////////
