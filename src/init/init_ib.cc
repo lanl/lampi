@@ -32,6 +32,7 @@
 #include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/ib/init.h"
+#undef PAGESIZE
 #include "path/ib/path.h"
 
 
