@@ -81,14 +81,14 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
             //  for that message had arrived, and when this frag
             //  is picked up. Need to search the list in any case
             //  just in case duplicate frags have arrived.
-            //if (!recvDone) {
-            //  SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,
-            //                                         timeNow);
-            //}
+//             if (!recvDone) {
+//                 SearchForFragsWithSpecifiedISendSeqNum(MatchedPostedRecvHeader, &recvDone,
+//                                                        timeNow);
+//            }
 	} else {
 	    //! if match not found, place on privateQueues.OkToMatchRecvFrags list
 	    DataHeader->WhichQueue = UNMATCHEDFRAGS;
-	    privateQueues.OkToMatchRecvFrags[fragSrc]->AppendNoLock(DataHeader);
+	    privateQueues.OkToMatchRecvFrags[fragSrc]->Append(DataHeader);
 	}
 
         if (usethreads()) {
@@ -182,7 +182,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
     }
 #endif				/* _DEBUGQUEUES */
 
-    if (fragSendSeqID == nextSeqIDToProcess || fragSendSeqID == 0) {
+    if (fragSendSeqID == nextSeqIDToProcess) {
 
 	//!
 	//! This is the sequence number we were expecting,

@@ -623,6 +623,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
 
         // what do we do if the return value is not ULM_SUCCESS?
         communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
+        return;
     }
 
 #ifdef RELIABILITY_ON
