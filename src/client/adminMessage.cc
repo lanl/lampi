@@ -942,6 +942,18 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
         ulm_err(("adminMessage::serverConnect timeout %d exceeded --"
                  " %d client sockets account for %d processes!\n",
                  timeout, hostcnt, np));
+	ulm_err(("\nmpirun was unable to start you application.\n"
+		"This may be caused by several things \n"
+		"- the application may not exist on the remote node\n"
+		"- the application may not be executable on the remote node\n"
+		"- the loader may not be able to find the dynamic libraries \n"
+		"needed to run the application.\n"
+		"Check to see that your remote LD_LIBRARY_PATH points to the \n"
+		"correct MPI library, and to any other dynamic libraries your \n"
+		"application needs. \n"
+		"- make sure that the mpirun you are using goes with the MPI \n"
+		"library you are trying to use.\n"));
+		
         for (int i = 0; i < nhosts_m; i++) {
             if (ranks[i] >= 0)
             {
@@ -1767,6 +1779,18 @@ bool adminMessage::serverConnect(int* procList, HostName_t* hostList,
             ulm_err(("adminMessage::serverConnect timeout %d exceeded --"
                      " %d client sockets account for %d processes!\n",
                      timeout, clientSocketCount(), clientProcessCount()));
+	    ulm_err(("\n\nmpirun was unable to start you application.\n"
+        	"This may be caused by several things \n"
+             	"- the application may not exist on the remote node\n"
+                 "- the application may not be executable on the remote node\n"
+                 "- the loader may not be able to find the dynamic libraries \n"
+                 "  needed to run the application.\n"
+                 "- check to see that your remote LD_LIBRARY_PATH points to the \n"
+                 "  correct MPI library, and to any other dynamic libraries your \n"
+                 "  application needs. \n"
+                 "- make sure that the mpirun you are using goes with the MPI \n"
+                 "  library you are trying to use.\n\n"));
+		 
             for (int i = 0; i < largestClientSocket_m; i++) {
                 if (clientSocketActive_m[i]) {
 #ifdef __linux__

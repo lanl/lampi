@@ -58,7 +58,7 @@
 #include <errno.h>
 
 #define ULM_GLOBAL_DEFINE
-
+#include "config.h"
 #include "init/environ.h"
 
 #include "internal/constants.h"
@@ -536,6 +536,9 @@ int main(int argc, char **argv)
     
     /* setup process characteristics */
     lampirun_init_proc();
+    
+    /* print out nice debug information for endusers */
+    ulm_notice (("*** LA-MPI: mpirun version " PACKAGE_VERSION " ***\n"));
 
     /*
      * Read in environment
