@@ -409,6 +409,7 @@ inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
             return false;
         }
         state_m = (state)(state_m | POSTED);
+        return true;
     }
 #ifdef ENABLE_RELIABILITY
     else if ((state_m & LOCALACKED) != 0) {
@@ -428,14 +429,9 @@ inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
         if (got_tokens) {
             state_m = (state)(state_m & ~LOCALACKED);
             vapi_result = VAPI_post_sr(h->handle, h->ud.handle, &sr_desc_m);
-            if (vapi_result != VAPI_OK) {
-                return false;
-            }
-        }
-        else {
-            return false;
+            return (vapi_result == VAPI_OK) ? true : false;
         }
     }
 #endif
-    return true;
+    return false;
 }
