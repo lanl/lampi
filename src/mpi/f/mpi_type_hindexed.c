@@ -48,7 +48,6 @@ void mpi_type_create_hindexed_f(MPI_Fint *count,
     MPI_Datatype c_type_old;
     MPI_Datatype c_type_new;
     ULMType_t *type;
-    int i;
 
     c_type_old = MPI_Type_f2c(*f_type_old);
 
