@@ -241,6 +241,7 @@ int Broadcaster::reset_coll_events()
       elan3_primeevent(ctx, event, 0);
     }
   }
+  ((ulm_coll_env_t*) sync->glob_env)->desc_index = 0;
 
   /* A barrier is needed hereafter if this is invoked due to a nack. */
   END_MARK;
@@ -359,6 +360,7 @@ Broadcaster::init_coll_events
       elan3_primeevent(ctx, event, 1);
     }
   }
+  ((ulm_coll_env_t*) sync->glob_env)->desc_index = 0;
 
   /* A barrier is needed hereafter if this is invoked due to a nack. */
   END_MARK;
@@ -784,7 +786,6 @@ int Broadcaster::broadcaster_free( )
     rc = make_progress_bcast();
 
   reset_coll_events();
-
   /* free  the segements, during which bcast_vp is to be freed*/
   first = segment;
   while(first)
@@ -799,7 +800,6 @@ int Broadcaster::broadcaster_free( )
     /* Free the segment */
     ulm_free(temp);
   }
-
  
   /* Reset the fields, I do not want to take the risk of resetting sync */
   bzero((void*)&comm_index, ((int) &segment - (int) &comm_index )); 
@@ -1313,7 +1313,6 @@ int Broadcaster::bcast_recv(quadrics_channel_t * channel)
 
   START_MARK;
   ctx         = quadrics_Glob_Mem_Info->ctx;
-
 #ifdef ENABLE_RELIABILITY
   /* Take the timestamp of the ulm_request */
   if (channel->repeats < 1 )
