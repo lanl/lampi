@@ -109,7 +109,7 @@ Options_t Options[] =
     {{"n", "np", "nprocs"},
      "Procs",
      STRING_ARGS,
-     NoOpFunction,
+     GetClientProcessCountNoInput,
      GetClientProcessCount,
      "Number of processes total or on each host (machine)"
     },
