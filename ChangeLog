@@ -1,3 +1,67 @@
+2004-10-13 15:46  ddd
+
+	* RELEASE_NOTES, config.h.in, configure, configure.ac,
+	  src/client/CheckForControlMsgs.cc, src/init/fork_many.cc,
+	  src/run/CheckForControlMsgs.cc, src/run/Input.cc,
+	  src/run/Input.h, src/run/Log.cc, src/run/Run.h,
+	  src/run/RunParams.h, src/run/mpirun.cc: Added command line option
+	  for setting connect timeout.
+
+	  Fixes to get rusage working on Tru64.
+
+	  Removing some dead debug code.
+
+2004-10-12 19:12  ddd
+
+	* src/: client/OrderlyShutdown.cc, include/internal/lampi_state.h,
+	  include/internal/types.h, init/fork_many.cc,
+	  run/CheckForControlMsgs.cc, run/Input.cc, run/Input.h,
+	  run/RunParams.h: Adding getrusage support
+
+2004-10-12 19:12  ddd
+
+	* src/run/Run.h: Adding syslog support, getrusage support
+
+2004-10-12 19:11  ddd
+
+	* src/client/adminMessage.h: Reworking version consistency checks
+
+2004-10-12 19:10  ddd
+
+	* src/: init/init.cc, run/mpirun.cc, init/init.h: Adding syslog
+	  support, getrusage support, reworking version consistency checks
+
+2004-10-12 19:06  ddd
+
+	* src/run/: Abort.cc, mpirun.mk: Adding syslog support
+
+2004-10-12 19:03  ddd
+
+	* config.h.in, configure, configure.ac, src/run/Log.cc: Adding
+	  syslog and getrusage support
+
+2004-10-06 17:29  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for 1.5.7
+
+2004-10-06 17:29  ddd
+
+	* src/: client/adminMessage.h, include/internal/constants.h,
+	  init/init.cc, init/init.h, run/mpirun.cc: Adding version
+	  consistency checking between mpirun and libmpi
+
+2004-10-06 17:28  ddd
+
+	* src/collective/ulm_reduce_interhost.cc: Fixing memory leak
+
+2004-09-30 17:03  ddd
+
+	* ChangeLog, RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for 1.5.6
+
 2004-09-30 16:57  ddd
 
 	* src/path/gm/recvFrag.cc: adding thread safety check and general
