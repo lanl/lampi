@@ -144,7 +144,7 @@ void Reactor::poll()
 {
     struct timeval tm;
     tm.tv_sec = 0;
-    tm.tv_usec = 0;
+    tm.tv_usec = 1;
     ulm_fd_set_t rset = sd_recv_set;
     ulm_fd_set_t sset = sd_send_set;
     ulm_fd_set_t eset = sd_except_set;

@@ -80,7 +80,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
 #endif                          /* LINUX */
 
     WaitTime.tv_sec = 0;
-    WaitTime.tv_usec = 0;
+    WaitTime.tv_usec = 100000;
 
     if ((*ServerSocketFD) == -1)
         return 0;
