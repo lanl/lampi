@@ -122,7 +122,7 @@ MODULES_MPIRUN	:= @MODULES_MPIRUN@ @MODULES_OS@
 # final flags needed by all platforms
 
 CPPFLAGS	+= -I. -I$(srcdir)/src -I$(srcdir)/src/include
-LDLIBS		+= -lpthread
+LDLIBS		+=
 
 ######################################################################
 

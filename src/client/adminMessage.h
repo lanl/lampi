@@ -289,7 +289,6 @@ class adminMessage {
 
     int socketToServer_m;
     int serverSocket_m;
-    bool cancelConnect_m;
     bool socketsToProcess_m[MAXSOCKETS];
 
   private:

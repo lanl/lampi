@@ -413,3 +413,29 @@ Version 1.5.8
 - Updated manual page.
 
 - Updated verbose output.
+
+Version 1.5.9
+
+- Loss of daemon process is now detected by the administrative socket
+  being closed at the remote end.
+
+- On BPROC systems, loss of daemon process is detected by waitpid()
+
+- Lost heartbeats no longer cause job termination.
+
+- For Myrinet/GM, sends that fail with GM_SEND_TIMED_OUT are now
+  retried.
+
+- mpirun and libmpi now no longer use threads internally.  This should
+  make the system more robust in Linux environments where there are
+  several versions of pthreads currently in use.  This may cause
+  problems for Tru64 platforms with very large numbers of processes.
+
+- Totalview now works reliably on BPROC systems.
+
+- Totalview can now correctly attach to a running job, and there is no
+  problem of being killed by lost heartbeats.
+
+- Job termination after error or MPI_Abort is now slightly less
+  aggressive in order to give more opportunity for standard output and
+  standard error to be recovered.

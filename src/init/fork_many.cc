@@ -393,8 +393,7 @@ static int fork_many_linear(int nprocs, volatile pid_t *local_pids)
     }
 
     /*
-     * clear process mask...except for __pthread_sig_restart
-     * used by glibc-LinuxThreads pthreads library
+     * clear process mask...
      */
     (void) sigemptyset(&signals);
     (void) sigaddset(&signals, SIGCHLD);
@@ -581,8 +580,7 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
         sigset_t signals;
 
         /*
-         * clear process mask...except for __pthread_sig_restart
-         * used by glibc-LinuxThreads pthreads library
+         * clear process mask...
          */
         (void) sigemptyset(&signals);
         (void) sigaddset(&signals, SIGCHLD);

@@ -45,7 +45,6 @@
  * - go into a service loop until time to terminate.
  */
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -74,16 +73,6 @@
 #include "path/gm/base_state.h"
 #include "run/Run.h"
 #include "run/RunParams.h"
-
-/*
- * bproc_vexecmove_* does not work properly with debuggers if more
- * than one thread is created before the bproc_vexecmove_* call.
- */
-#if ENABLE_BPROC
-static int use_connect_thread = 0;
-#else
-static int use_connect_thread = 1;
-#endif                          /* ENABLE_BPROC */
 
 
 /*
@@ -262,10 +251,12 @@ static bool exchangeIPAddresses(int *errorCode)
     if (udphosts == 0 && tcphosts == 0) {
         return true;
     } else if (udphosts != 0 && udphosts != RunParams.NHosts) {
-        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using UDP!\n", udphosts, RunParams.NHosts));
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using UDP!\n",
+                 udphosts, RunParams.NHosts));
         return false;
     } else if (tcphosts != 0 && tcphosts != RunParams.NHosts) {
-        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using TCP!\n", tcphosts, RunParams.NHosts));
+        ulm_err(("Error: exchangeIPAddresses %d hosts out of %d using TCP!\n",
+                 tcphosts, RunParams.NHosts));
         return false;
     }
 
@@ -439,6 +430,7 @@ static bool exchangeIBInfo(int *errorCode)
     return returnValue;
 }
 
+
 static bool exchangeGMInfo(int *errorCode)
 {
     adminMessage *s = RunParams.server;
@@ -537,11 +529,10 @@ static void getSocketsToClients(void)
 static void *connectThread(void *arg)
 {
     adminMessage *s = RunParams.server;
-    int nprocs = *(int *) arg;
+    int nprocs = RunParams.TotalProcessCount;
     int connectTimeOut =
         MIN_CONNECT_ALARMTIME + (PERPROC_CONNECT_ALARMTIME * nprocs);
     int rc = 0;
-    sigset_t signals;
 
     if (RunParams.ConnectTimeout > 0) {
         connectTimeOut = RunParams.ConnectTimeout;
@@ -552,22 +543,11 @@ static void *connectThread(void *arg)
         }
     }
 
-    /* enable SIGALRM for this thread */
-    (void) sigemptyset(&signals);
-    (void) sigaddset(&signals, SIGALRM);
-    pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *) NULL);
-
     if (!s->serverConnect(RunParams.ProcessCount,
                           RunParams.HostList,
-                          RunParams.NHosts, connectTimeOut)) {
+                          RunParams.NHosts,
+                          connectTimeOut)) {
         rc = -1;
-        if (use_connect_thread) {
-            pthread_exit((void *) rc);
-        }
-
-    }
-    if (use_connect_thread) {
-        pthread_exit((void *) rc);
     }
 
     return (void *) rc;
@@ -580,9 +560,6 @@ int mpirun(int argc, char **argv)
     int *ListHostsStarted;
     int ReceivingSocket;
     int rc;
-    pthread_t sc_thread;
-    sigset_t newsignals;
-    sigset_t oldsignals;
     unsigned int AuthData[3];
 
     /* setup process characteristics */
@@ -645,22 +622,6 @@ int mpirun(int argc, char **argv)
         Abort();
     }
 
-    /* set signal mask to block SIGALRM */
-    (void) sigemptyset(&newsignals);
-    (void) sigaddset(&newsignals, SIGALRM);
-    (void) sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
-
-    /* spawn thread to do adminMessage::serverConnect() processing */
-    RunParams.server->cancelConnect_m = false;
-    if (use_connect_thread) {
-        if (pthread_create
-            (&sc_thread, (pthread_attr_t *) NULL, connectThread,
-             (void *) &(RunParams.TotalProcessCount)) != 0) {
-            ulm_err(("Error: can't create serverConnect() thread!\n"));
-            Abort();
-        }
-    }
-
     if (RunParams.Verbose) {
         ulm_err(("*** Spawning application\n"));
     }
@@ -678,58 +639,21 @@ int mpirun(int argc, char **argv)
         }
         fprintf(stderr, "\n");
         ulm_warn(("Are PATH and LD_LIBRARY_PATH correct?\n"));
-
-        RunParams.server->cancelConnect_m = true;
-        if (use_connect_thread) {
-            pthread_join(sc_thread, (void **) NULL);
-        }
         Abort();
     }
-
     if (RunParams.Verbose) {
         ulm_err(("*** Waiting for application processes to connect back\n"));
     }
 
-    /* 2/4/04 RTA:
-     * It appears that creating more than one thread before a bproc call
-     * causes the bproc_vexecmove_* to only spawn one remote process.
-     * So until bproc is fixed, move the connectThread() call to after
-     * spawning user app.
-     */
-    if (0 == use_connect_thread) {
-        if (connectThread((void *) &(RunParams.TotalProcessCount)) ==
-            (void *) -1) {
-            Abort();
-        }
+    /* get connections back from daemons */
+    if (connectThread(NULL) == (void *) -1) {
+        Abort();
     }
 
     /*
      * at this stage all remote process have been spawned, but their
      * state is unknown
      */
-
-    /*
-     * Finish setting up administrative connections - time out
-     * proportional to number of processes (not number of hosts, since
-     * we don't always know the number of hosts)...with minimum
-     * connect timeout
-     */
-    if (use_connect_thread) {
-        /* join with serverConnect() processing thread */
-        void *thread_return;
-        if (pthread_join(sc_thread, &thread_return) == 0) {
-            if (thread_return == (void *) -1) {
-                Abort();
-            }
-        } else {
-            ulm_err(("Error: pthread_join() with serverConnect() "
-                     "thread failed!\n"));
-            Abort();
-        }
-    }
-
-    /* set signal mask to unblock SIGALRM */
-    sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *) NULL);
 
     if (RunParams.server->nhosts() < 1) {
         ulm_err(("Error: nhosts (%d) less than one!\n",
@@ -824,6 +748,8 @@ int mpirun(int argc, char **argv)
                 RunParams.TotalProcessCount, RunParams.NHosts);
         for (int h = 0; h < RunParams.NHosts; h++) {
             struct hostent *hptr;
+            char name[64];
+            char *dot;
 
             /* try to get a name rather than dotted IP address */
             hptr = gethostbyname(RunParams.HostList[h]);
@@ -834,8 +760,11 @@ int mpirun(int argc, char **argv)
             if (!hptr) {
                 perror("gethostbyaddr");
             }
-            fprintf(stderr, " %d*%s",
-                    RunParams.ProcessCount[h], hptr->h_name);
+            strncpy(name, hptr->h_name, sizeof(name));
+            if ((dot = strchr(name, '.')) != NULL) {
+                *dot = '\0';
+            }
+            fprintf(stderr, " %d*%s", RunParams.ProcessCount[h], name);
         }
         fprintf(stderr, "\n");
     }

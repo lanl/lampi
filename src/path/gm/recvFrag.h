@@ -81,7 +81,7 @@ public:
     // GM call back function to free resources for data ACKs
     static void ackCallback(struct gm_port *port,
                             void *context,
-                            enum gm_status status);
+                            gm_status_t status);
 
     // return descriptor to descriptor pool
     virtual void ReturnDescToPool(int poolIndex)

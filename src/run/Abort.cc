@@ -98,12 +98,12 @@ void AbortFunction(const char *file, int line)
                 }
             }
         }
-    }
 
-    /* one last attempt to clean up errant processes */
-    for (int h = 0; h < RunParams.NHosts; h++) {
-        if (RunParams.ActiveHost[h]) {
-            KillAppProcs(h);
+        /* one last attempt to clean up errant processes */
+        for (int h = 0; h < RunParams.NHosts; h++) {
+            if (RunParams.ActiveHost[h]) {
+                KillAppProcs(h);
+            }
         }
     }
 

@@ -172,7 +172,7 @@ void gmSetup(lampiState_t *s)
     char portName[15];
     char tmpMacAddress[LENMACADDR];
     gm_port *tmpPort;
-    gm_status_t returnValue;
+    gm_status_t status;
     int *nDevsPerProc;
     int dev;
     int i,*devs,proc,rDevIndex;
@@ -216,9 +216,10 @@ void gmSetup(lampiState_t *s)
     if (!s->iAmDaemon) {
         // Initialize gm
 
-        returnValue = gm_init();
-        if (returnValue != GM_SUCCESS) {
-            ulm_err(("Error: Can't initialize GM (%d)\n", (int) returnValue));
+        status = gm_init();
+        if (status != GM_SUCCESS) {
+            ulm_err(("Error: Can't initialize GM: %s (%d)\n",
+                     gm_strerror(status), (int) status));
             s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
             return;
         }
@@ -254,13 +255,13 @@ void gmSetup(lampiState_t *s)
                     return;
                 }
 
-                returnValue =
+                status =
                     gm_open(&tmpPort, dev, port, portName,
                             (enum gm_api_version)GM_API_VERSION);
-                if (returnValue == GM_NO_SUCH_DEVICE) {
+                if (status == GM_NO_SUCH_DEVICE) {
                     break;
                 }
-                else if (returnValue != GM_SUCCESS) {
+                else if (status != GM_SUCCESS) {
                     continue;
                 }
 
@@ -275,11 +276,12 @@ void gmSetup(lampiState_t *s)
  * earlier than 2.x, the local ID is the same as the global ID.
  */
 #if GM_API_VERSION >= 0x200
-                returnValue = gm_node_id_to_global_id(tmpPort, tmpNodeID,
+                status = gm_node_id_to_global_id(tmpPort, tmpNodeID,
                                                       &(gmState.localDevList[gmState.nDevsAllocated].global_node_id));
-                if (returnValue != GM_SUCCESS) {
-                    ulm_err(("Error: gm_node_id_to_global_id() node %d port %d"
-                             " returned %d\n", dev, port, (int) returnValue));
+                if (status != GM_SUCCESS) {
+                    ulm_err(("Error: gm_node_id_to_global_id() node %d port %d:"
+                             ": %s (%d)\n", dev, port,
+                             gm_strerror(status), (int) status));
                     s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
                     return;
                 }
@@ -303,13 +305,15 @@ void gmSetup(lampiState_t *s)
                    gmState.localDevList[gmState.nDevsAllocated].recvTokens =
                    gmState.localDevList[gmState.nDevsAllocated].sendTokens;
                 }
-                returnValue =
+                status =
                     gm_get_unique_board_id(tmpPort,
                                            gmState.localDevList[gmState.nDevsAllocated].
                                            macAddress);
-                if (returnValue != GM_SUCCESS) {
-                    ulm_err(("Error: gm_get_unique_board_id() node %d port %d"
-                             " returned %d\n", dev, port, (int) returnValue));
+                if (status != GM_SUCCESS) {
+                    ulm_err(("Error: gm_get_unique_board_id() node %d port %d:"
+                             " %s (%d)\n", dev, port,
+                             gm_strerror(status), (int) status));
+
                     s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
                     return;
                 }
@@ -328,7 +332,7 @@ void gmSetup(lampiState_t *s)
              * condition never met
              */
             if ( (gmState.nDevsAllocated == gmState.maxGMDevs) ||
-                 (GM_NO_SUCH_DEVICE == returnValue) )
+                 (GM_NO_SUCH_DEVICE == status) )
                 break;
 
         }                           /* end dev loop */
@@ -487,11 +491,11 @@ void gmSetup(lampiState_t *s)
 #endif
                     /* check to see if remote device is reachable from
                      *   the local device */
-                    returnValue =
+                    status =
                         gm_node_id_to_unique_id(gmState.
                                                 localDevList[localDev].gmPort,
                                                 allBaseDevInfo[rDevIndex].node_id,tmpMacAddress);
-                    if (returnValue != GM_SUCCESS) {
+                    if (status != GM_SUCCESS) {
                         continue;
                     }
                     /*

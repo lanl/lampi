@@ -35,8 +35,6 @@
 #include "config.h"
 #endif
 
-#include <pthread.h>
-
 extern "C" {
 #include <vapi_common.h>
 }

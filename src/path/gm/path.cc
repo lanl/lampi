@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
- * National Laboratory, which is operated by the University of California for
- * the U.S. Department of Energy. The Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years after
- * October 10,2002 subject to additional five-year worldwide renewals, the
- * Government is granted for itself and others acting on its behalf a paid-up,
- * nonexclusive, irrevocable worldwide license in this material to reproduce,
- * prepare derivative works, distribute copies to the public, perform publicly
- * and display publicly, and to permit others to do so. NEITHER THE UNITED
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the License,
- * or any later version.  Accordingly, this program is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -160,10 +163,6 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                   message,
                   offset,
                   payloadSize);
-        if (0) { // debug
-            ulm_warn(("%d sending frag %p to %d: tmapIndex %d offset %ld payloadSize %ld\n",
-                      myproc(), sfd, globalDestProc, tmapIndex, (long)offset, (long)payloadSize));
-        }
 
         // put on the FragsToSend list -- may not be able to send immediately
         sfd->WhichQueue = GMFRAGSTOSEND;
@@ -178,10 +177,12 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
     // send fragments if they are ready; otherwise, try to finish their initialization
     /*
-        We use a local numSent to mean how many fragments in FragsToSend were able to start
-        sending from gm_send_with_callback().  We can't use message->NumSent because its value
-        means the number of frags whose send completed.  However, GM does not complete a send
-        until it calls the callback function.
+        We use a local numSent to mean how many fragments in
+        FragsToSend were able to start sending from
+        gm_send_with_callback().  We can't use message->NumSent
+        because its value means the number of frags whose send
+        completed.  However, GM does not complete a send until it
+        calls the callback function.
      */
     if ((timeNow < 0) && message->FragsToSend.size())
         timeNow = dclock();
@@ -237,13 +238,6 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             if (usethreads())
                 gmState.gmLock.unlock();
 
-            if (0) { // debug
-                ulm_warn(("%d sent frag %p: gmPort %p addr %p size %d length %ld node_id %d port_id %d\n",
-                          myproc(), sfd,  sfd->gmPort(), addr, gmState.log2Size, 
-                          (long)(sfd->length_m +sizeof(gmHeader)), sfd->gmDestNodeID(),
-                          sfd->gmDestPortID())); 
-            }
-
             // switch frag to ack list and remove from send list
             afd = sfd;
             afd->WhichQueue = GMFRAGSTOACK;
@@ -276,7 +270,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 {
     int i, rc;
     unsigned int chksum;
-    
+
     *errorCode = ULM_SUCCESS;
 
     // check each Myrinet adapter
@@ -292,7 +286,8 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
             if (!rf) {
                 rf = gmState.recvFragList.getElement(0, rc);
                 if (rc != ULM_SUCCESS) {
-                    if ((rc == ULM_ERR_OUT_OF_RESOURCE) || (rc == ULM_ERR_FATAL)) {
+                    if ((rc == ULM_ERR_OUT_OF_RESOURCE)
+                        || (rc == ULM_ERR_FATAL)) {
                         *errorCode = rc;
                         return false;
                     }
@@ -313,16 +308,20 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 keepChecking = false;
                 break;
             case GM_RECV_TOKEN_VIOLATION_EVENT:
-                ulm_err(("Proc %d: GM error: GM_RECV_TOKEN_VIOLATION_EVENT.\n", myproc()));
+                ulm_err(("Proc %d: GM error: GM_RECV_TOKEN_VIOLATION_EVENT.\n",
+                         myproc()));
                 break;
             case GM_BAD_RECV_TOKEN_EVENT:
-                ulm_err(("Proc %d: GM error: GM_BAD_RECV_TOKEN_EVENT.\n", myproc()));
+                ulm_err(("Proc %d: GM error: GM_BAD_RECV_TOKEN_EVENT.\n",
+                         myproc()));
                 break;
             case GM_BAD_SEND_DETECTED_EVENT:
-                ulm_err(("Proc %d: GM error: GM_BAD_SEND_DETECTED_EVENT.\n", myproc()));
+                ulm_err(("Proc %d: GM error: GM_BAD_SEND_DETECTED_EVENT.\n",
+                         myproc()));
                 break;
             case GM_SEND_TOKEN_VIOLATION_EVENT:
-                ulm_err(("Proc %d: GM error: GM_SEND_TOKEN_VIOLATION_EVENT.\n", myproc()));
+                ulm_err(("Proc %d: GM error: GM_SEND_TOKEN_VIOLATION_EVENT.\n",
+                         myproc()));
                 break;
             case GM_RECV_EVENT:
                 // increment implicit # of receive tokens
@@ -332,96 +331,98 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     (devInfo->recvTokens)++;
 
                 rf->gmFragBuffer_m = *(gmFragBuffer **) ((unsigned char *)
-                                                         gm_ntohp(event->recv.buffer) - sizeof(gmFragBuffer *));
-                
+                                                         gm_ntohp(event->
+                                                                  recv.
+                                                                  buffer) -
+                                                         sizeof
+                                                         (gmFragBuffer *));
+
                 // copy and calculate checksum...if wanted...
                 chksum = 0;
                 rf->gmHeader_m = (gmHeader *) gm_ntohp(event->recv.buffer);
-                
+
 #if ENABLE_RELIABILITY
-                if ( gmState.doChecksum )
-                {
-                    chksum =  BasePath_t::headerChecksum(rf->gmHeader_m, sizeof(gmHeader) - sizeof(ulm_uint32_t),
-                                             GM_HDR_WORDS);
+                if (gmState.doChecksum) {
+                    chksum =
+                        BasePath_t::headerChecksum(rf->gmHeader_m,
+                                                   sizeof(gmHeader) -
+                                                   sizeof(ulm_uint32_t),
+                                                   GM_HDR_WORDS);
                 }
 #endif
-                    
-                rf->addr_m = (void *) ((unsigned char *)
-                                     gm_ntohp(event->recv.buffer) + sizeof(gmHeader));
-                rf->dev_m = i;
-                rf->length_m = gm_ntoh_u32(event->recv.length) - sizeof(gmHeader);
 
-                if (!gmState.doChecksum || 
-                    (!usecrc() && 
-                     (chksum == (unsigned int)(rf->gmHeader_m->data.checksum + 
-                                               rf->gmHeader_m->data.checksum))) 
-                    || (usecrc() && (chksum == 0)) ) 
-                {
+                rf->addr_m = (void *) ((unsigned char *)
+                                       gm_ntohp(event->recv.buffer) +
+                                       sizeof(gmHeader));
+                rf->dev_m = i;
+                rf->length_m =
+                    gm_ntoh_u32(event->recv.length) - sizeof(gmHeader);
+
+                if (!gmState.doChecksum ||
+                    (!usecrc() &&
+                     (chksum ==
+                      (unsigned int) (rf->gmHeader_m->data.checksum +
+                                      rf->gmHeader_m->data.checksum)))
+                    || (usecrc() && (chksum == 0))) {
                     switch (rf->gmHeader_m->common.type) {
-                        case MESSAGE_DATA:
-                            rf->msgData(timeNow);
-                            break;
-                        case MESSAGE_DATA_ACK:
-                            rf->msgDataAck(timeNow);
-                            break;
-                        default:
-                            ulm_warn(("gmPath::receive() received message of unknown type %d\n",
-                                      rf->gmHeader_m->common.type));
-                            break;
+                    case MESSAGE_DATA:
+                        rf->msgData(timeNow);
+                        break;
+                    case MESSAGE_DATA_ACK:
+                        rf->msgDataAck(timeNow);
+                        break;
+                    default:
+                        ulm_warn(("gmPath::receive() message of unknown type %d\n",
+                                  rf->gmHeader_m->common.type));
+                        break;
                     }
                     rf = 0;
                     break;
-                }
-                else
-                {
+                } else {
                     // checksum BAD, then abort or return descriptor to pool if
                     // ENABLE_RELIABILITY is defined
 #if ENABLE_RELIABILITY
-                    if ( gmState.doAck ) {
+                    if (gmState.doAck) {
                         if (usecrc()) {
-                            ulm_warn(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                            ulm_warn(("gmPath::receive - bad envelope CRC %u "
+                                      "(envelope + CRC = %u)\n",
                                       rf->gmHeader_m->data.checksum, chksum));
-                        }
-                        else {
+                        } else {
                             ulm_warn(("gmPath::receive - bad envelope checksum %u, "
                                       "calculated %u != 2*received %u\n",
-                                      rf->gmHeader_m->data.checksum,
-                                      chksum,
+                                      rf->gmHeader_m->data.checksum, chksum,
                                       (rf->gmHeader_m->data.checksum +
                                        rf->gmHeader_m->data.checksum)));
                         }
                         rf->ReturnDescToPool(0);
                         rf = 0;
                         continue;
-                    }
-                    else {
+                    } else {
                         if (usecrc()) {
-                            ulm_exit(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                            ulm_exit(("gmPath::receive - bad envelope CRC %u "
+                                      "(envelope + CRC = %u)\n",
                                       rf->gmHeader_m->data.checksum, chksum));
-                        }
-                        else {
+                        } else {
                             ulm_exit(("gmPath::receive - bad envelope checksum %u, "
                                       "calculated %u != 2*received %u\n",
-                                      rf->gmHeader_m->data.checksum,
-                                      chksum,
+                                      rf->gmHeader_m->data.checksum, chksum,
                                       (rf->gmHeader_m->data.checksum +
                                        rf->gmHeader_m->data.checksum)));
                         }
                     }
 #else
                     if (usecrc()) {
-                        ulm_exit(("gmPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
+                        ulm_exit(("gmPath::receive - bad envelope CRC %u "
+                                  "(envelope + CRC = %u)\n",
                                   rf->gmHeader_m->data.checksum, chksum));
-                    }
-                    else {
+                    } else {
                         ulm_exit(("gmPath::receive - bad envelope checksum %u, "
                                   "calculated %u != 2*received %u\n",
-                                  rf->gmHeader_m->data.checksum,
-                                  chksum,
+                                  rf->gmHeader_m->data.checksum, chksum,
                                   (rf->gmHeader_m->data.checksum +
                                    rf->gmHeader_m->data.checksum)));
                     }
-#endif      /* ENABLE_RELIABILITY */
+#endif                          /* ENABLE_RELIABILITY */
                 }
 
             default:
@@ -448,7 +449,8 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 
             while (devInfo->recvTokens) {
                 // get another buffer
-                gmFragBuffer *buf = devInfo->bufList.getElementNoLock(0, rc);
+                gmFragBuffer *buf =
+                    devInfo->bufList.getElementNoLock(0, rc);
                 if (rc != ULM_SUCCESS) {
                     break;
                 }
@@ -480,7 +482,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 
 void gmPath::callback(struct gm_port *port,
                       void *context,
-                      enum gm_status status)
+                      gm_status_t status)
 {
     gmSendFragDesc *sfd = (gmSendFragDesc *) context;
     SendDesc_t *bsd = (SendDesc_t *) sfd->parentSendDesc_m;
@@ -504,7 +506,8 @@ void gmPath::callback(struct gm_port *port,
             break;
         default:
             // otherwise fail if there was a failure 
-            ulm_exit(("Error: gmPath::callback called with error status (%d)\n", (int) status));
+            ulm_exit(("Error: Myrinet/GM: %s (%d)\n",
+                      gm_strerror(status), (int) status));
     }
 
     // Register frag as acked, if this is not a synchronous message first fragment.

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.5.8,lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.9,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -354,7 +354,7 @@ alpha*-dec*)
         else
            CXX="cxx"
            CFLAGS="-arch host -accept restrict_keyword"
-           CPPFLAGS="$CPPFLAGS -pthread -w"
+           CPPFLAGS="$CPPFLAGS -w"
            if test "$enable_debug" = "yes" ; then
               CFLAGS="$CFLAGS -g -gall -trapuv"
            else

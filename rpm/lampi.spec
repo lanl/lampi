@@ -1,4 +1,4 @@
-%define version 1.5.8
+%define version 1.5.9
 %define name lampi
 %define release 1
 

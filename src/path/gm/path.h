@@ -84,7 +84,7 @@ public:
     
 #endif
 
-    static void callback(struct gm_port *p, void *context, enum gm_status status);
+    static void callback(struct gm_port *p, void *context, gm_status_t status);
 };
 
 #endif /* GM_PATH_H */

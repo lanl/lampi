@@ -162,7 +162,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
 // GM call back function to free resources for data ACKs
 
 void gmRecvFragDesc::ackCallback(struct gm_port *port,
-                                 void *context, enum gm_status status)
+                                 void *context, gm_status_t status)
 {
     int dev;
     gmFragBuffer *buf = (gmFragBuffer *) context;

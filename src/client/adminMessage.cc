@@ -35,7 +35,6 @@
 #include "config.h"
 #endif
 
-#include <pthread.h>
 #include <assert.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -49,6 +48,10 @@
 #include "queue/globals.h"
 #include "util/MemFunctions.h"
 #include "util/misc.h"
+
+#ifndef __linux__
+typedef int socklen_t;
+#endif
 
 #define MAX_RETRY		100
 
@@ -391,11 +394,7 @@ bool adminMessage::clientConnect(int nprocesses, int hostrank, int timeout)
 
 bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
 {
-#ifdef __linux__
     socklen_t namelen;
-#else
-    int namelen;
-#endif
     int sockbuf = 1;
     struct sockaddr_in socketInfo;
 
@@ -898,15 +897,9 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
     ulm_iovec_t iovecs[5];
     int size, *hostsAssigned = 0;
     pid_t daemonPid;
-    pthread_t sca_thread;
 
 #if ENABLE_BPROC == 0
     int assignNewId;
-#ifdef __linux__
-    socklen_t addrlen;
-#else
-    int addrlen;
-#endif
     struct sockaddr_in addr;
 #else
     int use_random_mapping = 0;
@@ -938,11 +931,7 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
 
             for (int i = 0; i < largestClientSocket_m; i++) {
                 if (clientSocketActive_m[i]) {
-#ifdef __linux__
                     socklen_t addrlen = sizeof(struct sockaddr_in);
-#else
-                    int addrlen = sizeof(struct sockaddr_in);
-#endif
                     int result = getpeername(i, (struct sockaddr *) &addr, &addrlen);
                     if (result == 0) {
                         h = gethostbyaddr((char *) (&addr.sin_addr.s_addr), 4, AF_INET);
@@ -968,22 +957,8 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
     while (np != totalNProcesses_m) {
         int sockfd = -1;
         struct sockaddr_in addr;
-#ifdef __linux__
         socklen_t addrlen;
-#else
-        int addrlen;
-#endif
         fd_set fds;
-
-        if (cancelConnect_m) {
-            if (timeout > 0) {
-                alarm(0);
-                sigaction(SIGALRM, &oldSignals, (struct sigaction *) NULL);
-            }
-            pthread_cancel(sca_thread);
-            cancelConnect_m = false;
-            return false;
-        }
 
         FD_ZERO(&fds);
         FD_SET(serverSocket_m, &fds);
@@ -1001,7 +976,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
             ulm_err(("adminMessage::serverConnect: client socket fd, %d, greater than "
                      "allowed MAXSOCKETS, %d\n", sockfd, adminMessage::MAXSOCKETS));
             close(sockfd);
-            pthread_exit((void *) 0);
         }
 
         // now do the authorization handshake...receive info
@@ -1045,7 +1019,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
                 alarm(0);
                 sigaction(SIGALRM, &oldSignals, (struct sigaction *) NULL);
             }
-            pthread_cancel(sca_thread);
             return false;
         }
 
@@ -1066,7 +1039,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
                     alarm(0);
                     sigaction(SIGALRM, &oldSignals, (struct sigaction *) NULL);
                 }
-                pthread_cancel(sca_thread);
                 return false;
             }
         }
@@ -1083,7 +1055,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
                     alarm(0);
                     sigaction(SIGALRM, &oldSignals, (struct sigaction *) NULL);
                 }
-                pthread_cancel(sca_thread);
                 return false;
             }
         }
@@ -1167,7 +1138,6 @@ bool adminMessage::serverConnect(int *procList, HostName_t * hostList, int numHo
     if (numHosts > 0)
         ulm_free(hostsAssigned);
 
-    pthread_cancel(sca_thread);
     return true;
 }
 
@@ -1734,7 +1704,8 @@ adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *
 }
 
 
-/* return true if the name or IP address in dot notation of the peer to be stored at dst, or false if there is an error */
+/* return true if the name or IP address in dot notation of the peer
+ * to be stored at dst, or false if there is an error */
 bool adminMessage::peerName(int hostrank, char *dst, int bytes, bool useDottedIP)
 {
     int len;
@@ -1742,11 +1713,7 @@ bool adminMessage::peerName(int hostrank, char *dst, int bytes, bool useDottedIP
     int sockfd = (hostrank == -1) ? socketToServer_m : clientRank2FD(hostrank);
     struct sockaddr_in addr;
     struct hostent *h;
-#ifdef __linux__
     socklen_t addrlen = sizeof(struct sockaddr_in);
-#else
-    int addrlen = sizeof(struct sockaddr_in);
-#endif
     if (sockfd < 0) {
         return false;
     }
