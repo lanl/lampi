@@ -53,13 +53,18 @@
 #include "util/Utility.h"
 #include "run/Run.h"
 
+int StdInCTS = true;
+
 /*
  * Read from stdin and create an admin message to host rank 0.
  */
 static int ScanStdIn(int fdin)
 {
-    char buff[512];
+    static char buff[ULM_MAX_IO_BUFFER];
     int rc = ULM_SUCCESS;
+    if(StdInCTS == false)
+        return 0;
+
     int cnt = read(fdin, buff, sizeof(buff));
     if (cnt == 0) {
         if (isatty(fdin))
@@ -82,8 +87,10 @@ static int ScanStdIn(int fdin)
     adminMessage *server = RunParams.server;
     server->reset(adminMessage::SEND);
     server->pack(&cnt, adminMessage::INTEGER, 1);
-    if (cnt > 0)
+    if (cnt > 0) {
+        StdInCTS = false;
         server->pack(buff, adminMessage::BYTE, cnt);
+    }
 
     if (false == server->send(0, STDIOMSG, &rc)) {
         ulm_err(("ScanStdIn: error sending STDIOMSG: errno=%d\n", rc));

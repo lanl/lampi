@@ -143,6 +143,10 @@ void lampi_daemon_loop(lampiState_t *s)
                                NChildren + 1, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
                                StdoutBytesWritten, NewLineLast, s);
+        /* handle stdin */
+        if(STDINfdToChild >= 0)  {
+            ClientSendStdin(&ServerSocketFD, STDINfdToChild);
+        }
 
         /* send heartbeat to Server */
         if (DeltaTime > HEARTBEATINTERVAL) {

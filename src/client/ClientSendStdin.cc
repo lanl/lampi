@@ -47,11 +47,21 @@
 #include "client/SocketGeneric.h"
 
 
-int ClientSendStdin(int *src, int *dst)
+static char stdin_buff[ULM_MAX_IO_BUFFER];
+static int  stdin_offset = 0;
+static int  stdin_size = 0;
+
+
+/*
+ * Receive an I/O message from mpirun. Buffer the data - and attempt to write
+ * to the application. If the pipe/pty is full, we queue the data and poll the
+ * descriptor until all data is written.
+ */
+
+int ClientRecvStdin(int *src, int *dst)
 {
-    int size;
     int error;
-    int IOReturn = RecvSocket(*src, &size, sizeof(size), &error);
+    int IOReturn = RecvSocket(*src, &stdin_size, sizeof(stdin_size), &error);
     /* socket connection closed */
     if (IOReturn == 0) {
         close(*src);
@@ -66,38 +76,63 @@ int ClientSendStdin(int *src, int *dst)
     }
 
     /* close stdin to child */
-    if (size == 0) {
+    if (stdin_size == 0) {
         close(*dst);
         *dst = -1;
         return 0;
     }
 
-    char *buff = new char[size];
-    if (buff == 0) {
-        ulm_exit((-1,
-                  "ClientSendStdin: unable to allocate buffer for STDIOMSG\n"));
-    }
-    IOReturn = RecvSocket(*src, buff, size, &error);
+    IOReturn = RecvSocket(*src, stdin_buff, stdin_size, &error);
     if (IOReturn == 0) {
         close(*src);
         close(*dst);
         *src = *dst = -1;
-        delete[]buff;
         return -1;
     }
 
     if (IOReturn < 0 || error != ULM_SUCCESS) {
-        ulm_exit((-1,
-                  "ClientSendStdin: error reading STDIOMSG, error = %d\n",
-                  error));
+        ulm_exit((-1, "ClientRecvStdin: error reading STDIOMSG, error = %d\n", error));
+    }
+    return ClientSendStdin(src, dst);
+}
+
+
+/*
+ * Attempt to write the buffer to the app - when the entire buffer is written send
+ * a flow control message to the source.
+ */
+
+int ClientSendStdin(int* server, int *client)
+{
+    /* is there anything to do */
+    if(stdin_size == 0)
+        return 0;
+
+    int IOReturn = write(*client, stdin_buff+stdin_offset, stdin_size-stdin_offset);
+    if (IOReturn < 0) {
+        close(*client);
+        *client = -1;
+        return(-1);
     }
 
-    IOReturn = write(*dst, buff, size);
-    if (IOReturn < 0) {
-        close(*dst);
-        *dst = -1;
+    stdin_offset += IOReturn;
+    if(stdin_offset == stdin_size) {
+
+        stdin_offset = 0;
+        stdin_size = 0;
+
+        /* send ack back to mpirun */
+        unsigned int tag = STDIOMSG_CTS;
+        ulm_iovec_t ack;
+        ack.iov_base = &tag;
+        ack.iov_len = sizeof(tag);
+        if(ulm_writev(*server, &ack, 1) != sizeof(tag)) {
+            ulm_err(("ClientScanStdin: write to server failed, errno=%d\n", errno));
+            close(*server);
+            *server = -1;
+            return(-1);
+        }
     }
-    delete[]buff;
-    return 0;
+    return(0);
 }
 

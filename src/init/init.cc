@@ -1842,6 +1842,16 @@ void lampi_init_postfork_stdio(lampiState_t *s)
             if (isatty(stdin_parent)) {
                 tty_raw(stdin_parent);
             }
+
+            /* setup write end of pipe to be non-blocking */
+            int flags;
+            if((flags = fcntl(s->STDINfdToChild, F_GETFL, 0)) < 0) {
+                ulm_err(("lampi_init_postfork_stdio: fcntl(F_GETFL) failed with errno=%d\n", errno));
+            } else {
+                flags |= O_NONBLOCK;
+                if(fcntl(s->STDINfdToChild, F_SETFL, flags) < 0)
+                    ulm_err(("lam_init_postfork_stdio: fcntl(F_SETFL) failed with errno=%d\n", errno));
+            }
         }
 
         /* close all write stderr/stdout pipe fd's ) */

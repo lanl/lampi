@@ -45,7 +45,7 @@
 #define ULM_MAX_PATH_LEN                512
 #define ULM_MAX_PREFIX                  256
 #define ULM_MAX_TMP_BUFFER              20000
-
+#define ULM_MAX_IO_BUFFER               65536
 
 /* Times: alarms, heartbeats, retransmission (in seconds) */
 
@@ -91,6 +91,7 @@ enum MsgType_t {
 enum CtlMsgType_t {
     HEARTBEAT = 100,    /* heartbeat message */
     STDIOMSG,           /* stdio message */
+    STDIOMSG_CTS,       /* stdio flow control message */
 
     NORMALTERM = 200,   /* normal termination (client -> mpirun) */
     ACKNORMALTERM,      /* ack (mpirun -> client) */

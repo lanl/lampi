@@ -181,7 +181,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
 
             case STDIOMSG:
                 if (*STDINfdToChild >= 0)
-                    ClientSendStdin(ServerSocketFD, STDINfdToChild);
+                    ClientRecvStdin(ServerSocketFD, STDINfdToChild);
                 break;
             default:
                 ulm_exit((-1, "Error: Unrecognized control message (%u)\n",

@@ -76,6 +76,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
                               size_t *StdoutBytesWritten, int *NewLineLast,
                               PrefixName_t * IOPreFix, int *LenIOPreFix,
                               lampiState_t * state);
+int ClientRecvStdin(int *ServerFD, int *ClientFD);
 int ClientSendStdin(int *ServerFD, int *ClientFD);
 int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
                            int *ServerFD,
