@@ -35,9 +35,11 @@
 #define IB_STATE_H
 
 #include <vapi.h>
+#include "util/Lock.h"
+#include "path/common/addrLifo.h"
 
 #define LAMPI_MAX_IB_HCA_PORTS  2
-#define LAMPI_MAX_IB_HCAS       4
+#define LAMPI_MAX_IB_HCAS       2
 
 /* no dynamic sizing to help performance -- or at least
  * not unintentionally hurt it... 
@@ -64,7 +66,12 @@ typedef struct {
 typedef struct {
     VAPI_qp_hndl_t handle;
     VAPI_qp_prop_t prop;
+    VAPI_mr_hndl_t mr_handle;
+    VAPI_mr_t mr;
+    u_int32_t sq_tokens;
+    u_int32_t rq_tokens;
     bool receive_multicast;
+    addrLifo *bufs;
 } ib_qp_state_t;
 
 typedef struct {
@@ -80,10 +87,13 @@ typedef struct {
     VAPI_cq_hndl_t send_cq;
     VAPI_cqe_num_t recv_cq_size;
     VAPI_cqe_num_t send_cq_size;
+    VAPI_cqe_num_t recv_cq_tokens;
+    VAPI_cqe_num_t send_cq_tokens;
     ib_qp_state_t ud;
 } ib_hca_state_t;
 
 typedef struct {
+    Locks lock;
     u_int32_t num_hcas;
     int num_active_hcas;
     int active_hcas[LAMPI_MAX_IB_HCAS];
@@ -92,6 +102,9 @@ typedef struct {
     VAPI_qkey_t qkey;
     VAPI_gid_t mcast_gid;
     ib_ud_peer_t ud_peers;
+    int max_ud_2k_buffers;
+    bool ack;
+    bool checksum;
 } ib_state_t;
 
 extern ib_state_t ib_state;

@@ -52,14 +52,24 @@ void ibSetup(lampiState_t *s)
     VAPI_qp_init_attr_t qpinit;
     VAPI_qp_attr_t qpattr;
     VAPI_qp_attr_mask_t qpattrmask;
+    VAPI_mr_t mr;
     IB_port_t p;
     bool mcast_attached = false;
     int i, j, rc, usable = 0, mcast_prefix = htonl(0xff120000);
     int *authdata, *exchange_recv, *exchange_send;
-    int maxhcas, maxports;
+    int maxhcas, maxports, num_bufs;
+    void *mem;
 
     exchange_send = (int *)ulm_malloc(sizeof(int) * 2);
     exchange_send[0] = exchange_send[1] = 0;
+    ib_state.num_hcas = 0;
+    ib_state.num_active_hcas = 0;
+
+    // set these defaults here...eventually these will be set from
+    // mpirun values
+    ib_state.max_ud_2k_buffers = 2048;
+    ib_state.ack = true;
+    ib_state.checksum = false;
 
     // client daemon does info exchanges only
     if (s->iAmDaemon) {
@@ -67,8 +77,6 @@ void ibSetup(lampiState_t *s)
     }
 
     // get the number of available InfiniBand HCAs
-    ib_state.num_hcas = 0;
-    ib_state.num_active_hcas = 0;
     vapi_result = EVAPI_list_hcas(0, &ib_state.num_hcas, (VAPI_hca_id_t *)NULL);
     
     // no available HCAs...active_port is zero, exchange info now
@@ -190,6 +198,8 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
+        // set number of CQ tokens to size of CQ
+        h->recv_cq_tokens = h->recv_cq_size;
         // allocate send completion queue for HCA
         vapi_result = VAPI_create_cq(h->handle, h->cap.max_num_ent_cq,
             &(h->send_cq), &(h->send_cq_size));
@@ -198,6 +208,8 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
+        // set number of CQ tokens to size of CQ
+        h->send_cq_tokens = h->send_cq_size;
         // initialize UD QP information to use PD and CQs just created
         qpinit.sq_cq_hndl = h->send_cq;
         qpinit.rq_cq_hndl = h->recv_cq;
@@ -269,6 +281,39 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
+        // set the SQ and RQ tokens to the number of max outstanding WR allowed
+        h->ud.sq_tokens = h->ud.prop.cap.max_oust_wr_sq;
+        h->ud.rq_tokens = h->ud.prop.cap.max_oust_wr_rq;
+
+        // calculate an appropriate number of 2KB buffers to track
+        num_bufs = ib_state.max_ud_2k_buffers;
+        if ((u_int32_t)num_bufs > h->ud.rq_tokens) 
+            num_bufs = h->ud.rq_tokens;
+        if ((u_int32_t)num_bufs > h->recv_cq_tokens)
+            num_bufs = h->recv_cq_tokens;
+
+        // initialize bufs addrLifo tracker
+        h->ud.bufs = new addrLifo(num_bufs,128,256);
+
+        // grab a hunk of memory...register it as a memory region
+        mem = ulm_malloc(num_bufs * 2048);
+        mr.type = VAPI_MR;
+        mr.start = (VAPI_virt_addr_t)((unsigned long)mem);
+        mr.size = num_bufs * 2048;
+        mr.pd_hndl = h->pd;
+        mr.acl = VAPI_EN_LOCAL_WRITE;
+        vapi_result = VAPI_register_mr(h->handle, &mr, &(h->ud.mr_handle), 
+            &(h->ud.mr));
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: VAPI_register_mr for HCA %d returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+        // store 2KB chunks in addrLifo
+        while (num_bufs--) {
+            h->ud.bufs->push(mem);
+            mem = (void *)((char *)mem + 2048);
+        }
     }
 
 exchange_info:
@@ -334,14 +379,15 @@ exchange_info:
     // mark unused entries as invalid
     for (i = 0; i < ib_state.ud_peers.max_hcas; i++) {
         for (j = 0; j < ib_state.ud_peers.max_ports; j++) {
-            int k = ib_state.active_hcas[i];
             int l = (i * ib_state.ud_peers.max_ports) + j;
-            int m = ib_state.hca[k].active_ports[j];
             
             exchange_max_send[l].flag = 0;
 
             if ((i < ib_state.num_active_hcas) && 
-                (j < ib_state.hca[k].num_active_ports)) {
+                (j < ib_state.hca[ib_state.active_hcas[i]].num_active_ports)) {
+                int k = ib_state.active_hcas[i];
+                int m = ib_state.hca[k].active_ports[j];
+
                 exchange_max_send[l].qp_num = ib_state.hca[k].ud.prop.qp_num;
                 exchange_max_send[l].lid = ib_state.hca[k].ports[m].lid;
                 exchange_max_send[l].lmc = ib_state.hca[k].ports[m].lmc;
