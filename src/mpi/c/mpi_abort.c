@@ -38,7 +38,7 @@
 #include "internal/mpi.h"
 
 /*
- * MPI_Abort may be a which bypasses this function
+ * MPI_Abort may be a macro which bypasses this function
  */
 
 #undef MPI_Abort
@@ -46,7 +46,6 @@
 
 int PMPI_Abort(MPI_Comm comm, int errorcode)
 {
-    _mpi.finalized = 1;
     ulm_abort(comm, errorcode);
 
     return errorcode;
@@ -60,7 +59,6 @@ int PMPI_Abort(MPI_Comm comm, int errorcode)
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
-    _mpi.finalized = 1;
     ulm_abort(comm, errorcode);
 
     return errorcode;

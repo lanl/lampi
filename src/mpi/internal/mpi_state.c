@@ -68,12 +68,12 @@ void *ulm_request_null_location;
 static void atexit_handler(void)
 {
     if (_mpi.finalized == 0) {
-        fflush(stdin);
-        fflush(stdout);
         ulm_warn(("Warning: Process exiting without MPI finalization\n"));
-        fflush(stderr);
-        sleep(1);
     }
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+    sleep(1);
 }
 
 
