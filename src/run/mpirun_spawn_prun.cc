@@ -324,7 +324,7 @@ int mpirun_spawn_prun(unsigned int *AuthData, int port,
 
 /* BEGIN: ugly fix for broken rmsloader on certain Q systems */ 
 #define UGLY_FIX_FOR_BROKEN_RMSLOADER
-#if defined(__osf__) and defined(UGLY_FIX_FOR_BROKEN_RMSLOADER)
+#if defined(__osf__) && defined(UGLY_FIX_FOR_BROKEN_RMSLOADER)
     struct stat statbuf;
 
     if (stat("/usr/local/compaq/test/rmsloader", &statbuf) == 0) {
