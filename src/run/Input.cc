@@ -233,7 +233,7 @@ static void ScanSystemConfigFile(InputParameters_t * ULMInputOptions,
 
 
         /* parse input line */
-        ParseString InputData(InputBuffer, 3, "\n\t");
+        ParseString InputData(InputBuffer, 3, " \n\t");
         if (InputData.GetNSubStrings() == 0)
             continue;
 
