@@ -108,6 +108,8 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
                           recv_buf, recv_size, MPI_BYTE, source, recvtag,
                           comm, status);
         if (rc != MPI_SUCCESS) {
+            if(recv_buf != recv_block)
+                ulm_free(recv_buf);
             goto ERRHANDLER;
         }
 
@@ -118,6 +120,9 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
                        &type_index,
                        &map_index,
                        &map_offset);
+
+        if(recv_buf != recv_block)
+            ulm_free(recv_buf);
         return MPI_SUCCESS;
     }
 
