@@ -8,7 +8,7 @@ SRC_LIBMPI += \
 	init/stub.cc
 
 ifneq (,$(findstring SHARED_MEMORY, $(CPPFLAGS)))
-SRC_LIBMPI += init/init_shared_memory.cc init/init_local_coll.cc
+SRC_LIBMPI += init/init_shared_memory.cc
 endif
 
 ifneq (,$(findstring UDP, $(CPPFLAGS)))

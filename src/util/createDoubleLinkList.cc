@@ -32,7 +32,6 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include "mem/FreeLists.h"
-#include "path/sharedmem/SMPSendDesc.h"
 #include "internal/system.h"    // for CACHE_ALIGNMENT
 #include "queue/globals.h"
 

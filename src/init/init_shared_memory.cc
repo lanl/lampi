@@ -32,6 +32,7 @@
 #include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
+#include "path/sharedmem/path.h"
 
 
 void lampi_init_prefork_shared_memory(lampiState_t *s)
@@ -45,7 +46,6 @@ void lampi_init_prefork_shared_memory(lampiState_t *s)
 
     if (OPT_SHARED_MEMORY) {
         InitSMPSharedMemDevices(s->local_size);
-        InitUtsendMemDevices(s->local_size);
     }
 }
 
@@ -62,8 +62,25 @@ void lampi_init_postfork_shared_memory(lampiState_t *s)
     if (OPT_SHARED_MEMORY) {
 
         /*
-         * Add Shared_Memory path to global pathContainer ???
+         * Add Shared_Memory path to global pathContainer
          */
+
+        int pathHandle;
+        sharedmemPath *pathAddr;
+
+        if (!s->iAmDaemon) {
+            /*
+             * Add UDP path to global pathContainer
+             */
+
+            pathAddr = (sharedmemPath *) (pathContainer()->add(&pathHandle));
+            if (!pathAddr) {
+                s->error = ERROR_LAMPI_INIT_PATH_CONTAINER;
+                return;
+            }
+            new(pathAddr) sharedmemPath;
+            pathContainer()->activate(pathHandle);
+        }
 
     }
 }

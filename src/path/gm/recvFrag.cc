@@ -31,6 +31,7 @@
 #include "internal/log.h"
 #include "internal/options.h"
 #include "path/gm/recvFrag.h"
+#include "util/dclock.h"
 
 bool gmRecvFragDesc::AckData(double timeNow)
 {

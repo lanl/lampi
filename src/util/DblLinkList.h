@@ -99,6 +99,10 @@ class DoubleLinkList {
             Element->next=&Tail;
             Tail.prev=Element;
             length++;
+#ifdef _DEBUGQUEUES
+	    (Element->refCount)++;
+	    assert(Element->refCount == 1 );
+#endif
             return;
         }
 
@@ -117,6 +121,10 @@ class DoubleLinkList {
             firstEle->prev = Element;
             Head.next = Element;
             length++;
+#ifdef _DEBUGQUEUES
+	    (Element->refCount)++;
+	    assert(Element->refCount == 1 );
+#endif
             return;
         }
 
@@ -135,6 +143,10 @@ class DoubleLinkList {
             NewLastElement->next=&Tail;
             Tail.prev=NewLastElement;
             length--;
+#ifdef _DEBUGQUEUES
+	    (ReturnValue->refCount)--;
+	    assert(ReturnValue->refCount == 0 );
+#endif
             Lock.unlock();
             return ReturnValue;
         }
@@ -150,6 +162,10 @@ class DoubleLinkList {
             NewLastElement->next=&Tail;
             Tail.prev=NewLastElement;
             length--;
+#ifdef _DEBUGQUEUES
+	    (ReturnValue->refCount)--;
+	    assert(ReturnValue->refCount == 0 );
+#endif
             return ReturnValue;
         }
 
@@ -169,6 +185,10 @@ class DoubleLinkList {
             NewFirstElement->prev=&Head;
             Head.next=NewFirstElement;
             length--;
+#ifdef _DEBUGQUEUES
+	    (ReturnValue->refCount)--;
+	    assert(ReturnValue->refCount == 0 );
+#endif
             Lock.unlock();
             return ReturnValue;
         }
@@ -184,6 +204,10 @@ class DoubleLinkList {
             NewFirstElement->prev=&Head;
             Head.next=NewFirstElement;
             length--;
+#ifdef _DEBUGQUEUES
+	    (ReturnValue->refCount)--;
+	    assert(ReturnValue->refCount == 0 );
+#endif
             return ReturnValue;
         }
 
@@ -201,6 +225,14 @@ class DoubleLinkList {
             if(length == 0 ) {
                 return ReturnValue;
             }
+#ifdef _DEBUGQUEUES
+	    (Link->refCount)--;
+	    if( Link->refCount !=0 ) {
+		    fprintf(stderr," Link->refCount %d \n",Link->refCount);
+		    fflush(stderr);
+	    }
+	    assert(Link->refCount == 0 );
+#endif
 #ifdef _DEBUGQUEUES
             bool found=false;
             for ( Links_t *dsc=(Links_t *)begin();

@@ -63,11 +63,9 @@ lampi_init_func_t lampi_init_allforked_quadrics = noop;
 #endif
 
 #ifndef SHARED_MEMORY
-lampi_init_func_t lampi_init_prefork_local_coll = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_msg_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_shared_memory = noop;
-lampi_init_func_t lampi_init_postfork_local_coll = noop;
 lampi_init_func_t lampi_init_postfork_shared_memory = noop;
 lampi_init_func_t lampi_init_allforked_local_coll = noop;
 lampi_init_func_t lampi_init_allforked_shared_memory = noop;

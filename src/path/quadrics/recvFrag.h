@@ -34,7 +34,6 @@
 #include <elan3/elan3.h>
 
 #include "util/MemFunctions.h"
-#include "path/mcast/utsendDesc.h"                  // needed for UtsendDesc_t
 #include "internal/system.h"
 #include "path/common/BaseDesc.h"              // needed for BaseRecvDesc_t
 #include "path/quadrics/header.h"
@@ -159,9 +158,6 @@ public:
     bool checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd);
 #endif
 
-    // ACK processing code...
-    void handleMulticastMessageAck(double timeNow, UtsendDesc_t *msd,
-                                   BaseSendDesc_t *bsd, quadricsSendFragDesc *sfd);
     void handlePt2PtMessageAck(double timeNow, BaseSendDesc_t *bsd,
                                quadricsSendFragDesc *sfd);
 

@@ -75,7 +75,6 @@
 #ifdef SHARED_MEMORY
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 #include "path/sharedmem/SMPfns.h"
-#include "path/sharedmem/SMPSendDesc.h"
 #endif /* SHARED_MEMORY */
 
 #if defined(NUMA) && defined(__mips)
@@ -620,13 +619,8 @@ void lampi_init_postfork_resources(lampiState_t *s)
     long nPagesPerList = 4;
     long maxPagesPerList = maxPgsIn1IRecvDescDescList;
     ssize_t pageSize = SMPPAGESIZE;
-#ifdef SHARED_MEMORY
-    ssize_t eleSize = (((sizeof(SMPSendDesc_t) + sizeof(RecvDesc_t) - 1)
-                        / CACHE_ALIGNMENT) + 1) * CACHE_ALIGNMENT;
-#else
     ssize_t eleSize = (((sizeof(RecvDesc_t) - 1)
                         / CACHE_ALIGNMENT) + 1) * CACHE_ALIGNMENT;
-#endif
 
     ssize_t poolChunkSize = SMPPAGESIZE;
     int nFreeLists = 1;

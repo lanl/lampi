@@ -34,7 +34,6 @@
 
 #include "path/udp/sendFrag.h"		// needed for udpSendFragDesc and iovecs
 #include "path/common/BaseDesc.h"	// needed for BaseRecvDesc_t
-#include "path/mcast/utsendDesc.h"	        // needed for UtsendDesc_t
 
 //
 // The maximum payload size of short messages.  Size should be of the order
@@ -110,9 +109,6 @@ public:
     bool isDuplicateCollectiveFrag();
     bool checkForDuplicateAndNonSpecificAck(udpSendFragDesc *Frag, udp_ack_header &ack);
 #endif
-    void handleMulticastMessageAck(UtsendDesc_t *msendDesc,
-                                   BaseSendDesc_t *sendDesc, udpSendFragDesc *Frag,
-                                   udp_ack_header &ack);
     void handlePt2PtMessageAck(BaseSendDesc_t *sendDesc,
                                udpSendFragDesc *Frag, udp_ack_header &ack);
 

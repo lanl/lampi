@@ -572,11 +572,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
             }
         }
 
-        if (message->sendType == ULM_SEND_MULTICAST) {
-            // currently, must fit within mcast bufs which are of fixed size
-            fragLength = message->PostedLength;
-        }
-        else if (smallBufs || largeBufs) {
+        if (smallBufs || largeBufs) {
             if (smallBufs) {
                 destBufType = smallBufType;
                 smallBufs--;
@@ -703,17 +699,6 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
                     message->earliestTimeToResend = timeToResend;
                 }
 
-                if (message->multicastMessage) {
-                    // reset top-level earliestTimeToResend if needed
-                    if (message->multicastMessage->earliestTimeToResend == -1.0) {
-                        message->multicastMessage->earliestTimeToResend = 
-                            message->earliestTimeToResend;
-                    } else if (message->earliestTimeToResend <
-                               message->multicastMessage->earliestTimeToResend) {
-                        message->multicastMessage->earliestTimeToResend = 
-                            message->earliestTimeToResend;
-                    }
-                }
 #endif
                 // switch frag to ack list and remove from send list
                 afd = sfd;
@@ -786,17 +771,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
 
         if (send_done_now) {
             message->sendDone = 1;
-            if (message->multicastMessage) {
-                (message->multicastMessage->messageDoneCount)++;
-                if (!message->multicastMessage->sendDone &&
-                    message->multicastMessage->messageDoneCount == 
-                    message->multicastMessage->numDescsToAllocate) {
-                    message->multicastMessage->request->messageDone = true;
-                    message->multicastMessage->sendDone = true;
-                }
-            } else {
-                message->requestDesc->messageDone = true;
-            }
+    	    message->requestDesc->messageDone = true;
         }
     }
 
@@ -1047,18 +1022,10 @@ bool quadricsPath::resend(BaseSendDesc_t *message, int *errorCode)
 	// retrieve received_largest_inorder_seq
 	unsigned long long received_seq_no, delivered_seq_no;
 
-	if (message->multicastMessage) {
-	    received_seq_no = reliabilityInfo->coll_sender_ackinfo[getMemPoolIndex()].process_array
-		[global_proc_to_host(FragDesc->globalDestID)].received_largest_inorder_seq;
-	    delivered_seq_no = reliabilityInfo->coll_sender_ackinfo[getMemPoolIndex()].process_array
-		[global_proc_to_host(FragDesc->globalDestID)].delivered_largest_inorder_seq;
-	}
-	else {
-	    received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
 		[FragDesc->globalDestID].received_largest_inorder_seq;
-	    delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
 		[FragDesc->globalDestID].delivered_largest_inorder_seq;
-	}
 
 	bool free_send_resources = false;
 

@@ -32,7 +32,6 @@
 #define GM_RECVFRAG
 
 #include "util/MemFunctions.h"
-#include "path/mcast/utsendDesc.h"            // needed for UtsendDesc_t
 #include "internal/system.h"
 #include "path/common/BaseDesc.h"        // needed for BaseRecvDesc_t
 #include "path/gm/sendFrag.h"

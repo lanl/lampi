@@ -41,6 +41,8 @@ MODULES_OS	+= os/LINUX/i686
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
 CPPFLAGS	+= -DUDP
+#debug queues
+CPPFLAGS	+= -D_DEBUGQUEUES
 
 #GM support
 ifdef USE_GM

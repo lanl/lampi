@@ -33,9 +33,7 @@
 #include "internal/options.h"
 
 #ifdef SHARED_MEMORY
-#include "path/sharedmem/SMPSendDesc.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
-#include "path/mcast/utsendInit.h"
 #endif
 
 //!
@@ -65,76 +63,6 @@ bool Communicator::areQueuesEmpty()
     if (!empty) {
         return empty;
     }
-
-#ifdef SHARED_MEMORY
-    // check global SMP send queues for objects belonging to this communicator
-    list = &UnackedPostedSMPSends;
-    if (list->size() > 0) {
-        gotLock = (usethreads()) ? list->Lock.trylock() : 1;
-        if (gotLock) {
-            for (SMPSendDesc_t *j = (SMPSendDesc_t *)list->begin();
-                 j != (SMPSendDesc_t *)list->end(); j = (SMPSendDesc_t *)j->next) {
-                if (j->communicator == contextID) {
-                    empty = false;
-                    break;
-                }
-            }
-            if (usethreads()) {
-                list->Lock.unlock();
-            }
-        }
-        else {
-            empty = false;
-        }
-    }
-    if (!empty) {
-        return empty;
-    }
-
-    list = SMPSendsToPost[local_myproc()];
-    if (list->size() > 0) {
-        gotLock = list->Lock.trylock();
-        if (gotLock) {
-            for (SMPFragDesc_t *j = (SMPFragDesc_t *)list->begin();
-                 j != (SMPFragDesc_t *)list->end(); j = (SMPFragDesc_t *)j->next) {
-                if (j->ctx_m == contextID) {
-                    empty = false;
-                    break;
-                }
-            }
-            list->Lock.unlock();
-        }
-        else {
-            empty = false;
-        }
-    }
-    if (!empty) {
-        return empty;
-    }
-
-    list = &IncompletePostedSMPSends;
-    if (list->size() > 0) {
-        gotLock = (usethreads()) ? list->Lock.trylock() : 1;
-        if (gotLock) {
-            for (SMPSendDesc_t *j = (SMPSendDesc_t *)list->begin();
-                 j != (SMPSendDesc_t *)list->end(); j = (SMPSendDesc_t *)j->next) {
-                if (j->communicator == contextID) {
-                    empty = false;
-                    break;
-                }
-            }
-            if (usethreads()) {
-                list->Lock.unlock();
-            }
-        }
-        else {
-            empty = false;
-        }
-    }
-    if (!empty) {
-        return empty;
-    }
-#endif
 
     // check global network path send queues for objects belonging to this communicator
     list = &UnackedPostedSends;
@@ -206,46 +134,6 @@ bool Communicator::areQueuesEmpty()
     }
     if (!empty) {
         return empty;
-    }
-
-    // check global utsend queues for objects belonging to this commmunicator
-    if (OPT_MCAST) {
-        for (i = 0; i < local_nprocs(); i++) {
-            list = IncompleteUtsendDescriptors[i];
-            if (list->size() > 0) {
-                gotLock = list->Lock.trylock();
-                if (gotLock) {
-                    for (UtsendDesc_t *j = (UtsendDesc_t *)list->begin();
-                         j != (UtsendDesc_t *)list->end(); j = (UtsendDesc_t *)j->next) {
-                        if (j->contextID == contextID) {
-                            empty = false;
-                            break;
-                        }
-                    }
-                    list->Lock.unlock();
-                }
-            }
-            if (!empty) {
-                return empty;
-            }
-            list = UnackedUtsendDescriptors[i];
-            if (list->size() > 0) {
-                gotLock = list->Lock.trylock();
-                if (gotLock) {
-                    for (UtsendDesc_t *j = (UtsendDesc_t *)list->begin();
-                         j != (UtsendDesc_t *)list->end(); j = (UtsendDesc_t *)j->next) {
-                        if (j->contextID == contextID) {
-                            empty = false;
-                            break;
-                        }
-                    }
-                    list->Lock.unlock();
-                }
-            }
-            if (!empty) {
-                return empty;
-            }
-        }
     }
 
     return empty;

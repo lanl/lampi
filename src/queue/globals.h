@@ -37,7 +37,6 @@
 #include "queue/barrier.h"
 #include "queue/contextID.h"
 #include "util/DblLinkList.h"
-#include "path/mcast/utsendDesc.h"
 #include "include/internal/mmap_params.h"
 #include "init/init.h"
 #include "internal/buffer.h"
@@ -164,9 +163,6 @@ extern ProcessPrivateMemDblLinkList UnackedPostedSends;
 
 // acks that still need to be sent
 extern ProcessPrivateMemDblLinkList UnprocessedAcks;
-
-// pool of Utsend descriptors
-extern FreeListShared_t <UtsendDesc_t> UtsendDescriptors;
 
 // pool of IReceive descriptors
 extern FreeListPrivate_t <RecvDesc_t> IrecvDescPool;

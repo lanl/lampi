@@ -21,7 +21,7 @@ VERSION	:= include/internal/version.h
 #
 ######################################################################
 
-CPPFLAGS       := -DHAVE_PRAGMA_WEAK
+CPPFLAGS       := -DHAVE_PRAGMA_WEAK 
 
 ######################################################################
 
@@ -64,9 +64,9 @@ MODULES_LIBMPI	+= path/sharedmem
 endif
 
 # include multicast support if SHARED_MEMORY is defined
-ifneq (,$(findstring SHARED_MEMORY, $(CPPFLAGS)))
-MODULES_LIBMPI	+= path/mcast
-endif
+#ifneq (,$(findstring SHARED_MEMORY, $(CPPFLAGS)))
+#MODULES_LIBMPI	+= path/mcast
+#endif
 
 # include UDP/IP support if UDP is defined
 ifneq (,$(findstring UDP, $(CPPFLAGS)))

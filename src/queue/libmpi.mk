@@ -1,8 +1,5 @@
 SRC_LIBMPI += \
-	queue/CollGroupRecv.cc \
-	queue/CollGroupSend.cc \
 	queue/Communicator.cc \
-	queue/Progress.cc \
 	queue/Pt2PtGroupMatchFrags.cc \
 	queue/Pt2PtGroupMatchRecv.cc \
 	queue/Pt2PtGroupMisc.cc \

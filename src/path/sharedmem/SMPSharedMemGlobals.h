@@ -36,10 +36,8 @@
 #include "util/cbQueue.h"
 
 #ifdef SHARED_MEMORY
-#include "path/sharedmem/SMPSendDesc.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
-#include "path/mcast/localcollFrag.h"
-#include "path/mcast/state.h"
+#include "path/sharedmem/sendInfo.h"
 #endif
 
 #include "path/sharedmem/SMPDev.h"
@@ -48,9 +46,6 @@
 
 // initialize the shared memory devices
 void InitSMPSharedMemDevices(int NumLocalProcs);
-
-//
-void InitUtsendMemDevices(int NumLocalProcs);
 
 // get payload buffer from SMPSharedMem_logical_dev_t
 void * allocPayloadBuffer(SMPSharedMem_logical_dev_t *dev,
@@ -98,7 +93,7 @@ extern long maxSMPCollFragDescRetries;
 extern bool SMPCollFragDescAbortWhenNoResource;
 
 //! SMP send descriptor list
-extern FreeListShared_t <SMPSendDesc_t> SMPSendDescs;
+extern FreeListShared_t <sharedMemData_t> SMPSendDescs;
 
 //! SMP frag descriptor list
 extern FreeListShared_t <SMPSecondFragDesc_t> SMPFragPool;

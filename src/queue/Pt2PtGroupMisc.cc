@@ -44,7 +44,6 @@
 #include "util/dclock.h"
 #ifdef SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
-# include "path/sharedmem/SMPSendDesc.h"
 #endif // SHARED_MEMORY
 #include "internal/log.h"
 #include "internal/malloc.h"
@@ -238,7 +237,6 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         useSharedMemForCollectives = 0;
 
     // set path selection functions to default
-    multicastPathSelectionFunction = ulm_bind_multicast_message;
     pt2ptPathSelectionFunction = ulm_bind_pt2pt_message;
 
     // set contextID
@@ -759,7 +757,7 @@ void CheckForAckedMessages(double timeNow)
                     UnackedPostedSends.RemoveLinkNoLock(SendDesc);
                 if (usethreads())
                     SendDesc->Lock.unlock();
-                SendDesc->ReturnDesc();
+                SendDesc->path_m->ReturnDesc(SendDesc);
                 SendDesc = TmpDesc;
             } else {
                 // unlock
@@ -772,68 +770,6 @@ void CheckForAckedMessages(double timeNow)
     // unlock list
     if (usethreads())
         UnackedPostedSends.Lock.unlock();
-
-#ifdef SHARED_MEMORY
-    extern bool _ulm_checkSMPInMakeProgress;
-
-    if (_ulm_checkSMPInMakeProgress) {
-        // Loop over the sends that have not yet been acked.
-        SMPSendDesc_t *SMPSendDesc = 0;
-
-        // lock list to make sure reads are atomic
-        if (usethreads())
-            UnackedPostedSMPSends.Lock.lock();
-
-        for (SMPSendDesc =
-             (SMPSendDesc_t *) UnackedPostedSMPSends.begin();
-             SMPSendDesc != (SMPSendDesc_t *) UnackedPostedSMPSends.end();
-             SMPSendDesc = (SMPSendDesc_t *) SMPSendDesc->next) {
-
-            int LockReturn = SMPSendDesc->SenderLock.trylock();
-
-            // process only if lock is available, else try again later
-            if (LockReturn == 1) {      // we've acquired the lock
-                // sanity check
-#ifdef _DEBUGQUEUE
-                if (SMPSendDesc->WhichQueue != UNACKEDISENDQUEUE) {
-                    ulm_exit((-1, "Error: SMPSendDesc->WhichQueue != "
-                              "UNACKEDISENDQUEUE. Value %d\n",
-                              SMPSendDesc->WhichQueue));
-                }
-#endif                          /* _DEBUGQUEUE */
-
-                // we've sent everything...and we've gotten at least one ACK...
-                // so the synch. send is done
-                if ((SMPSendDesc->sendType == ULM_SEND_SYNCHRONOUS) &&
-                    SMPSendDesc->NumAcked && !SMPSendDesc->sendDone) {
-                    SMPSendDesc->sendDone = 1;
-                    SMPSendDesc->requestDesc->messageDone = true;
-                }
-
-                if (SMPSendDesc->NumAcked >= SMPSendDesc->numfrags) {
-                    // we double-check this because of a possible race condition
-                    if (!SMPSendDesc->sendDone) {
-                        SMPSendDesc->sendDone = 1;
-                        SMPSendDesc->requestDesc->messageDone = true;
-                    }
-                    SMPSendDesc_t *TmpDesc = (SMPSendDesc_t *)
-                        UnackedPostedSMPSends.
-                        RemoveLinkNoLock(SMPSendDesc);
-                    SMPSendDesc->SenderLock.unlock();
-                    SMPSendDesc->ReturnDesc();
-                    SMPSendDesc = TmpDesc;
-                } else {
-                    // unlock
-                    SMPSendDesc->SenderLock.unlock();
-                }
-            }                   // end trylock region
-        }                       // end for loop
-
-        // unlock list
-        if (usethreads())
-            UnackedPostedSMPSends.Lock.unlock();
-    }
-#endif                          //SHARED_MEMORY
 }
 
 
@@ -871,27 +807,26 @@ int CheckForRetransmits()
                 } else if (errorCode == ULM_SUCCESS) {
                     break;
                 } else if (errorCode == ULM_ERR_BAD_PATH) {
-                    // unbind message from old path
-                    sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
-                    // select a new path
-                    Communicator *commPtr =
-                        communicators[sendDesc->ctx_m];
-                    errorCode =
-                        (commPtr->
-                         pt2ptPathSelectionFunction) ((void *) sendDesc);
-                    if (errorCode != ULM_SUCCESS) {
-                        sendDesc->Lock.unlock();
-                        ulm_exit((-1,
-                                  "Error: CheckForRetransmits: no path "
-                                  "available to send message\n"));
-                    }
-                    // initialize the descriptor for this path
-                    sendDesc->path_m->init(sendDesc);
-
-                    // put the descriptor on the incomplete list
-                    TmpDesc = (BaseSendDesc_t *)
-                        UnackedPostedSends.RemoveLinkNoLock(sendDesc);
-                    IncompletePostedSends.Append(sendDesc);
+// revisit                    // unbind message from old path
+// revisit                    sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
+// revisit                    // select a new path
+// revisit                    Communicator *commPtr =
+// revisit                        communicators[sendDesc->ctx_m];
+// revisit                    errorCode =
+// revisit                        (commPtr-> pt2ptPathSelectionFunction) ((void *) sendDesc);
+// revisit                    if (errorCode != ULM_SUCCESS) {
+// revisit                        sendDesc->Lock.unlock();
+// revisit                        ulm_exit((-1,
+// revisit                                  "Error: CheckForRetransmits: no path "
+// revisit                                  "available to send message\n"));
+// revisit                    }
+// revisit                    // initialize the descriptor for this path
+// revisit                    sendDesc->path_m->init(sendDesc);
+// revisit
+// revisit                    // put the descriptor on the incomplete list
+// revisit                    TmpDesc = (BaseSendDesc_t *)
+// revisit                        UnackedPostedSends.RemoveLinkNoLock(sendDesc);
+// revisit                    IncompletePostedSends.Append(sendDesc);
                 } else {
                     // unbind should free frag descriptors, etc.
                     sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
@@ -939,21 +874,21 @@ int CheckForRetransmits()
                         break;
                     } else if (errorCode == ULM_ERR_BAD_PATH) {
                         // rebind message to new path
-                        sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
-                        // select a new path
-                        Communicator *commPtr =
-                            communicators[sendDesc->ctx_m];
-                        errorCode =
-                            ((commPtr->
-                              pt2ptPathSelectionFunction)) ((void *)
-                                                            sendDesc);
-                        if (errorCode != ULM_SUCCESS) {
-                            sendDesc->Lock.unlock();
-                            ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
-                            return errorCode;
-                        }
-                        // initialize the descriptor for this path
-                        sendDesc->path_m->init(sendDesc);
+// revisit                        sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
+// revisit                        // select a new path
+// revisit                        Communicator *commPtr =
+// revisit                            communicators[sendDesc->ctx_m];
+// revisit                        errorCode =
+// revisit                            ((commPtr->
+// revisit                              pt2ptPathSelectionFunction)) ((void *)
+// revisit                                                            sendDesc);
+// revisit                        if (errorCode != ULM_SUCCESS) {
+// revisit                            sendDesc->Lock.unlock();
+// revisit                            ulm_err(("Error: CheckForRetransmits: no path available to send message\n"));
+// revisit                            return errorCode;
+// revisit                        }
+// revisit                        // initialize the descriptor for this path
+// revisit                        sendDesc->path_m->init(sendDesc);
                     } else {
                         // unbind should free frag descriptors, etc.
                         sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);

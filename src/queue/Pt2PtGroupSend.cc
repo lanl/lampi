@@ -83,30 +83,10 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
     // set sent completion to false
     tmpRequest->messageDone = false;
 
-    // Multicast case - skip to isend_start_network
-    if (tmpRequest->sendType == ULM_SEND_MULTICAST) {
-        rc = isend_start_network(request);
-        return rc;
+    int retVal = isend_start_network(request);
+    if (retVal != ULM_SUCCESS) {
+    	    return retVal;
     }
-
-#ifdef SHARED_MEMORY
-    if (lampiState.map_global_rank_to_host
-        [remoteGroup->
-         mapGroupProcIDToGlobalProcID[tmpRequest->posted_m.proc.
-                                      destination_m]] != myhost()) {
-#endif                          // SHARED_MEMORY
-        int retVal = isend_start_network(request);
-        if (retVal != ULM_SUCCESS) {
-            return retVal;
-        }
-#ifdef SHARED_MEMORY
-    } else {
-        int retVal = isend_start_onhost(request);
-        if (retVal != ULM_SUCCESS) {
-            return retVal;
-        }
-    }
-#endif                          // SHARED_MEMORY
 
     return ULM_SUCCESS;
 }
@@ -119,12 +99,15 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     // create pointer to ULM request object
     RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
 
-    // get pointer to send descriptor base class
-    BaseSendDesc_t *SendDescriptor =
-        _ulm_SendDescriptors.getElement(getMemPoolIndex(), errorCode);
-    if (!SendDescriptor) {
+    BaseSendDesc_t *SendDescriptor ;
+    // bind send descriptor to a given path....this can fail...
+    errorCode = (*pt2ptPathSelectionFunction) (tmpRequest, (void **) 
+		    (&SendDescriptor) );
+    if (errorCode != ULM_SUCCESS) {
+        SendDescriptor->path_m->ReturnDesc(SendDescriptor);
         return errorCode;
     }
+
     // set the clear to send flag - depending on send mode
     if (tmpRequest->sendType != ULM_SEND_SYNCHRONOUS) {
         SendDescriptor->clearToSend_m = true;
@@ -145,7 +128,7 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
         SendDescriptor->PostedLength = tmpRequest->posted_m.length_m;
         if ((SendDescriptor->PostedLength > 0) && !ulm_bsend_increment_refcount(*request, 
                 SendDescriptor->bsendOffset)) {
-            SendDescriptor->ReturnDesc();
+            SendDescriptor->path_m->ReturnDesc(SendDescriptor);
             return ULM_ERR_FATAL;
         }
         tmpRequest->messageDone = true;
@@ -165,8 +148,6 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     SendDescriptor->numFragsCopiedIntoLibBufs_m = 0;
     SendDescriptor->sendDone =
         (SendDescriptor->sendType == ULM_SEND_BUFFERED) ? 1 : 0;
-    SendDescriptor->path_m = 0;
-    SendDescriptor->multicastMessage = 0;
 #ifdef RELIABILITY_ON
     SendDescriptor->earliestTimeToResend = -1.0;
 #endif
@@ -176,19 +157,6 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     else
         SendDescriptor->AppAddr = 0;
 
-    // set the multicast reference count
-    if (tmpRequest->sendType == ULM_SEND_MULTICAST) {
-        SendDescriptor->multicastRefCnt = localGroup->groupSize;
-    } else {
-        SendDescriptor->multicastRefCnt = 0;
-    }
-
-    // bind send descriptor to a given path....this can fail...
-    errorCode = (*pt2ptPathSelectionFunction) ((void *) SendDescriptor);
-    if (errorCode != ULM_SUCCESS) {
-        SendDescriptor->ReturnDesc();
-        return errorCode;
-    }
     // path-specific initialization of descriptor for fields like numfrags...
     SendDescriptor->path_m->init(SendDescriptor);
 
@@ -205,18 +173,14 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     // get sequence number...now that we can't fail for ordinary reasons...
     //
     unsigned long seq;
-    if (tmpRequest->sendType == ULM_SEND_MULTICAST) {
-        seq = 0;
-    } else {
-        if (usethreads())
-            next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
-                lock();
-        seq =
-            next_isendSeqs[tmpRequest->posted_m.proc.destination_m]++;
-        if (usethreads())
-            next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
-                unlock();
-    }
+    if (usethreads())
+    	    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+		    lock();
+    seq =
+    	    next_isendSeqs[tmpRequest->posted_m.proc.destination_m]++;
+    if (usethreads())
+    	    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+		    unlock();
 
     if (usethreads())
         SendDescriptor->Lock.lock();
@@ -231,25 +195,26 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     while (!SendDescriptor->path_m->
            send(SendDescriptor, &incomplete, &sendReturn)) {
         if (sendReturn == ULM_ERR_BAD_PATH) {
-            // unbind from the current path
-            SendDescriptor->path_m->unbind(SendDescriptor, (int *) 0, 0);
-            // select a new path, if at all possible
-            sendReturn =
-                (*pt2ptPathSelectionFunction) ((void *) SendDescriptor);
-            if (sendReturn != ULM_SUCCESS) {
-                if (usethreads())
-                    SendDescriptor->Lock.unlock();
-                SendDescriptor->ReturnDesc();
-                return sendReturn;
-            }
-            // initialize the descriptor for this path
-            SendDescriptor->path_m->init(SendDescriptor);
+// revisit            // unbind from the current path
+// revisit            SendDescriptor->path_m->unbind(SendDescriptor, (int *) 0, 0);
+// revisit            // select a new path, if at all possible
+// revisit            sendReturn =
+// revisit                (*pt2ptPathSelectionFunction) ((void *) SendDescriptor);
+// revisit            if (sendReturn != ULM_SUCCESS) {
+// revisit                if (usethreads())
+// revisit                    SendDescriptor->Lock.unlock();
+// revisit                SendDescriptor->path_m->ReturnDesc(SendDescriptor);
+// revisit                return sendReturn;
+// revisit            }
+// revisit            // initialize the descriptor for this path
+// revisit            SendDescriptor->path_m->init(SendDescriptor);
+		return ULM_ERROR;
         } else {
             // unbind should empty SendDescriptor of frag descriptors...
             SendDescriptor->path_m->unbind(SendDescriptor, (int *) 0, 0);
             if (usethreads())
                 SendDescriptor->Lock.unlock();
-            SendDescriptor->ReturnDesc();
+            SendDescriptor->path_m->ReturnDesc(SendDescriptor);
             return sendReturn;
         }
     }

@@ -177,8 +177,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	sendFragDesc->fragIndex = message->NumFragDescAllocated;
 	sendFragDesc->flags = 0;
 	sendFragDesc->ctx_m = message->ctx_m;
-	sendFragDesc->msgType_m =
-	    (message->multicastMessage) ? MSGTYPE_COLL : MSGTYPE_PT2PT;
+	sendFragDesc->msgType_m = MSGTYPE_PT2PT;
 
 	if (message->NumFragDescAllocated == 0) {
 	    leftToSend = message->PostedLength;
@@ -319,8 +318,8 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	header.ctxAndMsgType =
 	    GENERATE_CTX_AND_MSGTYPE(message->ctx_m, sendFragDesc->msgType_m);
 	header.fragIndex_m = message->NumFragDescAllocated;
-	header.isendSeq_m = (message->multicastMessage) ? 0 : message->isendSeq_m;
-	header.refCnt = (message->multicastMessage) ? message->multicastRefCnt : 0;
+	header.isendSeq_m = message->isendSeq_m;
+	header.refCnt = 0;
 
 	// save global destination process ID for later use (resend, etc.)
 	sendFragDesc->globalDestID = header.dest_proc;
@@ -328,22 +327,13 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	// thread-safe allocation of frag sequence number in header
 
 #ifdef RELIABILITY_ON
-	if (message->multicastMessage) {
-	    // thread-safe allocation of frag sequence number in header
-	    // we do this last to avoid gaps in the frag sequence...
-	    int dest_box = global_proc_to_host(sendFragDesc->globalDestID);
-	    reliabilityInfo->coll_next_frag_seqsLock[dest_box].lock();
-	    sendFragDesc->frag_seq = (reliabilityInfo->coll_next_frag_seqs[dest_box])++;
-	    sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
-	    reliabilityInfo->coll_next_frag_seqsLock[dest_box].unlock();
-	} else {
-	    // thread-safe allocation of frag sequence number in header
-	    reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].lock();
-	    sendFragDesc->frag_seq =
+	    
+	// thread-safe allocation of frag sequence number in header
+	reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].lock();
+	sendFragDesc->frag_seq =
 		(reliabilityInfo->next_frag_seqs[sendFragDesc->globalDestID])++;
-	    sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
-	    reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].unlock();
-	}
+	sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
+	reliabilityInfo->next_frag_seqsLock[sendFragDesc->globalDestID].unlock();
 #else
 	sendFragDesc->frag_seq = 0;
 	sendFragDesc->header.frag_seq = sendFragDesc->frag_seq;
@@ -398,15 +388,6 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
 	} else if (timeToResend < message->earliestTimeToResend) {
 	    message->earliestTimeToResend = timeToResend;
 	}
-	if (message->multicastMessage) {
-	    // reset top-level earliestTimeToResend if needed
-	    if (message->multicastMessage->earliestTimeToResend == -1.0) {
-		message->multicastMessage->earliestTimeToResend = message->earliestTimeToResend;
-	    } else if (message->earliestTimeToResend <
-		       message->multicastMessage->earliestTimeToResend) {
-		message->multicastMessage->earliestTimeToResend = message->earliestTimeToResend;
-	    }
-	}
 #endif
 
 	// switch frag to ack list and remove from send list
@@ -427,17 +408,7 @@ bool udpPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCode)
         )
     {
 	message->sendDone = 1;
-	if (message->multicastMessage) {
-	    (message->multicastMessage->messageDoneCount)++;
-	    if (!message->multicastMessage->sendDone &&
-		message->multicastMessage->messageDoneCount ==
-		message->multicastMessage->numDescsToAllocate) {
-		message->multicastMessage->request->messageDone = true;
-		message->multicastMessage->sendDone = true;
-	    }
-	} else {
-	    message->requestDesc->messageDone = true;
-	}
+	message->requestDesc->messageDone = true;
     }
 
     if (message->NumSent == message->numfrags)
@@ -476,18 +447,10 @@ bool udpPath::resend(BaseSendDesc_t *message, int *errorCode)
 	// retrieve received_largest_inorder_seq
 	unsigned long long received_seq_no, delivered_seq_no;
 
-	if (message->multicastMessage) {
-	    received_seq_no = reliabilityInfo->coll_sender_ackinfo[getMemPoolIndex()].process_array
-		[global_proc_to_host(FragDesc->globalDestID)].received_largest_inorder_seq;
-	    delivered_seq_no = reliabilityInfo->coll_sender_ackinfo[getMemPoolIndex()].process_array
-		[global_proc_to_host(FragDesc->globalDestID)].delivered_largest_inorder_seq;
-	}
-	else {
-	    received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
 		[FragDesc->globalDestID].received_largest_inorder_seq;
-	    delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
 		[FragDesc->globalDestID].delivered_largest_inorder_seq;
-	}
 
 	bool free_send_resources = false;
 

@@ -175,15 +175,11 @@ extern lampi_init_func_t lampi_init_postfork_quadrics;
 #endif
 
 #ifdef SHARED_MEMORY
-void lampi_init_prefork_local_coll(lampiState_t *);
-void lampi_init_postfork_local_coll(lampiState_t *);
 void lampi_init_prefork_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *);
 void lampi_init_postfork_shared_memory(lampiState_t *);
 #else
-extern lampi_init_func_t lampi_init_prefork_local_coll;
-extern lampi_init_func_t lampi_init_postfork_local_coll;
 extern lampi_init_func_t lampi_init_prefork_shared_memory;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_shared_memory;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory;

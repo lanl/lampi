@@ -35,12 +35,14 @@
 
 #include "ulm/ulm.h"
 #include "path/common/BaseDesc.h"
+#include "util/DblLinkList.h"
 
 enum pathType {
     LOCALCOLLECTIVEPATH,
     UDPPATH,
     QUADRICSPATH,
-    GMPATH
+    GMPATH,
+    SHAREDMEM
 };
 
 // enumeration used for getInfo/setInfo for paths
@@ -66,6 +68,8 @@ public:
     pathType pathType_m;
     // internal version
     int myVersion;
+    // send Descriptor cache
+    DoubleLinkList sendDescCache;
 
     enum recvType {
         POINT_TO_POINT,
@@ -187,7 +191,13 @@ public:
 
     // is the send done?
     virtual bool sendDone(BaseSendDesc_t *message, double timeNow, int *errorCode) {
-        if (message->NumAcked >= message->numfrags) {
+	    unsigned int nAcked;
+	    if ( message->path_m->pathType_m == SHAREDMEM ){
+		    nAcked=message->pathInfo.sharedmem.sharedData->NumAcked;
+	    }
+	    else
+		    nAcked=message->NumAcked;
+        if (nAcked >= message->numfrags) {
             return true;
         }
         *errorCode = ULM_SUCCESS;
@@ -198,6 +208,9 @@ public:
     // recvTypeArg is a "hint" at best...
     virtual bool receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL) {
         *errorCode = ULM_SUCCESS; return true; }
+
+    // return the message descritor to the free list
+    virtual void ReturnDesc(BaseSendDesc_t *message, int poolIndex=-1);
 
     // called via progress call to send (or push) miscellaneous non-message related data, such as
     // control messages, etc.

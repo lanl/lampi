@@ -173,15 +173,6 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
     ULM_64BIT_INT nextSeqIDToProcess =
 	next_expected_isendSeqs[fragSrc];
 
-    //sanity check
-#ifdef _DEBUGQUEUE
-    if (DataHeader->WhichQueue != SORTEDRECVFRAGS) {
-	ulm_exit((-1, "Error: DataHeader->WhichQueue != SORTEDRECVFRAGS %d\n"
-                  "  Actual value :: %d - Should be :: %d\n",
-                  DataHeader->WhichQueue, SORTEDRECVFRAGS));
-    }
-#endif				/* _DEBUGQUEUES */
-
     if (fragSendSeqID == nextSeqIDToProcess) {
 
 	//!

@@ -4,7 +4,6 @@ SRC_LIBMPI += \
 	interface/ulm_attr_get.cc \
 	interface/ulm_attr_put.cc \
 	interface/ulm_binary_functions.cc \
-	interface/ulm_bind_multicast_message.cc \
 	interface/ulm_bind_pt2pt_message.cc \
 	interface/ulm_bsend_info.cc \
 	interface/ulm_c_keyval_create.cc \

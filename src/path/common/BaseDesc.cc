@@ -57,43 +57,43 @@ extern bool startCount;
 extern double tt0;
 #endif
 
-void BaseSendDesc_t::ReturnDesc(int poolIndex)
-{
-    // sanity check - list must be empty
-#ifndef _DEBUGQUEUES
-    assert(FragsToSend.size() == 0);
-    assert(FragsToAck.size() == 0);
-#else
-    if (FragsToSend.size() != 0L) {
-        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
-                  "FragsToSend.size() %ld numfrags %d numsent %d "
-                  "numacked %d list %d\n", this, FragsToSend.size(),
-                  this->numfrags, this->NumSent, this->NumAcked,
-                  this->WhichQueue));
-    }
-    if (FragsToAck.size() != 0L) {
-        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
-                  "FragsToAck.size() %ld numfrags %d numsent %d "
-                  "numacked %d list %d\n", this, FragsToAck.size(),
-                  this->numfrags, this->NumSent, this->NumAcked,
-                  this->WhichQueue));
-    }
-#endif                          // _DEBUGQUEUES
-
-    // if this was a bsend (or aborted bsend), then decrement the reference
-    // count for the appropriate buffer allocation
-    if (sendType == ULM_SEND_BUFFERED) {
-        if (PostedLength > 0) {
-            ulm_bsend_decrement_refcount((ULMRequestHandle_t) requestDesc,
-                                         bsendOffset);
-        }
-    }
-    // mark descriptor as beeing in the free list
-    WhichQueue = SENDDESCFREELIST;
-    // return descriptor to pool -- always freed by allocating process!
-    int i = poolIndex < 0 ? getMemPoolIndex() : poolIndex;
-    _ulm_SendDescriptors.returnElement(this, i);
-}
+//void BaseSendDesc_t::ReturnDesc(int poolIndex)
+//{
+//    // sanity check - list must be empty
+//#ifndef _DEBUGQUEUES
+//    assert(FragsToSend.size() == 0);
+//    assert(FragsToAck.size() == 0);
+//#else
+//    if (FragsToSend.size() != 0L) {
+//        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
+//                  "FragsToSend.size() %ld numfrags %d numsent %d "
+//                  "numacked %d list %d\n", this, FragsToSend.size(),
+//                  this->numfrags, this->NumSent, this->NumAcked,
+//                  this->WhichQueue));
+//    }
+//    if (FragsToAck.size() != 0L) {
+//        ulm_exit((-1, "BaseSendDesc_t::ReturnDesc: this %p "
+//                  "FragsToAck.size() %ld numfrags %d numsent %d "
+//                  "numacked %d list %d\n", this, FragsToAck.size(),
+//                  this->numfrags, this->NumSent, this->NumAcked,
+//                  this->WhichQueue));
+//    }
+//#endif                          // _DEBUGQUEUES
+//
+//    // if this was a bsend (or aborted bsend), then decrement the reference
+//    // count for the appropriate buffer allocation
+//    if (sendType == ULM_SEND_BUFFERED) {
+//        if (PostedLength > 0) {
+//            ulm_bsend_decrement_refcount((ULMRequestHandle_t) requestDesc,
+//                                         bsendOffset);
+//        }
+//    }
+//    // mark descriptor as beeing in the free list
+//    WhichQueue = SENDDESCFREELIST;
+//    // return descriptor to pool -- always freed by allocating process!
+//    int i = poolIndex < 0 ? getMemPoolIndex() : poolIndex;
+//    _ulm_SendDescriptors.returnElement(this, i);
+//}
 
 
 // copied frag data to processor address space using a non-contiguous
@@ -333,7 +333,6 @@ ssize_t RecvDesc_t::CopyToAppLock(void *FrgDesc, bool * recvDone)
 
 	    // check to see if data arrived ok
 	    dataNotCorrupted = FragDesc->CheckData(checkSum, lengthToCopy);
-
 	    // return number of bytes copied
 	    if (!dataNotCorrupted) {
 		    return (-1);

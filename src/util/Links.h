@@ -39,6 +39,11 @@
 
 class Links_t {
 public:
+#ifdef _DEBUGQUEUES
+	volatile int refCount;
+	Links_t() {refCount=0;}
+	Links_t(int i) {refCount=0;}
+#endif
     // pointer to previous element in list
     volatile Links_t *prev;
     // pointer to next element in list

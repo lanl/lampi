@@ -55,7 +55,8 @@ struct NetWorkDevs {
 } _ulm_NetworkDevsSupported[] = {
     { "gm", PATH_GM}, 
     { "udp", PATH_UDP}, 
-    { "quadrics", PATH_QUADRICS}
+    { "quadrics", PATH_QUADRICS},
+    { "sharedmemory", PATH_SHAREDMEM}
 };
 
 void GetNetworkDevListNoInput(const char *InfoStream)

@@ -63,7 +63,7 @@ void InitSendDescriptors(int NumLocalProcs)
     ssize_t pageSize = SMPPAGESIZE;
     ssize_t eleSize = sizeof(BaseSendDesc_t);
     ssize_t poolChunkSize = SMPPAGESIZE;
-    int nFreeLists = NumLocalProcs;
+    int nFreeLists = 1;
     int retryForMoreResources = 1;
     int *memAffinityPool = (int *) ulm_malloc(sizeof(int) * NumLocalProcs);
     if (!memAffinityPool) {

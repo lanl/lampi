@@ -91,7 +91,7 @@ public:
         message->pathInfo.quadrics.lastMemReqOffset = (size_t)(-1);
 
         // initialize numfrags
-        lbufType = (message->multicastMessage) ? SHARED_LARGE_BUFFERS : PRIVATE_LARGE_BUFFERS;
+        lbufType = PRIVATE_LARGE_BUFFERS;
         npkts = (message->PostedLength + quadricsBufSizes[lbufType] - 1)/ quadricsBufSizes[lbufType];
         if (npkts == 0)
             npkts = 1;

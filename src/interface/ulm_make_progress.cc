@@ -32,7 +32,6 @@
 
 #include "queue/globals.h"
 #include "util/dclock.h"
-#include "path/mcast/utsendInit.h"
 #include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/options.h"
@@ -57,7 +56,6 @@ bool _ulm_checkSMPInMakeProgress = true;
 
 #ifdef RELIABILITY_ON
 #include "util/DblLinkList.h"
-void CheckForCollRetransmits(long mp);
 #endif
 
 static int incompleteReqObjCount = 0;
@@ -131,108 +129,10 @@ extern "C" int ulm_make_progress(void)
     //
     // On host traffic
     //
-#ifdef SHARED_MEMORY
-    if (_ulm_checkSMPInMakeProgress) {
-        // try to make progress with on-host sends
-        returnValue = sendOnHostMessages();
-        if ((returnValue == ULM_ERR_OUT_OF_RESOURCE) ||
-            (returnValue == ULM_ERR_FATAL)) {
-            return returnValue;
-        }
-        // process arriving on host frags
-        returnValue = processSMPFrags();
-        if (returnValue != ULM_SUCCESS) {
-            ulm_err(("Error: processSMPFrags returned %d\n",
-                    returnValue));
-            return returnValue;
-        }
-        // moves frags between SMPSendsToPost  and the fifo
-        if (SMPSendsToPost[local_myproc()]->size() != 0) {
-            returnValue = processUnsentSMPMessages();
-            if (returnValue != ULM_SUCCESS) {
-                ulm_err(("Error: processUnsentSMPMessages returned %d\n",
-                         returnValue));
-                return returnValue;
-            }
-        }
-    }
-#endif
 
-    if (USE_MULTICAST_COMMUNICATIONS) {
-        // send/resend incomplete collective messages
-        UtsendDesc_t *desc = 0;
-        UtsendDesc_t *tmpDesc = 0;
-        if (IncompleteUtsendDescriptors[mp]->size() > 0) {
-            IncompleteUtsendDescriptors[mp]->Lock.lock();
-            for (desc =
-                     (UtsendDesc_t *) IncompleteUtsendDescriptors[mp]->
-                     begin(); desc != (UtsendDesc_t *)
-                     IncompleteUtsendDescriptors[mp]->end();
-                 desc = (UtsendDesc_t *) tmpDesc) {
-                // save ptr to next descriptor before call to send()
-                // to properly traverse IncompleteUtsendDescriptors only
-                tmpDesc = (UtsendDesc_t *) desc->next;
-                // send with lockIncompleteList set to false since
-                // we already hold the lock to IncompleteUtsendDescriptors;
-                // potential for deadlock with utsend_start lock order
-                // so try to grab lock..if we can't, don't worry
-                // just go on to the next descriptor
-                if (desc->Lock.trylock() == 1) {
-                    desc->send(false);
-                    desc->Lock.unlock();
-                }
-            }
-            IncompleteUtsendDescriptors[mp]->Lock.unlock();
-        }
-        if (UnackedUtsendDescriptors[mp]->size() > 0) {
-            // free collective sends if completely acked
-            UnackedUtsendDescriptors[mp]->Lock.lock();
-            for (desc =
-                     (UtsendDesc_t *) UnackedUtsendDescriptors[mp]->
-                     begin();
-                 desc !=
-                     (UtsendDesc_t *) UnackedUtsendDescriptors[mp]->
-                     end(); desc = (UtsendDesc_t *) desc->next) {
-                if ((desc->unackedPt2PtMessages.size() == 0)
-                    && (desc->incompletePt2PtMessages.size() == 0)) {
-                    if (!desc->sendDone
-                        && (desc->messageDoneCount ==
-                            desc->numDescsToAllocate)) {
-                        // the request is in process private memory, but we are in the right context...
-                        desc->request->messageDone = true;
-                        desc->sendDone = true;
-                    }
-                    tmpDesc = (UtsendDesc_t *)
-                        UnackedUtsendDescriptors[mp]->
-                        RemoveLinkNoLock(desc);
-                    desc->freeDescriptor();
-                    desc = tmpDesc;
-                }
-            }
-            UnackedUtsendDescriptors[mp]->Lock.unlock();
-        }
-    }
     // check for completed sends
     double now = dclock();
     CheckForAckedMessages(now);
-
-    if (USE_MULTICAST_COMMUNICATIONS) {
-        // check for incomplete utrecv's
-        for (i = 0; i < nCommunicatorInstancesInUse; i++) {
-            returnValue =
-                communicators[activeCommunicators[i]]->
-                processCollectiveFrags();
-            if ((returnValue == ULM_ERR_OUT_OF_RESOURCE)
-                || (returnValue == ULM_ERR_FATAL)) {
-                return returnValue;
-            }
-        }
-    }
-#ifdef SHARED_MEMORY
-    // return - if only 1 host
-    if (lampiState.nhosts == 1)
-        return returnValue;
-#endif                          // SHARED_MEMORY
 
     if (DEBUG_TIMES) {
         ulm_err(("before push_frags_into_network\n"));
@@ -255,32 +155,13 @@ extern "C" int ulm_make_progress(void)
         pt[5] += (t[6] - t[2]);
     }
 
-#ifdef RELIABILITY_ON
-
-    // check for collective communication retransmits on both the
-    // Incomplete and Unacked UtsendDescriptor lists...and send
-    // anything on the Unacked list that needs to be retransmitted
-    // using reSend() to put the descriptor back on the Incomplete
-    // list
-
-    if (0) {
-        if ((now >= (reliabilityInfo->lastCheckForCollRetransmits +
-                     MIN_RETRANS_TIME)) ||
-            (reliabilityInfo->lastCheckForCollRetransmits < 0.0)) {
-            reliabilityInfo->lastCheckForCollRetransmits = now;
-            CheckForCollRetransmits(mp);
-        }
-    }
-#endif
-
-
     if (DEBUG_TIMES) {
         t[3] = dclock();
         pt[2] += (t[3] - t[6]);
     }
-#ifndef SHARED_MEMORY
-    if (lampiState.nhosts > 1) {
-#endif
+//#ifndef SHARED_MEMORY
+//    if (lampiState.nhosts > 1) {
+//#endif
         BasePath_t *pathArray[MAX_PATHS];
         int pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
         for (i = 0; i < pathCount; i++) {
@@ -295,9 +176,9 @@ extern "C" int ulm_make_progress(void)
                     return returnValue;
             }
         }
-#ifndef SHARED_MEMORY
-    }
-#endif
+//#ifndef SHARED_MEMORY
+//    }
+//#endif
 
     if (DEBUG_TIMES) {
         t[4] = dclock();

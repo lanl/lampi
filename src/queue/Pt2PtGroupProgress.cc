@@ -94,20 +94,20 @@ int push_frags_into_network(double timeNow)
 	    while (!SendDesc->path_m->send(SendDesc, &incomplete, &sendReturn)) {
 		if (sendReturn == ULM_ERR_BAD_PATH) {
 		    // unbind from the current path
-		    SendDesc->path_m->unbind(SendDesc, (int *)0, 0);
-		    // select a new path, if at all possible
-		    Communicator *commPtr=communicators[SendDesc->ctx_m];
-		    sendReturn = (*(commPtr->pt2ptPathSelectionFunction))((void *)SendDesc);
-		    if (sendReturn != ULM_SUCCESS) {
-			if( usethreads() ){
-                            SendDesc->Lock.unlock();
-                            IncompletePostedSends.Lock.unlock();
-			}
-			ulm_exit((-1, "Error: push_frags_into_network: "
-                                  "cannot find path for message\n"));
-		    }
-		    // initialize the descriptor for this path
-		    SendDesc->path_m->init(SendDesc);
+// revisit 		    SendDesc->path_m->unbind(SendDesc, (int *)0, 0);
+// revisit 		    // select a new path, if at all possible
+// revisit 		    Communicator *commPtr=communicators[SendDesc->ctx_m];
+// revisit 		    sendReturn = (*(commPtr->pt2ptPathSelectionFunction))((void *)SendDesc);
+// revisit 		    if (sendReturn != ULM_SUCCESS) {
+// revisit 			if( usethreads() ){
+// revisit                             SendDesc->Lock.unlock();
+// revisit                             IncompletePostedSends.Lock.unlock();
+// revisit 			}
+// revisit 			ulm_exit((-1, "Error: push_frags_into_network: "
+// revisit                                   "cannot find path for message\n"));
+// revisit 		    }
+// revisit 		    // initialize the descriptor for this path
+// revisit 		    SendDesc->path_m->init(SendDesc);
 		}
 		else {
 		    // unbind should empty SendDesc of frag descriptors, etc...
@@ -134,7 +134,7 @@ int push_frags_into_network(double timeNow)
 			IncompletePostedSends.RemoveLinkNoLock(SendDesc);
 		    if( usethreads() )
                         SendDesc->Lock.unlock();
-		    SendDesc->ReturnDesc();
+		    SendDesc->path_m->ReturnDesc(SendDesc);
 		    SendDesc=TmpDesc;
 		} else {
 		    // message has not been acked - move to unacked_isends list

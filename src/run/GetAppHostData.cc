@@ -302,6 +302,7 @@ void GetAppHostData(const char *InfoStream)
                 ulm_err(("Error: Hostname too long for library buffer, length = %ld\n", len));
                 Abort();
             }
+	    bzero(RunParameters.HostList[cnt],len+1);
             strncpy((char *) RunParameters.HostList[cnt], NetEntry->h_name,
                 len);
             cnt++;

@@ -47,13 +47,12 @@
  * \param multicastFunction  pointer to pointer of multicast message path selection function
  * \return ULM return code
  */
-extern "C" int ulm_get_path_selection_functions(int comm, int (**pt2ptFunction)(void *), int (**multicastFunction)(void *, void *))
+extern "C" int ulm_get_path_selection_functions(int comm, int (**pt2ptFunction)(void *, void **))
 {
     int errorCode = ULM_SUCCESS;
     Communicator *commPtr = communicators[comm];
 
     *pt2ptFunction = commPtr->pt2ptPathSelectionFunction;
-    *multicastFunction = commPtr->multicastPathSelectionFunction;
 
     return errorCode;
 }

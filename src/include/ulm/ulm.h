@@ -113,10 +113,12 @@ int ulm_make_progress(void);
  * bind a point-to-point send message descriptor to a path
  * object
  *
+ * \param message       request descriptor
  * \param message       Send message descriptor
  * \return              ULM return code
  */
-int ulm_bind_pt2pt_message(void *message);
+int ulm_bind_pt2pt_message(void *request,
+		void **SendDescriptor);
 
 /*!
  * bind a multicast send message descriptor to a path object
@@ -136,12 +138,10 @@ int ulm_bind_multicast_message(void *multicastMessage, void *hostMessage);
  * \param comm                  Communicator ID
  * \param pt2ptFunction         Pointer to point-to-point message path
  *                              selection function
- * \param multicastFunction     Pointer to multicast message path
- *                              selection function
  * \return                      ULM return code
  */
-int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction) (void *),
-			      int (*multicastFunction) (void *, void *));
+int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction) 
+		(void *, void **) );
 
 /*!
  * get the functions that bind point-to-point and multicast messages
@@ -151,12 +151,10 @@ int ulm_set_path_selection_functions(int comm, int (*pt2ptFunction) (void *),
  * \param comm                  Communicator ID
  * \param pt2ptFunction         Pointer to pointer of point-to-point
  *                              message path selection function
- * \param multicastFunction     Pointer to pointer of multicast message
- *                              path selection function
  * \return                      ULM return code
  */
-int ulm_get_path_selection_functions(int comm, int (**pt2ptFunction) (void *),
-			     int (**multicastFunction) (void *, void *));
+int ulm_get_path_selection_functions(int comm, int (**pt2ptFunction) 
+		(void *, void **) );
 
 /*!
  * Get communicator specific topology pointer

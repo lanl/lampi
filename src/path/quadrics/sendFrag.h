@@ -410,14 +410,6 @@ private:
             if (parentSendDesc->sendType == ULM_SEND_MULTICAST) {
                 // currently, zero out - no reliability.
                 frag_seq = 0;
-            }
-            else if (parentSendDesc->multicastMessage) {
-                // thread-safe allocation of frag sequence number in header
-                // we do this last to avoid gaps in the frag sequence...
-                int dest_box = global_proc_to_host(globalDestID);
-                reliabilityInfo->coll_next_frag_seqsLock[dest_box].lock();
-                frag_seq = (reliabilityInfo->coll_next_frag_seqs[dest_box])++;
-                reliabilityInfo->coll_next_frag_seqsLock[dest_box].unlock();
             } else {
                 // thread-safe allocation of frag sequence number in header
                 if (usethreads())
@@ -637,14 +629,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
     E3_DMA_MAIN *qdma = mainDMADesc;
 
     /* initialize the QDMA descriptor */
-    if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
-        // Note that this setup was found by consulting the libelan 
-        // source code.  What documentation exists is misleading
-        // at best.  Caveat emptor
-        qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED_BROADCAST, 63);
-    } else { // normal dma
-        qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
-    }
+    qdma->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_QUEUED, 63);
     qdma->dma_dest = 0;
     qdma->dma_destEvent = quadricsQueue[rail].elanQAddr;	// global queue object
     qdma->dma_size = sizeof(quadricsCtlHdr_t);
@@ -691,8 +676,6 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
 
     // overwrite fragEnvelope->commonHdr values
     fragEnvelope->commonHdr.ctlMsgType = (unsigned short)cmType;
-    fragEnvelope->commonHdr.multicastRefCnt = (cmType == MESSAGE_DATA) ?
-        (unsigned short)parentSendDesc->multicastRefCnt : 0;
     fragEnvelope->commonHdr.checksum = 0;
 
     /* sender side control message types */
@@ -703,11 +686,11 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         quadricsDataHdr_t *p = &(fragEnvelope->msgDataHdr);
         if (parentSendDesc->sendType == ULM_SEND_SYNCHRONOUS) {
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                                        ((parentSendDesc->multicastMessage) ? MSGTYPE_COLL_SYNC : MSGTYPE_PT2PT_SYNC));
+			    MSGTYPE_PT2PT_SYNC);
         }
         else {
             p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                                        ((parentSendDesc->multicastMessage) ? MSGTYPE_COLL : MSGTYPE_PT2PT));
+			    MSGTYPE_PT2PT);
         }
         p->tag_m = parentSendDesc->tag_m;
         p->senderID = myproc();
@@ -745,7 +728,7 @@ inline void quadricsSendFragDesc::initEnvelope(int index, int chainedIndex)
         p->senderID = myproc();
         p->destID = globalDestID;
         p->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc->ctx_m,
-                                                    ((parentSendDesc->multicastMessage) ? MSGTYPE_COLL : MSGTYPE_PT2PT));
+			MSGTYPE_PT2PT);
     }
     break;
     case MEMORY_REQUEST_ACK:
@@ -836,14 +819,7 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
     }
 
     /* initialize the first DMA descriptor */
-    if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
-        // Note that this setup was found by consulting the libelan 
-        // source code.  What documentation exists is misleading
-        // at best.  Caveat emptor
-        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
-    } else { // normal DMA
-        d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
-    }
+    d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
     d->dma_dest = (E3_Addr)destAddr;
     d->dma_destEvent = (E3_Addr)0;
     d->dma_size = (elanbug) ? toEndOfPageBytes : fragLength;
@@ -860,14 +836,7 @@ inline void quadricsSendFragDesc::initData(int index, bool elanbug)
 
     if (elanbug) {
         /* initialize the second DMA descriptor */
-        if (parentSendDesc && parentSendDesc->multicastRefCnt > 0) { // bcast dma
-            // Note that this setup was found by consulting the libelan 
-            // source code.  What documentation exists is misleading
-            // at best.  Caveat emptor
-            d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL_BROADCAST, 63);
-        } else { // normal dma
-            d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
-        }
+	    d->dma_u.type = E3_DMA_TYPE(DMA_BYTE, DMA_WRITE, DMA_NORMAL, 63);
 
         d->dma_dest = (E3_Addr)((unsigned char *)destAddr + toEndOfPageBytes);
         d->dma_destEvent = (E3_Addr)0;

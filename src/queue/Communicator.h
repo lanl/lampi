@@ -395,7 +395,7 @@ public:
     // function pointer to bind multicast messages to a path object
     int (*multicastPathSelectionFunction) (void *, void *);
     // function pointer to bind point-to-point messages to a path object
-    int (*pt2ptPathSelectionFunction) (void *);
+    int (*pt2ptPathSelectionFunction) (void *, void **);
 
     // constructor
     Communicator() {}
@@ -474,14 +474,6 @@ public:
 
     // off host send
     int isend_start_network(ULMRequestHandle_t *request);
-
-#ifdef SHARED_MEMORY
-    // on host in-order send
-    int isend_start_onhost(ULMRequestHandle_t *request);
-#endif
-
-
-    // Multicast messages
 
     // initialize request object for utrecv
     int utrecv_init(int tag, void *data, size_t dataLength,
@@ -572,13 +564,6 @@ public:
     //
     // progess functions
     //
-
-#ifdef SHARED_MEMORY
-
-    // make progress with on host messaging
-    int sendOnHostMessages();
-
-#endif                          // SHARED_MEMORY
 
     // on recv side - invoked after match is made
     void ProcessMatchedData(RecvDesc_t *MatchedPostedRecvHeader,

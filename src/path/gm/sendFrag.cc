@@ -96,11 +96,11 @@ bool gmSendFragDesc::init(int globalDestProc,
         payload = (void *) buf->payload;
 
         if (parentSendDesc_m->sendType == ULM_SEND_SYNCHRONOUS) {
-            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc_m->ctx_m,
-                                                             ((parentSendDesc_m->multicastMessage) ? MSGTYPE_COLL_SYNC : MSGTYPE_PT2PT_SYNC));
+            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
+		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT_SYNC);
         } else {
-            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE(parentSendDesc_m->ctx_m,
-                                                             ((parentSendDesc_m->multicastMessage) ? MSGTYPE_COLL : MSGTYPE_PT2PT));
+            header->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
+		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT);
         }
 
         header->common.ctlMsgType = MESSAGE_DATA;

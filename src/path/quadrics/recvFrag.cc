@@ -363,126 +363,6 @@ bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDe
 
 #endif
 
-
-void quadricsRecvFragDesc::handleMulticastMessageAck(double timeNow, UtsendDesc_t *msd,
-                                                     BaseSendDesc_t *bsd, quadricsSendFragDesc *sfd)
-{
-    quadricsDataAck_t *p = &(envelope.msgDataAck);
-    int errorCode;
-
-    if (p->ackStatus == ACKSTATUS_DATAGOOD) {
-        // register Fragment as acked
-        bsd->clearToSend_m = true;
-        (bsd->NumAcked)++;
-
-        // reset queues appropriately
-        if (sfd->WhichQueue == QUADRICSFRAGSTOACK) {
-            bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
-        }
-
-#ifdef RELIABILITY_ON
-        else if (sfd->WhichQueue == QUADRICSFRAGSTOSEND) {
-            bsd->FragsToSend.RemoveLinkNoLock((Links_t *)sfd);
-            // increment NumSent since we were going to send this again...
-            (bsd->NumSent)++;
-        }
-#endif
-        else {
-            ulm_exit((-1,
-                      "quadricsRecvFragDesc::handleMulticastMessageAck "
-                      "Frag on %d queue\n",
-                      sfd->WhichQueue));
-        }
-
-        sfd->WhichQueue = QUADRICSFRAGFREELIST;
-
-#ifdef RELIABILITY_ON
-        // set fragment sequence number to 0/null/invalid to detect duplicate ACKs
-        sfd->frag_seq = 0;
-#endif
-
-        // re-initialize data members
-        sfd->parentSendDesc = 0;
-
-        if (sfd->done(timeNow, &errorCode)) {
-            // return all sfd send resources
-            sfd->freeRscs();
-            sfd->WhichQueue = QUADRICSFRAGFREELIST;
-            // return frag descriptor to free list
-            // the header holds the global proc id
-            if (usethreads()) {
-                quadricsSendFragDescs.returnElement(sfd, sfd->rail);
-            } else {
-                quadricsSendFragDescs.returnElementNoLock(sfd, sfd->rail);
-            }
-        }
-        else {
-            // set a bool to make sure this is not retransmitted
-            // when cleanCtlMsgs() removes it from ctlMsgsToAck...
-            sfd->freeWhenDone = true;
-            // put on ctlMsgsToAck list for later cleaning by push()
-            // the ACK has come after rescheduling this frag to
-            // be resent...
-            ProcessPrivateMemDblLinkList *list =
-                &(quadricsQueue[rail].ctlMsgsToAck[MESSAGE_DATA]);
-            if (usethreads()) {
-                list->Lock.lock();
-                list->AppendNoLock((Links_t *)sfd);
-                quadricsQueue[rail].ctlFlagsLock.lock();
-                quadricsQueue[rail].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
-                quadricsQueue[rail].ctlFlagsLock.unlock();
-                list->Lock.unlock();
-            }
-            else {
-                list->AppendNoLock((Links_t *)sfd);
-                quadricsQueue[rail].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
-            }
-        }
-
-        // for multicast messages we return BaseSendDesc_t's to the free pool
-        if ((bsd->NumAcked == bsd->numfrags) &&
-            (bsd->FragsToAck.size() == 0) && (bsd->FragsToSend.size() == 0)) {
-            // increment the multicast send descriptor sub-message completed count
-            (msd->messageDoneCount)++;
-            if (bsd->WhichQueue == INCOMPLETEISENDQUEUE) {
-                msd->incompletePt2PtMessages.RemoveLinkNoLock(bsd);
-            } else if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
-                msd->unackedPt2PtMessages.RemoveLinkNoLock(bsd);
-            } else {
-                ulm_exit((-1, "quadricsRecvFragDesc::handleMulticastMessageAck base"
-                          "send desc. on %d queue.\n",
-                          bsd->WhichQueue));
-            }
-            // return the descriptor to the sending process' pool
-            bsd->ReturnDesc(getMemPoolIndex());
-        }
-    } else  {
-        // only process negative acknowledgements if we are
-        // the process that sent the original message; otherwise,
-        // just rely on sender side retransmission
-        ulm_warn(("Warning: Quadrics Data corrupt on receipt.  Will retransmit.\n"));
-
-        // save and then reset WhichQueue flag
-        short whichQueue = sfd->WhichQueue;
-        sfd->WhichQueue = QUADRICSFRAGSTOSEND;
-        // move sfd from FragsToAck list to FragsToSend list
-        if (whichQueue == QUADRICSFRAGSTOACK) {
-            bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
-            bsd->FragsToSend.AppendNoLock((Links_t *)sfd);
-        }
-        // move message to incomplete queue
-        if (bsd->NumSent == bsd->numfrags) {
-            if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
-                bsd->WhichQueue = INCOMPLETEISENDQUEUE;
-                msd->unackedPt2PtMessages.RemoveLinkNoLock(bsd);
-                msd->incompletePt2PtMessages.AppendNoLock(bsd);
-            }
-        }
-        // reset send desc. NumSent as though this frag has not been sent
-        (bsd->NumSent)--;
-    }
-}
-
 void quadricsRecvFragDesc::handlePt2PtMessageAck(double timeNow, BaseSendDesc_t *bsd,
                                                  quadricsSendFragDesc *sfd)
 {
@@ -678,48 +558,6 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 
     msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
 
-    // Check to see if this is an ack for a collective message,
-    // if so, handle appropriately.  If not, continue handling as
-    // a pt-2-pt ack.
-    if ((msgType_m == MSGTYPE_COLL) || (msgType_m == MSGTYPE_COLL_SYNC)) {
-        UtsendDesc_t *msd;
-
-#ifdef RELIABILITY_ON
-        // bsd may be 0, so check before trying to use it...
-        if (bsd) {
-            msd = bsd->multicastMessage;
-            if (msd) {
-                msd->Lock.lock();
-                if ((msd != bsd->multicastMessage) ||
-                    (bsd != (volatile BaseSendDesc_t *)sfd->parentSendDesc)) {
-                    msd->Lock.unlock();
-                    ReturnDescToPool(getMemPoolIndex());
-                    return;
-                }
-            } else {
-                ReturnDescToPool(getMemPoolIndex());
-                return;
-            }
-        } else {
-            ReturnDescToPool(getMemPoolIndex());
-            return;
-        }
-
-        if (checkForDuplicateAndNonSpecificAck(sfd)) {
-            msd->Lock.unlock();
-            ReturnDescToPool(getMemPoolIndex());
-            return;
-        }
-#else
-        msd = bsd->multicastMessage;
-        msd->Lock.lock();
-#endif
-        handleMulticastMessageAck(timeNow, msd, (BaseSendDesc_t *)bsd, sfd);
-        msd->Lock.unlock();
-        ReturnDescToPool(getMemPoolIndex());
-        return;
-    } else {
-
         // lock frag through send descriptor to prevent two
         // ACKs from processing simultaneously
 
@@ -745,7 +583,6 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
 
         handlePt2PtMessageAck(timeNow, (BaseSendDesc_t *)bsd, sfd);
         ((BaseSendDesc_t *)bsd)->Lock.unlock();
-    }
 
     ReturnDescToPool(getMemPoolIndex());
     return;

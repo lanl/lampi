@@ -31,11 +31,11 @@
 #ifndef _SMPFRAGDESC
 #define _SMPFRAGDESC
 
-#include "path/mcast/utsendDesc.h"
 #include "internal/system.h"
+#include "path/sharedmem/sendInfo.h"
+#include "internal/constants.h"
 
 // forward declaration
-class SMPSendDesc_t;
 class RecvDesc_t;
 
 
@@ -44,6 +44,9 @@ class SMPFragDesc_t : public Links_t
 public:
 
     // Data members
+
+	//  flag indicating all fragments have been sent - optimization
+	int allFragsSent;
 
     // total length of user data (this frag) after fragment is
     // matched, this becomes the counter for the amount of data that
@@ -99,8 +102,7 @@ public:
 
     // needed so that ack can be put directly to his header
     union {
-        SMPSendDesc_t *SMP;
-        UtsendDesc_t *Coll;
+        sharedMemData_t *SMP;
     } SendingHeader_m;
 
     // ok to access data in library buffers
@@ -167,8 +169,7 @@ public:
 
     // needed so that ack can be put directly to his header
     union {
-        SMPSendDesc_t *SMP;
-        UtsendDesc_t *Coll;
+        BaseSendDesc_t *SMP;
     } SendingHeader_m;
 
     // matched recieve

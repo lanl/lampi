@@ -35,9 +35,9 @@
 
 void  InitSMPSharedMemDescriptors(int NumLocalProcs);
 void SetUpSharedMemoryQueues(int nLocalProcs);
-int processSMPFrags();
+//int processSMPFrags();
 int  createDoubleLinklist(SharedMemDblLinkList**);
-int processUnsentSMPMessages();
+//int processUnsentSMPMessages();
 int sendOnHostMessages();
 
 #endif // !_SMPFNS

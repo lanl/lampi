@@ -48,11 +48,8 @@
 
 #ifdef SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
-#include "path/sharedmem/SMPSendDesc.h"
 #include "path/sharedmem/SMPDev.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
-#include "path/mcast/localcollFrag.h"
-#include "path/mcast/state.h"
 #endif
 
 // number of shared memory "devices"
@@ -255,11 +252,9 @@ void InitSMPSharedMemDevices(int NumLocalProcs)
     InitSMPSharedMemDescriptors(NumLocalProcs);
 #endif
 
-    // allocate collective frag descriptors
-    InitCollSharedMemDescriptors(NumLocalProcs);
 }
 
-FreeListShared_t<SMPSendDesc_t> SMPSendDescs;
+FreeListShared_t<sharedMemData_t> SMPSendDescs;
 FreeListShared_t<SMPSecondFragDesc_t> SMPFragPool;
 
 // first frags for which the payload buffers are not yet ready
@@ -300,7 +295,7 @@ void InitSMPSharedMemDescriptors(int NumLocalProcs)
     maxPagesPerList = maxPgsIn1SMPISendDescList;
     ssize_t pageSize = SMPPAGESIZE;
     ssize_t eleSize =
-        (((sizeof(SMPSendDesc_t) + sizeof(SMPFragDesc_t) -
+        (((sizeof(sharedMemData_t) + sizeof(SMPFragDesc_t) -
            1) / CACHE_ALIGNMENT) + 1) * CACHE_ALIGNMENT;
     eleSize +=
         ((((SMPFirstFragPayload - 1) / CACHE_ALIGNMENT) +

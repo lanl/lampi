@@ -44,9 +44,9 @@
 #include "ulm/ulm.h"
 
 // network path specific objects embbedded in BaseSendDesc_t
-#include "path/mcast/sendInfo.h"
 #include "path/udp/sendInfo.h"
 #include "path/quadrics/sendInfo.h"
+#include "path/sharedmem/sendInfo.h"
 
 #define REQUEST_TYPE_SEND   1
 #define REQUEST_TYPE_RECV   2
@@ -57,8 +57,6 @@
 class SMPFragDesc_t;
 class SMPSecondFragDesc_t;
 class BasePath_t;
-class UtsendDesc_t;
-
 
 // BaseSendDesc_t:
 //
@@ -77,9 +75,9 @@ public:
 
     // path specific info/data
     union {
-        localCollSendInfo localColl;
         udpSendInfo udp;
         quadricsSendInfo quadrics;
+	sharedmemSendInfo sharedmem;
     } pathInfo;
 
     Locks Lock;                     // lock
@@ -87,11 +85,9 @@ public:
     DoubleLinkList FragsToSend;     // double link list of frags that need to be sent
     RequestDesc_t *requestDesc;     // pointer to associated request object
     ULMType_t *datatype;            // datatype for message (null means raw bytes)
-    UtsendDesc_t *multicastMessage; // parent UtsendDesc_t for multicast messages
     bool clearToSend_m;             // flag for flow control, frags are only sent when true
     int ctx_m;                      // context ID tag
     int maxOutstandingFrags;        // maximum outstanding frags - for flow control
-    int multicastRefCnt;            // reference count for multicast message
     int numFragsCopiedIntoLibBufs_m;        // number of frags that have been copied into library buffers
     int sendDone;                   // is send done ?
     int sendType;                   // send type
@@ -122,7 +118,6 @@ public:
             datatype = NULL;
             path_m = 0;
             AppAddr = 0;
-            multicastMessage = 0;
 #ifdef RELIABILITY_ON
             earliestTimeToResend = -1;
 #endif
@@ -138,14 +133,10 @@ public:
             FragsToAck.Lock.init();
             path_m = 0;
             AppAddr = 0;
-            multicastMessage = 0;
 #ifdef RELIABILITY_ON
             earliestTimeToResend = -1;
 #endif
         }
-
-    // cleanup function
-    void ReturnDesc(int poolIndex = -1);
 
     // Returns true if okay to send frags
     bool clearToSend()

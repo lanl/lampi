@@ -47,6 +47,7 @@
 #include "queue/globals.h"	// for getMemPoolIndex()
 #include "util/MemFunctions.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"	// for SMPSharedMemDevs and alloc..
+#include "path/udp/path.h"
 
 #ifdef RELIABILITY_ON
 #include "queue/ReliabilityInfo.h"
@@ -493,48 +494,6 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
     udpSendFragDesc *Frag = (udpSendFragDesc *) ack.udpio.ptr;
     volatile BaseSendDesc_t *sendDesc = (volatile BaseSendDesc_t *) Frag->parentSendDesc;
 
-    // Check to see if this is an ack for a collective message,
-    // if so, handle appropriately.  If not, continue handling as
-    // a pt-2-pt ack.
-    if (Frag->msgType_m == MSGTYPE_COLL) {
-	UtsendDesc_t *msendDesc;
-
-#ifdef RELIABILITY_ON
-	//sendDesc may be 0, so check before trying to use it...
-	if (sendDesc) {
-	    msendDesc = sendDesc->multicastMessage;
-	    if (msendDesc) {
-		msendDesc->Lock.lock();
-		if ((msendDesc != sendDesc->multicastMessage) ||
-		    (sendDesc != (volatile BaseSendDesc_t *) Frag->parentSendDesc)) {
-		    msendDesc->Lock.unlock();
-		    ReturnDescToPool(getMemPoolIndex());
-		    return;
-		}
-	    } else {
-		ReturnDescToPool(getMemPoolIndex());
-		return;
-	    }
-	} else {
-	    ReturnDescToPool(getMemPoolIndex());
-	    return;
-	}
-
-	if (checkForDuplicateAndNonSpecificAck(Frag, ack)) {
-	    msendDesc->Lock.unlock();
-	    ReturnDescToPool(getMemPoolIndex());
-	    return;
-	}
-#else
-	msendDesc = sendDesc->multicastMessage;
-	msendDesc->Lock.lock();
-#endif
-	handleMulticastMessageAck(msendDesc, (BaseSendDesc_t *) sendDesc, Frag, ack);
-	msendDesc->Lock.unlock();
-	ReturnDescToPool(getMemPoolIndex());
-	return;
-    } else {
-
 	// lock frag through send descriptor to prevent two
 	// ACKs from processing simultaneously
 
@@ -560,7 +519,6 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
 
 	handlePt2PtMessageAck((BaseSendDesc_t *) sendDesc, Frag, ack);
 	((BaseSendDesc_t *)sendDesc)->Lock.unlock();
-    }
     ReturnDescToPool(getMemPoolIndex());
     return;
 }
@@ -642,113 +600,6 @@ bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag,
     return false;
 }
 #endif
-
-void udpRecvFragDesc::handleMulticastMessageAck(UtsendDesc_t *msendDesc,
-					    BaseSendDesc_t *sendDesc, udpSendFragDesc * Frag, udp_ack_header & ack)
-{
-#ifdef HEADER_ON
-    	int descPoolIndex = global_to_local_proc(ulm_ntohi(Frag->header.src_proc));
-#else
-	 int descPoolIndex = global_to_local_proc((Frag->header.src_proc));
-#endif
-    if (ack.ack_or_nack == UDP_ACK_GOODACK) {
-	// register Frag as acked
-	sendDesc->clearToSend_m = true;
-	(sendDesc->NumAcked)++;
-
-	// reset queues appropriately
-	if (Frag->WhichQueue == UDPFRAGSTOACK) {
-	    sendDesc->FragsToAck.RemoveLinkNoLock((Links_t *) Frag);
-	}
-#ifdef RELIABILITY_ON
-	else if (Frag->WhichQueue == UDPFRAGSTOSEND) {
-	    sendDesc->FragsToSend.RemoveLinkNoLock((Links_t *) Frag);
-	    // increment NumSent since we were going to send this again...
-	    (sendDesc->NumSent)++;
-	}
-#endif
-	else {
-	    ulm_exit((-1, "udpRecvFragDesc::handleMulticastMessageAck Frag "
-                      "on %d queue\n", Frag->WhichQueue));
-	}
-	Frag->WhichQueue = UDPFRAGFREELIST;
-
-#ifdef RELIABILITY_ON
-	// set frag_seq value to 0/null/invalid to detect duplicate ACKs
-	Frag->frag_seq = 0;
-#endif
-
-	// re-initialize data members
-	Frag->parentSendDesc = 0;
-
-	// free packed data array possibly associated with the send frag descriptor
-	if (Frag->nonContigData) {
-	    free(Frag->nonContigData);
-	    Frag->nonContigData = 0;
-	}
-/*	 if (Frag->earlySend) {
-                int index = getMemPoolIndex();
-                if (Frag->earlySend_type ==  EARLY_SEND_SMALL)
-                        UDPEarlySendData_small.freeLists_m[index]->
-                                freeList_m.Append((Links_t*)(Frag->earlySend));
-                else if (Frag->earlySend_type ==  EARLY_SEND_MED)
-                        UDPEarlySendData_med.freeLists_m[getMemPoolIndex()]->
-                                freeList_m.Append((Links_t*)(Frag->earlySend));
-                else if (Frag->earlySend_type ==  EARLY_SEND_LARGE)
-			UDPEarlySendData_large.freeLists_m[getMemPoolIndex()]->
-                                freeList_m.Append((Links_t*)(Frag->earlySend));
-		 else {
-                        ulm_warn(("no size match 2\n"));
-                   return;
-                }
-        }
-
-*/
-	// return Fragment descriptor to free list
-	udpSendFragDescs.returnElement(Frag, descPoolIndex);
-
-	// for multicast messages we return BaseSendDesc_t's to the free pool
-	if ((sendDesc->NumAcked == sendDesc->numfrags) &&
-	    (sendDesc->FragsToAck.size() == 0) && (sendDesc->FragsToSend.size() == 0)) {
-	    // increment the multicast send descriptor sub-message completed count
-	    (msendDesc->messageDoneCount)++;
-	    if (sendDesc->WhichQueue == INCOMPLETEISENDQUEUE) {
-		msendDesc->incompletePt2PtMessages.RemoveLinkNoLock(sendDesc);
-	    } else if (sendDesc->WhichQueue == UNACKEDISENDQUEUE) {
-		msendDesc->unackedPt2PtMessages.RemoveLinkNoLock(sendDesc);
-	    } else {
-		ulm_exit((-1, "udpRecvFragDesc::handleMulticastMessageAck base "
-                          "send desc. on %d queue.\n", sendDesc->WhichQueue));
-	    }
-	    // return the descriptor to the sending process' pool
-	    sendDesc->ReturnDesc(descPoolIndex);
-	}
-    } else if (myproc() == (ulm_int32_t)ulm_ntohi(Frag->header.src_proc)) {
-	// only process negative acknowledgements if we are
-	// the process that sent the original message; otherwise,
-	// just rely on sender side retransmission
-	ulm_warn(("Warning: Copy Error on receipt.  Will retransmit.\n"));
-
-	// save and then reset WhichQueue flag
-	short whichQueue = Frag->WhichQueue;
-	Frag->WhichQueue = UDPFRAGSTOSEND;
-	// move Frag from FragsToAck list to FragsToSend list
-	if (whichQueue == UDPFRAGSTOACK) {
-	    sendDesc->FragsToAck.RemoveLinkNoLock((Links_t *) Frag);
-	    sendDesc->FragsToSend.AppendNoLock((Links_t *) Frag);
-	}
-	// move message to incomplete queue
-	if (sendDesc->NumSent == sendDesc->numfrags) {
-	    if (sendDesc->WhichQueue == UNACKEDISENDQUEUE) {
-		sendDesc->WhichQueue = INCOMPLETEISENDQUEUE;
-		msendDesc->unackedPt2PtMessages.RemoveLinkNoLock(sendDesc);
-		msendDesc->incompletePt2PtMessages.AppendNoLock(sendDesc);
-	    }
-	}
-	// reset Frag and send desc. NumSent as though this Frag has not been sent
-	(sendDesc->NumSent)--;
-    }
-}
 
 void udpRecvFragDesc::handlePt2PtMessageAck(BaseSendDesc_t *sendDesc, udpSendFragDesc * Frag, udp_ack_header & ack)
 {
