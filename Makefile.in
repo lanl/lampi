@@ -188,7 +188,8 @@ endif
 ifeq "$(with_romio)" "yes"
 	umask 002 ; \
 	(for f in $(ROMIODIR)/include/*.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
-	test -f $(includedir)/mpio.h && mv $(includedir)/mpiandio.h $(includedir)/mpi.h
+	test -f $(includedir)/mpio.h && mv $(includedir)/mpiandio.h $(includedir)/mpi.h ; \
+	test -f $(includedir)/mpiof.h && mv $(includedir)/mpiandiof.h $(includedir)/mpif.h 
 endif
 
 check:
