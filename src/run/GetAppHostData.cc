@@ -86,6 +86,10 @@ void GetAppHostCount(const char *InfoStream)
  */
 void GetMpirunHostnameNoInput(const char *InfoStream)
 {
+#ifdef BPROC
+    int node = bproc_currnode();
+    sprintf(RunParameters.mpirunName, "n%d", node);
+#else
     HostName_t tmp;
     struct hostent *localHostInfo;
     tmp[ULM_MAX_HOSTNAME_LEN - 1] = '\0';
@@ -101,6 +105,7 @@ void GetMpirunHostnameNoInput(const char *InfoStream)
             (strlen(localHostInfo->h_name) >=
              ULM_MAX_HOSTNAME_LEN) ? tmp : localHostInfo->h_name,
             ULM_MAX_HOSTNAME_LEN);
+#endif
 }
 
 
