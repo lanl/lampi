@@ -122,9 +122,10 @@ typedef struct {
     size_t iov_len;
 } ulm_iovec_t;
 
-/* we need to allow a larger number of file descriptors. This is a (hopefully) temporary
-fix for bproc. */
-
+/*
+ * we need to allow a larger number of file descriptors. This is a
+ * (hopefully) temporary fix for bproc.
+ */
 #ifndef ULM_FD_SETSIZE
 #define ULM_FD_SETSIZE 8192
 #endif

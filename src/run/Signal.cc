@@ -46,13 +46,19 @@
 
 static void handler(int signal)
 {
+    if (RunParams.Verbose) {
+        ulm_err(("Caught signal %d\n", signal));
+    }
+
     switch (signal) {
 
     case SIGALRM:
         /* return to correct location in mpirun */
         break;
 
+    case SIGHUP:
     case SIGINT:
+    case SIGTERM:
         Abort();
         break;
     }
@@ -76,8 +82,16 @@ int InstallSigHandler(void)
     sa.sa_handler = handler;
     sigfillset(&sa.sa_mask);
     sa.sa_flags = 0;
+    if (sigaction(SIGHUP, &sa, NULL)) {
+        ulm_err(("Error: trapping SIGHUP\n"));
+        Abort();
+    }
     if (sigaction(SIGINT, &sa, NULL)) {
         ulm_err(("Error: trapping SIGINT\n"));
+        Abort();
+    }
+    if (sigaction(SIGTERM, &sa, NULL)) {
+        ulm_err(("Error: trapping SIGTERM\n"));
         Abort();
     }
 

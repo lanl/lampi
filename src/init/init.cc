@@ -190,7 +190,12 @@ void lampi_init(void)
         lampi_daemon_loop(&lampiState);
     } else if (lampiState.global_rank == 0) {
         if (lampiState.quiet == 0) {
-            fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
+            if (ENABLE_DEBUG) {
+                fprintf(stderr,
+                        "LA-MPI: *** libmpi (" PACKAGE_VERSION "-debug)\n");
+            } else {
+                fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
+            }
             fprintf(stderr, "LA-MPI: *** Copyright 2001-2004, ACL, "
                     "Los Alamos National Laboratory\n");
         }

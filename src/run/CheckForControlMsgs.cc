@@ -85,6 +85,18 @@ static int GetIOFromClient(int *fd)
         free(buf);
         return 0;
     }
+
+    if (RunParams.Verbose) {
+        if (stdio_fd == 1) {
+            ulm_err(("stdout: received %ld bytes\n", (long) size));
+        } else if (stdio_fd == 2) {
+            ulm_err(("stderr: received %ld bytes\n", (long) size));
+        } else {
+            ulm_err(("WARNING: received %ld bytes for fd = %d\n",
+                     (long) size, stdio_fd));
+        }
+    }
+    
     write(stdio_fd, buf, bytes);
     free(buf);
 
@@ -155,6 +167,9 @@ int CheckForControlMsgs(int MaxDesc,
             switch (tag) {      /* process according to message type */
 
             case HEARTBEAT:
+                if (RunParams.Verbose) {
+                    ulm_err(("heartbeat from host %d\n", i));
+                }
 #ifndef HAVE_CLOCK_GETTIME
                 struct timeval t;
                 gettimeofday(&t, NULL);
@@ -176,7 +191,7 @@ int CheckForControlMsgs(int MaxDesc,
                 }
 
                 if (RunParams.Verbose) {
-                    ulm_err(("Host %d reports normal exit\n", i));
+                    ulm_err(("host %d reports normal exit\n", i));
                 }
 
                 if (ActiveHosts[i]) {
@@ -191,7 +206,7 @@ int CheckForControlMsgs(int MaxDesc,
                 if ((*HostsNormalTerminated) == NHosts) {
 
                     if (RunParams.Verbose) {
-                        ulm_err(("All hosts reported normal exit\n"));
+                        ulm_err(("all hosts reported normal exit\n"));
                     }
 
                     tag = ALLHOSTSDONE;
@@ -201,7 +216,7 @@ int CheckForControlMsgs(int MaxDesc,
                         /* send request if socket still open */
                         if (fd[j] > 0) {
                             if (RunParams.Verbose) {
-                                ulm_err(("ALLHOSTSDONE to host %d\n", j));
+                                ulm_err(("all hosts done to host %d\n", j));
                             }
                             size = SendSocket(fd[j], 1, &iov);
                             /* if size <= 0 assume connection lost */
@@ -217,17 +232,14 @@ int CheckForControlMsgs(int MaxDesc,
                 break;
 
             case ACKALLHOSTSDONE:
-
                 if (RunParams.Verbose) {
-                    ulm_err(("Host %d done\n", i));
+                    ulm_err(("host %d done\n", i));
                 }
-
                 (*ActiveClients)--;
                 fd[i] = -1;
                 break;
 
             case ABNORMALTERM:
-
                 size = RecvSocket(fd[i], &abnormal_term_msg,
                                   sizeof(abnormal_term_msg), &error);
                 if (size > 0 || error != ULM_SUCCESS) {
@@ -244,10 +256,16 @@ int CheckForControlMsgs(int MaxDesc,
                 break;
 
             case STDIOMSG:
+                if (RunParams.Verbose) {
+                    ulm_err(("stdio: receiving output from host %d\n", i));
+                }
                 ActiveHosts[i] = GetIOFromClient(&fd[i]);
                 break;
 
             case STDIOMSG_CTS:
+                if (RunParams.Verbose) {
+                    ulm_err(("stdin: clear to send from host %d\n", i));
+                }
                 StdInCTS = true;
                 break;
 

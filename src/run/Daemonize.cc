@@ -86,6 +86,10 @@ static int ScanStdIn(int fdin)
         }
     }
 
+    if (RunParams.Verbose) {
+        ulm_err(("stdin: sending %d bytes to daemon 0\n", cnt));
+    }
+
     adminMessage *server = RunParams.server;
     server->reset(adminMessage::SEND);
     server->pack(&cnt, adminMessage::INTEGER, 1);

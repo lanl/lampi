@@ -513,8 +513,14 @@ static void ListOptions(void)
 
 static void Version(void)
 {
-    printf("LA-MPI: Version " PACKAGE_VERSION "\n"
-           "mpirun built on " __DATE__ " at " __TIME__ "\n");
+    if (ENABLE_DEBUG) {
+        printf("LA-MPI: Version " PACKAGE_VERSION "-debug\n"
+               "mpirun built on " __DATE__ " at " __TIME__ "\n");
+    } else {
+        printf("LA-MPI: Version " PACKAGE_VERSION "\n"
+               "mpirun built on " __DATE__ " at " __TIME__ "\n");
+    }
+
     exit(EXIT_SUCCESS);
 }
 

@@ -545,7 +545,12 @@ int mpirun(int argc, char **argv)
 
     /* print banner message */
     if (RunParams.Quiet == 0) {
-        fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
+        if (ENABLE_DEBUG) {
+            fprintf(stderr,
+                    "LA-MPI: *** mpirun (" PACKAGE_VERSION "-debug)\n");
+        } else {
+            fprintf(stderr, "LA-MPI: *** mpirun (" PACKAGE_VERSION ")\n");
+        }
     }
 
     /* get authorization data for admin communication */
