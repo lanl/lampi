@@ -44,7 +44,7 @@
  * MPI state
  */
 mpi_state_t _mpi;
-static int called=0;
+static int called = 0;
 
 /*
  * Something for the proc null request handle to point at
@@ -56,71 +56,73 @@ static int dummy_proc_null_request;
  */
 int _mpi_init(void)
 {
-    int 		rc, val;
+    int rc, val;
 
     if (_MPI_DEBUG) {
-	_mpi_dbg("_mpi_init:\n");
+        _mpi_dbg("_mpi_init:\n");
     }
 
     lampi_environ_find_integer("LAMPI_NO_CHECK_ARGS", &val);
-    if ( 1 == val ) {
+    if (1 == val) {
         _mpi.check_args = 0;
     } else {
         _mpi.check_args = lampiState.checkargs;
     }
     _mpi.threadsafe = 0;
-    /* initialize _mpi lock - upper layer is responsible to ensure that
-     * only one thread at a time makes a call
+ 
+    /*
+     * initialize _mpi lock - upper layer is responsible to ensure
+     * that only one thread at a time makes a call
      */
-    if( !called) {
-        called=1;
+    if (!called) {
+        called = 1;
         cLockInit(&(_mpi.lock));
     }
     _mpi_lock(&(_mpi.lock));
 
     if (_mpi.initialized == 0) {
 
-	if (_MPI_DEBUG) {
-	    _mpi_dbg("_mpi_init: initializing\n");
-	}
+        if (_MPI_DEBUG) {
+            _mpi_dbg("_mpi_init: initializing\n");
+        }
 
-	_mpi.initialized = 1;
-	_mpi.finalized = 0;
-	_mpi.proc_null_request = &dummy_proc_null_request;
+        _mpi.initialized = 1;
+        _mpi.finalized = 0;
+        _mpi.proc_null_request = &dummy_proc_null_request;
 
         rc = _mpi_init_collectives();
         if (rc < 0) {
             return rc;
         }
 
-	rc = _mpi_init_datatypes();
-	if (rc < 0) {
-	    return rc;
-	}
+        rc = _mpi_init_datatypes();
+        if (rc < 0) {
+            return rc;
+        }
 
-	rc = _mpi_init_operations();
-	if (rc < 0) {
-	    return rc;
-	}
+        rc = _mpi_init_operations();
+        if (rc < 0) {
+            return rc;
+        }
 
-	/*
-	 * dynamic table of pointer to error handler structs
-	 */
-	_mpi.errhandler_table = _mpi_create_errhandler_table();
-	if (_mpi.errhandler_table == NULL) {
-	    return -1;
-	}
+        /*
+         * dynamic table of pointer to error handler structs
+         */
+        _mpi.errhandler_table = _mpi_create_errhandler_table();
+        if (_mpi.errhandler_table == NULL) {
+            return -1;
+        }
 
-	/*
-	 * dynamic table of pointers which can be freed when there are
-	 * no pending messages
-	 */
-	_mpi.free_table = ulm_malloc(sizeof(ptr_table_t));
-	if (_mpi.free_table == NULL) {
-	    return -1;
-	}
+        /*
+         * dynamic table of pointers which can be freed when there are
+         * no pending messages
+         */
+        _mpi.free_table = ulm_malloc(sizeof(ptr_table_t));
+        if (_mpi.free_table == NULL) {
+            return -1;
+        }
         memset(_mpi.free_table, 0, sizeof(ptr_table_t));
-	cLockInit(&(_mpi.free_table->lock));
+        cLockInit(&(_mpi.free_table->lock));
     }
 
     _mpi_unlock(&(_mpi.lock));
@@ -136,4 +138,42 @@ int _mpi_init(void)
     cLockInit(&(lampiState.bsendData->Lock));
 
     return MPI_SUCCESS;
+}
+
+
+/*
+ * MPI layer clean-up.  By this point, everything is complete, so
+ * unconditionally free everything we can.
+ */
+int _mpi_finalize(void)
+{
+    _mpi_lock(&(_mpi.lock));
+    if (_mpi.finalized == 0) {
+        int i;
+
+        _mpi.finalized = 1;
+
+        for (i = 0; i < _mpi.errhandler_table->size; i++) {
+            if (_mpi.errhandler_table->addr[i]) {
+                ulm_free(_mpi.errhandler_table->addr[i]);
+            }
+        }
+        if (_mpi.errhandler_table->addr) {
+            ulm_free(_mpi.errhandler_table->addr);
+        }
+        ulm_free(_mpi.errhandler_table);
+
+        for (i = 0; i < _mpi.free_table->size; i++) {
+            if (_mpi.free_table->addr[i]) {
+                ulm_free(_mpi.free_table->addr[i]);
+            }
+        }
+        if (_mpi.free_table->addr) {
+            ulm_free(_mpi.free_table->addr);
+        }
+        ulm_free(_mpi.free_table);
+    }
+    _mpi_unlock(&(_mpi.lock));
+
+    return 0;
 }

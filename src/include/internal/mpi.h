@@ -246,6 +246,7 @@ struct errhandler_t {
  */
 ULMFunc_t *_mpi_get_reduction_function(MPI_Op, MPI_Datatype);
 int _mpi_error(int ulm_error);
+int _mpi_finalize(void);
 int _mpi_init(void);
 int _mpi_init_collectives(void);
 int _mpi_init_datatypes(void);
