@@ -55,16 +55,16 @@ Reactor::Reactor() :
     sd_run(true),
     sd_changes(0)
 {
-    FD_ZERO(&sd_recv_set);
-    FD_ZERO(&sd_send_set);
-    FD_ZERO(&sd_except_set);
+    ULM_FD_ZERO(&sd_recv_set);
+    ULM_FD_ZERO(&sd_send_set);
+    ULM_FD_ZERO(&sd_except_set);
 }
 
 
 bool Reactor::insertListener(int sd, Listener* listener, int flags)
 {
 #ifndef NDEBUG
-    if(sd < 0 || sd > FD_SETSIZE) {
+    if(sd < 0 || sd > ULM_FD_SETSIZE) {
         ulm_err(("Reactor::insertListener(%d) invalid descriptor.\n", sd));
         return false;
     }
@@ -85,15 +85,15 @@ bool Reactor::insertListener(int sd, Listener* listener, int flags)
     descriptor->flags |= flags;
     if(flags & NotifyRecv) {
         descriptor->recvListener = listener;
-        FD_SET(sd, &sd_recv_set);
+        ULM_FD_SET(sd, &sd_recv_set);
     }
     if(flags & NotifySend) {
         descriptor->sendListener = listener;
-        FD_SET(sd, &sd_send_set);
+        ULM_FD_SET(sd, &sd_send_set);
     }
     if(flags & NotifyExcept) {
         descriptor->exceptListener = listener;
-        FD_SET(sd, &sd_except_set);
+        ULM_FD_SET(sd, &sd_except_set);
     }
     sd_changes++;
     sd_lock.unlock();
@@ -104,7 +104,7 @@ bool Reactor::insertListener(int sd, Listener* listener, int flags)
 bool Reactor::removeListener(int sd, Listener* listener, int flags)
 {
 #ifndef NDEBUG
-    if(sd < 0 || sd > FD_SETSIZE) {
+    if(sd < 0 || sd > ULM_FD_SETSIZE) {
         ulm_err(("Reactor::insertListener(%d) invalid descriptor.\n", sd));
         return false;
     }
@@ -120,15 +120,15 @@ bool Reactor::removeListener(int sd, Listener* listener, int flags)
     descriptor->flags &= ~flags;
     if(flags & NotifyRecv) {
         descriptor->recvListener = 0;
-        FD_CLR(sd, &sd_recv_set);
+        ULM_FD_CLR(sd, &sd_recv_set);
     }
     if(flags & NotifySend) {
         descriptor->sendListener = 0;
-        FD_CLR(sd, &sd_send_set);
+        ULM_FD_CLR(sd, &sd_send_set);
     }
     if(flags & NotifyExcept) {
         descriptor->exceptListener = 0;
-        FD_CLR(sd, &sd_except_set);
+        ULM_FD_CLR(sd, &sd_except_set);
     }
     sd_changes++;
     sd_lock.unlock();
@@ -184,15 +184,15 @@ void Reactor::dispatch(int cnt, ulm_fd_set_t& rset, ulm_fd_set_t& sset, ulm_fd_s
         descriptor =  (Descriptor*)descriptor->next) {
         int sd = descriptor->sd; 
         int flags = 0;
-        if(FD_ISSET(sd, &rset) && descriptor->flags & NotifyRecv) {
+        if(ULM_FD_ISSET(sd, &rset) && descriptor->flags & NotifyRecv) {
             descriptor->recvListener->recvEventHandler(sd);
             flags |= NotifyRecv;
         }
-        if(FD_ISSET(sd, &sset) && descriptor->flags & NotifySend) {
+        if(ULM_FD_ISSET(sd, &sset) && descriptor->flags & NotifySend) {
             descriptor->sendListener->sendEventHandler(sd);
             flags |= NotifySend;
         }
-        if(FD_ISSET(sd, &eset) && descriptor->flags & NotifyExcept) {
+        if(ULM_FD_ISSET(sd, &eset) && descriptor->flags & NotifyExcept) {
             descriptor->exceptListener->exceptEventHandler(sd);
             flags |= NotifyExcept;
         }
