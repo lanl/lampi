@@ -56,7 +56,11 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
     if (!quadricsDoAck) {
         /* free Elan-addressable memory now */
         if (length_m > CTLHDR_DATABYTES) {
+            if ( usethreads() )
+                quadricsState.quadricsLock.lock();            
             elan3_free(ctx, addr_m);
+            if ( usethreads() )
+                quadricsState.quadricsLock.unlock();
         }
         switch (msgType_m) {
         case MSGTYPE_PT2PT_SYNC:
@@ -420,8 +424,14 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     // fill in base info fields
     length_m = p->dataLength;
     msgLength_m = p->msgLength;
+    if ( usethreads() )
+        quadricsState.quadricsLock.lock();
+
     addr_m = (length_m <= CTLHDR_DATABYTES) ? (void *)p->data :
         (void *)elan3_elan2main(ctx, (E3_Addr)p->dataElanAddr);
+    if ( usethreads() )
+        quadricsState.quadricsLock.unlock();
+
     srcProcID_m = p->senderID;
     dstProcID_m = p->destID;
     tag_m = p->tag_m;
@@ -440,8 +450,8 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     // make sure this was intended for this process...
     if (dstProcID_m != myproc()) {
         ulm_exit((-1, "Quadrics data frag on rail %d from process %d misdirected to process "
-                  "%d, intended destination %d\n",
-                  rail, srcProcID_m, myproc(), dstProcID_m));
+                  "%d, intended destination %d. frag_seq = %lld\n",
+                  rail, srcProcID_m, myproc(), dstProcID_m, seq_m));
     }
 
     if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
@@ -520,9 +530,13 @@ void quadricsRecvFragDesc::memRel()
     switch (p->memType) {
     case PRIVATE_SMALL_BUFFERS:
     case PRIVATE_LARGE_BUFFERS:
+        if ( usethreads() )
+            quadricsState.quadricsLock.lock();
         for (int i = 0; i < p->memBufCount; i++) {
             elan3_free(ctx, elan3_elan2main(ctx, (E3_Addr)(p->memBufPtrs.wordPtrs[i])));
         }
+        if ( usethreads() )
+            quadricsState.quadricsLock.unlock();
         break;
     default:
         ulm_exit((-1, "quadricsRecvFragDesc::memRel: bad memory "
@@ -611,8 +625,12 @@ void quadricsRecvFragDesc::memReq(double timeNow)
     for (int i = 0; i < naddrsNeeded; i++) {
         if ((mtype == MSGTYPE_PT2PT) || (mtype == MSGTYPE_PT2PT_SYNC)) {
             // elan-address process private memory
+            if ( usethreads() )
+                quadricsState.quadricsLock.lock();            
             addrs[i] = elan3_allocMain(ctx, E3_BLK_ALIGN,
                                        quadricsBufSizes[bufType]);
+            if ( usethreads() )
+                quadricsState.quadricsLock.unlock();
             if (addrs[i])
                 naddrs++;
             else {
@@ -647,12 +665,16 @@ void quadricsRecvFragDesc::memReq(double timeNow)
     hdr->memRequestAck.memType = bufType;
     hdr->memRequestAck.memNeededSeqOffset = p->memNeededSeqOffset;
     hdr->memRequestAck.sendMessagePtr.ptr = p->sendMessagePtr.ptr;
+    if ( usethreads() )
+        quadricsState.quadricsLock.lock();
     for (int i = 0; i < naddrs; i++) {
         // this translation works because all process/Elan combos
         // have the same virtual memory mappings
         hdr->memRequestAck.memBufPtrs.wordPtrs[i] =
             (ulm_uint32_t)elan3_main2elan(ctx, addrs[i]);
     }
+    if ( usethreads() )
+        quadricsState.quadricsLock.unlock();
 
     // use incoming ctx and rail!
     sfd->init(0,

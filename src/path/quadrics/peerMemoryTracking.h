@@ -91,6 +91,7 @@ public:
     //! stores an address (void *) in the LIFO
     bool push(void *addr) {
         bool result = false;
+
         if ((nentries + 1) <= arraySize) {
             baseArray[nentries++] = addr;
             result = true;
@@ -559,7 +560,12 @@ public:
      * \param counts the array of integers which must be NUMBER_BUFTYPES or larger to contain the sizes
      */
     void addrCounts(int destination, int *counts) {
-        struct peerInfo *info = tracker[destination & mask];
+        struct peerInfo *info;
+
+        if (usethreads())
+            lock.lock();
+
+        info = tracker[destination & mask];
         /* find the right peer info structure */
         while (info && (info->destination != destination)) { info = info->next; }
         for (int i = 0; i < NUMBER_BUFTYPES; i++) {
@@ -568,6 +574,8 @@ public:
             else
                 counts[i] = 0;
         }
+        if (usethreads())
+            lock.unlock();
     }
 
     //! prints the current state of this peerMemoryTracker (for debugging purposes)

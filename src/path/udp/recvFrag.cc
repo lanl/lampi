@@ -125,26 +125,31 @@ int udpRecvFragDesc::pullFrags(int &retVal)
     }
 
     while (UDPGlobals::checkLongMessageSocket) {
-	FD_ZERO(&readmask);
-	FD_SET(longsock, &readmask);
-
-	count = select(maxfdp1, &readmask, (fd_set *) 0, (fd_set *) 0, &t);
-
-	if (count > 0 && FD_ISSET(longsock, &readmask)) {
-	    desc = (udpRecvFragDesc *) UDPRecvFragDescs.getElement(getMemPoolIndex(), retVal);
-	    if (retVal != ULM_SUCCESS)
-		return bytesRecvd;
-	    UDPGlobals::checkLongMessageSocket = false;	// will be reset as necessary
-	    desc->sockfd = longsock;
-	    desc->shortMsg = false;
-	    desc->copyError = false;
-	    desc->pt2ptNonContig = false;
-	    desc->dataReadFromSocket = false;
-	    bytesRecvd += desc->handleLongSocket();
-	}
-	else {
-	    break;
-	}
+        FD_ZERO(&readmask);
+        FD_SET(longsock, &readmask);
+    
+        count = select(maxfdp1, &readmask, (fd_set *) 0, (fd_set *) 0, &t);
+    
+        if (count > 0 && FD_ISSET(longsock, &readmask)) {
+            desc = (udpRecvFragDesc *) UDPRecvFragDescs.getElement(getMemPoolIndex(), retVal);
+            if (retVal != ULM_SUCCESS)
+            {
+                if (usethreads()) {
+                    UDPGlobals::longMessageLock.unlock();
+                }
+                return bytesRecvd;                
+            }
+            UDPGlobals::checkLongMessageSocket = false;	// will be reset as necessary
+            desc->sockfd = longsock;
+            desc->shortMsg = false;
+            desc->copyError = false;
+            desc->pt2ptNonContig = false;
+            desc->dataReadFromSocket = false;
+            bytesRecvd += desc->handleLongSocket();
+        }
+        else {
+            break;
+        }
     }
 
     if (usethreads()) {

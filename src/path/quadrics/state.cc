@@ -46,6 +46,8 @@ int quadricsBufSizes[NUMBER_BUFTYPES] = {
     65536
 };
 
+quadricsState_t	quadricsState;
+
 int maxOutstandingQuadricsFrags = 20;
 int quadricsNRails = 0;
 int quadricsLastRail = -1;
