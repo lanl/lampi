@@ -115,6 +115,9 @@ void RunEventLoop(void)
     int *fd;
 
     fd = RunParams.Networks.TCPAdminstrativeNetwork.SocketsToClients;
+    heartbeat_time = ulm_time();
+    RunParams.HostsNormalTerminated = 0;
+    RunParams.HostsAbNormalTerminated = 0;
 
     /* setup list of active hosts */
     RunParams.ActiveHost = ulm_new(int, RunParams.NHosts);
@@ -122,16 +125,9 @@ void RunEventLoop(void)
         RunParams.ActiveHost[i] = 1;
     }
 
-    heartbeat_time = ulm_time();
-
-    RunParams.HostsNormalTerminated = 0;
-    RunParams.HostsAbNormalTerminated = 0;
-
     /* setup stdin file descriptor to be non-blocking */
     if (RunParams.STDINfd >= 0) {
-        /* input from terminal */
-        if (isatty(RunParams.STDINfd)) {
-
+        if (isatty(RunParams.STDINfd)) {    /* input from terminal */
             struct termios term;
             if (tcgetattr(RunParams.STDINfd, &term) != 0) {
                 ulm_err(("tcgetattr(%d) failed with errno=%d\n",
@@ -146,8 +142,7 @@ void RunEventLoop(void)
                          RunParams.STDINfd, errno));
                 RunParams.STDINfd = -1;
             }
-            /* input from pipe or file */
-        } else {
+        } else {                            /* input from pipe or file */
             struct stat sbuf;
             if (fstat(RunParams.STDINfd, &sbuf) != 0) {
                 ulm_err(("stat(%d) failed with errno=%d\n",

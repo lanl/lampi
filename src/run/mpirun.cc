@@ -593,6 +593,16 @@ int mpirun(int argc, char **argv)
         }
     }
 
+    /* sanity check */
+    if (RunParams.TotalProcessCount <= 0) {
+        ulm_err(("Error: Invalid number of processes\n"));
+        Abort();
+    }
+    if (RunParams.NHosts <= 0) {
+        ulm_err(("Error: Invalid number of processes\n"));
+        Abort();
+    }
+
     LogJobStart();
 
     if (RunParams.Verbose) {
@@ -781,6 +791,7 @@ int mpirun(int argc, char **argv)
     for (int i = 0; i < RunParams.NHosts; i++) {
         ulm_delete(RunParams.AppPIDs[i]);
     }
+    ulm_delete(RunParams.ActiveHost);
     ulm_delete(RunParams.AppPIDs);
     ulm_delete(RunParams.Networks.
                TCPAdminstrativeNetwork.SocketsToClients);
