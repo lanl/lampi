@@ -58,6 +58,11 @@ int PMPI_Wait(MPI_Request *request, MPI_Status *status)
         }
     }
 
+    if (request == NULL || *request == MPI_REQUEST_NULL) {
+        memset(status, 0, sizeof(MPI_Status));
+        return MPI_SUCCESS;
+    }
+
     if (*request == _mpi.proc_null_request) {
 	if (status) {
 	    status->MPI_ERROR = MPI_SUCCESS;
