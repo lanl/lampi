@@ -43,6 +43,12 @@ inline bool ibSendFragDesc::init(SendDesc_t *message, int hca, int port)
     return true;
 }
 
+inline bool ibSendFragDesc::init(enum ibCtlMsgTypes type, int glDestID, 
+int hca, int port)
+{
+    return true;
+}
+
 inline bool ibSendFragDesc::post(double timeNow, int *errorCode)
 {
     return true;

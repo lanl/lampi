@@ -63,6 +63,11 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
 
         void msgData(double timeNow);
         void msgDataAck(double timeNow);
+        void handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd, ibSendFragDesc *sfd);
+
+#ifdef ENABLE_RELIABILITY
+        bool checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd);
+#endif
 
         bool AckData(double timeNow);
         unsigned int CopyFunction(void *fragAddr, void *appAddr, ssize_t length);

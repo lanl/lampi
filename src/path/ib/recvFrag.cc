@@ -31,6 +31,8 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <vapi_common.h>
+#undef PAGESIZE
 #include "queue/globals.h"
 #include "path/ib/recvFrag.h"
 #include "path/ib/sendFrag.h"
@@ -196,11 +198,14 @@ inline bool ibRecvFragDesc::AckData(double timeNow)
 #endif
 
     // fill in other fields
+    p->type = MESSAGE_DATA_ACK;
     p->ctxAndMsgType = msg_m->header.ctxAndMsgType;
+    p->dest_proc = msg_m->header.senderID;
+    p->src_proc = msg_m->header.destID;
     p->ptrToSendDesc = msg_m->header.sendFragDescPtr;
 
     // use incoming ctx and rail!
-    sfd->init(MESSAGE_DATA_ACK);
+    sfd->init(MESSAGE_DATA_ACK, p->dest_proc, hca_index, port_index);
 
     list = &(ib_state.hca[hca_index].ctlMsgsToSend[MESSAGE_DATA_ACK]);
     list->AppendNoLock((Links_t *)sfd);
@@ -283,13 +288,223 @@ inline bool ibRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
 
 inline void ibRecvFragDesc::ReturnDescToPool(int LocalRank)
 {
+    VAPI_ret_t vapi_result;
+    ib_hca_state_t *h = &(ib_state.hca[hca_index_m]);
+
+    // repost the descriptor 
+    vapi_result = VAPI_post_rr(h->handle, h->ud.handle, &(rr_desc_m));
+    if (vapi_result != VAPI_OK) {
+        ulm_err(("ibRecvFragDesc::ReturnDescToPool: VAPI_post_rr() for HCA "
+            "%d returned %s\n",
+            hca_index_m, VAPI_strerror(vapi_result)));
+        exit(1);
+    }
+
+    // decrement tokens...don't need to check values...
+    if (usethreads()) {
+        ib_state.lock.lock();
+    }
+
+    (h->recv_cq_tokens)--;
+    (h->ud.rq_tokens)--;
+
+    if (usethreads()) {
+        ib_state.lock.unlock();
+    }
 }
 
 inline void ibRecvFragDesc::msgData(double timeNow)
 {
+    addr_m = msg_m->data;
+    srcProcID_m = msg_m->header.senderID;
+    dstProcID_m = msg_m->header.destID;
+    tag_m = msg_m->header.tag_m;
+    ctx_m = EXTRACT_CTX(msg_m->header.ctxAndMsgType);
+    msgType_m = EXTRACT_MSGTYPE(msg_m->header.ctxAndMsgType);
+    isendSeq_m = msg_m->header.isendSeq_m;
+    seq_m = msg_m->header.frag_seq;
+    seqOffset_m = msg_m->header.dataSeqOffset;
+    msgLength_m = msg_m->header.msgLength;
+    length_m = msg_m->header.dataLength;
+
+    // remap process IDs from global to group ProcID
+    dstProcID_m = communicators[ctx_m]->
+        localGroup->mapGlobalProcIDToGroupProcID[dstProcID_m];
+    srcProcID_m = communicators[ctx_m]->
+        remoteGroup->mapGlobalProcIDToGroupProcID[srcProcID_m];
+
+    communicators[ctx_m]->handleReceivedFrag((BaseRecvFragDesc_t *)this, timeNow);
 }
 
 inline void ibRecvFragDesc::msgDataAck(double timeNow)
 {
+    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    ibSendFragDesc *sfd = (ibSendFragDesc *)p->ptrToSendDesc.ptr;
+    volatile SendDesc_t *bsd = (volatile SendDesc_t *)sfd->parentSendDesc_m;
+
+    msgType_m = EXTRACT_MSGTYPE(p->ctxAndMsgType);
+
+        // lock frag through send descriptor to prevent two
+        // ACKs from processing simultaneously
+
+        if (bsd) {
+            ((SendDesc_t *)bsd)->Lock.lock();
+            if (bsd != sfd->parentSendDesc_m) {
+                ((SendDesc_t *)bsd)->Lock.unlock();
+                ReturnDescToPool(getMemPoolIndex());
+                return;
+            }
+        } else {
+            ReturnDescToPool(getMemPoolIndex());
+            return;
+        }
+
+#ifdef ENABLE_RELIABILITY
+        if (checkForDuplicateAndNonSpecificAck(sfd)) {
+            ((SendDesc_t *)bsd)->Lock.unlock();
+            ReturnDescToPool(getMemPoolIndex());
+            return;
+        }
+#endif
+
+        handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
+        ((SendDesc_t *)bsd)->Lock.unlock();
+
+    ReturnDescToPool(getMemPoolIndex());
+    return;
 }
 
+#ifdef ENABLE_RELIABILITY
+
+inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd)
+{
+    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    sender_ackinfo_control_t *sptr;
+    sender_ackinfo_t *tptr;
+
+    // update sender ACK info -- largest in-order delivered and received frag sequence
+    // numbers received by our peers (or peer box, in the case of collective communication)
+    // from ourself or another local process
+    if ((msgType_m == MSGTYPE_PT2PT) || (msgType_m == MSGTYPE_PT2PT_SYNC)) {
+        sptr = &(reliabilityInfo->sender_ackinfo[local_myproc()]);
+        tptr = &(sptr->process_array[p->src_proc]);
+    } else {
+        ulm_err(("ibRecvFragDesc::check...Ack received ack of unknown "
+                 "message type %d\n", msgType_m));
+        return true;
+    }
+
+    sptr->Lock.lock();
+    if (p->deliveredFragSeq > tptr->delivered_largest_inorder_seq) {
+        tptr->delivered_largest_inorder_seq = p->deliveredFragSeq;
+    }
+    // received is not guaranteed to be a strictly increasing series...
+    tptr->received_largest_inorder_seq = p->receivedFragSeq;
+    sptr->Lock.unlock();
+
+    // check to see if this ACK is for a specific frag or not
+    // if not, then we don't need to do anything else...
+    if (p->ackStatus == ACKSTATUS_AGGINFO_ONLY) {
+        return true;
+    } else if ((sfd->frag_seq_m != p->thisFragSeq)) {
+        // this ACK is a duplicate...or just screwed up...just ignore it...
+        return true;
+    }
+
+    return false;
+}
+
+#endif
+
+inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
+                                                 ibSendFragDesc *sfd)
+{
+    short whichQueue = sfd->WhichQueue;
+    ibDataAck_t *p = (ibDataAck_t *)((unsigned long)sg_m[0].addr);
+    int errorCode;
+
+    if (p->ackStatus == ACKSTATUS_DATAGOOD) {
+
+        // register frag as acked
+        bsd->clearToSend_m = true;
+        (bsd->NumAcked)++;
+
+        // remove frag descriptor from list of frags to be acked
+        if (whichQueue == IBFRAGSTOACK) {
+            bsd->FragsToAck.RemoveLinkNoLock((Links_t *)sfd);
+        }
+#ifdef ENABLE_RELIABILITY
+        else if (whichQueue == IBFRAGSTOSEND) {
+            bsd->FragsToSend.RemoveLinkNoLock((Links_t *)sfd);
+            // increment NumSent since we were going to send this again...
+            (bsd->NumSent)++;
+        }
+#endif
+        else {
+            ulm_exit((-1, "ibRecvFragDesc::handlePt2PtMessageAck: Frag "
+                      "on %d queue\n", whichQueue));
+        }
+
+        // reset WhichQueue flag
+        sfd->WhichQueue = IBFRAGFREELIST;
+
+#ifdef ENABLE_RELIABILITY
+        // set seq_m value to 0/null/invalid to detect duplicate ACKs
+        sfd->frag_seq_m = 0;
+#endif
+
+        // reset send descriptor pointer
+        sfd->parentSendDesc_m = 0;
+
+        if (sfd->done(timeNow, &errorCode)) {
+            sfd->free();
+        }
+        else {
+            // we need to wait for local completion notification
+            // before we free this descriptor...
+            // put on ctlMsgsToAck list for later cleaning by push()
+            if (usethreads()) {
+                ib_state.lock.lock();
+            }
+
+            ProcessPrivateMemDblLinkList *list =
+                &(ib_state.hca[sfd->hca_index_m].ctlMsgsToAck[MESSAGE_DATA]);
+            list->AppendNoLock((Links_t *)sfd);
+            ib_state.hca[sfd->hca_index_m].ctlMsgsToAckFlag |= (1 << MESSAGE_DATA);
+
+            if (usethreads()) {
+                ib_state.lock.unlock();
+            }
+        }
+
+    } else {
+        /*
+         * only process negative acknowledgements if we are
+         * the process that sent the original message; otherwise,
+         * just rely on sender side retransmission
+         */
+        ulm_warn(("Warning: IB Data corrupt upon receipt. Will retransmit.\n"));
+
+        // reset WhichQueue flag
+        sfd->WhichQueue = IBFRAGSTOSEND;
+        // move Frag from FragsToAck list to FragsToSend list
+        if (whichQueue == IBFRAGSTOACK) {
+            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
+            bsd->FragsToSend.Append((Links_t *)sfd);
+        }
+        // move message to incomplete queue
+        if (bsd->NumSent == bsd->numfrags) {
+            // sanity check, is frag really in UnackedPostedSends queue
+            if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
+                ulm_exit((-1, "Error: Send descriptor not "
+                          "in UnackedPostedSends"
+                          " list, where it was expected.\n"));
+            }
+            bsd->WhichQueue = INCOMPLETEISENDQUEUE;
+            UnackedPostedSends.RemoveLink(bsd);
+            IncompletePostedSends.Append(bsd);
+        }
+        // reset send desc. NumSent as though this frag has not been sent
+        (bsd->NumSent)--;
+    } // end NACK/ACK processing
+}

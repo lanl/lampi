@@ -71,7 +71,7 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         ibSendFragDesc(int poolIndex) { state_m = UNINITIALIZED; }
 
         bool init(SendDesc_t *message, int hca, int port);
-        bool init(enum ibCtlMsgTypes type);
+        bool init(enum ibCtlMsgTypes type, int glDestID, int hca, int port);
         bool init(void);
         bool post(double timeNow, int *errorCode);
 
