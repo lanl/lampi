@@ -294,6 +294,15 @@ void gmSetup(lampiState_t *s)
                     gm_num_send_tokens(tmpPort);
                 gmState.localDevList[gmState.nDevsAllocated].recvTokens =
                     gm_num_receive_tokens(tmpPort);
+
+                // dont allow for more recv than send tokens - as we need to be 
+                // able to send an ack for every recv when reliability is enabled
+                // or for synchronous sends
+                if(gmState.localDevList[gmState.nDevsAllocated].recvTokens >
+                   gmState.localDevList[gmState.nDevsAllocated].sendTokens) {
+                   gmState.localDevList[gmState.nDevsAllocated].recvTokens =
+                   gmState.localDevList[gmState.nDevsAllocated].sendTokens;
+                }
                 returnValue =
                     gm_get_unique_board_id(tmpPort,
                                            gmState.localDevList[gmState.nDevsAllocated].

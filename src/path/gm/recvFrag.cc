@@ -36,6 +36,7 @@
 #include "path/gm/recvFrag.h"
 #include "util/dclock.h"
 
+
 bool gmRecvFragDesc::AckData(double timeNow)
 {
     gmHeaderDataAck *p;
@@ -77,7 +78,6 @@ bool gmRecvFragDesc::AckData(double timeNow)
     }
 
     p = (gmHeaderDataAck *) &(buf->header.dataAck);
-
     p->thisFragSeq = seq_m;
         
     if ( ENABLE_RELIABILITY ) {
@@ -87,8 +87,16 @@ bool gmRecvFragDesc::AckData(double timeNow)
 		    mapGroupProcIDToGlobalProcID[srcProcID_m];
 	    /* process the deliverd sequence number range */
 	    int returnValue = processRecvDataSeqs(p, glSourceProcess, reliabilityInfo);
-	    if (returnValue != ULM_SUCCESS)
-		    return false;
+	    if (returnValue != ULM_SUCCESS) {
+                if (usethreads()) {
+                    gmState.localDevList[dev_m].Lock.lock();
+                    gmState.localDevList[dev_m].bufList.returnElementNoLock((Links_t *) buf, 0);
+                    gmState.localDevList[dev_m].Lock.unlock();
+                } else {
+                    gmState.localDevList[dev_m].bufList.returnElementNoLock((Links_t *) buf, 0);
+                }
+	        return false;
+            }
     }
 
     // start debug
@@ -104,6 +112,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p->dest_proc = gmHeader_m->data.senderID;
     p->ptrToSendDesc = gmHeader_m->data.sendFragDescPtr;
     p->checksum = 0;
+    p->isendSeq_m = isendSeq_m;
 
 #if ENABLE_RELIABILITY
     if ( gmState.doChecksum )
@@ -163,19 +172,14 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
         return;
     }
     
-    // reclaim send token
-    if (usethreads()) 
-        gmState.localDevList[dev].Lock.lock();
-    gmState.localDevList[dev].sendTokens++;
-    if (usethreads()) 
-        gmState.localDevList[dev].Lock.unlock();
-
-    // return fragment buffer to free list
+    // reclaim send token and return fragment buffer to free list
     if (usethreads()) {
         gmState.localDevList[dev].Lock.lock();
+        gmState.localDevList[dev].sendTokens++;
         gmState.localDevList[dev].bufList.returnElementNoLock((Links_t *) buf, 0);
         gmState.localDevList[dev].Lock.unlock();
     } else {
+        gmState.localDevList[dev].sendTokens++;
         gmState.localDevList[dev].bufList.returnElementNoLock((Links_t *) buf, 0);
     }
 }
@@ -192,9 +196,11 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
     sfd = (gmSendFragDesc *)p->ptrToSendDesc.ptr;
     bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
-    if ( NULL == bsd )
-    {
-        ulm_err(("Process %d: Inconsistency Error! Base send descriptor is NULL.\n"));
+    // if we receive duplicate acks - the send descriptor may have 
+    // already been returned to the freelist - or reused - before the 
+    // duplicate is received - so verify that this is the correct descriptor
+    if ( NULL == bsd || bsd->isendSeq_m != p->isendSeq_m ) {
+        ReturnDescToPool(0);
         return;
     }
 
@@ -208,9 +214,10 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
         return;
     }
 #endif
-    handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
-    if ( ACKSTATUS_DATAGOOD == p->ackStatus )
+    if ( ACKSTATUS_DATAGOOD == p->ackStatus ) {
         sfd->setDidReceiveAck(true);
+    }
+    handlePt2PtMessageAck(timeNow, (SendDesc_t *)bsd, sfd);
 
     if (usethreads())
         bsd->Lock.unlock();
@@ -238,7 +245,7 @@ void gmRecvFragDesc::msgData(double timeNow)
     // check for valid communicator - if the communicator has already been released 
     // this is a duplicate fragment that can be dropped
     if(communicators[ctx_m] == NULL) {
-        ReturnDescToPool(getMemPoolIndex());
+        ReturnDescToPool(0);
         return;
     }
 

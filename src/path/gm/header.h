@@ -43,11 +43,11 @@ enum gmMsgTypes {
 // Other constants
 enum {
     HEADER_SIZE = 18 * sizeof(ulm_uint32_t),
-    DATAACK_PADDING = 4
+    DATAACK_PADDING = 2
 };
 
 struct gmHeaderCommon {
-    unsigned short type;          // message type used to select the proper structure definition
+    ulm_uint32_t type;          // message type used to select the proper structure definition
 };
 
 // if dataChecksum is a CRC, then it is stored in the native integer

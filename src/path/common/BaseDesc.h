@@ -540,6 +540,7 @@ struct BaseAck
     ulm_uint64_t deliveredFragSeq; //!< largest in-order delivered frag seq
 
     ulm_int32_t ackStatus;	 //!< GOODACK/NACK of single message frag
+    ulm_uint64_t isendSeq_m;     // unique msg. sequence number for matching
 
 };
 

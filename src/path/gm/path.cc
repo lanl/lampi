@@ -38,6 +38,7 @@
 #include "path/gm/path.h"
 #include "os/atomic.h"
 
+
 inline bool gmPath::canReach(int globalDestProcessID)
 {
     // return true only for processes not on our "box"
@@ -389,7 +390,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                                       (rf->gmHeader_m->data.checksum +
                                        rf->gmHeader_m->data.checksum)));
                         }
-                        rf->ReturnDescToPool(getMemPoolIndex());
+                        rf->ReturnDescToPool(0);
                         rf = 0;
                         continue;
                     }
@@ -504,12 +505,13 @@ void gmPath::callback(struct gm_port *port,
         bsd->Lock.lock();
 
     (bsd->NumSent)++;
-    sfd->setSendDidComplete(true);
 
+    sfd->setSendDidComplete(true);
     if ( (bsd->sendType == ULM_SEND_SYNCHRONOUS) && (sfd->seqOffset_m == 0) )
     {
-        if ( sfd->didReceiveAck() )
+        if ( sfd->didReceiveAck() ) {
             sfd->freeResources(dclock(), bsd);
+        }
     }
     else
     {
@@ -518,8 +520,9 @@ void gmPath::callback(struct gm_port *port,
             (bsd->NumAcked)++;
             sfd->freeResources(dclock(), bsd);            
         }
-        else if ( sfd->didReceiveAck() )
+        else if ( sfd->didReceiveAck() ) {
             sfd->freeResources(dclock(), bsd); 
+        }
     }
 
     if (usethreads())
