@@ -81,6 +81,7 @@ private:
     };
 
     Locks              sd_lock;
+    Locks              sd_progress;
     DoubleLinkList     sd_active;
     DoubleLinkList     sd_free;
     DoubleLinkList     sd_pending;
