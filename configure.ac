@@ -279,7 +279,7 @@ alpha*-dec*)
 
         # on ASCI-Q, header files are broken.  Use header files we have installed
         # in src/path/quadrics/elan3:
-        RMS_BROKEN_PREFIX="src/path/quadrics"
+        RMS_BROKEN_PREFIX="$srcdir/src/path/quadrics"
         RMS_PREFIX="/usr/opt/rms"
 
 	;;
