@@ -160,7 +160,7 @@ void *accept_thread(void *arg) {
 	int nHosts = RunParameters->NHosts;
     int connectCount = 0, i, hostID = 0;
     fd_set rset;
-    struct timeval tmo = { 0, 10000 };
+    struct timeval tmo;
 
     /* enable asynchronous cancel mode for this thread */
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *)NULL);
@@ -174,6 +174,8 @@ void *accept_thread(void *arg) {
      */
     while (connectCount < 2 * nHosts) {
 	FD_ZERO(&rset);
+    tmo.tv_sec = 0;
+    tmo.tv_usec = 10000;
 	/* set the sockets to listen on */
 	for (int fdIndex = 0; fdIndex < 2; fdIndex++) {
 	    FD_SET(iosock_fd[fdIndex], &rset);
@@ -187,6 +189,8 @@ void *accept_thread(void *arg) {
 		    int fd = -1, pid = -1, rfd = -1;
 		    socklen_t sa_size;
 		    struct sockaddr sa;
+            bool foundHostID = false;
+
 		    sa_size = sizeof(sa);
 		    fd = accept(iosock_fd[sock], &sa, &sa_size);
 		    if (fd == -1 && errno != EAGAIN) {
@@ -200,22 +204,35 @@ void *accept_thread(void *arg) {
 				"mpirun_spawn_bproc: failed to read pid or fd"
 				" from IO connection.\n");
 			close(fd);
+            pthread_exit((void *)0);
 		    }
 		    /* find host index that corresponds to this pid */
-		    for (i = 0; i < nHosts; i++)
-			if (pid == pids[i]) {
-			    hostID = i;
-			}
+            while (!foundHostID) {
+		        for (i = 0; i < nHosts; i++)
+			        if (pid == pids[i]) {
+			            hostID = i;
+                        foundHostID = true;
+                        break;
+			        }
+            }
 		    switch (rfd) {
 		    case STDOUT_FILENO:
-			if (RunParameters->STDOUTfds[hostID] != -1)
-			    break;
+			if (RunParameters->STDOUTfds[hostID] != -1) {
+                fprintf(stderr,"mpirun_spawn_bproc: duplicate host rank %d for stdout socket %d and %d\n",
+                    hostID, fd, RunParameters->STDOUTfds[hostID]);
+                close(fd);
+                pthread_exit((void *)0);
+            }
 			RunParameters->STDOUTfds[hostID] = fd;
 			connectCount++;
 			break;
 		    case STDERR_FILENO:
-			if (RunParameters->STDERRfds[hostID] != -1)
-			    break;
+			if (RunParameters->STDERRfds[hostID] != -1) {
+                fprintf(stderr,"mpirun_spawn_bproc: duplicate host rank %d for stderr socket %d and %d\n",
+                    hostID, fd, RunParameters->STDERRfds[hostID]);
+                close(fd);
+                pthread_exit((void *)0);
+            }
 			RunParameters->STDERRfds[hostID] = fd;
 			connectCount++;
 			break;
@@ -281,6 +298,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 
     for (i = 0; i < nHosts; i++) {
         nodes[i] = bproc_getnodebyname(RunParameters->HostList[i]);
+        pids[i] = -1;
     }
 
 #ifndef USE_CT
