@@ -116,7 +116,7 @@ typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logica
 typedef SMPSharedMem_log_dev<110*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 
-#if defined(__linux__) && (defined(__i386) || defined(__x86_64_))
+#if defined(__linux__) && (defined(__i386) || defined(__x86_64))
 typedef SMPSharedMem_log_dev<440*SMPPAGESIZE, sizeof(smpDev)>SMPSharedMem_logical_dev_t;
 #endif
 
