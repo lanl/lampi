@@ -445,10 +445,6 @@ void *server_connect(void *arg)
     sigaddset(&signals, SIGALRM);
     pthread_sigmask(SIG_UNBLOCK, &signals, (sigset_t *)NULL);
 
-    /* enable asynchronous cancel mode for this thread */
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, (int *)NULL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, (int *)NULL);
-
     if (!server->serverConnect(RunParameters.ProcessCount,
                                RunParameters.HostList,
                                RunParameters.NHosts, connectTimeOut)) {
@@ -529,6 +525,7 @@ int main(int argc, char **argv)
     sigprocmask(SIG_BLOCK, &newsignals, &oldsignals);
 
     /* spawn thread to do adminMessage::serverConnect() processing */
+    server->cancelConnect_m = false;
     if (pthread_create(&sc_thread, (pthread_attr_t *)NULL, server_connect, (void *)&nprocs) != 0) {
         ulm_err(("Error: can't create serverConnect() thread!\n"));
         Abort();
@@ -541,7 +538,8 @@ int main(int argc, char **argv)
                       &RunParameters, FirstAppArgument, argc, argv);
     if( rc != ULM_SUCCESS ) {
         ulm_err(("Error: Can't spawn application (%d)\n", rc));
-        pthread_cancel(sc_thread);
+        server->cancelConnect_m = true;
+        pthread_join(sc_thread, (void **)NULL);
         Abort();
     }
     
