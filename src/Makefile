@@ -21,7 +21,7 @@ VERSION	:= include/internal/version.h
 #
 ######################################################################
 
-CFLAGS       := -DHAVE_PRAGMA_WEAK -DUSE_CT
+CPPFLAGS       := -DHAVE_PRAGMA_WEAK -DUSE_CT
 
 ######################################################################
 
@@ -80,7 +80,7 @@ MODULES_LIBMPI  += collective/quadrics
 endif
 
 # include GM if GM is defined
-ifneq (,$(findstring GM, $(CPPFLAGS)))
+ifneq (,$(findstring -DGM, $(CPPFLAGS)))
 MODULES_LIBMPI	+= path/gm
 endif
 
