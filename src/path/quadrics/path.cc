@@ -858,6 +858,13 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                 qstate = elan3_read32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
                                             offsetof(E3_Queue, q_state));
 
+                // reset event block
+                E3_RESET_BCOPY_BLOCK(quadricsQueue[i].rcvBlk);
+
+                // make sure that qstate is read and main memory event copy block cleared
+                // before updating q_fptr
+                mb();
+
                 // write new q_fptr to ELAN
                 elan3_write32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
                                     offsetof(E3_Queue, q_fptr),
@@ -870,9 +877,9 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
                                         offsetof(E3_Queue, q_state), 0);
                 }
 
-                // reset event block
-                E3_RESET_BCOPY_BLOCK(quadricsQueue[i].rcvBlk);
-                    
+                // make sure main memory is reset before repriming event...
+                mb();
+
                 // reprime ELAN q_event with a wait
                 elan3_waitevent(ctx, quadricsQueue[i].sdramQAddr +
                                 offsetof(E3_Queue, q_event));
