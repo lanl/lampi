@@ -115,8 +115,8 @@ software based broadcast.  Limit: %d (see mpirun options to change).\n",broadcas
 
     if ( errorcode == ULM_SUCCESS)
     {
-        if (cp->localGroup->ProcID==0)  
-           ulm_err(("%i Enabling hw bcast on comm=%i\n",myproc(),new_comm ));
+      if (cp->localGroup->ProcID==0)  
+          ulm_err(("%i Enabling hw bcast (%i) on comm=%i\n",myproc(),bcaster_id,new_comm ));
 
       cp->hw_bcast_enabled = QSNET_COLL ;
       cp->bcaster          = bcaster;
