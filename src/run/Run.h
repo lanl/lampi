@@ -60,6 +60,8 @@ int SendQuadricsInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server);
 int SendGMInputToClients(ULMRunParams_t *RunParameters,
 		adminMessage *server);
+int SendIBInputToClients(ULMRunParams_t *RunParameters,
+		adminMessage *server);
 int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                  int **ListHostsStarted, ULMRunParams_t *RunParameters, 
 		 int FirstAppArgument, int argc, char **argv);
@@ -178,6 +180,7 @@ void parseQuadricsRails(const char *InfoStream);
 void parseUseCRC(const char *InfoStream);
 void parseQuadricsFlags(const char *InfoStream);
 void parseMyrinetFlags(const char *InfoStream);
+void parseIBFlags(const char *InfoStream);
 void parseResourceAffinity(const char *InfoStream);
 void parseSMDescMemPerProc(const char *InfoStream);
 void parseTotalIRecvDescPages(const char *InfoStream);

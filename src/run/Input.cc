@@ -101,6 +101,9 @@ void Usage(FILE *stream)
             "               The keywords supported are \"ack\", \"noack\", \"checksum\",\n"
             "               \"nochecksum\", and a number to set the size of the large message\n"
             "               fragment buffer size [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
+            "-if FLAGSLIST  A comma-delimited list of keywords for operation on InfiniBand networks.\n"
+            "               The keywords supported are \"ack\", \"noack\", \"checksum\", and\n"
+            "               \"nochecksum\" [THIS OPTION MAY CHANGE IN FUTURE RELEASES].\n"
             "\n");
     fflush(stream);
 }
@@ -1529,6 +1532,38 @@ void parseMyrinetFlags(const char *InfoStream)
                    && (fragSize = strtol(*i, &endptr, 10))
                    && (*endptr == '\0')) {
             RunParameters.Networks.GMSetup.fragSize = fragSize;
+        }
+    }
+#endif
+}
+
+void parseIBFlags(const char *InfoStream)
+{
+#ifdef ENABLE_INFINIBAND
+    int NSeparators = 2;
+    char SeparatorList[] = { " , " };
+
+    int OptionIndex =
+        MatchOption("IBFlags", ULMInputOptions, SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option IBFlags not found\n"));
+        Abort();
+    }
+
+    ParseString IBFlags(ULMInputOptions[OptionIndex].InputData,
+                              NSeparators, SeparatorList);
+
+    for (ParseString::iterator i = IBFlags.begin();
+         i != IBFlags.end(); i++) {
+        if ((strlen(*i) >= 3) && (strncmp(*i, "noack", 3) == 0)) {
+            RunParameters.Networks.IBSetup.ack = false;
+        } else if ((strlen(*i) >= 3)
+                   && (strncmp(*i, "nochecksum", 3) == 0)) {
+            RunParameters.Networks.IBSetup.checksum = false;
+        } else if ((strlen(*i) >= 1) && (strncmp(*i, "ack", 1) == 0)) {
+            RunParameters.Networks.IBSetup.ack = true;
+        } else if ((strlen(*i) >= 1) && (strncmp(*i, "checksum", 1) == 0)) {
+            RunParameters.Networks.IBSetup.checksum = true;
         }
     }
 #endif

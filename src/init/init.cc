@@ -1700,6 +1700,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
     lampi_init_prefork_receive_setup_params_shared_memory(s);
     lampi_init_prefork_receive_setup_params_quadrics(s);
     lampi_init_prefork_receive_setup_params_gm(s);
+    lampi_init_prefork_receive_setup_params_ib(s);
 }
 
 

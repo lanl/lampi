@@ -175,6 +175,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->Networks.UseUDP = 0;
     RunParameters->Networks.UseGM = 0;
     RunParameters->Networks.UseQSW = 0;
+    RunParameters->Networks.UseIB = 0;
 
 #ifdef ENABLE_SHARED_MEMORY
     RunParameters->Networks.UseSharedMemory = 1;
@@ -191,6 +192,11 @@ int MPIrunProcessInput(int argc, char **argv,
 #ifdef ENABLE_GM
     RunParameters->Networks.GMSetup.NGMHosts = 0;
 #endif
+#ifdef ENABLE_INFINIBAND
+    RunParameters->Networks.IBSetup.NIBHosts = 0;
+    RunParameters->Networks.IBSetup.ack = 1;
+    RunParameters->Networks.IBSetup.checksum = 0;
+#endif
     for (int j = 0; j < RunParameters->NHosts; j++) {
         for (int i = 0; i < RunParameters->NPathTypes[j]; i++) {
             switch (RunParameters->ListPathTypes[j][i]) {
@@ -204,6 +210,12 @@ int MPIrunProcessInput(int argc, char **argv,
             case PATH_GM:
                 RunParameters->Networks.UseGM = 1;
                 RunParameters->Networks.GMSetup.NGMHosts++;
+                break;
+#endif
+#ifdef ENABLE_INFINIBAND
+            case PATH_IB:
+                RunParameters->Networks.UseIB = 1;
+                (RunParameters->Networks.IBSetup.NIBHosts)++;
                 break;
 #endif
             case PATH_QUADRICS:

@@ -87,11 +87,8 @@ void ibSetup(lampiState_t *s)
     ib_state.num_hcas = 0;
     ib_state.num_active_hcas = 0;
 
-    // set these defaults here...eventually these will be set from
-    // mpirun values
+    // set some defaults here...
     ib_state.max_ud_2k_buffers = 2048;
-    ib_state.ack = true;
-    ib_state.checksum = false;
     ib_state.max_outst_frags = -1;
 
     // client daemon does info exchanges only

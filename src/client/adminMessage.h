@@ -131,6 +131,10 @@ typedef struct {
         START_QUADRICS_INPUT,
         /* marker indicating the end of Quadrics input data */
         END_QUADRICS_INPUT,
+        /* marker indicating the start of InfiniBand input data */
+        START_IB_INPUT,
+        /* marker indicating the end of InfiniBand input data */
+        END_IB_INPUT,
         /* end marker */
         COUNT
     };

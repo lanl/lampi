@@ -306,6 +306,13 @@ InputParameters_t ULMInputOptions[] =
      NoOpFunction,
      parseMyrinetFlags,
      "Special Myrinet GM flags -- noack, ack, nochecksum, checksum, <number> (fragment size)", 0, "\0"
+    },
+    {"-if",
+     "IBFlags",
+     STRING_ARGS,
+     NoOpFunction,
+     parseIBFlags,
+     "Special InfiniBand flags -- noack, ack, nochecksum, checksum", 0, "\0"
     }
 };
 

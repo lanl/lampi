@@ -50,6 +50,9 @@
 #ifdef ENABLE_GM
 # include "path/gm/setupInfo.h"
 #endif
+#ifdef ENABLE_INFINIBAND
+#include "path/ib/setupInfo.h"
+#endif
 
 // structure to hold input environment variables
 typedef struct ulmEnvSet {
@@ -114,6 +117,7 @@ typedef struct ULMRunParams {
         int UseUDP;
         int UseQSW;
         int UseGM;
+        int UseIB;
         SocketAdminNetwork_t TCPAdminstrativeNetwork;
 #ifdef ENABLE_SHARED_MEMORY
         SharedMemJobParams_t SharedMemSetup;
@@ -123,6 +127,9 @@ typedef struct ULMRunParams {
 #endif
 #ifdef ENABLE_GM
         GMNetworkSetupInfo GMSetup;
+#endif
+#ifdef ENABLE_INFINIBAND
+        IBNetworkSetupInfo IBSetup;
 #endif
     } Networks;
 

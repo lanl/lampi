@@ -65,6 +65,7 @@ enum {
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS,
     ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM,
+    ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB,
     ERROR_LAMPI_INIT_PREFORK_PATHS,
     ERROR_LAMPI_INIT_POSTFORK_PATHS,
     ERROR_LAMPI_INIT_ALLFORKED_PATHS,
@@ -198,8 +199,12 @@ extern lampi_init_func_t lampi_init_postfork_udp;
 #endif
 
 #ifdef ENABLE_INFINIBAND
+void lampi_init_prefork_receive_setup_msg_ib(lampiState_t *);
+void lampi_init_prefork_receive_setup_params_ib(lampiState_t *);
 void lampi_init_postfork_ib(lampiState_t *);
 #else
+extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_ib;
+extern lampi_init_func_t lampi_init_prefork_receive_setup_params_ib;
 extern lampi_init_func_t lampi_init_postfork_ib;
 #endif
 #endif /* _LAMPI_INIT_H_ */

@@ -368,6 +368,13 @@ int SendInitialInputDataMsgToClients(ULMRunParams_t *RunParameters,
         Abort();
     }
 
+    /* InfiniBand input parameters */
+    returnValue = SendIBInputToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendIBInputToClients - %d\n", returnValue));
+        Abort();
+    }
+
     ulm_dbg(("\nmpirun: bcasting UDP addresses...\n"));
     /* UDP IP address information broadcast */
     if (!broadcastUDPAddresses(&returnValue)) {
@@ -657,6 +664,13 @@ int SendInitialInputDataToClients(ULMRunParams_t *RunParameters,
     returnValue = SendGMInputToClients(RunParameters, server);
     if (returnValue != ULM_SUCCESS) {
         ulm_err((" Error returned from SendGMInputToClients - %d\n", returnValue));
+        Abort();
+    }
+
+    /* InfiniBand input parameters */
+    returnValue = SendIBInputToClients(RunParameters, server);
+    if (returnValue != ULM_SUCCESS) {
+        ulm_err((" Error returned from SendIBInputToClients - %d\n", returnValue));
         Abort();
     }
 
@@ -1015,6 +1029,46 @@ int SendGMInputToClients(ULMRunParams_t *RunParameters,
 		    &errorCode) )
 	{
 		ulm_err(("Error: Can't broadcast GM input message (error %d)\n", errorCode));
+    		Abort();
+	}
+#endif
+        
+    return returnValue;
+}
+
+
+int SendIBInputToClients(ULMRunParams_t *RunParameters,
+		adminMessage *server)
+{
+    int returnValue = ULM_SUCCESS;
+#ifdef ENABLE_INFINIBAND
+    int tag,errorCode;
+
+    if (RunParameters->Networks.IBSetup.NIBHosts == 0) {
+        return returnValue;
+    } else if (RunParameters->Networks.IBSetup.NIBHosts != RunParameters->NHosts) {
+        ulm_err(("Error: SendIBInputToClients %d hosts out of %d using InfiniBand!\n", 
+            RunParameters->Networks.IBSetup.NIBHosts, RunParameters->NHosts));
+        returnValue = ULM_ERROR;
+        return returnValue;
+    }
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters->NHosts == 1)
+        return returnValue;
+
+    ulm_dbg( ("mpirun: Bcasting IB input...\n") );
+    server->reset(adminMessage::SEND);
+    server->pack(&(RunParameters->Networks.IBSetup.ack), 
+		    (adminMessage::packType)sizeof(bool), 1);
+    server->pack(&(RunParameters->Networks.IBSetup.checksum), 
+		    (adminMessage::packType)sizeof(bool), 1);
+    tag = dev_type_params::END_IB_INPUT;
+    server->pack(&tag, adminMessage::INTEGER, 1);
+    if ( !server->broadcast(dev_type_params::START_IB_INPUT,
+		    &errorCode) )
+	{
+		ulm_err(("Error: Can't broadcast IB input message (error %d)\n", errorCode));
     		Abort();
 	}
 #endif

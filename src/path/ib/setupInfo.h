@@ -34,4 +34,10 @@
 #ifndef IB_SETUPINFO_H
 #define IB_SETUPINFO_H
 
+typedef struct {
+    int NIBHosts;
+    bool checksum;
+    bool ack;
+} IBNetworkSetupInfo;
+
 #endif

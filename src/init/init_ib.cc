@@ -35,6 +35,141 @@
 #undef PAGESIZE
 #include "path/ib/path.h"
 
+void lampi_init_prefork_receive_setup_msg_ib(lampiState_t * s)
+{
+    int errorCode;
+    int rank;
+    int recvd;
+    int tag;
+
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_receive_setup_params_ib");
+    }
+
+    if ((s->nhosts == 1) || (!s->ib)) {
+        return;
+    }
+
+    rank = 0;
+    tag = dev_type_params::START_IB_INPUT;
+    if (false == s->client->receiveMessage(&rank, &tag, &errorCode)) {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    if (false ==
+        s->client->unpackMessage(&ib_state.ack,
+                                 (adminMessage::packType) sizeof(bool),
+                                 1)) {
+        ulm_err(("Failed unpacking ib_state.ack\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    if (false ==
+        s->client->unpackMessage(&ib_state.checksum,
+                                 (adminMessage::packType) sizeof(bool),
+                                 1)) {
+        ulm_err(("Failed unpacking ib_state.checksum\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    int done = 0;
+    while (!done) {
+        /* read next tag */
+        recvd = s->client->nextTag(&tag);
+        if (recvd != adminMessage::OK) {
+            ulm_err(("Did not receive OK when reading next tag for IB setup. "
+                     "recvd = %d, errorcode = %d.\n", recvd, errorCode));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+            return;
+        }
+        switch (tag) {
+        case dev_type_params::END_IB_INPUT:
+            /* done reading input params */
+            done = 1;
+            break;
+        default:
+            ulm_err(("Unknown IB setup tag %d...\n", tag));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+            return;
+        }
+    }                           /* end while loop */
+}
+
+
+void lampi_init_prefork_receive_setup_params_ib(lampiState_t * s)
+{
+    int errorCode;
+    int recvd;
+    int tag;
+
+    if (s->error) {
+        return;
+    }
+    if (s->verbose) {
+        lampi_init_print("lampi_init_prefork_receive_setup_params_ib");
+    }
+
+    if ((s->nhosts == 1) || (!s->ib)) {
+        return;
+    }
+
+#ifdef ENABLE_CT
+    lampi_init_prefork_receive_setup_msg_ib(s);
+    return;
+#endif
+
+    recvd = s->client->receive(-1, &tag, &errorCode);
+    if ((recvd == adminMessage::OK) &&
+        (tag == dev_type_params::START_IB_INPUT)) {
+    } else {
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    if (false ==
+        s->client->unpack(&ib_state.ack,
+                          (adminMessage::packType) sizeof(bool), 1)) {
+        ulm_err(("Failed unpacking ib_state.ack\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    if (false ==
+        s->client->unpack(&ib_state.checksum,
+                          (adminMessage::packType) sizeof(bool), 1)) {
+        ulm_err(("Failed unpacking ib_state.checksum\n"));
+        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+        return;
+    }
+
+    int done = 0;
+    while (!done) {
+        /* read next tag */
+        recvd = s->client->receive(-1, &tag, &errorCode);
+        if (recvd != adminMessage::OK) {
+            ulm_err(("Did not receive OK when reading next tag for IB setup. "
+                     "recvd = %d, errorcode = %d.\n", recvd, errorCode));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+            return;
+        }
+        switch (tag) {
+        case dev_type_params::END_IB_INPUT:
+            /* done reading input params */
+            done = 1;
+            break;
+        default:
+            ulm_err(("Unknown IB setup tag %d...\n", tag));
+            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_IB;
+            return;
+        }
+    }
+}
 
 void lampi_init_postfork_ib(lampiState_t * s)
 {
