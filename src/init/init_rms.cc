@@ -82,14 +82,18 @@ void lampi_init_prefork_rms(lampiState_t *s)
     lampi_environ_find_integer("RMS_NNODES", &(s->nhosts));
 
 #ifdef QSNETLIBS_VERSION_STRING
-#if QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
+
+# if QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
+    // This should never be true, but...
     elan_nodeId = devinfo.NodeId - cap.LowNode;
-#else
-    if (0) {
+# else
+
+    if (0) { // debug
         printf("devinfo.Position.NodeId = %d\n", devinfo.Position.NodeId);
         printf("olddevinfo.NodeId = %d\n", ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId);
         fflush(stdout);
     }
+
 #ifdef __osf__
     // For QA and QB we need to do this weirdness...
     elan_nodeId = ((ELAN3_OLD_DEVINFO *) &devinfo)->NodeId - cap.LowNode;
@@ -99,9 +103,14 @@ void lampi_init_prefork_rms(lampiState_t *s)
 #endif
 
 #endif
-#endif
 
+#else 
+
+    // Old versions of qsnetlibs (pre 1.4) do this ..
     elan_nodeId = devinfo.NodeId - cap.LowNode;
+
+#endif ////  QSNETLIBS_VERSION_STRING
+
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
 
     /*
