@@ -153,6 +153,18 @@ int non_contiguous_copy(BaseRecvFragDesc_t *frag,
 }
 
 
+void BaseSendDesc_t::shallowCopyTo(RequestDesc_t *request)
+{
+    BaseSendDesc_t	*sendDesc = (BaseSendDesc_t *)request;
+
+    RequestDesc_t::shallowCopyTo(request);
+    sendDesc->bsendBufferSize = bsendBufferSize;
+    sendDesc->sendType = sendType;
+    sendDesc->AppAddr = AppAddr;
+    sendDesc->posted_m = posted_m;
+}
+
+
 // return number of uncorrupted bytes copied, or -1 if the frag's data
 // is corrupt
 ssize_t RecvDesc_t::CopyToApp(void *FrgDesc, bool * recvDone)

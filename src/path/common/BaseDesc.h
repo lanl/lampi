@@ -96,9 +96,10 @@ public:
 
     int sendType;               // send type - normal, buffered, synchronous, or ready
     ssize_t bsendOffset;            // bsend buffer allocation offset
-    void *appBufferPointer;	// set to point to the original buffer (which
+    void *appBufferPointer;		// set to point to the original buffer (which
                                 // can be different from AppAddr -- MPI_Bsend)
-    size_t bsendBufferSize;	// the size of the buffer needed to pack the bsend data
+    ULMType_t *bsendDatatype;	// original datatype (NULL => contiguous)
+    size_t bsendBufferSize;		// the size of the buffer needed to pack the bsend data
 
     int bsendDtypeCount;	// datatype element count of original bsend data
 
@@ -138,6 +139,8 @@ public:
         {
             return clearToSend_m;
         }
+
+    virtual void shallowCopyTo(RequestDesc_t *request);
 };
 
 
