@@ -20,12 +20,12 @@ fault tolerance and fail over can be addressed abstractly.
 
 (a) The building blocks for the path abstraction are in
         
-        lampi/src/net/common/
+        lampi/src/path/common/
 
 (b) The detailed implementation for each path are kept in separate
     directories, for example 
 
-        lampi/src/net/udp
+        lampi/src/path/udp
 
     for the UDP path.
 
