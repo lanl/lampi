@@ -74,8 +74,12 @@ void lampi_daemon_loop(lampiState_t *s)
 
     /* end tmp */
     int i, NumAlive = 0, MaxDescriptor;
-    double LastTime, HeartBeatTime, DeltaTime, TimeInSeconds;
-    unsigned int Message = TERMINATENOW, NotifyServer;
+    double LastTime = 0.0;
+    double HeartBeatTime = 0.0;
+    double DeltaTime = 0.0;
+    double TimeInSeconds = 0.0;
+    unsigned int Message = TERMINATENOW;
+    unsigned int NotifyServer;
     bool shuttingDown = false;
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
