@@ -42,8 +42,7 @@ enum gmMsgTypes {
 
 // Other constants
 enum {
-    HEADER_SIZE = 18 * sizeof(ulm_uint32_t),
-    DATAACK_PADDING = 2
+    HEADER_SIZE = 18 * sizeof(ulm_uint32_t)
 };
 
 struct gmHeaderCommon {
@@ -71,7 +70,7 @@ struct gmHeaderData {
 };
 
 struct gmHeaderDataAck : public BaseAck_t {
-    ulm_uint32_t padding[DATAACK_PADDING];
+    char padding[HEADER_SIZE - 4 - sizeof(BaseAck_t)];
     ulm_uint32_t checksum;              // additive checksum or CRC of all 128 - 4 bytes of the control message
 };
 
