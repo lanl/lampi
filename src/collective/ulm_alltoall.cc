@@ -66,7 +66,6 @@ extern "C" int ulm_alltoall(void *sendbuf, int sendcount, ULMType_t *sendtype,
     }
 
     for (root = 0; root < nproc; root++) {
-        sendbuf = (void *) ;
         rc = ulm_gather((char*) sendbuf + root * sendcount * sendtype->extent,
                         sendcount, sendtype,
                         recvbuf, recvcount, recvtype,
