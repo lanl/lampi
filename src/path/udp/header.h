@@ -53,10 +53,21 @@ inline ulm_uint64_t bswap_64(ulm_uint64_t x)
     return r.ll;
 }
 #   endif
+
+#ifdef __GNUC__
+#define ulm_bswap_32(x)	bswap_32(x)
+#else
+inline ulm_uint32_t ulm_bswap_32(ulm_uint32_t x)
+{
+    return ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |
+            (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24));    
+}
+#endif	/*__GNUC__ */
+
 #   define ulm_ntohl(x)	bswap_64 (x)
-#   define ulm_ntohi(x)	bswap_32 (x)
+#   define ulm_ntohi(x)	ulm_bswap_32 (x)
 #   define ulm_htonl(x)	bswap_64 (x)
-#   define ulm_htoni(x)	bswap_32 (x)
+#   define ulm_htoni(x)	ulm_bswap_32 (x)
 # endif
 #endif
 
