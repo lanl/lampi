@@ -505,7 +505,7 @@ if test "$enable_lsf" = "yes" ; then
    AC_DEFINE(ENABLE_LSF, 1)
    test "$LSF_INC" = "" || CPPFLAGS="$CPPFLAGS -I$LSF_INC"
    test "$LSF_LIB" = "" || LDFLAGS="$LDFLAGS -L$LSF_LIB"
-   LIBS="$LIBS -llsf"
+   LIBS="$LIBS -llsf -lnsl"
 else
    AC_DEFINE(ENABLE_LSF, 0)
 fi
