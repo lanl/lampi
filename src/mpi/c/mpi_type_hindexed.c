@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2005. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -39,15 +39,15 @@
 #include "internal/mpif.h"
 
 #ifdef HAVE_PRAGMA_WEAK
+#pragma weak MPI_Type_create_hindexed = PMPI_Type_create_hindexed
 #pragma weak MPI_Type_hindexed = PMPI_Type_hindexed
-
-#pragma weak PMPI_Type_create_hindexed = PMPI_Type_hindexed
-#pragma weak MPI_Type_create_hindexed = PMPI_Type_hindexed
 #endif
 
-int PMPI_Type_hindexed(int count, int *blocklength_array,
-		       MPI_Aint *disp_array, MPI_Datatype mtype_old,
-		       MPI_Datatype *mtype_new)
+int PMPI_Type_create_hindexed(int count, 
+                              int *blocklength_array,
+                              MPI_Aint *disp_array,
+                              MPI_Datatype mtype_old,
+                              MPI_Datatype *mtype_new)
 {
     int i, rc;
     MPI_Datatype *type_array;
@@ -157,4 +157,18 @@ int PMPI_Type_hindexed(int count, int *blocklength_array,
     fetchNadd(&(t->ref_count), 1);
 
     return rc;
+}
+
+
+int PMPI_Type_hindexed(int count, 
+                       int *blocklength_array,
+                       MPI_Aint *disp_array,
+                       MPI_Datatype mtype_old,
+                       MPI_Datatype *mtype_new)
+{
+    return PMPI_Type_create_hindexed(count, 
+                                     blocklength_array,
+                                     disp_array,
+                                     mtype_old,
+                                     mtype_new);
 }

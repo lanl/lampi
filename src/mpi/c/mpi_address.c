@@ -39,10 +39,7 @@
 
 #ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Get_address = PMPI_Get_address
-
-#pragma weak PMPI_Address = PMPI_Get_address
-#pragma weak MPI_Address = PMPI_Get_address
-
+#pragma weak MPI_Address = PMPI_Address
 #endif
 
 int PMPI_Get_address(void *location, MPI_Aint *address)
@@ -56,3 +53,11 @@ int PMPI_Get_address(void *location, MPI_Aint *address)
 
     return MPI_SUCCESS;
 }
+
+
+int PMPI_Address(void *location, MPI_Aint *address)
+{
+    return PMPI_Get_address(location, address);
+}
+
+

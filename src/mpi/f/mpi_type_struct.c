@@ -226,7 +226,7 @@ void PMPI_TYPE_CREATE_STRUCT(MPI_Fint *count,
                              MPI_Fint *f_type_old_array,
                              MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -236,7 +236,7 @@ void pmpi_type_create_struct(MPI_Fint *count,
                              MPI_Fint *f_type_old_array,
                              MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -246,7 +246,7 @@ void pmpi_type_create_struct_(MPI_Fint *count,
                               MPI_Fint *f_type_old_array,
                               MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -256,7 +256,7 @@ void pmpi_type_create_struct__(MPI_Fint *count,
                                MPI_Fint *f_type_old_array,
                                MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -266,7 +266,7 @@ void MPI_TYPE_CREATE_STRUCT(MPI_Fint *count,
                             MPI_Fint *f_type_old_array,
                             MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -276,7 +276,7 @@ void mpi_type_create_struct(MPI_Fint *count,
                             MPI_Fint *f_type_old_array,
                             MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -286,7 +286,7 @@ void mpi_type_create_struct_(MPI_Fint *count,
                              MPI_Fint *f_type_old_array,
                              MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 
@@ -296,7 +296,7 @@ void mpi_type_create_struct__(MPI_Fint *count,
                               MPI_Fint *f_type_old_array,
                               MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_struct_f(count, blklen_array, f_disp_array,
+    mpi_type_create_struct_f(count, blklen_array, disp_array,
                              f_type_old_array, f_type_new, rc);
 }
 

@@ -39,14 +39,15 @@
 #include "internal/mpif.h"
 
 #ifdef HAVE_PRAGMA_WEAK
+#pragma weak MPI_Type_create_hvector = PMPI_Type_create_hvector
 #pragma weak MPI_Type_hvector = PMPI_Type_hvector
-
-#pragma weak PMPI_Type_create_hvector = PMPI_Type_hvector
-#pragma weak MPI_Type_create_hvector = PMPI_Type_hvector
 #endif
 
-int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
-		      MPI_Datatype mtype_old, MPI_Datatype *mtype_new)
+int PMPI_Type_create_hvector(int count,
+                             int blocklength,
+                             MPI_Aint stride,
+                             MPI_Datatype mtype_old,
+                             MPI_Datatype *mtype_new)
 {
     ULMType_t *oldtype = mtype_old;
     ULMType_t *newtype, *t;
@@ -231,4 +232,18 @@ int PMPI_Type_hvector(int count, int blocklength, MPI_Aint stride,
     }
 
     return MPI_SUCCESS;
+}
+
+
+int PMPI_Type_hvector(int count,
+                      int blocklength,
+                      MPI_Aint stride,
+                      MPI_Datatype mtype_old,
+                      MPI_Datatype *mtype_new)
+{
+    return PMPI_Type_create_hvector(count,
+                                    blocklength,
+                                    stride,
+                                    mtype_old,
+                                    mtype_new);
 }

@@ -211,7 +211,7 @@ void PMPI_TYPE_CREATE_HINDEXED(MPI_Fint *count,
                                MPI_Fint *f_type_old,
                                MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -221,7 +221,7 @@ void pmpi_type_create_hindexed(MPI_Fint *count,
                                MPI_Fint *f_type_old,
                                MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -231,7 +231,7 @@ void pmpi_type_create_hindexed_(MPI_Fint *count,
                                 MPI_Fint *f_type_old,
                                 MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -241,7 +241,7 @@ void pmpi_type_create_hindexed__(MPI_Fint *count,
                                  MPI_Fint *f_type_old,
                                  MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -251,7 +251,7 @@ void MPI_TYPE_CREATE_HINDEXED(MPI_Fint *count,
                               MPI_Fint *f_type_old,
                               MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -261,7 +261,7 @@ void mpi_type_create_hindexed(MPI_Fint *count,
                               MPI_Fint *f_type_old,
                               MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -271,7 +271,7 @@ void mpi_type_create_hindexed_(MPI_Fint *count,
                                MPI_Fint *f_type_old,
                                MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 
@@ -281,7 +281,7 @@ void mpi_type_create_hindexed__(MPI_Fint *count,
                                 MPI_Fint *f_type_old,
                                 MPI_Fint *f_type_new, MPI_Fint *rc)
 {
-    mpi_type_create_hindexed_f(count, blklen_array, f_disp_array,
+    mpi_type_create_hindexed_f(count, blklen_array, disp_array,
                                f_type_old, f_type_new, rc);
 }
 

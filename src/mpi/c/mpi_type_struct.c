@@ -39,17 +39,15 @@
 #include "internal/mpif.h"
 
 #ifdef HAVE_PRAGMA_WEAK
+#pragma weak MPI_Type_create_struct = PMPI_Type_create_struct
 #pragma weak MPI_Type_struct = PMPI_Type_struct
-
-#pragma weak PMPI_Type_create_struct = PMPI_Type_struct
-#pragma weak MPI_Type_create_struct = PMPI_Type_struct
 #endif
 
-int PMPI_Type_struct(int count,
-                     int *array_of_blocklengths,
-                     MPI_Aint *array_of_displacements,
-                     MPI_Datatype *array_of_types,
-                     MPI_Datatype *newdatatype)
+int PMPI_Type_create_struct(int count,
+                            int *array_of_blocklengths,
+                            MPI_Aint *array_of_displacements,
+                            MPI_Datatype *array_of_types,
+                            MPI_Datatype *newdatatype)
 {
     ULMType_t *newtype, *t;
     ULMType_t **types = (ULMType_t **) array_of_types;
@@ -356,4 +354,18 @@ int PMPI_Type_struct(int count,
     }
 
     return MPI_SUCCESS;
+}
+
+
+int PMPI_Type_struct(int count,
+                     int *array_of_blocklengths,
+                     MPI_Aint *array_of_displacements,
+                     MPI_Datatype *array_of_types,
+                     MPI_Datatype *newdatatype)
+{
+    return PMPI_Type_create_struct(count,
+                                   array_of_blocklengths,
+                                   array_of_displacements,
+                                   array_of_types,
+                                   newdatatype);
 }
