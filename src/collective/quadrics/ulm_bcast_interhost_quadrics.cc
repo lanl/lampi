@@ -2277,7 +2277,11 @@ int Communicator::bcast_wait( bcast_request_t * ulm_req)
     smpBarrier(barrierData);
     while (ti < (size_t) count) {
         offset = 0;
-        if (bcaster->self == ulm_req->comm_root) {
+        /*if (bcaster->self == ulm_req->comm_root) */
+        if (bcaster->self == ulm_req->root
+           || (ulm_req->comm_root != ulm_req->root
+             && bcaster->self == bcaster->localRoot) )
+       {
             type_pack(TYPE_PACK_PACK, shared_buffer, copy_buffer_size,
       		&offset, buff, count, type, &ti, &mi, &mo);
             wmb();
