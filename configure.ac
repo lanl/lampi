@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.3.0-2,lampi-support@lanl.gov)
+AC_INIT(lampi,1.3.0-3,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -463,7 +463,7 @@ if test "$enable_gm" = "yes" ; then
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/gm"
    test "$GM_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$GM_PREFIX/include"
    test "$GM_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$GM_PREFIX/lib"
-   LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lgm"
+   LIBS="$LIBS -lgm"
 fi
 
 AC_ARG_ENABLE(shared_memory,

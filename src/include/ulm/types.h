@@ -144,6 +144,8 @@ struct ULMType_t {
     int num_pairs;
     ULMTypeLayout_t layout;
     int isbasic;
+    int num_primitives;
+    int second_primitive_offset;
     int op_index;
     int fhandle;
     ULMTypeEnvelope_t envelope;

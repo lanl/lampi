@@ -201,6 +201,8 @@ int _mpi_init_datatypes(void)
         type[i].num_pairs = 1;
         type[i].layout = CONTIGUOUS;
         type[i].isbasic = 1;
+        type[i].num_primitives = 1;
+        type[i].second_primitive_offset = 0;
         type[i].committed = 1;
         type[i].ref_count = 1;
         type[i].envelope.combiner = MPI_COMBINER_NAMED;
@@ -215,9 +217,29 @@ int _mpi_init_datatypes(void)
 
     type[I_LB].type_map = NULL;
     type[I_LB].num_pairs = 0;
+    type[I_LB].num_primitives = 0;
 
     type[I_UB].type_map = NULL;
     type[I_UB].num_pairs = 0;
+    type[I_UB].num_primitives = 0;
+
+    /*
+     * pair types are special
+     */
+
+    type[I_SHORT_INT].num_primitives = 2;
+    type[I_2INT].num_primitives = 2;
+    type[I_LONG_INT].num_primitives = 2;
+    type[I_FLOAT_INT].num_primitives = 2;
+    type[I_DOUBLE_INT].num_primitives = 2;
+    type[I_LONG_DOUBLE_INT].num_primitives = 2;
+
+    type[I_SHORT_INT].second_primitive_offset = type[I_SHORT_INT].extent - sizeof(int);
+    type[I_2INT].second_primitive_offset = type[I_2INT].extent - sizeof(int);
+    type[I_LONG_INT].second_primitive_offset = type[I_LONG_INT].extent - sizeof(int);
+    type[I_FLOAT_INT].second_primitive_offset = type[I_FLOAT_INT].extent - sizeof(int);
+    type[I_DOUBLE_INT].second_primitive_offset = type[I_DOUBLE_INT].extent - sizeof(int);
+    type[I_LONG_DOUBLE_INT].second_primitive_offset = type[I_LONG_DOUBLE_INT].extent - sizeof(int);
 
     return MPI_SUCCESS;
 }

@@ -172,6 +172,8 @@ ptr_table_t *_mpif_create_type_table(void)
         type[i].num_pairs = 1;
         type[i].layout = CONTIGUOUS;
         type[i].isbasic = 1;
+        type[i].num_primitives = 1;
+        type[i].second_primitive_offset = 0;
         type[i].committed = 1;
         type[i].ref_count = 1;
         type[i].envelope.combiner = MPI_COMBINER_NAMED;
@@ -179,6 +181,18 @@ ptr_table_t *_mpif_create_type_table(void)
         type[i].envelope.naddrs = 0;
         type[i].envelope.ndatatypes = 0;
     }
+
+    /*
+     * pair types are special
+     */
+
+    type[I_2INTEGER].num_primitives = 2;
+    type[I_2REAL].num_primitives = 2;
+    type[I_2DOUBLE_PRECISION].num_primitives = 2;
+
+    type[I_2INTEGER].second_primitive_offset = type[I_2INTEGER].extent - sizeof(int);
+    type[I_2REAL].second_primitive_offset = type[I_2REAL].extent - sizeof(float);
+    type[I_2DOUBLE_PRECISION].second_primitive_offset = type[I_2DOUBLE_PRECISION].extent - sizeof(double);
 
     /*
      * Now add all fortran accessible types to the handle table in the

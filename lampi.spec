@@ -1,6 +1,6 @@
 %define version 1.3.0
 %define name lampi
-%define release 2
+%define release 3
 
 Summary: Los Alamos Message Passing Interface
 Name: %{name}

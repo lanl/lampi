@@ -28,9 +28,8 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "internal/mpi.h"
+#include "internal/log.h"
 
 int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t lb, ssize_t ub, int *packed_bytes, int *count)
 {
@@ -153,30 +152,54 @@ int PMPI_Get_elements(MPI_Status *status, MPI_Datatype mtype, int *count)
 	/* Calculate the number of typemap pairs received */
 	ULMType_t *dtype = (ULMType_t *) mtype;
 	int dtype_cnt = status->_count / dtype->packed_size;
-    int total_count = 0, partial_count = 0;
-    int packed_bytes;
+        int total_count = 0, partial_count = 0;
+        int packed_bytes;
 
-    if (dtype_cnt == 0) {
-        packed_bytes = status->_count;
-        if (packed_bytes > 0) {
-            ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound, 
-                (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &partial_count);
+        if (dtype->isbasic && dtype->num_primitives == 2) {
+
+            /*
+             * Fix-up for non-primitive basic types.
+             *
+             * This is is kludge.  Doing something better is tricky
+             * because we would ideally use MPI_Type_struct to create
+             * these types during initialization, but can't because
+             * other aspects of initialization are not yet complete.
+             *
+             * My preferred solution would be to separate the type
+             * creation logic into two parts: ULM type creation, and
+             * layered on top the MPI specific book-keeping.  This is
+             * a fairly major task however.
+             */
+
+            int remainder;
+
+            *count = dtype_cnt * 2;
+            remainder = (status->_count - dtype_cnt * dtype->extent);
+            if (remainder >= dtype->second_primitive_offset) {
+                *count += 1;
+            }
+
+        } else if (dtype_cnt == 0) {
+            packed_bytes = status->_count;
+            if (packed_bytes > 0) {
+                ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound, 
+                                      (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &partial_count);
+            }
+            *count = partial_count;
         }
-        *count = partial_count;
-    }
-    else {
-        packed_bytes = dtype->packed_size;
-        if (packed_bytes > 0) {
-            ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound,
-                (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &total_count);
+        else {
+            packed_bytes = dtype->packed_size;
+            if (packed_bytes > 0) {
+                ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound,
+                                      (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &total_count);
+            }
+            packed_bytes = status->_count - (dtype_cnt * dtype->packed_size);
+            if (packed_bytes > 0) {
+                ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound,
+                                      (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &partial_count);
+            }
+            *count = (total_count * dtype_cnt) + partial_count;
         }
-        packed_bytes = status->_count - (dtype_cnt * dtype->packed_size);
-        if (packed_bytes > 0) {
-            ulm_type_get_elements(dtype, 1, (ssize_t)0, dtype->lower_bound,
-                (ssize_t)(dtype->lower_bound + dtype->extent), &packed_bytes, &partial_count);
-        }
-        *count = (total_count * dtype_cnt) + partial_count;
-    }
 
     }
     else {
