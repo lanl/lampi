@@ -47,7 +47,7 @@
 #ifdef ENABLE_UDP
 # include "path/udp/setupInfo.h"
 #endif
-#ifdef ENABLE_UDP
+#ifdef ENABLE_TCP
 # include "path/tcp/tcpsetup.h"
 #endif
 #ifdef ENABLE_GM
