@@ -367,7 +367,8 @@ void lampi_init_postfork_globals(lampiState_t *s)
     }
 
     lampiState.local_rank = lampiState.memLocalityIndex = s->local_rank;
-    s->client->setLocalProcessRank(s->local_rank);
+    if ( s->client )
+        s->client->setLocalProcessRank(s->local_rank);
 }
 
 
