@@ -263,6 +263,7 @@ bool TCPRecvFrag::recvHeader(int sd)
     case TCP_MSGTYPE_ACK:
     {
         SendDesc_t *message = (SendDesc_t*)fragHdr.msg_desc.ptr;
+        message->NumAcked++;
         message->clearToSend_m = true;
         tcpPeer->recvComplete(this);
         ReturnDescToPool(getMemPoolIndex());
@@ -359,8 +360,10 @@ bool TCPRecvFrag::recvDiscard(int sd)
 
 bool TCPRecvFrag::sendAck(int sd)
 {
-    // only the first fragment of a given message needs to send an ack
-    if (fragHdr.fragIndex_m != 0 || fragHdr.msg_length == fragHdr.length)
+    // send an ack for the first fragment of a multi-fragment message,
+    // or if the message type is synchronous
+    if ((msgType_m == MSGTYPE_PT2PT) &&
+        (fragHdr.fragIndex_m != 0 || fragHdr.msg_length == fragHdr.length))
         return true;
 
     if (fragAcked == false) {
