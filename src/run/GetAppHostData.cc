@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -335,6 +336,93 @@ void GetAppHostData(const char *InfoStream)
         }
     }
 }
+
+/*
+ * This routine sets up the host information, when this data is
+ * specified in one or more of the input sources.
+ */
+void GetAppHostDataFromMachineFile(const char *InfoStream)
+{
+    /* find HostList index in database */
+    int OptionIndex =
+        MatchOption("MachineFile", ULMInputOptions, SizeOfInputOptionsDB);
+    if (OptionIndex < 0) {
+        ulm_err(("Error: Option MachineFile not found in input parameter database\n"));
+        Abort();
+    }
+
+    FILE *fp = fopen(ULMInputOptions[OptionIndex].InputData, "r+");
+    if(fp == NULL) {
+        ulm_err(("error: unable to open %s for input\n", ULMInputOptions[OptionIndex].InputData));
+        Abort();
+    }
+
+    int allocated = 128;
+    RunParameters.HostList = (char (*)[ULM_MAX_HOSTNAME_LEN])
+        malloc(allocated * ULM_MAX_HOSTNAME_LEN);
+    int cnt = 0;
+    char buff[ULM_MAX_CONF_FILELINE_LEN];
+    while(fgets(buff, sizeof(buff)-1, fp) != NULL) {
+
+        /* strip off any leading whitespace */
+        char *hostname = buff;
+        while(*hostname && isspace(*hostname))
+            hostname++;
+
+        /* strip off any trailing whitespace */
+        size_t len = strlen(hostname);
+        char *ptr = hostname + len - 1;
+        while(ptr > hostname && isspace(*ptr)) {
+            *ptr = '\0';
+            ptr--;
+        }
+
+        /* if index exceeds allocated space grow array */
+        if(cnt >= allocated) {
+            allocated <<= 1;
+            RunParameters.HostList = (char (*)[ULM_MAX_HOSTNAME_LEN])
+                realloc(RunParameters.HostList, allocated * ULM_MAX_HOSTNAME_LEN);
+        }
+
+        /* resolve hostname */
+        if (RunParameters.UseBproc) {
+           int first,last;
+           int scan_cnt = sscanf(hostname, "%d - %d", &first, &last);
+           switch (scan_cnt) {
+               case 1:
+                   sprintf(RunParameters.HostList[cnt++], "%d", first);
+                   break;
+               case 2:
+                   if (last >= first) {
+                       for (scan_cnt = first ; scan_cnt <= last; scan_cnt++) {
+                           sprintf(RunParameters.HostList[cnt++], "%d", scan_cnt);
+                       }
+                   }
+                   break;
+               default:
+                   break;
+           }
+        }
+        else {
+            struct hostent *host = gethostbyname(hostname);
+            if (host == NULL) {
+                ulm_err(("error: hostname look-up failed for %s\n", hostname));
+                Abort();
+            }
+            size_t len = strlen(host->h_name);
+            if (len >= ULM_MAX_HOSTNAME_LEN) {
+                ulm_err(("error: hostname too long for library buffer, length = %ld\n", len));
+                Abort();
+            }
+	    bzero(RunParameters.HostList[cnt],len+1);
+            strncpy((char *) RunParameters.HostList[cnt], host->h_name, len);
+            cnt++;
+        }
+    }
+    RunParameters.HostListSize = cnt;
+    fclose(fp);
+}
+
 
 
 void GetAppHostDataNoInputRSH(const char *InfoStream)
