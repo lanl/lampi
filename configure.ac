@@ -120,8 +120,10 @@ LDFLAGS_MPIRUN=""
 LDLIBS_MPIRUN=""
 LIBEXT="a"
 DLLEXT="so"
+RMS_BROKEN_PREFIX=""
 
 romiodir=romio-1.2.4.1
+ROMIO_FS="ufs nfs"
 
 enable_dynamic=${enable_dynamic:-yes}
 enable_static=${enable_static:-yes}
@@ -173,7 +175,6 @@ i?86-pc-linux*)
         GM_PREFIX="/opt/gm-1.6.3"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -218,7 +219,6 @@ i?86-pc-cygwin*)
         GM_PREFIX="/opt/gm-1.6.3"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -265,7 +265,6 @@ ia64-unknown-linux*)
         GM_PREFIX="/opt/gm"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -302,7 +301,6 @@ x86_64-unknown-linux*)
         GM_PREFIX="/opt/gm"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -363,6 +361,7 @@ alpha*-dec*)
         # in src/path/quadrics/elan3:
         RMS_BROKEN_PREFIX="$srcdir/src/path/quadrics"
         RMS_PREFIX="/usr/opt/rms"
+        ROMIO_FS="ufs nfs cfs"
 
 	;;
 
@@ -396,7 +395,6 @@ powerpc-apple-darwin*)
         GM_PREFIX="/opt/gm"
         LSF_LIB=""
         LSF_INC=""
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -446,7 +444,6 @@ mips-sgi-irix*)
         GM_PREFIX="/opt/gm"
         LSF_LIB="/lsf/lib"
         LSF_INC="/lsf/share/include"
-        RMS_BROKEN_PREFIX=""
         RMS_PREFIX=""
 
 	;;
@@ -629,5 +626,6 @@ AC_SUBST(enable_dynamic)
 AC_SUBST(enable_static)
 AC_SUBST(with_romio)
 AC_SUBST(romiodir)
+AC_SUBST(ROMIO_FS)
 
 AC_OUTPUT([Makefile])
