@@ -446,7 +446,7 @@ void ibSetup(lampiState_t *s)
             rfrag->rr_desc_m.sg_lst_len = 1;
 
             rfrag->sg_m[0].addr = (VAPI_virt_addr_t)((unsigned long)rmem);
-            rfrag->sg_m[0].len = 2048;
+            rfrag->sg_m[0].len = (2048 + IB_GRH_LEN);
             rfrag->sg_m[0].lkey = h->ud.recv_mr.l_key;
 
             rmem = (void *)((char *)rmem + (2048 + IB_GRH_LEN));
