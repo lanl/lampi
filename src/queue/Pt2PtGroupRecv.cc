@@ -63,7 +63,7 @@ int Communicator::irecv_start(ULMRequestHandle_t *request)
 
     // actually get the descriptor
     unsigned long long seq;
-    int errorCode;
+
     if (usethreads()) {
         // Generate a new sequence number for this irecv.
         seq =
