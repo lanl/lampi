@@ -235,19 +235,19 @@ endif
 # rules for calculating dependency files
 
 %.d: %.c
-	@mkdir -p $(@D)
+	-@mkdir -p $(@D)
 	$(CC) -M $(CPPFLAGS) $< | sed  -e 's@^.*\'.$(OBJEXT)':@$*'.$(OBJEXT)' $*.d:@' > $@
 
 %.d: %.cc
-	@mkdir -p $(@D)
+	-@mkdir -p $(@D)
 	$(CXX) -M $(CPPFLAGS) $< | sed  -e 's@^.*\'.$(OBJEXT)':@$*'.$(OBJEXT)' $*.d:@' > $@
 
 # rules for assembly files
 
 %.$(OBJEXT): %.s
-	@mkdir -p $(@D)
+	-@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.$(OBJEXT): %.S
-	@mkdir -p $(@D)
+	-@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
