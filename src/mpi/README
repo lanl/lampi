@@ -1,0 +1,7 @@
+This directory contains a partial MPI implementation on top of ULM.
+
+It is certainly not complete, and some of the features may not be
+implemented in a standard compliant fashion.
+
+The goal is to provide a lightweight wrapper around ULM which will allow
+the majority of simple MPI applications to run.

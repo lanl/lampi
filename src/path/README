@@ -1,0 +1,133 @@
+This directory contains the code for network device support.
+
+
+1. INTRODUCTION: NETWORK DEVICES AND PATHS
+
+Network devices are supported using an abstraction called a "path".
+
+A path is a virtualization of lower-level network transports and
+devices available to LA-MPI.  Each path can represent a single network
+adapter, or a set of adapters of the same type (supporting transparent
+message-fragment striping over mulitple devices), or even a common
+protocol over a set of adapters of different types (e.g. UDP).
+
+Using the path concept, the higher (message-level) layers of LA-MPI
+can be written in a device independent fashion, and support for path
+fault tolerance and fail over can be addressed abstractly.
+
+
+2. DIRECTORY LAYOUT
+
+(a) The building blocks for the path abstraction are in
+        
+        lampi/src/net/common/
+
+(b) The detailed implementation for each path are kept in separate
+    directories, for example 
+
+        lampi/src/net/udp
+
+    for the UDP path.
+
+    Each path-implementation directory will typically contain the
+    following files:
+
+        sendFrag.{h,cc}
+        recvFrag.{h,cc}
+
+            Send and recv fragment descriptors.
+
+        header.h
+
+            Header and other control message structures.
+
+        path.{h,cc}
+
+            The implementation of the path itself, particularly the
+            send() and receive() methods.
+    
+        init.cc
+
+            Initialization.
+
+        state.{h,cc}
+
+            State and/or global data.
+
+        setupInfo.h
+
+            Definition of data used by mpirun during startup.
+
+        sendInfo.h
+
+            Statistics used for path failover.
+
+
+
+3. HOW TO ADD A NEW PATH
+
+(a) On the mpirun side:
+
+- Add an entry to the PathType_t enumeration in the file
+  include/internal/constants.h.  This macro is used in the library to
+  refer to the device.
+
+- Add an entry to the array _ulm_NetworkDevsSupported[] defined
+  in run/GetNetworkDevList.cc .  This includes a string which is
+  the command line input parameter used to specify the device be
+  used, and the integer device-type macro used in the library to
+  specify the device.
+
+- add to the structure ULMRunNetworkTypes_t in run/JobParams.h
+   an element to hold the GM setup parameters.
+
+- In subroutine run/GetNetworkDevList.cc
+ -in subroutine GetNetworkDevListNoInput provide default
+         device information (e.g. add the device to the list to be
+         used when nothing is specified at run time - compile time
+         parameters)
+
+
+(b) On the library side:
+
+- Add to the struct lampiState_t (in see include/internal/state.h and
+  include/internal/lampi_state.h) an int that will be used to
+  indicate if the particular device is in use.
+
+- Initialize this parameter in
+  lampi_init_prefork_initialize_state_information()
+
+- In lampi_init_prefork_receive_setup_{params,msg}() for case
+  adminMessage::NDEVTYPES add code to set the new network device
+  parameter, if it is passed with the list of network devices to
+  use.
+
+- In the section of lampi_init_receive_setup_params that receives
+  network specific input parameters, add a call to a new routine
+  (named lampi_init_receive_NewDev_setup_params) that will receive and
+  process this information.  For this new entries need to be added to
+  the struct dev_type_params defined in SocketComm/adminMessage.h .
+  The pair of entries in the enum are of the form START_DEVX_INPUT and
+  END_DEVX_INPUT.  A new struct needs to be added in
+  SocketComm/adminMessage.h with the name devx_input_params, which
+  holds an enum with the tags for each input parameter.
+
+- The routine lampi_init_receive_NewDev_setup_params() will always (if
+  more than one host is involved in the job) look first for the
+  incoming tag START_DEVX_INPUT, and will receive input parameters
+  until END_DEVX_INPUT is encountered - even if no input parameters
+  are set in the particular run.
+
+- In net/common/path.h add to the pathType enum, an enum for the new
+  path.
+
+- In net/paths/gmPath.h define a new path class.  This derives from
+  path.
+
+- Add a new directory in net  (such as net/gm)
+
+- Add device initialization code in net/new_device/init.cc .  New
+  header files should also be located in this directory.
+     
+
+

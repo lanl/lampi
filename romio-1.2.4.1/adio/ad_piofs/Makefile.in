@@ -1,0 +1,26 @@
+CC          = @CC@
+AR          = @AR@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = $(MPI_INCLUDE) -I${srcdir}/../include -I../include
+CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+
+@VPATH@
+
+AD_PIOFS_OBJECTS = ad_piofs_close.o ad_piofs_read.o ad_piofs_rdcoll.o \
+      ad_piofs_wrcoll.o ad_piofs_open.o ad_piofs_write.o ad_piofs_done.o \
+      ad_piofs_fcntl.o ad_piofs_iread.o ad_piofs_iwrite.o ad_piofs_wait.o \
+      ad_piofs_flush.o ad_piofs_seek.o ad_piofs_resize.o ad_piofs_hints.o \
+      ad_piofs.o
+
+default: $(LIBNAME)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+$(LIBNAME): $(AD_PIOFS_OBJECTS)
+	cp $(AD_PIOFS_OBJECTS) ../../objects
+	$(AR) $(LIBNAME) $(AD_PIOFS_OBJECTS)
+
+clean:
+	@rm -f *.o

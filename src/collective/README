@@ -1,0 +1,28 @@
+So you want add your own collective.
+Here's how you do it.
+
+Step 1. Look at the collectives in the current ulm distribution.
+These should be in $ULMROOT/collective. Pay particular 
+attention to the function prototypes.  Your collective
+function must use exactly the same arguments.
+
+Step 2. Write the new collective and place it in
+$ULMROOT/collective directory.  We prefer that the
+file name and the function name be the same.
+
+Step 3. Add the collective file name to libmpi.mk.
+
+Step 4. Compile the library
+
+Step 5. To use the new collective in an mpi/ulm programs.
+Declare the new collective as extern in the mpi program
+eg. extern int newtoall();
+
+Step 6. Set the new collective function as the primary function for
+that type of collective operation.  That is, suppose
+I have a new alltoall function called newalltoall. 
+To use this function i call
+	ulm_set_coll_op("alltoall",newalltoall,0);
+This sets the newalltoall function as the primary
+alltoall collective function.  So now whenever you
+use mpi_alltoall --the newalltoall func is used.

@@ -1,0 +1,610 @@
+/*
+ * Copyright 2002-2003. The Regents of the University of California. This material 
+ * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
+ * National Laboratory, which is operated by the University of California for 
+ * the U.S. Department of Energy. The Government is granted for itself and 
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
+ * license in this material to reproduce, prepare derivative works, and 
+ * perform publicly and display publicly. Beginning five (5) years after 
+ * October 10,2002 subject to additional five-year worldwide renewals, the 
+ * Government is granted for itself and others acting on its behalf a paid-up, 
+ * nonexclusive, irrevocable worldwide license in this material to reproduce, 
+ * prepare derivative works, distribute copies to the public, perform publicly 
+ * and display publicly, and to permit others to do so. NEITHER THE UNITED 
+ * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
+ * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
+ * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+ * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
+ * OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it and/or 
+ * modify it under the terms of the GNU Lesser General Public License as 
+ * published by the Free Software Foundation; either version 2 of the License, 
+ * or any later version.  Accordingly, this program is distributed in the hope 
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * GNU Lesser General Public License for more details.
+ */
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef QUEUES_COMMUNICATOR_H
+#define QUEUES_COMMUNICATOR_H
+
+#include "os/atomic.h"
+
+#define ULM_64BIT_INT		long long
+#define HWSPECIFICBARRIER        1
+#define SMPSWBARRIER             2
+
+#include "queue/Group.h"
+#include "util/DblLinkList.h"
+#include "util/Lock.h"
+#include "internal/ftoc.h"
+#include "path/common/BaseDesc.h"
+#include "sender_ackinfo.h"
+#include "ulm/ulm.h"
+
+#ifdef SHARED_MEMORY
+#include "path/sharedmem/SMPFragDesc.h"
+#include "queue/SharedMemForCollective.h"
+#endif
+
+enum { MCAST_BUF_SZ = 16384 };
+
+struct ulm_comm_info_t {
+    int myGlobalRank;           // info for ulm
+    int numRanksOnHost;         // unique for this host
+    int *onHostRankTable;
+    int commSize;               // number of ranks in COMM
+    int *listOfRanksInComm;     // info for ulm (L2Gtable)
+    int numHostsInComm;         // define the len. of hostInfo array
+    ulm_host_info_t *hostInfo;  // array of struct defined above
+};
+
+/*
+ * attributes
+ */
+struct attributes_t {
+    //Lock
+    Locks Lock;
+    // flag indicating usage
+    int inUse;
+    // is this set from fortran ?
+    int setFromFortran;
+    // copy function - C
+    MPI_Copy_function *cCopyFunction;
+    // copy function - Fortran
+    Fortran_Copy_function *fCopyFunction;
+    // delete function - C
+    MPI_Delete_function *cDeleteFunction;
+    // delete function - Fortran
+    Fortran_Delete_function *fDeleteFunction;
+    // extra state
+    void *extraState;
+    // marked for deletion ?
+    int markedForDeletion;
+    // reference count
+    int refCount;
+};
+
+struct commAttribute_t {
+    int keyval;
+    void *attributeValue;
+};
+
+// pool of attributes_t and control information needed to manage it
+struct attributePool_t {
+
+    // lock to control access to pool
+    Locks poolLock;
+
+    // size of pool
+    int poolSize;
+
+    // number of elements in use
+    int eleInUse;
+
+    // first element available
+    int firstFreeElement;
+
+    // array of elements
+    attributes_t *attributes;
+};
+
+// process private message queues
+struct procPrivateQs_t {
+    // receive side
+    // posted receive messages, wild source process
+    ProcessPrivateMemDblLinkList PostedWildRecv;
+
+    // posted receive messages, specified source process
+    // sorted based on source process
+    ProcessPrivateMemDblLinkList **PostedSpecificRecv;
+
+    // matched posted receives, source process specified
+    // sorted based on source process
+    ProcessPrivateMemDblLinkList **MatchedRecv;
+
+    // received message frags that can't be matched yet
+    // sorted based on source process
+    ProcessPrivateMemDblLinkList **AheadOfSeqRecvFrags;
+
+    // received message frags that may be used to match
+    //   posted receives
+    // sorted based on source process
+    ProcessPrivateMemDblLinkList **OkToMatchRecvFrags;
+
+#ifdef SHARED_MEMORY
+    ProcessPrivateMemDblLinkList **OkToMatchSMPFrags;
+#endif                          // SHARED_MEMORY
+
+    // Queue of posted utrecvs that have not matched any frags
+    ProcessPrivateMemDblLinkList PostedUtrecvs;
+};
+
+
+// data structure for caching data for collective's optimization
+
+struct list_t {
+    int length;
+    int *list;
+};
+
+struct CollectiveOpt_t {
+    // send/recv pattern - only for larest power of 2 hosts that fits within
+    //   the current set of 2
+    list_t *hostExchangeList;
+
+    // number of hosts about the largest power of 2 in the current host
+    //   group
+    int nExtra;
+
+    // number of hosts in the largest power of 2 host set
+    int extraOffset;
+
+    // number of pair-wise exchanges the tree describes
+    int treeDepth;
+
+    // the order in which the data will be arrive from the remote hosts
+    int *dataHostOrder;
+
+    // array to hold he amount of data that each host will send around
+    //   and the number of stripes for this collective
+    size_t *dataToSend;
+
+    // array to hold the amount of data that each host sends in
+    //   the current stripe - this is not a running sum
+    size_t *dataToSendThisStripe;
+
+    // array to keep track of which local process's data is being read in
+    int *currentLocalRank;
+
+    // array to keep track of the data offset into the current local
+    //   process's data that is in the shared memory buffer.
+    size_t *currentRankBytesRead;
+
+    // array indicating how much data to send this time around
+    size_t *dataToSendNow;
+
+    // set up array indicating how much data to receive this time around
+    size_t *recvScratchSpace;
+
+    // size of shared memory buffer allocated for the local host
+    ssize_t localStripeSize;
+
+    // size of shared memory buffer allocated per rank
+    ssize_t perRankStripeSize;
+
+    // shared buffer offset used for reduce on this host, and the
+    // minimum such offset across all hosts, and the max extent for
+    // which the shared memory buffer can be used
+    size_t reduceOffset;
+    size_t minReduceOffset;
+    size_t maxReduceExtent;
+};
+
+
+// structure to store a pointer to a group object, and information
+// needed to manage it's use.
+struct sharedQs_t {
+    volatile int localRootProcess;
+    volatile int contextID;
+    volatile bool InUse;
+    volatile int nAllocated;
+    volatile int nFreed;
+};
+
+
+class Communicator {
+private:
+    // tag for use with collective operations
+    long long base_tag;
+
+    // lock for use in guaranteeing unique tags
+    Locks base_tag_lock;
+
+    // multicast vpid for quadrics hw bcast 
+    int *multicast_vpid;
+
+    // buffer for use with hardware multicast (per rail)
+    unsigned char **elan_mcast_buf;
+
+public:
+    // topology
+    ULMTopology_t *topology;
+
+    // attributes
+    int attributeCount;
+    int sizeOfAttributeArray;
+    commAttribute_t *attributeList;
+    enum { ATTRIBUTE_CACHE_GROWTH_INCREMENT = 5 };
+
+    // reference count
+    int refCount;
+    // number of requests referencing this communicator
+    int requestRefCount;
+    // lock to protect integrity of above reference counts
+    Locks refCounLock;
+
+    // enum for indicating communicator type
+    enum { INTRA_COMMUNICATOR, INTER_COMMUNICATOR };
+    enum { MAX_COMM_CACHE_SIZE = 5 };
+    // tag used for intercomm_merge
+    enum { INTERCOMM_TAG = -3 };
+
+    // communicator type
+    int communicatorType;
+
+    // ok to delete communicator
+    int markedForDeletion;
+
+    // local group's communicator - for inter communicators
+    int localGroupsComm;
+
+    // can communicator be freed ?
+    bool canFreeCommunicator;
+
+    // generic lock for infrequent operations
+    Locks commLock;
+
+    // index for error handler table
+    int errorHandlerIndex;
+
+    // group pointers - for intra communicators these will be identicle
+    //   and for inter communicators, these will be distinct.
+    Group *localGroup;
+    Group *remoteGroup;
+
+    // communicator index
+    int contextID;
+
+    // communicator cache - used for forming new groups
+    int cacheSize;
+    int *commCache;
+    int availInCommCache;
+    int updateCache(int baseValue, int len) {
+        if (len > cacheSize)
+            return ULM_ERR_BAD_PARAM;
+
+        for (int i = 0; i < len; i++)
+            commCache[i] = baseValue + i;
+        availInCommCache = len;
+
+        return ULM_SUCCESS;
+    }
+
+    /* structures for collective alrogithm optimization */
+    int useSharedMemForCollectives;
+
+    /* next element in pool to use in next collective op */
+    int collectivePoolIndex;
+
+    /* element in SharedMemForCollective being used */
+    int collectiveIndexDesc;
+    int collectiveInUse;
+
+
+    /* pointer to pool allocated to this communicator */
+    CollectiveSMBuffer_t *sharedCollectiveData;
+    int initializeCollectives(int useSharedMem);
+
+    /* structure for caching data for collective's optimizations */
+    CollectiveOpt_t collectiveOpt;
+
+    void freeCollectivesResources();
+
+    // Fetch the multicast vpid associated with this communicator/rail
+    // when running under osf.  Returns -1 if there is no such vpid
+    int getMcastVpid(int rail, int *vp);
+
+    // Fetch the multicast buffer associated with this 
+    // communicator/rail when running under osf.  Returns 0 if there
+    // is no such buffer.  The size of the buffer, if it exists, is
+    // stored in the sz pointer.
+    void* getMcastBuf(int rail, size_t *sz);
+
+    /*
+     * get pointer to collective descriptor
+     */
+    CollectiveSMBuffer_t *getCollectiveSMBuffer(long long tag,
+                                                int collectiveType =
+                                                ULM_COLLECTIVE_ALLGATHER) {
+        CollectiveSMBuffer_t *smbuf;
+
+        collectiveInUse = collectiveIndexDesc;
+        collectiveIndexDesc++;
+        if (collectiveIndexDesc == N_COLLCTL_PER_COMM)
+            collectiveIndexDesc = 0;
+
+        smbuf = &(sharedCollectiveData[collectiveInUse]);
+        return smbuf;
+    }
+
+    /*
+     * release  pointer to collective descriptor
+     */
+    void releaseCollectiveSMBuffer(CollectiveSMBuffer_t *smbuf) {
+	  /* if we are recycling, reinitialize the flags that all use */
+	  if( collectiveIndexDesc == 0 ) {
+	     /* make sure all are done with the data */
+	     smpBarrier(barrierData);
+	     if( localGroup->onHostProcID == 0 ) {
+		for( int ele=0 ; ele <  N_COLLCTL_PER_COMM ; ele++ ) {
+		   sharedCollectiveData[ele].flag=0;
+		}
+	     }
+	     /* don't let anyone move ahead until initialization is done */
+	     smpBarrier(barrierData);
+	  }
+    } // end releaseCollectiveSMBuffer
+
+    // get new contextID - from the cache (may need to refresh the cache)
+    int getNewContextID(int *outputContextID);
+
+    // is threaded access expected for this group
+    bool useThreads;
+
+    // next pt-2-pt message sequence number expected on the receive
+    // side process private
+    ULM_64BIT_INT *next_expected_isendSeqs;
+    Locks *next_expected_isendSeqsLock;
+
+    // posted recv counter - used to keep track internally of
+    //  the posted receives
+    bigAtomicUnsignedInt next_irecv_id_counter;
+    Locks next_irecv_id_counterLock;
+
+    // point-to-point receive lock. To avoid a race conditions between
+    // a receive being posted and an incoming frament being placed on
+    // the privateQueues.OkToMatchRecvFrags list, this lock must be
+    // aquired before posting a receive of processing an incoming
+    // fratment.  Alternatively one could keep checking the posted
+    // receive queues and the privateQueues.OkToMatchRecvFrags queues,
+    // but this seems more expensive.
+    Locks *recvLock;
+
+    // next pt-2-pt message sequence number generated on the send side
+    //    process private
+    ULM_64BIT_INT *next_isendSeqs;
+    Locks *next_isendSeqsLock;
+
+    // function pointer to bind multicast messages to a path object
+    int (*multicastPathSelectionFunction) (void *, void *);
+    // function pointer to bind point-to-point messages to a path object
+    int (*pt2ptPathSelectionFunction) (void *);
+
+    // constructor
+    Communicator() {}
+
+    // destructor
+    ~Communicator() {}
+
+
+    // initialization function - can be used to recycle
+    //   an instance of the class
+    //  - initialize next_expected_isendSeqs
+    //  - initialize next_isendSeqs
+    //  - initialize send/recv queues
+    //  - set thread usage
+    //  - get map of Group to Global ProcID
+    int init(int ctxID, bool threadUsage, int group1Index, int group2Index,
+             bool firstInstanceOfContext, bool setCtxCache, int sizeCtxCache,
+             int *lstCtxElements, int commType, bool okToDeleteComm,
+             int useSharedMem, int useSharedMemCollOpts);
+
+    // free process private resources
+    int freeCommunicator();
+
+    // retrieve a unique base tag for collective ops must specify, as
+    // an argument, the number of tags the operation will use
+    long long get_base_tag(int num_requested) {
+        long long ret_tag;
+        if (num_requested < 1)
+            return -1;
+        base_tag_lock.lock();
+        ret_tag = base_tag;
+        base_tag -= num_requested;
+        base_tag_lock.unlock();
+        return ret_tag;
+    }
+
+    // process frags arriving "off the wire"
+    int handleReceivedFrag(BaseRecvFragDesc_t *recvFrag, double timeNow = -1.0);
+
+    //
+    // message Queues
+    //
+
+    // check to see if queues are empty
+    bool areQueuesEmpty();
+
+    // see if shared memory queues are actually allocated from shared
+    // memory (for COMM_SELF this is not the case)
+    bool shareMemQueuesUsed;
+    // index of shared memory queues in queue pool
+    int indexSharedMemoryQueue;
+    // set up the shared memory queues in process private memory
+    int setupSharedMemoryQueuesInPrivateMemory();
+
+    procPrivateQs_t privateQueues;
+
+    enum {
+        SPECIFIC_RECV_QUEUE,    // queue of specific receives
+        WILD_RECV_QUEUE         // queue of wild receives
+    };
+
+    //
+    // receive functions
+    //
+
+    // start non-blocking irecv
+    int irecv_start(ULMRequestHandle_t *request);
+
+    //
+    // send functions
+    //
+
+    // method to start the send using the request object created
+    // by the init method
+    int isend_start(ULMRequestHandle_t *request);
+
+    // off host send
+    int isend_start_network(ULMRequestHandle_t *request);
+
+#ifdef SHARED_MEMORY
+    // on host in-order send
+    int isend_start_onhost(ULMRequestHandle_t *request);
+#endif
+
+
+    // Multicast messages
+
+    // initialize request object for utrecv
+    int utrecv_init(int tag, void *data, size_t dataLength,
+                    ULMType_t *dtype, RequestDesc_t *&request);
+
+    // start utrecv
+    int utrecv_start(RequestDesc_t *request);
+
+    // initialize request object for utsend
+    int utsend_init(int tag, void *data, int dataLen, ULMType_t *dtype,
+                    ULMMcastInfo_t *mcastInfo, int mcastInfoLen, RequestDesc_t *&request);
+
+    // start utsend
+    int utsend_start(RequestDesc_t *request, ULMMcastInfo_t *mcastInfo, int mcastInfoLen);
+
+    // match posted receives against the frags present
+    int processCollectiveFrags();
+
+    // check to see if there is any data to be received
+    int iprobe(int sourceProc, int tag, int *found, ULMStatus_t *status);
+
+    //
+    // message matching functions
+    //
+
+    // frag processing
+    // search for missing frags (old: got_missing_frag)
+    RecvDesc_t *isThisMissingFrag(BaseRecvFragDesc_t *rec);
+
+    // search for specified frags
+    void SearchForFragsWithSpecifiedISendSeqNum(RecvDesc_t *MatchedPostedRecvHeader,
+                                                double timeNow = -1.0);
+
+    // search ahead of sequence queue to see if frags can now be
+    // matched (old name: scan_ahead_of_sequence)
+    int matchFragsInAheadOfSequenceList(int proc, double timeNow = -1.0);
+
+    // try and match frag (old name: match_message)
+    RecvDesc_t *checkPostedRecvListForMatch(BaseRecvFragDesc_t *RecvDesc);
+
+    // try and match frag when only wild receives are posted
+    //  (old name: only_wild)
+    RecvDesc_t *checkWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec);
+
+    // try and match frag when only specific (with refernece
+    //   to source process) receives are posted
+    //  (old name: only_specific)
+    RecvDesc_t *checkSpecificPostedRecvListForMatch(BaseRecvFragDesc_t *rec);
+
+    // try and match frag when both specific and wild receives are
+    // posted (old name: both_wild_and_specific)
+    RecvDesc_t *checkSpecificAndWildPostedRecvListForMatch(BaseRecvFragDesc_t *rec);
+
+#ifdef SHARED_MEMORY
+    // special code for on host messaging
+    RecvDesc_t *checkSMPRecvListForMatch(SMPFragDesc_t * RecvDesc, int *queueMatched);
+    RecvDesc_t *checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag);
+    RecvDesc_t *checkSMPSpecificRecvListForMatch(SMPFragDesc_t * incomingFrag);
+    RecvDesc_t *checkSMPSpecificAndWildRecvListForMatch
+        (SMPFragDesc_t * incomingFrag, int *queueMatched);
+#endif
+
+    //
+    // posted recv processing
+    //
+
+    // try and match posted irecv with wild source and posted message
+    // descriptor IRDesc (old name: wild_irecv)
+    void checkFragListsForWildMatch(RecvDesc_t *IRDesc);
+
+    // try and match posted irecv with spedified source and posted
+    // message descriptor IRDesc (old name: specific_irecv)
+    void checkFragListsForSpecificMatch(RecvDesc_t *IRDesc);
+
+    // try and match posted irecv with frag in ProcWithData list
+    // and posted message descriptor IRDesc (old name:
+    // irecv_find_match)
+    bool checkSpecifiedFragListsForMatch(RecvDesc_t *IRDesc, int ProcWithData);
+
+#ifdef SHARED_MEMORY
+    bool matchAgainstSMPFramentList(RecvDesc_t *receiver, int sourceProcess);
+#endif                          // SHARED_MEMORY
+
+    //
+    // progess functions
+    //
+
+#ifdef SHARED_MEMORY
+
+    // make progress with on host messaging
+    int sendOnHostMessages();
+
+#endif                          // SHARED_MEMORY
+
+    // on recv side - invoked after match is made
+    void ProcessMatchedData(RecvDesc_t *MatchedPostedRecvHeader,
+                            BaseRecvFragDesc_t *DataHeader, double timeNow =
+                            -1.0, bool * recvDone = 0);
+
+    //
+    // Synchronization functions
+    //
+
+    // barrier initialization code
+    int barrierInit(bool firstInstanceOfContext);
+    int platformBarrierSetup(int *callGenericSMPSetup,
+                             int *callGenericNetworkSetup, int *gotSMPresouces,
+                             int *gotNetworkResources);
+    int genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMPResources);
+
+    // barrier free - host specific
+    int barrierFree();
+    void freePlatformSpecificBarrier();
+
+    // on host barrier type
+    int SMPBarrierType;
+
+    // pointer to barrier data structure - an optimization (barrierControl also
+    //   holds the pointer as one of it's elements)
+    volatile void *barrierData;
+
+    // pointer to barrier control structure
+    void *barrierControl;
+
+    // function pointer to on host Barrier
+    void (*smpBarrier) (volatile void *barrierData);
+};
+
+#endif

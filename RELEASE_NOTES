@@ -1,0 +1,124 @@
+                       Release notes for LA-MPI
+
+                       
+========================= Minor Release 1.0 =========================
+
+Version 1.0.0
+
+First release of LA-MPI, a portable, end-to-end,
+network-fault-tolerant implementation of the MPI 1.2 standard (with
+some extensions).
+
+This version complies with the MPI 1.2 standard with the following
+caveats:
+
+- MPI_Cancel() is currently implemented as a no-op.  This is not
+  fully consistent with the MPI standard.
+
+
+Version 1.0.1
+
+- Updated tagging of stdout/stderr. Now optional using "mpirun -t"
+- Numerous improvements to argument handling for RMS startup.
+- Updated man page.
+
+
+Version 1.0.1
+
+- More improvements to RMS startup.
+
+
+========================= Minor Release 1.1 =========================
+
+Version 1.1.1
+
+- Early send completion for Quadrics
+
+
+Version 1.1.2
+
+- Incorporating ROMIO 1.2.4.1 into library for MPI-IO support.
+
+
+Version 1.1.3
+
+- Inter-host barrier now uses synchronous sends.
+
+
+Version 1.1.4
+
+- Optional CRC functionality added.
+- BPROC scheduling updated.
+- Licenses updated.
+
+
+Version 1.1.5
+
+- mpirun command line updated for runtime selection of checksum/CRC
+  and acking behaviour.
+- Documentation updated for new mpirun options.
+- Quadrics fragment sizes increased for large messages.
+
+
+Version 1.1.6
+
+- Bug fix for running with different executables on each host.
+- Bug fix to allow for long hostnames.
+
+
+Version 1.1.7
+
+- Bug fixes for hybrid allgatherv, gatherv and scatterv algorithms.
+- The BPROC job scheduler now integrated into the spawning mechanism.
+
+
+Version 1.1.8
+
+- Build system changed to allow for explicit rpath in libmpi.so
+- Fixes for more robust handling of stdin/stderr in.
+- Bug fix for broadcast of large buffers.
+- Bug fix to allow for more than 128 hosts.
+- Application now runs reliably beyond MPI_Finalize()
+- UDP optimizations.
+- Added support for Mac OS X version 10.2.x.  The Mac version does
+  require the Unix utility 'lndir'.  This program is part of the
+  freely available X11 distribution.  X11 is available from Apple at
+  http://www.apple.com/macosx/x11 or at http://www.xfree86.org/.
+- The Mac version does not support the #pragma weak directive, so for
+  this release, we are renaming all PMPI_* functions to MPI_*.
+  
+This version has been tested on ~1000 node (~4000 processor) 
+Compaq Alpha ES45 / Quadrics elan 3 system.
+
+
+Version 1.1.9
+
+- Datatype initialization reorganized.  Fortran datatypes (MPI_REAL,
+  etc.) are now associated with C-linkage symbols to cater for legacy
+  codes written to MPICH rather than MPI standard.
+- Fortran to C handle conversion is now faster.
+
+
+Version 1.1.10
+
+- Improvements in thread-safety for the UDP path.
+
+
+Version 1.1.11
+
+- Fixed out-of-order receive problem induced by mixed wild- and
+  specific-source receives.
+- Changes to Quadrics rail processing.
+
+
+Version 1.1.12
+
+- Optimizations for Quadrics elan3/elite3 networks.  In particular,
+  remote memory buffers management on multi-rail systems is now
+  handled better allowing for higher and more consistent bandwidth
+  utilization.
+- Support for system-wide configuration file allowing better control
+  of default behavior (especially on large systems with unusual
+  configurations.
+
+

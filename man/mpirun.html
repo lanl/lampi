@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<!-- Manual page created with latex2man on Fri Nov  1 12:07:32 MST 2002 --
+-- Author of latex2man: Juergen.Vollmer@acm.org --
+-- NOTE: This file is generated, DO NOT EDIT. -->
+<html>
+<head><title>MPIRUN</title></head>
+<body bgcolor="white">
+<h1 align=center>
+Los Alamos Message Passing Library 
+</h1>
+<h4 align=center>LA-MPI Development team </h4>
+<h4 align=center>2002/09/04</h4>
+<h4 align=center>Version 1.1.5</h4>
+<p>
+<tt>mpirun</tt>
+- run MPI programs using the Los Alamos Message Passing library, LA-MPI. 
+<h3>Table of Contents</h3>
+<ul>
+<li><a href="#section_1">Synopsis </a></li>
+<li><a href="#section_2">Description </a></li>
+<li><a href="#section_3">Options </a></li>
+<li><a href="#section_4">Arguments </a></li>
+<li><a href="#section_5">Examples </a></li>
+<li><a href="#section_6">Files </a></li>
+<li><a href="#section_7">Diagnostics </a></li>
+<li><a href="#section_8">Reporting Bugs </a></li>
+<li><a href="#section_9">Version </a></li>
+<li><a href="#section_10">License </a></li>
+<li><a href="#section_11">Authors </a>
+</li></ul>
+<p>
+<h2><a name="section_1">Synopsis</a></h2>
+
+<p>
+<tt>mpirun</tt>
+[<b>-n</b>|<b>-np</b>
+<i>#,...</i>]
+[<b>-N</b><i> #</i>]
+[<b>-H</b><i> hostlist</i>]
+[<b>-s</b><i> mpirunhost</i>]
+[<b>-d</b><i> wdir</i>]
+[<b>-dapp</b><i> edir</i>]
+[<b>-dev</b><i> netpaths</i>]
+[<b>-threads</b>]
+[<b>-t</b>]
+[<b>-crc</b>]
+[<b>-qf</b><i> flaglist</i>]
+<i>executable</i>
+[<i>args ...</i>]
+<p>
+<tt>mpirun</tt>
+-h|-help
+<p>
+<tt>mpirun</tt>
+-version 
+<p>
+<tt>mpirun</tt>
+-list-options 
+<p>
+<h2><a name="section_2">Description</a></h2>
+
+<tt>mpirun</tt>
+starts the specified executables with LA-MPI as the MPI layer. LA-MPI is a network fault-tolerant message passing 
+system designed for the challenges of the terascale cluster environment. 
+<p>
+<h2><a name="section_3">Options</a></h2>
+
+<dl compact>
+<dt><b>-n</b>|<b>-np</b> <i> number of processes</i>
+<dd> A single value specifies the total number of processes, while a 
+comma-delimited list of numbers specifies the number of processes on each host or machine. 
+</dd>
+<dt><b>-N</b><i> number of hosts</i>
+<dd> The number of hosts to use. 
+</dd>
+<dt><b>-H</b><i> hostlist</i>
+<dd> A comma-delimited list of name(s) of hosts to use. 
+</dd>
+<dt><b>-s</b><i> mpirunhost</i>
+<dd> A preferred IP interface name or address for TCP/IP administrative and UDP data traffic. 
+</dd>
+<dt><b>-d</b><i> wdir</i>
+<dd> A comma-delimited list of one or more working directories for spawned processes. 
+</dd>
+<dt><b>-dapp</b><i> edir</i>
+<dd> A comma-delimited list of one or more directories where the <i>executable</i>
+is located. 
+</dd>
+<dt><b>-dev</b><i> netpaths</i>
+<dd> A colon-delimited list of one or more network paths to use for this MPI job. Currently the choices 
+are some combination of "hippi800", "udp", and "quadrics" (depending upon your environment). 
+</dd>
+<dt><b>-threads</b>
+<dd> Turn on thread safe code. 
+</dd>
+<dt><b>-t</b>
+<dd> Turn on tagging of standard output and error lines with either GR[HR.LR] (GR = global rank, HR = host rank, LR = local rank), 
+or simply HR (on RMS/prun systems). 
+</dd>
+<dt><b>-crc</b>
+<dd> Use 32-bit CRCs instead of 32-bit additive checksums (the LA-MPI default) for application to application data integrity 
+where applicable. 
+</dd>
+<dt><b>-qf</b><i> flaglist</i>
+<dd> A comma-delimited list of keywords that affect operation on Quadrics networks. The keywords that are supported 
+are "noack", "ack", "nochecksum", and "checksum". "noack" disables retransmission of data, but allows data sends to complete upon local notification 
+by the Quadrics Elan adapters. "nochecksum" disables all LA-MPI CRC/checksum generation and verification; in this mode, data integrity guarantees are 
+provided only at the Elan adapter level. The defaults are "ack", and "checksum" for a LA-MPI library built with reliability mode enabled. This option 
+is likely to change in a future release. 
+</dd>
+<dt><b>-h</b>|<b>-help</b>
+<dd> Print a brief help message and exit. 
+</dd>
+<dt><b>-version</b>
+<dd> Print version information and exit. 
+</dd>
+<dt><b>-list-options</b>
+<dd> Print a longer help message with all options and exit. 
+</dd>
+</dl>
+<p>
+There are many more options, but most are not of interest to the typical user. If you need more details on mpirun options, 
+please send email to <a href ="mailto:lampi-support@lanl.gov"><tt>lampi-support@lanl.gov</tt></a>.
+<p>
+<h2><a name="section_4">Arguments</a></h2>
+
+The <i>executable</i>
+must be either a single executable or a comma-delimited list of executables for each host or machine 
+(which is not supported for all environments). Executable arguments apply to all specified executables. 
+<p>
+<h2><a name="section_5">Examples</a></h2>
+
+<ol compact>
+<dt>1. <strong>mpirun dcalc -f foo</strong>
+<dd> On systems with LSF, this command can be used to 
+start <tt>dcalc -f foo</tt>
+on some number of hosts and processors preassigned by LSF. 
+</dd>
+<dt>2. <strong>mpirun -n 64 dcalc -f foo</strong>
+<dd> On systems with LSF, this command will start 
+64 processes of <tt>dcalc -f foo</tt>
+on either all or some subset of preassigned hosts and processors. If it is a subset, 
+then mpirun attempts to use all of the preassigned processors on a host before allocating from the 
+next reserved host's allocation. On systems with rsh spawning only, this command will start 64 processes on the 
+local host or machine. 
+</dd>
+<dt>3. <strong>mpirun -n 64 -N 40 dcalc -f foo</strong>
+<dd> On systems with standard LSF, this command will start 
+64 processes on 40 preassigned hosts as explained in example #2. On systems with LSF/RMS, mpirun will 
+start 64 processes on 40 hosts using <em>prun</em>(1)
+in a block assignment mode. This command will not work 
+on systems with rsh spawning only, as there is no specific host information available. 
+</dd>
+<dt>4. <strong>mpirun -n 66 -H n1,n2,n3,n4 dcalc -f foo</strong>
+<dd> This command will start 66 processes on the 4 named hosts. 
+If the system supports LSF, then the assignment will be made using the processors available on each host. If the 
+system only support rsh spawning, then mpirun will assign as close as possible the same number of processes per host 
+(in this example, 17 processes will be started on n1 and n2, and 16 on n3 and n4). 
+</dd>
+<dt>5. <strong>mpirun -dev udp -t -np 2,10,30,22 -h n1,n2,n3,n4 dcalc -f foo</strong>
+<dd> On systems with rsh spawning, this command will 
+start 2 processes on n1, 10 on n2, 30 on n3, and 22 on n4. Prefix tagging of standard output and 
+standard error will be done, and only UDP/IP will be used for intercommunication between hosts. 
+</li>
+</ol>
+<p>
+<h2><a name="section_6">Files</a></h2>
+
+<dl compact>
+<dt><tt>mpirun</tt>
+<dd> Job spawner using LA-MPI. 
+</dd>
+<dt><tt>libmpi.so</tt>
+<dd> LA-MPI shared-object library. 
+</dd>
+<dt><tt>mpi.h</tt>
+<dd> LA-MPI main C header file. 
+</dd>
+<dt><tt>mpif.h</tt>
+<dd> LA-MPI main Fortran header file. 
+</dd>
+</dl>
+<p>
+<h2><a name="section_7">Diagnostics</a></h2>
+
+LA-MPI has an abundant number of error and diagnostic messages that will not 
+always be very clear to the end user. If your job dies unexpectedly, please 
+check to see if a file, <tt>lampi.log</tt>,
+has been generated in your working 
+directory. All severe warnings and errors are logged to this file and standard 
+error. 
+<p>
+As with any well-defined standard, it is very easy to compile with the wrong 
+mpi.h or mpif.h header files (especially on systems with more than one MPI 
+library). The result is unpredictable, but nearly always bad. Please be careful. 
+<p>
+On systems that support job spawning via <tt>rsh</tt>,
+it is possible to have 
+difficulties if your <tt>csh</tt>
+startup environment (e.g., .cshrc problems) 
+reports errors for shells that are not login shells. <tt>rsh</tt>
+spawns a 
+<tt>csh</tt>
+to set certain environment variables, and start the first executable 
+on a host. Future versions of LA-MPI will allow different shells to be used. 
+<p>
+<h2><a name="section_8">Reporting Bugs</a></h2>
+
+Please send all bug reports to your friendly neighborhood developer at 
+<a href ="mailto:lampi-support@lanl.gov"><tt>lampi-support@lanl.gov</tt></a>.
+<p>
+<h2><a name="section_9">Version</a></h2>
+
+Version: 1.1.5 of 2002/09/04.
+<p>
+<h2><a name="section_10">License</a></h2>
+
+<dl compact>
+<p>
+ACL LICENSE 
+<p>
+This software and ancillary information (herein called "SOFTWARE") 
+called LA-MPI is made available under the terms described here. The 
+SOFTWARE has been approved for release with associated LA-CC Number 
+LA-CC-02-41. 
+<p>
+Unless otherwise indicated, this SOFTWARE has been authored by an 
+employee or employees of the University of California, operator of the 
+Los Alamos National Laboratory under Contract No.W-7405-ENG-36 with 
+the U.S. Department of Energy. The U.S. Government has rights to use, 
+reproduce, and distribute this SOFTWARE. The public may copy, 
+distribute, prepare derivative works and publicly display this 
+SOFTWARE without charge, provided that this Notice and any statement 
+of authorship are reproduced on all copies. Neither the Government 
+nor the University makes any warranty, express or implied, or assumes 
+any liability or responsibility for the use of this SOFTWARE. 
+<p>
+If SOFTWARE is modified to produce derivative works, such modified 
+SOFTWARE should be clearly marked, so as not to confuse it with the 
+version available from LANL. 
+<p>
+This SOFTWARE is free software; you can redistribute it and-or modify 
+it under the terms of the GNU Lesser General Public License as 
+published by the Free Software Foundation; either version 2.1 of the 
+License, or (at your option) any later version. 
+<p>
+This SOFTWARE is distributed in the hope that it will be useful, but 
+WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+Lesser General Public License for more details. 
+<p>
+You should have received a copy of the GNU Lesser General Public License along 
+with this library (see the file LICENSE in the source distribution); if not, 
+write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
+Boston, MA 02111-1307 USA 
+<p>
+</dd>
+</dl>
+<p>
+<h2><a name="section_11">Authors</a></h2>
+
+David J. Daniel, <br>
+ 
+Nehal N. Desai, <br>
+ 
+Richard L. Graham, <br>
+ 
+L. Dean Risinger, <br>
+ 
+Mitchel W. Sukalski 
+<p>
+</body>
+</html>
+<!-- NOTE: This file is generated, DO NOT EDIT. -->

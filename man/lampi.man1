@@ -1,0 +1,250 @@
+'\" t
+.\" Manual page created with latex2man on Fri Nov  1 12:07:27 MST 2002
+.\" NOTE: This file is generated, DO NOT EDIT.
+.de Vb
+.ft CW
+.nf
+..
+.de Ve
+.ft R
+
+.fi
+..
+.TH "MPIRUN" "1" "2002/09/04" "LA\-MPI Reliable MPI " "LA\-MPI Reliable MPI "
+.SH NAME
+
+.PP
+mpirun
+\- run MPI programs using the Los Alamos Message Passing library, LA\-MPI. 
+.PP
+.SH SYNOPSIS
+
+.PP
+mpirun
+[\fB\-n\fP|\fB\-np\fP
+\fI#,...\fP]
+[\fB\-N\fP\fI #\fP]
+[\fB\-H\fP\fI hostlist\fP]
+[\fB\-s\fP\fI mpirunhost\fP]
+[\fB\-d\fP\fI wdir\fP]
+[\fB\-dapp\fP\fI edir\fP]
+[\fB\-dev\fP\fI netpaths\fP]
+[\fB\-threads\fP]
+[\fB\-t\fP]
+[\fB\-crc\fP]
+[\fB\-qf\fP\fI flaglist\fP]
+\fIexecutable\fP
+[\fIargs ...\fP]
+.PP
+mpirun
+\-h|\-help
+.PP
+mpirun
+\-version 
+.PP
+mpirun
+\-list\-options 
+.PP
+.SH DESCRIPTION
+
+mpirun
+starts the specified executables with LA\-MPI as the MPI layer. LA\-MPI is a network fault\-tolerant message passing 
+system designed for the challenges of the terascale cluster environment. 
+.PP
+.SH OPTIONS
+
+.TP
+\fB\-n\fP|\fB\-np\fP \fI number of processes\fP
+ A single value specifies the total number of processes, while a 
+comma\-delimited list of numbers specifies the number of processes on each host or machine. 
+.TP
+\fB\-N\fP\fI number of hosts\fP
+ The number of hosts to use. 
+.TP
+\fB\-H\fP\fI hostlist\fP
+ A comma\-delimited list of name(s) of hosts to use. 
+.TP
+\fB\-s\fP\fI mpirunhost\fP
+ A preferred IP interface name or address for TCP/IP administrative and UDP data traffic. 
+.TP
+\fB\-d\fP\fI wdir\fP
+ A comma\-delimited list of one or more working directories for spawned processes. 
+.TP
+\fB\-dapp\fP\fI edir\fP
+ A comma\-delimited list of one or more directories where the \fIexecutable\fP
+is located. 
+.TP
+\fB\-dev\fP\fI netpaths\fP
+ A colon\-delimited list of one or more network paths to use for this MPI job. Currently the choices 
+are some combination of "hippi800", "udp", and "quadrics" (depending upon your environment). 
+.TP
+\fB\-threads\fP
+ Turn on thread safe code. 
+.TP
+\fB\-t\fP
+ Turn on tagging of standard output and error lines with either GR[HR.LR] (GR = global rank, HR = host rank, LR = local rank), 
+or simply HR (on RMS/prun systems). 
+.TP
+\fB\-crc\fP
+ Use 32\-bit CRCs instead of 32\-bit additive checksums (the LA\-MPI default) for application to application data integrity 
+where applicable. 
+.TP
+\fB\-qf\fP\fI flaglist\fP
+ A comma\-delimited list of keywords that affect operation on Quadrics networks. The keywords that are supported 
+are "noack", "ack", "nochecksum", and "checksum". "noack" disables retransmission of data, but allows data sends to complete upon local notification 
+by the Quadrics Elan adapters. "nochecksum" disables all LA\-MPI CRC/checksum generation and verification; in this mode, data integrity guarantees are 
+provided only at the Elan adapter level. The defaults are "ack", and "checksum" for a LA\-MPI library built with reliability mode enabled. This option 
+is likely to change in a future release. 
+.TP
+\fB\-h\fP|\fB\-help\fP
+ Print a brief help message and exit. 
+.TP
+\fB\-version\fP
+ Print version information and exit. 
+.TP
+\fB\-list\-options\fP
+ Print a longer help message with all options and exit. 
+.PP
+There are many more options, but most are not of interest to the typical user. If you need more details on mpirun options, 
+please send email to \fBlampi\-support@lanl.gov\fP\&.
+.PP
+.SH ARGUMENTS
+
+The \fIexecutable\fP
+must be either a single executable or a comma\-delimited list of executables for each host or machine 
+(which is not supported for all environments). Executable arguments apply to all specified executables. 
+.PP
+.SH EXAMPLES
+
+.TP
+1. \fBmpirun dcalc \-f foo\fP
+ On systems with LSF, this command can be used to 
+start dcalc \-f foo
+on some number of hosts and processors preassigned by LSF. 
+.TP
+2. \fBmpirun \-n 64 dcalc \-f foo\fP
+ On systems with LSF, this command will start 
+64 processes of dcalc \-f foo
+on either all or some subset of preassigned hosts and processors. If it is a subset, 
+then mpirun attempts to use all of the preassigned processors on a host before allocating from the 
+next reserved host\&'s allocation. On systems with rsh spawning only, this command will start 64 processes on the 
+local host or machine. 
+.TP
+3. \fBmpirun \-n 64 \-N 40 dcalc \-f foo\fP
+ On systems with standard LSF, this command will start 
+64 processes on 40 preassigned hosts as explained in example #2. On systems with LSF/RMS, mpirun will 
+start 64 processes on 40 hosts using \fIprun\fP(1)
+in a block assignment mode. This command will not work 
+on systems with rsh spawning only, as there is no specific host information available. 
+.TP
+4. \fBmpirun \-n 66 \-H n1,n2,n3,n4 dcalc \-f foo\fP
+ This command will start 66 processes on the 4 named hosts. 
+If the system supports LSF, then the assignment will be made using the processors available on each host. If the 
+system only support rsh spawning, then mpirun will assign as close as possible the same number of processes per host 
+(in this example, 17 processes will be started on n1 and n2, and 16 on n3 and n4). 
+.TP
+5. \fBmpirun \-dev udp \-t \-np 2,10,30,22 \-h n1,n2,n3,n4 dcalc \-f foo\fP
+ On systems with rsh spawning, this command will 
+start 2 processes on n1, 10 on n2, 30 on n3, and 22 on n4. Prefix tagging of standard output and 
+standard error will be done, and only UDP/IP will be used for intercommunication between hosts. 
+.PP
+.SH FILES
+
+.TP
+mpirun
+ Job spawner using LA\-MPI. 
+.TP
+libmpi.so
+ LA\-MPI shared\-object library. 
+.TP
+mpi.h
+ LA\-MPI main C header file. 
+.TP
+mpif.h
+ LA\-MPI main Fortran header file. 
+.PP
+.SH DIAGNOSTICS
+
+LA\-MPI has an abundant number of error and diagnostic messages that will not 
+always be very clear to the end user. If your job dies unexpectedly, please 
+check to see if a file, lampi.log,
+has been generated in your working 
+directory. All severe warnings and errors are logged to this file and standard 
+error. 
+.PP
+As with any well\-defined standard, it is very easy to compile with the wrong 
+mpi.h or mpif.h header files (especially on systems with more than one MPI 
+library). The result is unpredictable, but nearly always bad. Please be careful. 
+.PP
+On systems that support job spawning via rsh,
+it is possible to have 
+difficulties if your csh
+startup environment (e.g., \&.cshrc problems) 
+reports errors for shells that are not login shells. rsh
+spawns a 
+csh
+to set certain environment variables, and start the first executable 
+on a host. Future versions of LA\-MPI will allow different shells to be used. 
+.PP
+.SH REPORTING BUGS
+
+Please send all bug reports to your friendly neighborhood developer at 
+\fBlampi\-support@lanl.gov\fP\&.
+.PP
+.SH VERSION
+
+Version: 1.1.5 of 2002/09/04\&.
+.PP
+.SH LICENSE
+
+.PP
+ACL LICENSE 
+.PP
+This software and ancillary information (herein called "SOFTWARE") 
+called LA\-MPI is made available under the terms described here. The 
+SOFTWARE has been approved for release with associated LA\-CC Number 
+LA\-CC\-02\-41. 
+.PP
+Unless otherwise indicated, this SOFTWARE has been authored by an 
+employee or employees of the University of California, operator of the 
+Los Alamos National Laboratory under Contract No.W\-7405\-ENG\-36 with 
+the U.S. Department of Energy. The U.S. Government has rights to use, 
+reproduce, and distribute this SOFTWARE. The public may copy, 
+distribute, prepare derivative works and publicly display this 
+SOFTWARE without charge, provided that this Notice and any statement 
+of authorship are reproduced on all copies. Neither the Government 
+nor the University makes any warranty, express or implied, or assumes 
+any liability or responsibility for the use of this SOFTWARE. 
+.PP
+If SOFTWARE is modified to produce derivative works, such modified 
+SOFTWARE should be clearly marked, so as not to confuse it with the 
+version available from LANL. 
+.PP
+This SOFTWARE is free software; you can redistribute it and\-or modify 
+it under the terms of the GNU Lesser General Public License as 
+published by the Free Software Foundation; either version 2.1 of the 
+License, or (at your option) any later version. 
+.PP
+This SOFTWARE is distributed in the hope that it will be useful, but 
+WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+Lesser General Public License for more details. 
+.PP
+You should have received a copy of the GNU Lesser General Public License along 
+with this library (see the file LICENSE in the source distribution); if not, 
+write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
+Boston, MA 02111\-1307 USA 
+.PP
+.SH AUTHORS
+
+David J. Daniel, 
+.br 
+Nehal N. Desai, 
+.br 
+Richard L. Graham, 
+.br 
+L. Dean Risinger, 
+.br 
+Mitchel W. Sukalski 
+.PP
+.\" NOTE: This file is generated, DO NOT EDIT.

@@ -1,0 +1,72 @@
+BUILDING LA-MPI: The Los Alamos Message Passing Interface
+---------------------------------------------------------
+
+The GNU make utility (gmake) must be available.
+
+The  ULM library build tries to guess the configuration of the system
+using the script "src/conf/gnu-os".  It uses the string output by this
+script to select a make configuration file from those available in
+"src/conf".  To override the guess, set the make macro CONFIG. For
+example:
+        
+        make CONFIG=alphaev6-dec-osf5.1-gcc
+
+If you need to store an explicit dynamic loader directory path to find C and
+C++ libraries for any shared libraries that are built, then include a
+colon-delimited list of directories by invoking make with
+
+        make rpath=directory_1:directory_2
+
+The top level makefile has the following major targets:  build debug 
+clean distclean.
+
+  build
+
+    makes a symbolic link shadow tree in build-$(CONFIG) and builds
+    the optimized library there
+
+    The executable mpirun and the associated library objects are
+    placed in a directory directly under lampi/.  The directory is named
+    after the target hence, using the above example, mpirun and the
+    libraries would reside in
+
+      lampi/build-alphaev6-dec-osf5.1-gcc/
+
+    after a successful "make build".
+
+  debug
+
+     makes a symbolic link shadow tree in debug-$(CONFIG) and builds
+     the debug library there
+
+  lampi
+
+     like build, but no ROMIO code is compiled.
+
+  lampi-debug
+
+     like debug, but no ROMIO code is compiled.
+
+  clean
+
+     removes object and dependency files
+
+  distclean
+
+     removes the shadow directories
+
+  install
+
+     builds and then installs the necessary executable, library and
+     include files to a target directory which can be specified using
+     the prefix variable
+        make prefix=<DIR> install
+
+  debug-install
+
+     does a debug build and then installs the necessary executable,
+     library and include files to a target directory which can be
+     specified using the prefix variable
+
+        make prefix=<DIR> debug-install
+

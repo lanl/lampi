@@ -1,0 +1,129 @@
+We added a new send type ULM_SEND_MULTICAST to include/ulm/constants.h
+
+--
+
+In isend_start() (Pt2PtGroupSend.cc), we need to handle the
+SHARED_MEMORY case since the destination is used as an array index.
+Further, we don't want to use shared memory for the broadcast since
+the bcast_vp/dma approach will already place the data appropriately.
+We check the message type and skip directly to isend_start_network().
+
+--
+
+We do not use the value passed in for the destination on a send with
+type ULM_SEND_MULTICAST.
+
+--
+
+In isend_start_network() we need to deal with getting a sequence
+number, since they are currently indexed by destination pid.  Since
+the message sequence number is only used to insure in-order delivery,
+we simply zero it out if the message is of type ULM_SEND_MULTICAST.
+(Queues/Pt2PtGroupSend.cc)
+
+Also, for the time being, we are zeroing out the frag_seq number in
+the quadrics path send fragments.  Since the way fragments are tracked
+will change for dynamic processes, we will wait until this change is
+implemented to add fragment tracking to the multicast path.
+
+--
+
+Added a method to the Communicator class... 
+      
+      int Communicator::getMcastVpid(int rail, int *vp)
+ 
+This returns the multicast vpid in vp for the specified rail.  The
+return value is a ULM error code.  If we are not running on tru64 or
+the communicator does not represent a contiguous range of processes,
+*vp = -1.  This value is only computed once and is cached in the
+private variable
+      
+      int* Communicator::multicast_vpid
+
+This method was added because trying to set the multicast_vpid in
+Communicator::init() requires elan3 information that may not be
+correctly set.  (Recall that some communicators are created during
+initialization).
+
+-- 
+
+In quadricsPath::send, we set the global destination proc as the
+multicast vpid when we have a message of type ULM_SEND_MULTICAST.  If
+we cannot get the vpid for some reason, we return with an error. 
+
+-- 
+
+In net/quadrics/globals we could declare a set of buffers for use with
+the hardware multicast 
+    unsigned char ***elan_bcast_buf
+
+These buffers are indexed by rail and source process
+(elan_bcast_buf[rail][source proc]) to prevent possible overwrites
+during overlapping broadcasts.  Each buffer is of size
+ELAN_BCAST_BUF_SZ (currently 16k), and allocated with elan3_allocMain.
+
+This approach will not scale well, so we instead take the step of
+creating our own elan3_gmalloc, using the following sequence:
+
+         elan3_allocMain(ctx, addr, sz)
+         reduce(addr, max)
+         if (addr != max)
+            elan3_allocMain()
+
+Simply, if all participating procs are not on the same page
+(determined by the call to reduce), they re-call elan3_allocMain until
+all processes share the same starting address.  The buffers resulting
+from this scheme is
+
+          unsigned char** Communicator::elan_mcast_buf
+          Locks* Communicator::elan_mcast_buf_lock
+
+Note the locks for thread safety.  The global allocation function is
+
+          void* Communicator::gmalloc(size_t sz)
+
+In this scheme, we need one buf/lock per rail since the context, and
+hence the elan addressable memory, rely on the rail in use.
+
+--
+
+The above gmalloc scheme does not work due to initialization problems
+with the communicator (i.e. gmalloc cannot be called during
+communicator initialization).  Thus, I've removed it (as well as the
+special initialization for ULM_COMM_WORLD/SELF) and added a method to
+the communicator
+          
+          void* Communicator::getMcastBuf(int rail, size_t *sz)
+
+that returns the address of a usable buffer across all procs in the
+communicator.  This is lazily evaluated, so the first call actually
+creates the buffers using the allocate/reduce scheme above.  I've
+actually tested this and it seems to work, and it requires no special
+initialization for ULM_COMM_WORLD/SELF.
+
+-- 
+
+Added logic to quadricsPath::send() to deal with the multicast case.  We
+need to bypass normal memory allocation (small/large bufs), some
+initialization (fragLength), and use of the gldestProc variable as an
+array index (which we set with a call to getMcastVpid after the call
+to getCtxRailAndDest().
+
+Added logic to quadricsPath::getCtxRailAndDest() to handle the multicast
+case.  The destination buf address is set using getMcastBuf.
+
+Added logic to quadricsSendFrag::init() so that multicast data is never
+sent via a queue dma.
+
+Set up ulm_bind_pt2pt_message() to always bind a multicast message to
+a quadrics path.
+
+--
+
+For the time being, we're calling getMcastVpid and getMcastBuf at the
+beginning of ulm_bcast_quadrics().  This insures that both are called
+by the entire collective, and that we have obtained a valid vpid and
+buffer.  If we cannot obtain a valid vpid/buffer, we simply call
+ulm_bcast(). 
+
+--

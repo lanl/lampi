@@ -1,0 +1,32 @@
+#!/bin/sh -x
+
+ULMROOT=$HOME/develop/ulm/root
+LAMPI="$ULMROOT/mpirun -nolsf -env LD_LIBRARY64_PATH=$ULMROOT"
+
+make clean
+make
+
+for ARGS in '-n 10000 0 4k' '-n 1000 8k 256k' '-n 100 256k 2M 64k'
+do
+  
+    # mpirun n16 2 mpi-ping-mpt-sgi $ARGS
+    # mpirun n15,n16 1 mpi-ping-mpt-sgi $ARGS
+    # MPI_BYPASS_OFF=1 mpirun n15,n16 1 mpi-ping-mpt-sgi $ARGS
+
+    # mpirun n16 2 mpi-ping-mpt-sgi-overlap $ARGS
+    # mpirun n15,n16 1 mpi-ping-mpt-sgi-overlap $ARGS
+    # MPI_BYPASS_OFF=1 mpirun n15,n16 1 mpi-ping-mpt-sgi-overlap $ARGS
+
+    $LAMPI -h n16 -np 2 -exe mpi-ping-lampi-sgi $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 1 -exe mpi-ping-lampi-sgi $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 2 -exe mpi-ping-lampi-sgi $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 3 -exe mpi-ping-lampi-sgi $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 4 -exe mpi-ping-lampi-sgi $ARGS
+
+    $LAMPI -h n16 -np 2 -exe mpi-ping-lampi-sgi-overlap $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 1 -exe mpi-ping-lampi-sgi-overlap $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 2 -exe mpi-ping-lampi-sgi-overlap $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 3 -exe mpi-ping-lampi-sgi-overlap $ARGS
+    $LAMPI -h n15,n16 -np 1 -nh800devs 4 -exe mpi-ping-lampi-sgi-overlap $ARGS
+
+done

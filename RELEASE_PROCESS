@@ -1,0 +1,314 @@
+------------------------------------------------------------------------
+                       LA-MPI RELEASE PROCEDURE
+------------------------------------------------------------------------
+
+0. Directories
+
+The CVS repository for LA-MPI is
+
+    cvs.ccs.lanl.gov:/home/LAMPI/repository/
+
+and will be referred to as $CVSROOT.
+
+The release directory into which distribution trees for each release
+and system architecure should be placed is
+
+    cvs.ccs.lanl.gov:/home/LAMPI/release/
+
+and will be referred to as $RELEASEROOT.
+
+The developer's working directory is referred to as $WORKDIR.
+
+
+
+1. Release types
+
+LA-MPI releases are labeled by a three-component release number such
+as 1.1.23.  The three components of release number are
+
+      MAJOR_RELEASE.MINOR_RELEASE.PATCH_RELEASE
+
+A major release corresponds to a major overhaul and/or rewrite of
+large portions of the code base.  This is an infrequent occurence and
+is not covered by this document, since there may be structural changes
+to the code base sufficiently large to make maintenance under a
+version control system inappropriate.
+
+A minor release corresponds to the addition of a significant piece of
+functionality, or to support for new platforms.
+
+A patch release is a small change related to minor feature enhancement
+or a bug fix.
+
+
+
+2. Regression test requirements
+
+(a) Minor release
+
+Pass all of the lampi_complete list in mpitest on at least 6 processes
+on all of the supported architectures.
+
+(b) Patch release
+
+Pass all of the lampi_regression list in mpitest on at least 6
+processes on all of the supported architectures.
+
+
+
+3. CVS branches
+
+A simple branch structure is used for managing releases, as indicated
+in the diagram below.
+
+
+             Main branch head     Patch branch head
+                    ^                    ^
+                    |                    |
+                    |                    |
+                    | < - - merge - - - -+ PATCH_RELEASE_1_3_3
+                    |                    |
+                    |                    |
+                    |                    |
+                    |                    |
+                    | < - - merge - - - -+ PATCH_RELEASE_1_3_2
+                    |                    |
+                    |                    |
+                    |                    |
+                    |                    |
+                    | < - - merge - - - -+ PATCH_RELEASE_1_3_1
+                    |                    |
+                    |                    |
+                    |                    |
+                    |                    |
+  MINOR_RELEASE_1_3 + +------------------+ PATCH_RELEASE_1_3_0
+                    |     BRANCH_1_3                 
+                    |
+                    |                        Patch branch head
+                    |                              ^
+                    |                              |
+                    | < - - - - merge - - - - - - -+ PATCH_RELEASE_1_2_3
+                    |                              |
+                    |                              |
+                    |                              |
+                    |                              |
+                    | < - - - - merge - - - - - - -+ PATCH_RELEASE_1_2_2
+                    |                              |
+                    |                              |
+                    |                              |
+                    |                              |
+                    | < - - - - merge - - - - - - -+ PATCH_RELEASE_1_2_1
+                    |                              |
+                    |                              |
+                    |                              |
+                    |                              |
+  MINOR_RELEASE_1_2 + +----------------------------+ PATCH_RELEASE_1_2_0
+                    |         BRANCH_1_2
+                    |
+
+               Main branch
+
+
+At any given point in the development cycle, there are likely to be 
+two active branches: the main branch and the current patch branch.
+
+All new development occurs on the main branch.  Bug fixes and minor
+enhancements are performed on the patch branch and then merged into
+the main branch.  Releases are made from the patch branch and tagged
+with PATCH_RELEASE_X_Y_Z
+
+The following discussion should make these concepts more clear.
+
+For each minor release a new branch is created off the main
+branch.  tagged with the major and minor release numbers.  This branch
+is the "patch branch" for the minor release.
+
+Work for patch releases is done on the patch branch.  When a new
+feature is added or bug fixed, the patch branch can be tagged for a
+patch release.  At this point changes on the patch branch should be
+merged into the main branch.
+
+For example, for minor release 2, and patches to it:
+
+  (a) Checkout main branch to directory $WORKDIR/lampi_main/
+
+      cvs co -d $WORKDIR/lampi_main lampi
+
+  (b) Tag the main branch, create the patch branch for this release
+      off the main branch, and tag the patch branch for patch
+      release 0.
+
+      cd $WORKDIR/lampi_main
+      cvs tag MINOR_RELEASE_1_2                         # Tag the main branch
+      cvs tag -b BRANCH_1_2                             # Create branch
+      cvs rtag -r BRANCH_1_2 PATCH_RELEASE_1_2_0 lampi  # Tag the patch branch
+                                                        # in the repository as
+                                                        # release 1.2.0
+
+  (c) Checkout the new patch branch to directory $WORKDIR/lampi_patch
+
+      cvs co -d $WORKDIR/lampi_patch -r BRANCH_1_2 lampi
+
+  (d) Make changes to the patch branch,
+
+      cd $WORKDIR/lampi_patch
+      <edit>
+      <run regression>
+      cvs commit
+
+  (e) Tag the patch branch for a new patch release
+
+      cd $WORKDIR/lampi_main
+      cvs tag PATCH_RELEASE_1_2_1
+
+  (h) Check differences from main branch the since the last patch
+      release
+            
+      cd $WORKDIR/lampi_main
+      cvs -q diff -r PATCH_RELEASE_1_2_0 -r PATCH_RELEASE_1_2_1
+
+  (i) Merge differences from main branch the since the last patch
+      release
+
+      cd $WORKDIR/lampi_main
+      cvs -q update -j PATCH_RELEASE_1_2_0 -j PATCH_RELEASE_1_2_1
+      <fix conflicts>
+      cvs commit
+
+
+
+4. Distribution trees
+
+For release X.Y.Z, distribution trees for supported architectures
+should be placed in directory $RELEASEROOT/$ARCH/lampi-X.Y.Z/
+
+Currently supported architectures ($ARCH) are:
+
+  alphaev6-dec-osf5.1
+  alphaev6-unknown-linux-gnu
+  alphaev6-unknown-linux-gnu-bproc
+  i686-pc-linux-gnu
+  i686-pc-linux-gnu-lsf
+  i686-pc-linux-gnu-bproc
+  mips-sgi-irix6.5
+
+so the following distribution trees should be created
+
+  $RELEASEROOT/alphaev6-dec-osf5.1/lampi-X.Y.Z/
+  $RELEASEROOT/alphaev6-unknown-linux-gnu/lampi-X.Y.Z/
+  $RELEASEROOT/alphaev6-unknown-linux-gnu-bproc/lampi-X.Y.Z/
+  $RELEASEROOT/i686-pc-linux-gnu/lampi-X.Y.Z/
+  $RELEASEROOT/i686-pc-linux-gnu-lsf/lampi-X.Y.Z/
+  $RELEASEROOT/i686-pc-linux-gnu-bproc/lampi-X.Y.Z/
+  $RELEASEROOT/mips-sgi-irix6.5/lampi-X.Y.Z/
+ 
+This can be done using the install target of make:
+
+  cvs co -d $WORKDIR/lampi_patch -r PATCH_RELEASE_X_Y_Z lampi
+  cd $WORKDIR/lampi_patch
+  make prefix=$RELEASEROOT/alphaev6-dec-osf5.1/lampi-X.Y.Z/ install
+
+
+
+5. Source trees
+
+For each release X.Y.Z, a gzipped source "tarball" should be placed in
+$RELEASEROOT/src/lampi-X.Y.Z.tar.gz
+
+A source tree for a given release can be extracted from the repository
+using the export command
+
+   cvs export -r PATCH_RELEASE_X_Y_Z -d lampi_X_Y_Z lampi
+
+"cvs export" is preferred to "cvs checkout" in this instance because
+it omits the CVS administrative directories.
+
+
+
+------------------------------------------------------------------------
+                      Appendix: CVS cheat sheet
+------------------------------------------------------------------------
+
+A. Create a tag:
+
+  cd module
+  cvs -q tag SOME_TAG
+
+
+B. Checkout to a particular directory:
+
+  cvs checkout -d module1 module
+
+or checkout a tagged version to a particular directory:
+
+  cvs checkout -r SOME_TAG -d module1 module
+
+
+C. Branching (for release 1.0.X)
+
+  cvs checkout module
+  cd module
+  cvs -q tag MINOR_RELEASE_1_0
+  cvs -q tag -b BRANCH_1_0
+  cvs -q rtag -r BRANCH_1_0 PATCH_RELEASE_1_2_0
+
+then, check-out the main branch to directory module_main/ using
+
+  cvs checkout -d module_main module
+
+and the patch branch to directory module_patch/ using
+
+  cvs checkout -d module_patch -r BRANCH_1_0 module
+
+
+D. Merging from the patch branch to the main branch (in a moderately
+organized fashion):
+
+(1) Go to the patch directory, and tag with a name for the current
+    fix. For example if this is the third fix:
+
+      cd module_patch/
+      cvs -q tag PATCH_RELEASE_1_2_2
+
+    The previous patch should have been tagged with
+    PATCH_RELEASE_1_2_1
+
+(2) Go to the main branch directory
+
+      cd module  
+
+(3) Check differences since the last fix was merged:
+
+      cvs -q diff -r PATCH_RELEASE_1_2_2 -r PATCH_RELEASE_1_2_1
+
+(4) Merge the changes since the last 
+
+      cvs -q update -j PATCH_RELEASE_1_2_2 -j PATCH_RELEASE_1_2_1
+
+E. Marking a file as binary:
+
+     cvs admin -kb <file>
+     cvs update -A <file>
+     cvs commit -m "making binary" <file>
+
+
+F. Import a module:
+
+     cvs import -m "Importing initial project" \
+        module ddd start
+
+
+G. Import a module, but make sure no files get skipped:
+
+     cvs import -I ! -m "Importing initial project" \
+        module ddd start
+
+
+H. Export current version to a particular directory:
+
+     cvs export -D now -d lampi_module1 module
+
+
+I. Export a tagged version to a particular directory:
+
+     cvs export -r SOME_TAG -d module1 module

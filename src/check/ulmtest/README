@@ -1,0 +1,23 @@
+
+	   ulmtest -- front-end to API-level tests for ULM
+
+ulmtest provides a common interface for a variety of tests to exercise
+various aspects of ULM.
+
+This code is intended as an API level test only.  To this end they are
+written in Standard C and use only the interface to ULM advertised in
+ULM.h and ULMExt.h.
+
+Adding a new test:
+
+The various tests are accessed via a dispatch table.  To add a new
+test:
+
+1. create a file test_???.c containing a function
+   "int test_???(status_t *)" to implement the test
+2. add a prototype to ulmtest.h,
+3. add the new test_???.c file to SRC in the Makefile.
+4. add an entry to the dispatch table "test_table" in ulmtest.c
+
+Where possible, make use of the existing state variables (state_t),
+so that the interface can be reused.

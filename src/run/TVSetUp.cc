@@ -1,0 +1,155 @@
+/*
+ * Copyright 2002-2003. The Regents of the University of California. This material 
+ * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
+ * National Laboratory, which is operated by the University of California for 
+ * the U.S. Department of Energy. The Government is granted for itself and 
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
+ * license in this material to reproduce, prepare derivative works, and 
+ * perform publicly and display publicly. Beginning five (5) years after 
+ * October 10,2002 subject to additional five-year worldwide renewals, the 
+ * Government is granted for itself and others acting on its behalf a paid-up, 
+ * nonexclusive, irrevocable worldwide license in this material to reproduce, 
+ * prepare derivative works, distribute copies to the public, perform publicly 
+ * and display publicly, and to permit others to do so. NEITHER THE UNITED 
+ * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
+ * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
+ * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+ * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
+ * OWNED RIGHTS.
+
+ * Additionally, this program is free software; you can distribute it and/or 
+ * modify it under the terms of the GNU Lesser General Public License as 
+ * published by the Free Software Foundation; either version 2 of the License, 
+ * or any later version.  Accordingly, this program is distributed in the hope 
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * GNU Lesser General Public License for more details.
+ */
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+
+
+/*
+ *  This routine is used to setup the data TotalView needs
+ *    to use, so that it can attach to the remote processes.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <strings.h>
+
+#include "internal/constants.h"
+#include "internal/malloc.h"
+#include "internal/profiler.h"
+#include "internal/types.h"
+#include "run/Run.h"
+#include "internal/new.h"
+#include "run/JobParams.h"
+#include "run/TV.h"
+#include "client/adminMessage.h"
+
+MPIR_PROCDESC *MPIR_proctable = NULL;
+int MPIR_proctable_size = 0;
+int MPIR_being_debugged = 0;
+volatile int MPIR_debug_state = 0;
+volatile int TVDummy = 0;       /* NEVER change this - this is a variable the
+                                   MPIR_Breakpoint uses to trick the compiler
+                                   thinking that this might be modified, and
+                                   therefore not optimize MPIR_Breakpoint away */
+volatile int MPIR_i_am_starter = 1;
+
+
+void MPIrunTVSetUp(ULMRunParams_t *RunParameters,adminMessage *server)
+{
+    int HostRank, NumberOfProcsToDebug;
+    struct hostent *Host;
+
+    /* check to see if code being debugged */
+    if (RunParameters->TVDebug == 0)
+        return;
+
+    /* compute size of MPIR_proctable */
+    NumberOfProcsToDebug = RunParameters->NHosts;
+    if (RunParameters->TVDebugApp != 0) {
+        /* no daemon processes */
+        NumberOfProcsToDebug = 0;
+        /* app processes */
+        for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++)
+            NumberOfProcsToDebug +=
+                ((RunParameters->ProcessCount)[HostRank]);
+    }
+
+    /* allocate memory for process table */
+    MPIR_proctable_size = NumberOfProcsToDebug;
+    MPIR_proctable =
+        (MPIR_PROCDESC *) ulm_malloc(sizeof(MPIR_PROCDESC) *
+                                     MPIR_proctable_size);
+    if (MPIR_proctable == NULL) {
+        printf("Unable to allocate MPIR_proctable.\n");
+        Abort();
+    }
+    /* allocate memory for list of hosts used by TotalView */
+    RunParameters->TVHostList =
+        (HostName_t *) ulm_malloc(sizeof(HostName_t) *
+                                  RunParameters->NHosts);
+    if (RunParameters->TVHostList == NULL) {
+        printf("Unable to allocate TVHostList array.\n");
+        Abort();
+    }
+    for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++) {
+        bzero((RunParameters->TVHostList)[HostRank], ULM_MAX_HOSTNAME_LEN);
+        Host = gethostbyname((RunParameters->HostList)[HostRank]);
+        sprintf((RunParameters->TVHostList)[HostRank], "%s",
+                inet_ntoa(*(struct in_addr *) Host->h_addr_list[0]));
+    }
+
+/* debug */
+    printf
+        (" IN MPIrunTVSetUp ::  MPIR_proctable_size %d RunParameters->TVDebugApp %d\n",
+         MPIR_proctable_size, RunParameters->TVDebugApp);
+    fflush(stdout);
+/* end debug */
+    /* if app being debugged, setup will be finished after the fork() */
+    if (RunParameters->TVDebugApp != 0)
+        return;
+    /* debug */
+    fprintf(stderr," debugging deamons \n");
+    fflush(stderr);
+    /* end debug */
+
+    /* set flag indicating TotalView is going to be used */
+    MPIR_being_debugged = 1;
+
+    /* fill in MPIR_proctable */
+    for (HostRank = 0; HostRank < RunParameters->NHosts; HostRank++) {
+        MPIR_proctable[HostRank].host_name =
+            (char *) &((RunParameters->TVHostList)[HostRank]);
+        MPIR_proctable[HostRank].executable_name =
+            (char *) (RunParameters->ExeList[HostRank]);
+        MPIR_proctable[HostRank].pid = server->daemonPIDForHostRank(HostRank);
+    }
+
+    /* set debug state */
+    MPIR_debug_state = MPIR_DEBUG_SPAWNED;
+
+    /* provide function in which TotalView will set a breakpoint */
+    MPIR_Breakpoint();
+}
+
+/* dummy subroutine - need to make sure that compiler will
+ *   not optimize this routine away, so that TotalView can set
+ *   a breakpoint, and do what it needs to.
+ */
+extern "C" void MPIR_Breakpoint(void)
+{
+    if (TVDummy != 0) {
+        fprintf(stderr, " TVDummy != 0\n");
+        Abort();
+    }
+    while (TVDummy == 1) ;
+}

@@ -1,0 +1,147 @@
+MPool Design
+
+-----------------------------------------------------------------------
+I Motivation
+-----------------------------------------------------------------------
+
+The MPool class is meant to manage a block of memory.  Design goals
+for the MPool are
+        
+        - allow recycling of memory
+        - handle process arrival and departure
+        - allow easy switching between different allocation schemes
+        - handle both private and shared memory regions
+        - simple interface to users such as the FreeLists
+        - where possible, the managed region can be grown
+
+-----------------------------------------------------------------------
+II Inheritance Hierarchy
+-----------------------------------------------------------------------
+
+First, we detail the inheritance hierarchy for memory pools, including
+the interfaces.
+
+class MPool
+        int allocate(size_t sz, void **p, int align = 0, 
+            int locality = 0, size_t *act_sz = 0) 
+        int free(void *p, int locality = 0)
+        int setAllocator(Allocator *a)
+        int grow(size_t sz, size_t *act_sz = 0)
+
+class PrivateMPool : public MPool
+
+class SharedMPool : public MPool
+        int attach()
+
+-----------------------------------------------------------------------
+III Methods
+-----------------------------------------------------------------------
+
+We now detail the purpose of the class methods.
+
+allocate
+        Fulfills a request for sz bytes of memory, and returns the
+        starting address of the memory in p.  Note that the method
+        may actually return more memory than requested.  If the user
+        passes in the size_t pointer act_sz, the actual number of bytes
+        allocated is set in *act_sz.  align specifies the alignment
+        policy for the memory being returned, a value of 0 indicates
+        that the default alignment of the Allocator should be used.
+        If locality is specified, the returned region has the requisite
+        locality.
+        
+free 
+        Frees the allocated region with starting address p.  If
+        locality is specified, it is preserved on the region of memory
+        being freed.
+
+setAllocator
+        Sets the Allocator object that will manage the memory pool.
+
+grow
+        Tries to grow the pool by sz bytes.  Note that the method may
+        actually grow the pool by more than sz bytes.  If the user
+        passes in the size_t pointer act_sz, the actual number of bytes
+        grown is returned in *act_sz.  
+
+attach
+        This method is called when a new process is attaching to a
+        shared memory pool 
+        
+All methods follow certain conventions:
+        - The return value is 0 for success, negative for failure
+
+-----------------------------------------------------------------------
+IV State
+-----------------------------------------------------------------------
+
+We detail compositional details of the MPool class.
+
+MPool
+        Allocator *a
+        void      *start
+        size_t    size
+
+Allocator
+        This is an abstract base class that any concrete allocator must
+        inherit from.  The allocator manages memory residing in the 
+        MPool.
+        
+        Allocator(MPool *p, size_t da)
+                constructor, sets address of the pool using the
+                allocator and the default alignment for memory handed
+                out via allocate()
+
+        int allocate(size_t sz, void **p, size_t align = 0, 
+                    int locality = 0, size_t *act_sz = 0)
+                allocates at least sz bytes and returns the starting 
+                address in *p with either a default alignment or by
+                'align' bytes if align > 0.  If locality is specified,
+                the returned region has the requisite locality.  If
+                act_sz is specified, stores the actual number of bytes
+                allocated in the requested region.
+                
+        int free(void *p, int locality = 0)
+                If locality is specified, it is preserved on the region
+                of memory being freed.
+
+        int check()
+                This method is for debugging purposes.  When the code is
+                build with -DMEM_DEBUG, guard regions are added to the
+                beginning and end of each block of allocated memory.
+                This method checks all allocated blocks to ensure that
+                the guard words remain intact, and returns and error (as
+                well as other information) if some are corrupted.
+                
+-----------------------------------------------------------------------
+V Constructors
+-----------------------------------------------------------------------
+
+MPool
+        MPool(void *p, size_t sz, Allocator *a, void *q = 0, 
+                size_t q_sz = 0)
+
+SharedMPool
+        SharedMPool(void *p, size_t sz, Allocator *a, 
+                void *q = 0, size_t q_sz = 0)
+
+PrivateMPool
+        PrivateMPool(void *p, size_t sz, Allocator *a, 
+                void *q = 0, size_t q_sz = 0)
+        PrivateMPool(size_t sz, Allocator *a)
+
+Argument description:
+        p    starting address of region to be managed by pool
+
+        sz   size of region
+
+        a    pointer to an allocator object that will manage the pool
+
+        q    optional pointer to a (separate) region that the MPool
+             object will occupy
+
+        q_sz size of the separate region that the MPool will occupy
+
+
+
+/* vim: set tw=72: */

@@ -1,0 +1,135 @@
+From: David Daniel <ddd@lanl.gov>
+Subject: release directory for la-mpi
+To: Nehal Desai <nehal@lanl.gov>, Richard Graham <rlgraham@lanl.gov>,
+    Dean Risinger <deanr@lanl.gov>, Mitch Sukalski <mitch@lanl.gov> 
+Date: 22 Aug 2002 14:58:02 -0600
+Organization: Los Alamos National Laboratory
+
+I have created a directory for us to keep our releases
+
+    /home/ulm/release
+
+with subdirectories for each version
+
+    /home/ulm/release/1.0.0
+    /home/ulm/release/1.0.0_debug
+
+under each of these, directories for each system/configuration
+
+    /home/ulm/release/1.0.0/alphaev6-dec-osf5.1
+    /home/ulm/release/1.0.0/i686-pc-linux-gnu
+    etc.
+
+and under each of these a full "/usr" tree.
+
+You can create such a tree using the install and debug-install targets
+of the Makefile:
+
+On tru64 or linux just 
+
+   make prefix=<INSTALL DIR> install
+   make prefix=<DEBUG DIR> debug-install
+
+On irix, since we are doing a 64 bit build, do 
+
+   make prefix=<INSTALL DIR> libdir=<INSTALL DIR>/lib64 install
+   make prefix=<DEBUG DIR>   libdir=<DEBUG DIR>/lib64   debug-install
+
+If /home/ulm is mounted on the build system, then you can "make
+install" directly into the correct place.  Otherwise, install to an
+empty directory, tar it up, and copy to and untar on an ACL system.
+
+When we're finished we should have a tree something like this:
+
+/home/ulm/release
+|-- 1.0.0
+|   |-- i686-pc-linux-gnu
+|   |   |-- bin
+|   |   |   `-- mpirun
+|   |   |-- include
+|   |   |   |-- mpi
+|   |   |   |   |-- constants.h
+|   |   |   |   |-- mpi.h
+|   |   |   |   `-- types.h
+|   |   |   |-- mpi.h
+|   |   |   |-- mpif.h
+|   |   |   `-- ulm
+|   |   |       |-- constants.h
+|   |   |       |-- errors.h
+|   |   |       |-- system.h
+|   |   |       |-- types.h
+|   |   |       `-- ulm.h
+|   |   |-- lib
+|   |   |   `-- libmpi.so
+|   |   `-- man
+|   |       `-- man1
+|   |           |-- lampi.1
+|   |           `-- mpirun.1
+|   `-- mips-sgi-irix6.5
+|       |-- bin
+|       |   `-- mpirun
+|       |-- include
+|       |   |-- mpi
+|       |   |   |-- constants.h
+|       |   |   |-- mpi.h
+|       |   |   `-- types.h
+|       |   |-- mpi.h
+|       |   |-- mpif.h
+|       |   `-- ulm
+|       |       |-- constants.h
+|       |       |-- errors.h
+|       |       |-- system.h
+|       |       |-- types.h
+|       |       `-- ulm.h
+|       |-- lib64
+|       |   `-- libmpi.so
+|       `-- man
+|           `-- man1
+|               |-- lampi.1
+|               `-- mpirun.1
+`-- 1.0.0_debug
+    |-- i686-pc-linux-gnu
+    |   |-- bin
+    |   |   `-- mpirun
+    |   |-- include
+    |   |   |-- mpi
+    |   |   |   |-- constants.h
+    |   |   |   |-- mpi.h
+    |   |   |   `-- types.h
+    |   |   |-- mpi.h
+    |   |   |-- mpif.h
+    |   |   `-- ulm
+    |   |       |-- constants.h
+    |   |       |-- errors.h
+    |   |       |-- system.h
+    |   |       |-- types.h
+    |   |       `-- ulm.h
+    |   |-- lib
+    |   |   `-- libmpi.so
+    |   `-- man
+    |       `-- man1
+    |           |-- lampi.1
+    |           `-- mpirun.1
+    `-- mips-sgi-irix6.5
+        |-- bin
+        |   `-- mpirun
+        |-- include
+        |   |-- mpi
+        |   |   |-- constants.h
+        |   |   |-- mpi.h
+        |   |   `-- types.h
+        |   |-- mpi.h
+        |   |-- mpif.h
+        |   `-- ulm
+        |       |-- constants.h
+        |       |-- errors.h
+        |       |-- system.h
+        |       |-- types.h
+        |       `-- ulm.h
+        |-- lib64
+        |   `-- libmpi.so
+        `-- man
+            `-- man1
+                |-- lampi.1
+                `-- mpirun.1
+

@@ -1,0 +1,215 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Project:     Los Alamos Message Passing Interface (LA-MPI)
+%% Descr:       A reliable, resilient message passing library
+%% Author:      L. Dean Risinger jr.
+%% $Id$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[english]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{babel}
+
+%% do we have the `fancyhdr' package?
+\IfFileExists{fancyhdr.sty}{
+\usepackage[fancyhdr,pdf]{latex2man}
+}{
+%% do we have the `fancyheadings' package?
+\IfFileExists{fancyheadings.sty}{
+\usepackage[fancy,pdf]{latex2man}
+}{
+\usepackage[nofancy,pdf]{latex2man}
+\message{no fancyhdr or fancyheadings package present, discard it}
+}}
+
+\setDate{2002/09/04}    %%%% must be manually set, if rcsinfo is not present
+\message{package rcsinfo not present, discard it}
+
+\setVersionWord{Version:}  %%% that's the default, no need to set it.
+\setVersion{1.1.5}
+
+\begin{document}
+
+\begin{Name}{1}{mpirun}{LA-MPI Development team}{LA-MPI Reliable MPI}{Los Alamos Message Passing Library}
+
+  \Prog{mpirun} - run MPI programs using the Los Alamos Message Passing library, LA-MPI.  
+\end{Name}
+
+\section{Synopsis}
+%%%%%%%%%%%%%%%%%%
+
+\Prog{mpirun} [\Opt{-n}\Bar\Opt{-np} \Arg{#,...}] \oOptArg{-N}{ #} \oOptArg{-H}{ hostlist} \oOptArg{-s}{ mpirunhost}
+\oOptArg{-d}{ wdir} \oOptArg{-dapp}{ edir} \oOptArg{-dev}{ netpaths} \oOpt{-threads} \oOpt{-t} \oOpt{-crc} \oOptArg{-qf}{ flaglist}
+\Arg{executable} [\Arg{args ...}]
+
+\Prog{mpirun} -h\Bar-help
+
+\Prog{mpirun} -version
+
+\Prog{mpirun} -list-options
+
+\section{Description}
+%%%%%%%%%%%%%%%%%%%%%
+\Prog{mpirun} starts the specified executables with LA-MPI as the MPI layer. LA-MPI is a network fault-tolerant message passing 
+system designed for the challenges of the terascale cluster environment.
+
+\section{Options}
+%%%%%%%%%%%%%%%%%
+\begin{Description}\setlength{\itemsep}{0cm}
+\item[\Opt{-n}\Bar\Opt{-np} \Arg{ number of processes}] A single value specifies the total number of processes, while a 
+comma-delimited list of numbers specifies the number of processes on each host or machine. 
+\item[\OptArg{-N}{ number of hosts}] The number of hosts to use.
+\item[\OptArg{-H}{ hostlist}] A comma-delimited list of name(s) of hosts to use.
+\item[\OptArg{-s}{ mpirunhost}] A preferred IP interface name or address for TCP/IP administrative and UDP data traffic.
+\item[\OptArg{-d}{ wdir}] A comma-delimited list of one or more working directories for spawned processes.
+\item[\OptArg{-dapp}{ edir}] A comma-delimited list of one or more directories where the \Arg{executable} is located.
+\item[\OptArg{-dev}{ netpaths}] A colon-delimited list of one or more network paths to use for this MPI job. Currently the choices
+are some combination of "hippi800", "udp", and "quadrics" (depending upon your environment).
+\item[\Opt{-threads}] Turn on thread safe code.
+\item[\Opt{-t}] Turn on tagging of standard output and error lines with either GR[HR.LR] (GR = global rank, HR = host rank, LR = local rank), 
+or simply HR (on RMS/prun systems).
+\item[\Opt{-crc}] Use 32-bit CRCs instead of 32-bit additive checksums (the LA-MPI default) for application to application data integrity
+where applicable.
+\item[\OptArg{-qf}{ flaglist}] A comma-delimited list of keywords that affect operation on Quadrics networks. The keywords that are supported
+are "noack", "ack", "nochecksum", and "checksum". "noack" disables retransmission of data, but allows data sends to complete upon local notification
+by the Quadrics Elan adapters. "nochecksum" disables all LA-MPI CRC/checksum generation and verification; in this mode, data integrity guarantees are
+provided only at the Elan adapter level. The defaults are "ack", and "checksum" for a LA-MPI library built with reliability mode enabled. This option
+is likely to change in a future release.
+\item[\Opt{-h}\Bar\Opt{-help}] Print a brief help message and exit.
+\item[\Opt{-version}] Print version information and exit.
+\item[\Opt{-list-options}] Print a longer help message with all options and exit.
+%\item[\Opt{-d, --debug}] Run in debug mode.
+%\item[\OptArg{--define}{ VAR=VAL}] Define an architecture specific
+%  variable.
+%\item[\OptArg{--env}{ VAR=VAL}] Define an environment variable to 
+%  pass to the application.
+%\item[\OptArg{--host}{ HOSTNAME:args}] Name of a host to use 
+%  (where implemented) and optionally, the name of an executable to run on this host.
+%\item[\OptArg{-N, --nhosts}{ NHOSTS}] Number of hosts to use.
+%\item[\OptArg{-n, --nprocs}{ NPROCS}] Number of processes to start.
+%\item[\Opt{-t, --tag}] Tag application output with process rank (and
+%  host rank if appropriate).
+%\item[\Opt{-v, --verbose}] Verbose output.
+\end{Description}
+
+There are many more options, but most are not of interest to the typical user. If you need more details on mpirun options,
+please send email to \Email{lampi-support@lanl.gov}. 
+
+\section{Arguments}
+%%%%%%%%%%%%%%%%%%%
+The \Arg{executable} must be either a single executable or a comma-delimited list of executables for each host or machine 
+(which is not supported for all environments). Executable arguments apply to all specified executables. 
+
+\section{Examples}
+%%%%%%%%%%%%%%%%%%
+\begin{enumerate}\setlength{\itemsep}{2cm}
+\item[1. \textbf{mpirun dcalc -f foo}] On systems with LSF, this command can be used to
+start \Prog{dcalc -f foo} on some number of hosts and processors preassigned by LSF.
+\item[2. \textbf{mpirun -n 64 dcalc -f foo}] On systems with LSF, this command will start
+64 processes of \Prog{dcalc -f foo} on either all or some subset of preassigned hosts and processors. If it is a subset,
+then mpirun attempts to use all of the preassigned processors on a host before allocating from the
+next reserved host's allocation. On systems with rsh spawning only, this command will start 64 processes on the
+local host or machine.
+\item[3. \textbf{mpirun -n 64 -N 40 dcalc -f foo}] On systems with standard LSF, this command will start
+64 processes on 40 preassigned hosts as explained in example #2. On systems with LSF/RMS, mpirun will
+start 64 processes on 40 hosts using \Cmd{prun}{1} in a block assignment mode. This command will not work
+on systems with rsh spawning only, as there is no specific host information available.
+\item[4. \textbf{mpirun -n 66 -H n1,n2,n3,n4 dcalc -f foo}] This command will start 66 processes on the 4 named hosts.
+If the system supports LSF, then the assignment will be made using the processors available on each host. If the
+system only support rsh spawning, then mpirun will assign as close as possible the same number of processes per host
+(in this example, 17 processes will be started on n1 and n2, and 16 on n3 and n4).
+\item[5. \textbf{mpirun -dev udp -t -np 2,10,30,22 -h n1,n2,n3,n4 dcalc -f foo}] On systems with rsh spawning, this command will 
+start 2 processes on n1, 10 on n2, 30 on n3, and 22 on n4. Prefix tagging of standard output and
+standard error will be done, and only UDP/IP will be used for intercommunication between hosts.
+\end{enumerate}
+
+\section{Files}
+%%%%%%%%%%%%%%%
+\begin{Description}\setlength{\itemsep}{0cm}
+\item[\File{mpirun}] Job spawner using LA-MPI.
+\item[\File{libmpi.so}] LA-MPI shared-object library.
+\item[\File{mpi.h}] LA-MPI main C header file.
+\item[\File{mpif.h}] LA-MPI main Fortran header file.
+\end{Description}
+
+\section{Diagnostics}
+%%%%%%%%%%%%%%%%%%%%%
+LA-MPI has an abundant number of error and diagnostic messages that will not
+always be very clear to the end user. If your job dies unexpectedly, please
+check to see if a file, \File{lampi.log}, has been generated in your working
+directory.  All severe warnings and errors are logged to this file and standard
+error.
+
+As with any well-defined standard, it is very easy to compile with the wrong
+mpi.h or mpif.h header files (especially on systems with more than one MPI
+library). The result is unpredictable, but nearly always bad. Please be careful.
+
+On systems that support job spawning via \Prog{rsh}, it is possible to have
+difficulties if your \Prog{csh} startup environment (e.g., .cshrc problems)
+reports errors for shells that are not login shells. \Prog{rsh} spawns a
+\Prog{csh} to set certain environment variables, and start the first executable
+on a host. Future versions of LA-MPI will allow different shells to be used.
+
+\section{Reporting Bugs}
+%%%%%%%%%%%%%%%%%%%%%%%%
+Please send all bug reports to your friendly neighborhood developer at
+\Email{lampi-support@lanl.gov}.
+
+\section{Version}
+%%%%%%%%%%%%%%%%%
+Version: \Version\ of \Date.
+
+\section{License}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+
+                             ACL LICENSE
+
+This software and ancillary information (herein called "SOFTWARE")
+called LA-MPI is made available under the terms described here.  The
+SOFTWARE has been approved for release with associated LA-CC Number
+LA-CC-02-41.
+
+Unless otherwise indicated, this SOFTWARE has been authored by an
+employee or employees of the University of California, operator of the
+Los Alamos National Laboratory under Contract No.W-7405-ENG-36 with
+the U.S. Department of Energy.  The U.S. Government has rights to use,
+reproduce, and distribute this SOFTWARE. The public may copy,
+distribute, prepare derivative works and publicly display this
+SOFTWARE without charge, provided that this Notice and any statement
+of authorship are reproduced on all copies.  Neither the Government
+nor the University makes any warranty, express or implied, or assumes
+any liability or responsibility for the use of this SOFTWARE.
+
+If SOFTWARE is modified to produce derivative works, such modified
+SOFTWARE should be clearly marked, so as not to confuse it with the
+version available from LANL.
+
+This SOFTWARE is free software; you can redistribute it and-or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.
+
+This SOFTWARE is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this library (see the file LICENSE in the source distribution); if not,
+write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+Boston, MA 02111-1307 USA
+
+\end{description}
+
+\section{Authors}
+%%%%%%%%%%%%%%%%
+\noindent
+David J. Daniel, \\
+Nehal N. Desai, \\
+Richard L. Graham, \\
+L. Dean Risinger, \\
+Mitchel W. Sukalski 
+
+\LatexManEnd
+
+\end{document}

@@ -1,0 +1,8 @@
+
+	   ulmprobe -- front-end to low-level tests for ULM
+
+ulmprobe *WILL* provide a common interface for a variety of tests to
+exercise and examine the inner workings of ULM.
+
+This code *WILL* be written in C++ in order to access the essential
+goodness (or otherwise) of ULM.
