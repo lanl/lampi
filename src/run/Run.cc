@@ -180,8 +180,14 @@ void RunEventLoop(void)
         /* check if any messages have arrived and process */
         rc = CheckForControlMsgs();
         if (rc < 0 || RunParams.HostsAbNormalTerminated > 0) {
-            /* last check if any messages have arrived and process */
-            CheckForControlMsgs();
+            /*
+             * final check for messages: 3 per host should be enough
+             * to capture error message, standard out and standard
+             * error
+             */
+            for (int i = 0; i < 3 * RunParams.NHosts; i++) {
+                CheckForControlMsgs();
+            }
             Abort();
         }
 
