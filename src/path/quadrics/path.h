@@ -160,18 +160,13 @@ public:
     bool needsPush(void);
 
 #ifdef ENABLE_RELIABILITY
-    bool retransmitP(SendDesc_t *message) {
-        if (!quadricsDoAck || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
-            || (message->FragsToAck.size() == 0))
-            return false;
-        else if (dclock() >= message->earliestTimeToResend) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    bool resend(SendDesc_t *message, int *errorCode);
+    
+    bool doAck() { return quadricsDoAck; }
+    
+    int fragSendQueue() {return QUADRICSFRAGSTOSEND;}
+    
+    int toAckQueue() {return QUADRICSFRAGSTOACK;}
+    
 #endif
 
     // lazy rail-balancer to even out the number of DMAs per rail

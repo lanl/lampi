@@ -107,8 +107,8 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
                 /* enqueue DMA */
                 if (sfd->enqueue(timeNow, errorCode)) {
 #ifdef ENABLE_RELIABILITY
-                    sfd->timeSent = timeNow;
-                    (sfd->numTransmits)++;
+                    sfd->timeSent_m = timeNow;
+                    (sfd->numTransmits_m)++;
 #endif
                     // switch control message to ack list and remove from send list
                     afd = sfd;
@@ -126,7 +126,7 @@ bool quadricsPath::sendCtlMsgs(int rail, double timeNow, int startIndex, int end
                     quadricsQueueInfo_t *q;
                     bool needDest = (sfd->destAddr) ? true : false;
                     p->railOK = false;
-                    if (getCtxRailAndDest(sfd->parentSendDesc, sfd->globalDestID, &newctx,
+                    if (getCtxRailAndDest(sfd->parentSendDesc_m, sfd->globalDestProc_m, &newctx,
                                           &newrail, &newdest, sfd->destBufType, needDest, errorCode)) {
                         if (!needDest || (needDest && newdest)) {
                             sfd->reinit(newctx, newrail, newdest);
@@ -262,7 +262,7 @@ bool quadricsPath::cleanCtlMsgs(int rail, double timeNow, int startIndex, int en
                 quadricsQueueInfo_t *q;
                 bool needDest = (sfd->destAddr) ? true : false;
                 p->railOK = false;
-                if (getCtxRailAndDest(sfd->parentSendDesc, sfd->globalDestID, &newctx, &newrail,
+                if (getCtxRailAndDest(sfd->parentSendDesc_m, sfd->globalDestProc_m, &newctx, &newrail,
                                       &newdest, sfd->destBufType, needDest, errorCode)) {
                     if (!needDest || (needDest && newdest)) {
                         sfd->reinit(newctx, newrail, newdest);
@@ -659,13 +659,13 @@ bool quadricsPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             /* enqueue DMA */
             if (sfd->enqueue(timeNow, errorCode)) {
 #ifdef ENABLE_RELIABILITY
-                sfd->timeSent = timeNow;
-                (sfd->numTransmits)++;
+                sfd->timeSent_m = timeNow;
+                (sfd->numTransmits_m)++;
                 unsigned long long max_multiple =
-                    (sfd->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-                    (1 << sfd->numTransmits) :
+                    (sfd->numTransmits_m < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
+                    (1 << sfd->numTransmits_m) :
                     (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-                double timeToResend = sfd->timeSent + (RETRANS_TIME * max_multiple);
+                double timeToResend = sfd->timeSent_m + (RETRANS_TIME * max_multiple);
                 if (message->earliestTimeToResend == -1) {
                     message->earliestTimeToResend = timeToResend;
                 } else if (timeToResend < message->earliestTimeToResend) {
@@ -679,6 +679,7 @@ bool quadricsPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 sfd = (quadricsSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
                 message->FragsToAck.AppendNoLock(afd);
                 (message->NumSent)++;
+                afd->setSendDidComplete(true);
             }
             else if (*errorCode == ULM_ERR_BAD_SUBPATH) {
                 // mark this rail as bad, if it is not already, and
@@ -689,7 +690,7 @@ bool quadricsPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 void *newdest = 0;
                 bool needDest = (sfd->destAddr) ? true : false;
                 quadricsQueue[sfd->rail].railOK = false;
-                if (getCtxRailAndDest(message, sfd->globalDestID, &newctx, &newrail,
+                if (getCtxRailAndDest(message, sfd->globalDestProc_m, &newctx, &newrail,
                                       &newdest, sfd->destBufType, needDest, errorCode)) {
                     if (!needDest || (needDest && newdest)) {
                         sfd->reinit(newctx, newrail, newdest);
@@ -973,105 +974,6 @@ bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
     }
     return true;
 }
-
-#ifdef ENABLE_RELIABILITY
-
-bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
-{
-    bool returnValue = false;
-
-    // move the timed out frags from FragsToAck back to
-    // FragsToSend
-    quadricsSendFragDesc *FragDesc = 0;
-    quadricsSendFragDesc *TmpDesc = 0;
-    double curTime = 0;
-
-    *errorCode = ULM_SUCCESS;
-
-    // reset send descriptor earliestTimeToResend
-    message->earliestTimeToResend = -1;
-
-    for (FragDesc = (quadricsSendFragDesc *) message->FragsToAck.begin();
-	 FragDesc != (quadricsSendFragDesc *) message->FragsToAck.end();
-	 FragDesc = (quadricsSendFragDesc *) FragDesc->next) {
-
-	// reset TmpDesc
-	TmpDesc = 0;
-
-	// obtain current time
-	curTime = dclock();
-
-	// retrieve received_largest_inorder_seq
-	unsigned long long received_seq_no, delivered_seq_no;
-
-	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].received_largest_inorder_seq;
-	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID].delivered_largest_inorder_seq;
-
-	bool free_send_resources = false;
-
-	// move frag if timed out and not sitting at the
-	// receiver
-	if (delivered_seq_no >= FragDesc->frag_seq) {
-	    // an ACK must have been dropped somewhere along the way...or
-	    // it hasn't been processed yet...
-	    FragDesc->WhichQueue = QUADRICSFRAGFREELIST;
-	    TmpDesc = (quadricsSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-	    // set frag_seq value to 0/null/invalid to detect duplicate ACKs
-	    FragDesc->frag_seq = 0;
-	    // reset send descriptor pointer
-	    FragDesc->parentSendDesc = 0;
-	    // free all of the other resources after we unlock the frag
-	    free_send_resources = true;
-	} else {
-	    unsigned long long max_multiple = (FragDesc->numTransmits < MAXRETRANS_POWEROFTWO_MULTIPLE) ?
-		(1 << FragDesc->numTransmits) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
-	    if ((curTime - FragDesc->timeSent) >= (RETRANS_TIME * max_multiple)) {
-		// resend this frag...
-		returnValue = true;
-		FragDesc->WhichQueue = QUADRICSFRAGSTOSEND;
-		TmpDesc = (quadricsSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
-		message->FragsToSend.AppendNoLock(FragDesc);
-                (message->NumSent)--;
-                FragDesc=TmpDesc;
-		continue;
-            } else {
-                double timeToResend = FragDesc->timeSent + (RETRANS_TIME * max_multiple);
-                if (message->earliestTimeToResend == -1) {
-                    message->earliestTimeToResend = timeToResend;
-                } else if (timeToResend < message->earliestTimeToResend) {
-                    message->earliestTimeToResend = timeToResend;
-                }
-            }
-        }
-    
-	if (free_send_resources) {
-	    message->clearToSend_m=true;
-	    (message->NumAcked)++;
-
-	    // free send resources
-	    FragDesc->freeRscs();
-        FragDesc->WhichQueue = QUADRICSFRAGFREELIST;
-
-	    // return frag descriptor to free list
-            //   the header holds the global proc id
-	    if (usethreads()) {
-		quadricsSendFragDescs.returnElement(FragDesc, FragDesc->rail);
-            } else {
-		quadricsSendFragDescs.returnElementNoLock(FragDesc, FragDesc->rail);
-	    }
-        }
-	// reset FragDesc to previous value, if appropriate, to iterate over list correctly...
-	if (TmpDesc) {
-	    FragDesc = TmpDesc;
-	}
-    } // end FragsToAck frag descriptor loop
-
-    return returnValue;
-}
-
-#endif
 
 bool quadricsPath::releaseMemory(double timeNow, int *errorCode) {
     quadricsSendFragDesc *sfd = 0;
