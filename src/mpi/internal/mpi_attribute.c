@@ -33,6 +33,15 @@
 
 #include "mpi/constants.h"
 
+/* 
+ * the following definitions, in conjunction with our fortran
+ * bindings, cause terrible confusion -- so undefine them here
+ */
+
+#undef MPI_DUP_FN
+#undef MPI_NULL_COPY_FN
+#undef MPI_NULL_DELETE_FN
+
 /*
  * default attribute functions
  */
