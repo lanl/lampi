@@ -31,12 +31,32 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef IB_SENDINFO_H
-#define IB_SENDINFO_H
+#ifndef IB_SENDFRAG_H
+#define IB_SENDFRAG_H
 
-class ibSendInfo {
+#include "path/common/BaseDesc.h"
+#include "path/ib/state.h"
+
+class ibSendFragDesc : public BaseSendFragDesc_t {
     public:
-        ssize_t allocated_offset_m;
+        enum qp_type {
+            UD_QP,
+            OTHER_QP
+        };
+
+        enum state {
+            UNINITIALIZED = 0,
+            IBRESOURCESINITED = 1 << 1
+        };
+
+        int hca_index_m;
+        state state_m;
+        qp_type qp_type_m;
+        VAPI_sr_desc_t sr_desc_m;
+        VAPI_sg_lst_entry_t sg_m[1];
+
+
+        ibSendFragDesc(int poolIndex) { state_m = UNINITIALIZED; }
 };
 
 #endif

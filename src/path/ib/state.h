@@ -39,13 +39,13 @@
 #include <vapi.h>
 #include "mem/FreeLists.h"
 #include "util/Lock.h"
-#include "path/common/addrLifo.h"
 
 #define LAMPI_MAX_IB_HCA_PORTS  2
 #define LAMPI_MAX_IB_HCAS       2
 
 /* forward declarations */
 class ibRecvFragDesc;
+class ibSendFragDesc;
 
 /* no dynamic sizing to help performance -- or at least
  * not unintentionally hurt it... 
@@ -72,15 +72,17 @@ typedef struct {
 typedef struct {
     VAPI_qp_hndl_t handle;
     VAPI_qp_prop_t prop;
-    VAPI_mr_hndl_t mr_handle;
-    VAPI_mr_t mr;
+    VAPI_mr_hndl_t recv_mr_handle;
+    VAPI_mr_hndl_t send_mr_handle;
+    VAPI_mr_t recv_mr;
+    VAPI_mr_t send_mr;
     u_int32_t sq_tokens;
     u_int32_t rq_tokens;
     bool receive_multicast;
-    int num_bufs;
-    addrLifo *bufs;
-    VAPI_rr_desc_t *rr_descs;
-    VAPI_sg_lst_entry_t *sg;
+    int num_rbufs;
+    int num_sbufs;
+    void *base_rbuf;
+    void *base_sbuf;
 } ib_ud_qp_state_t;
 
 typedef struct {
@@ -100,6 +102,11 @@ typedef struct {
     VAPI_cqe_num_t send_cq_tokens;
     ib_ud_qp_state_t ud;
     FreeListPrivate_t <ibRecvFragDesc> recv_frag_list;
+    FreeListPrivate_t <ibSendFragDesc> send_frag_list;
+    unsigned int ctlMsgsToSendFlag;
+    unsigned int ctlMsgsToAckFlag;
+    ProcessPrivateMemDblLinkList ctlMsgsToSend[1];
+    ProcessPrivateMemDblLinkList ctlMsgsToAck[1];
 } ib_hca_state_t;
 
 typedef struct {
@@ -113,6 +120,7 @@ typedef struct {
     VAPI_gid_t mcast_gid;
     ib_ud_peer_t ud_peers;
     int max_ud_2k_buffers;
+    int max_outst_frags;
     bool ack;
     bool checksum;
 } ib_state_t;

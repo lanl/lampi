@@ -46,7 +46,9 @@
 #include "init/init.h"
 #include "client/adminMessage.h"
 #include "path/ib/recvFrag.h"
+#include "path/ib/sendFrag.h"
 #include "path/ib/state.h"
+#include "util/DblLinkList.h"
 
 extern FixedSharedMemPool SharedMemoryPools;
 
@@ -59,11 +61,13 @@ void ibSetup(lampiState_t *s)
     VAPI_mr_t mr;
     IB_port_t p;
     ibRecvFragDesc *rfrag;
+    ibSendFragDesc *sfrag;
+    DoubleLinkList dlist;
     bool mcast_attached = false;
     int i, j, rc, usable = 0, mcast_prefix = htonl(0xff120000);
     int *authdata, *exchange_recv, *exchange_send;
-    int maxhcas, maxports, num_bufs;
-    void *mem;
+    int maxhcas, maxports, num_rbufs, num_sbufs;
+    void *rmem, *smem;
 
     int nFreeLists;
     long nPagesPerList;
@@ -88,6 +92,7 @@ void ibSetup(lampiState_t *s)
     ib_state.max_ud_2k_buffers = 2048;
     ib_state.ack = true;
     ib_state.checksum = false;
+    ib_state.max_outst_frags = -1;
 
     // client daemon does info exchanges only
     if (s->iAmDaemon) {
@@ -303,32 +308,47 @@ void ibSetup(lampiState_t *s)
         h->ud.sq_tokens = h->ud.prop.cap.max_oust_wr_sq;
         h->ud.rq_tokens = h->ud.prop.cap.max_oust_wr_rq;
 
-        // calculate an appropriate number of 2KB buffers to track
-        num_bufs = ib_state.max_ud_2k_buffers;
-        if ((u_int32_t)num_bufs > h->ud.rq_tokens) 
-            num_bufs = h->ud.rq_tokens;
-        if ((u_int32_t)num_bufs > h->recv_cq_tokens)
-            num_bufs = h->recv_cq_tokens;
+        // calculate an appropriate number of 2KB receive buffers to track
+        num_rbufs = ib_state.max_ud_2k_buffers;
+        if ((u_int32_t)num_rbufs > h->ud.rq_tokens) 
+            num_rbufs = h->ud.rq_tokens;
+        if ((u_int32_t)num_rbufs > h->recv_cq_tokens)
+            num_rbufs = h->recv_cq_tokens;
 
-        // initialize bufs addrLifo tracker
-        h->ud.bufs = new addrLifo(num_bufs,128,256);
-        // cache value of num_bufs for later reference
-        h->ud.num_bufs = num_bufs;
+        // calculate an appropriate number of 2KB send buffers to track
+        num_sbufs = ib_state.max_ud_2k_buffers;
+        if ((u_int32_t)num_sbufs > h->ud.sq_tokens) 
+            num_sbufs = h->ud.sq_tokens;
+        if ((u_int32_t)num_sbufs > h->send_cq_tokens)
+            num_sbufs = h->send_cq_tokens;
 
-        // grab a hunk of memory...register it as a memory region
-        mem = ulm_malloc(num_bufs * 2048);
-        // grab two more hunks for receive descriptors and scatter entries
-        h->ud.rr_descs = (VAPI_rr_desc_t *)ulm_malloc(num_bufs * sizeof(VAPI_rr_desc_t));
-        h->ud.sg = (VAPI_sg_lst_entry_t *)ulm_malloc(num_bufs * sizeof(VAPI_sg_lst_entry_t));
+        // cache value of send and receive num_bufs for later reference
+        h->ud.num_rbufs = num_rbufs;
+        h->ud.num_sbufs = num_sbufs;
+
+        // grab a hunk of memory...make sure it is page-aligned...
+        // register it as a memory region for receive buffers
+        rmem = ulm_malloc(num_rbufs * 2048 + getpagesize());
+        rmem = (void *)(((unsigned long)rmem + getpagesize() - 1)/getpagesize());
+        rmem = (void *)((unsigned long)rmem * getpagesize());
+        // cache start of buffer memory for later calculations
+        h->ud.base_rbuf = rmem;
+
+        // do the same for send buffers
+        smem = ulm_malloc(num_sbufs * 2048 + getpagesize());
+        smem = (void *)(((unsigned long)smem + getpagesize() - 1)/getpagesize());
+        smem = (void *)((unsigned long)smem * getpagesize());
+        // cache start of buffer memory for later calculations
+        h->ud.base_sbuf = smem;
 
         // initialize a receive fragment descriptor list per HCA -- will eventually
         // have its memoryPool chunks registered with the HCA for RDMA write access...
         rc = h->recv_frag_list.Init(nFreeLists = 1,
-            nPagesPerList = ((num_bufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
+            nPagesPerList = ((num_rbufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
             PoolChunkSize = getpagesize(),
             PageSize = getpagesize(),
             ElementSize = sizeof(ibRecvFragDesc),
-            minPagesPerList = ((num_bufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
+            minPagesPerList = ((num_rbufs * sizeof(ibRecvFragDesc)) / getpagesize()) + 1,
             maxPagesPerList = -1,
             mxConsecReqFailures = 1000,
             "IB receive fragment descriptors",
@@ -343,22 +363,57 @@ void ibSetup(lampiState_t *s)
                 ib_state.active_hcas[i]));
         }
 
-        // register the memory
+        // initialize a send fragment descriptor list per HCA 
+        rc = h->send_frag_list.Init(nFreeLists = 1,
+            nPagesPerList = ((num_sbufs * sizeof(ibSendFragDesc)) / getpagesize()) + 1,
+            PoolChunkSize = getpagesize(),
+            PageSize = getpagesize(),
+            ElementSize = sizeof(ibSendFragDesc),
+            minPagesPerList = ((num_sbufs * sizeof(ibSendFragDesc)) / getpagesize()) + 1,
+            maxPagesPerList = -1,
+            mxConsecReqFailures = 1000,
+            "IB send fragment descriptors",
+            retryForMoreResources = true,
+            NULL,
+            enforceMemAffinity = false,
+            NULL,
+            Abort = true,
+            threshToGrowList = 0); 
+        if (rc) {
+            ulm_exit((-1, "Error: can't initialize IB send_frag_list for HCA %d\n",
+                ib_state.active_hcas[i]));
+        }
+
+        // register the receive buffer memory
         mr.type = VAPI_MR;
-        mr.start = (VAPI_virt_addr_t)((unsigned long)mem);
-        mr.size = num_bufs * 2048;
+        mr.start = (VAPI_virt_addr_t)((unsigned long)rmem);
+        mr.size = num_rbufs * 2048;
         mr.pd_hndl = h->pd;
         mr.acl = VAPI_EN_LOCAL_WRITE;
-        vapi_result = VAPI_register_mr(h->handle, &mr, &(h->ud.mr_handle), 
-            &(h->ud.mr));
+        vapi_result = VAPI_register_mr(h->handle, &mr, &(h->ud.recv_mr_handle), 
+            &(h->ud.recv_mr));
         if (vapi_result != VAPI_OK) {
-            ulm_err(("ibSetup: VAPI_register_mr for HCA %d returned %s\n",
+            ulm_err(("ibSetup: VAPI_register_mr for HCA %d (receive buffers) returned %s\n",
                 ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
             exit(1);
         }
-        // store 2KB chunks in addrLifo...and create recv_desc and sg entry
-        for (j = 0; j < num_bufs; j++) {
-            h->ud.bufs->push(mem);
+
+        // register the send buffer memory
+        mr.type = VAPI_MR;
+        mr.start = (VAPI_virt_addr_t)((unsigned long)smem);
+        mr.size = num_sbufs * 2048;
+        mr.pd_hndl = h->pd;
+        mr.acl = 0;
+        vapi_result = VAPI_register_mr(h->handle, &mr, &(h->ud.send_mr_handle), 
+            &(h->ud.send_mr));
+        if (vapi_result != VAPI_OK) {
+            ulm_err(("ibSetup: VAPI_register_mr for HCA %d (send buffers) returned %s\n",
+                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            exit(1);
+        }
+
+        // initialize recv desc. to reference each 2KB buffer
+        for (j = 0; j < num_rbufs; j++) {
 
             // grab receive fragment descriptor and initialize
             rfrag = h->recv_frag_list.getElement(0, rc);
@@ -368,33 +423,79 @@ void ibSetup(lampiState_t *s)
                 exit(1);
             }
 
+            // initialize LA-MPI recv. frag. desc.
             rfrag->hca_index_m = ib_state.active_hcas[i];
             rfrag->qp_type_m = ibRecvFragDesc::UD_QP;
-            rfrag->desc_index_m = j;
 
             // store pointer to receive fragment descriptor as id
-            h->ud.rr_descs[j].id = (VAPI_wr_id_t)((unsigned long)rfrag);
-            h->ud.rr_descs[j].opcode = VAPI_RECEIVE;
-            h->ud.rr_descs[j].comp_type = VAPI_SIGNALED;
-            h->ud.rr_descs[j].sg_lst_p = &(h->ud.sg[j]);
-            h->ud.rr_descs[j].sg_lst_len = 1;
+            rfrag->rr_desc_m.id = (VAPI_wr_id_t)((unsigned long)rfrag);
+            rfrag->rr_desc_m.opcode = VAPI_RECEIVE;
+            rfrag->rr_desc_m.comp_type = VAPI_SIGNALED;
+            rfrag->rr_desc_m.sg_lst_p = rfrag->sg_m;
+            rfrag->rr_desc_m.sg_lst_len = 1;
 
-            h->ud.sg[j].addr = (VAPI_virt_addr_t)((unsigned long)mem);
-            h->ud.sg[j].len = 2048;
-            h->ud.sg[j].lkey = h->ud.mr.l_key;
+            rfrag->sg_m[0].addr = (VAPI_virt_addr_t)((unsigned long)rmem);
+            rfrag->sg_m[0].len = 2048;
+            rfrag->sg_m[0].lkey = h->ud.recv_mr.l_key;
 
-            mem = (void *)((char *)mem + 2048);
+            rmem = (void *)((char *)rmem + 2048);
+        
+            // post it...
+            vapi_result = VAPI_post_rr(h->handle, h->ud.handle, &(rfrag->rr_desc_m));
+            if (vapi_result != VAPI_OK) {
+                ulm_err(("ibSetup: VAPI_post_rr() for HCA %d (desc. num. %d) returned %s\n",
+                    ib_state.active_hcas[i], j, VAPI_strerror(vapi_result)));
+                exit(1);
+            }
+
+            // decrement tokens...don't need to check values...
+            (h->recv_cq_tokens)--;
+            (h->ud.rq_tokens)--;
         }
 
-        // now post them all...
-        vapi_result = EVAPI_post_rr_list(h->handle, h->ud.handle,
-            h->ud.num_bufs, h->ud.rr_descs);
-        if (vapi_result != VAPI_OK) {
-            ulm_err(("ibSetup: EVAPI_post_rr_list() for HCA %d returned %s\n",
-                ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
-            exit(1);
+        // initialize send desc. to reference each 2KB buffer
+        for (j = 0; j < num_sbufs; j++) {
+
+            // grab send fragment descriptor and initialize
+            sfrag = h->send_frag_list.getElement(0, rc);
+            if (rc != ULM_SUCCESS) {
+                ulm_err(("ibSetup: unable to get send fragment desc. for HCA %d\n",
+                    ib_state.active_hcas[i]));
+                exit(1);
+            }
+
+            // initialize LA-MPI send frag. desc. 
+            sfrag->hca_index_m = ib_state.active_hcas[i];
+            sfrag->qp_type_m = ibSendFragDesc::UD_QP;
+            sfrag->state_m = ibSendFragDesc::IBRESOURCESINITED;
+
+            // store pointer to send fragment descriptor as id
+            sfrag->sr_desc_m.id = (VAPI_wr_id_t)((unsigned long)sfrag);
+            sfrag->sr_desc_m.opcode = VAPI_SEND;
+            sfrag->sr_desc_m.comp_type = VAPI_SIGNALED;
+            sfrag->sr_desc_m.sg_lst_p = sfrag->sg_m;
+            sfrag->sr_desc_m.sg_lst_len = 1;
+            sfrag->sr_desc_m.remote_qkey = ib_state.qkey;
+
+            sfrag->sg_m[0].addr = (VAPI_virt_addr_t)((unsigned long)smem);
+            sfrag->sg_m[0].len = 2048; // possibly overwritten with real len <= 2048
+            sfrag->sg_m[0].lkey = h->ud.send_mr.l_key;
+
+            smem = (void *)((char *)smem + 2048);
+        
+            // store it on a temporary list...
+            dlist.AppendNoLock(sfrag);
+
+            // decrement tokens...don't need to check values...
+            (h->send_cq_tokens)--;
+            (h->ud.sq_tokens)--;
         }
-            
+
+        // store the send descriptors on the freelist
+        while (dlist.size()) {
+            sfrag = (ibSendFragDesc *)dlist.GetLastElementNoLock();
+            h->send_frag_list.returnElementNoLock(sfrag, 0);;
+        }
     }
 
 exchange_info:

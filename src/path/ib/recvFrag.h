@@ -48,7 +48,8 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
         bool DataOK_m;
         int hca_index_m;
         qp_type qp_type_m;
-        int desc_index_m;
+        VAPI_rr_desc_t rr_desc_m;
+        VAPI_sg_lst_entry_t sg_m[1];
 
 
         ibRecvFragDesc() { DataOK_m = false; }
