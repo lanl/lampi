@@ -139,12 +139,13 @@ int push_frags_into_network(double timeNow)
                 //
                 // We've finished sending
                 //
-                int nAcked = SendDesc->NumAcked;
+                unsigned int nAcked = SendDesc->NumAcked;
                 if( SendDesc->path_m->pathType_m == SHAREDMEM ) {
-                    /* the shared memory send descriptor stores NumAcked in
-                    *   the shared memory variable
-                    *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
-                    */
+                    /* 
+                     * the shared memory send descriptor stores
+                     * NumAcked in the shared memory variable
+                     * SendDesc->pathInfo.sharedmem.sharedData->NumAcked
+                     */
                     nAcked = SendDesc->pathInfo.sharedmem.sharedData->NumAcked;
                 }
                 if ( ( nAcked >= SendDesc->numfrags) &&
