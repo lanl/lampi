@@ -578,9 +578,12 @@ static int fork_many_tree(int rank, int nprocs, volatile pid_t *local_pids)
          * Install SIGCHLD handler
          */
 
+        if (sigaction(SIGCHLD, NULL, &action) < 0) {
+            perror("sigaction failed");
+            abort();
+        }
         action.sa_handler = sigchld_handler;
-        sigfillset(&action.sa_mask);
-        action.sa_flags = SA_NOCLDSTOP;
+        action.sa_flags |= SA_NOCLDSTOP;
         if (sigaction(SIGCHLD, &action, NULL) < 0) {
             perror("sigaction failed");
             abort();
