@@ -1,3 +1,203 @@
+2004-06-29 23:27  ddd
+
+	* src/: include/mpi/constants.h, mpi/internal/mpi_state.c: Previous
+	  fix for handling MPI_REQUEST_NULL in fortran just moved the
+	  problem elsewhere.  So, biting the bullet and making null
+	  descriptors (MPI_DATATYPE_NULL, MPI_OP_NULL and MPI_REQUEST_NULL)
+	  into pointers to real memory locations.
+
+2004-06-29 23:23  ddd
+
+	* src/client/adminMessage.h: increasing send buffer size to 64k
+
+2004-06-29 14:23  ddd
+
+	* src/: client/AbortLocalHost.cc, client/CheckForControlMsgs.cc,
+	  client/CheckIfChildrenAlive.cc, client/ClientSendStdin.cc,
+	  client/InstallSigHandler.cc, client/OrderlyShutdown.cc,
+	  client/ULMClient.h, client/ULMClientSignals.cc,
+	  client/adminMessage.cc, client/daemonLoop.cc, client/libmpi.mk,
+	  client/setupMemoryPools.cc, collective/newalltoall.cc,
+	  collective/quadrics/ulm_bcast_interhost_quadrics.cc,
+	  include/internal/constants.h, include/internal/log.h,
+	  include/internal/malloc.h, include/internal/new.h,
+	  include/internal/types.h, init/init.cc, init/init_quadrics.cc,
+	  interface/ulm_abort.cc, interface/ulm_log.cc,
+	  mem/FixedSharedMemPool.cc, mem/FreeLists.h, mem/MemoryPool.h,
+	  mem/ULMMallocSharedLocal.h, mem/ULMMemoryBuckets.h,
+	  mem/ULMPool.cc, mpi/f/mpi_test.c, mpi/f/mpi_wait.c,
+	  mpi/internal/mpi_errhandler.c, os/IRIX/SN0/IRIX_request.cc,
+	  os/IRIX/SN0/IRIX_request_private.cc, os/IRIX/SN0/MD_acquire.cc,
+	  os/IRIX/SN0/MD_acquire.h, os/IRIX/SN0/acquire.h,
+	  os/IRIX/SN0/numa.cc, os/IRIX/SN0/request.h,
+	  path/common/BaseDesc.cc, path/common/InitSendDescriptors.cc,
+	  path/common/path.cc, path/gm/init.cc, path/gm/path.cc,
+	  path/gm/recvFrag.h, path/gm/sendFrag.cc, path/ib/init.cc,
+	  path/ib/memory.cc, path/ib/path.cc, path/ib/path.h,
+	  path/ib/recvFrag.cc, path/ib/sendFrag.cc, path/quadrics/init.cc,
+	  path/quadrics/path.cc, path/quadrics/path.h,
+	  path/quadrics/recvFrag.cc, path/quadrics/recvFrag.h,
+	  path/quadrics/sendFrag.h, path/sharedmem/InitSMPDevs.cc,
+	  path/sharedmem/path.cc, path/tcp/tcppath.cc, path/tcp/tcppeer.cc,
+	  path/udp/UDPNetwork.cc, path/udp/init.cc, path/udp/path.cc,
+	  path/udp/recvFrag.cc, path/udp/sendFrag.cc, queue/Group.cc,
+	  queue/Pt2PtGroupMisc.cc, queue/Pt2PtGroupProgress.cc,
+	  queue/Pt2PtGroupRecvFrags.cc, queue/ReliabilityInfo.cc,
+	  queue/barrier.cc, run/Abort.cc, run/AbortAllHosts.cc,
+	  run/CheckForControlMsgs.cc, run/Daemonize.cc,
+	  run/GetClientCpus.cc, run/InstallSigHandler.cc,
+	  run/KillAppProcs.cc, run/Run.h, run/Signal.cc, run/globals.h,
+	  run/mpirun.cc, run/mpirun.mk, run/sigalarm.cc, util/Reactor.cc,
+	  util/Vector.h: A large check-in.  Main goal is make abnormal exit
+	  on bproc more robust.
+
+	  Don't panic: Most of the changes are simplifications of ulm_err
+	  and ulm_exit.
+
+	  Adding more output for mpirun -v.
+
+	  Also removed some more dead code.
+
+2004-06-28 15:52  twoodall
+
+	* src/run/CheckForControlMsgs.cc: removed debug
+
+2004-06-28 15:46  twoodall
+
+	* src/: client/CheckForControlMsgs.cc, client/ClientSendStdin.cc,
+	  client/ULMClient.h, client/daemonLoop.cc,
+	  include/internal/constants.h, init/init.cc,
+	  run/CheckForControlMsgs.cc, run/Daemonize.cc, run/globals.h: -
+	  changed client pipe/pty to be non-blocking - maintain a static
+	  buffer for stdin to be written to client - added flow control so
+	  that stdin is only sent to the daemon   when the
+	  daemon/application is ready for it (buffer is available)
+
+2004-06-28 15:45  twoodall
+
+	* src/collective/: ulm_barrier_interhost.cc,
+	  p2p/ulm_barrier_p2p.cc: changed barrier to standard send rather
+	  than synchronous
+
+2004-06-28 15:07  ddd
+
+	* src/mpi/c/: mpi_test.c, mpi_wait.c: Return with empty status if
+	  request is MPI_REQUEST_NULL
+
+2004-06-28 14:49  ddd
+
+	* src/mpi/f/mpi_wait.c: Return immediately with empty status if
+	  request is MPI_REQUEST_NULL
+
+2004-06-28 14:47  ddd
+
+	* src/mpi/f/: mpi_error_string.c, mpi_get_processor_name.c,
+	  mpi_test.c, mpi_wait.c: mpi_get_processor_name.c
+
+2004-06-23 14:50  twoodall
+
+	* src/path/: gm/recvFrag.cc, ib/recvFrag.cc, quadrics/recvFrag.cc,
+	  udp/recvFrag.cc: added check for valid communicator in receive
+	  data - as source could resend before seeing an ack - and receiver
+	  could have already freed the communicator
+
+2004-06-21 18:13  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec, src/client/adminMessage.h,
+	  src/include/internal/lampi_state.h, src/include/internal/log.h,
+	  src/include/internal/malloc.h, src/init/init.cc,
+	  src/interface/ulm_log.cc, src/run/Input.cc, src/run/Input.h,
+	  src/run/RunParams.h, src/run/SendInputDataToClients.cc: Adding
+	  run-time control of warnings (off by default, mpirun -w turns
+	  them on).
+
+	  Minor tweaks to log functions: Log messages come out in one
+	  string; name of log file can be modified by setting the LAMPI_LOG
+	  env variable (useful on bproc and other development systems).
+
+	  Updating version number for 1.5.4 (not ready to tag yet).
+
+2004-06-21 08:34  ddd
+
+	* src/: client/adminMessage.h, init/init.cc, init/init.h,
+	  run/Input.cc, run/Input.h, run/ProcessInput.cc, run/RunParams.h,
+	  run/SendInputDataToClients.cc, run/mpirun.cc: Adding "mpirun -v"
+	  option for debugging start-up.
+
+	  Explicitly setting stdio streams to no buffering in MPI_Init to
+	  see if this helps.
+
+2004-06-20 15:34  ddd
+
+	* src/: client/AbortLocalHost.cc, client/CheckForControlMsgs.cc,
+	  client/ClientHandshakeWithServer.cc, client/ScanStdoutStderr.cc,
+	  client/ServerHandshakeWithClient.cc, client/SocketClient.h,
+	  client/SocketGeneric.cc, client/SocketGeneric.h,
+	  client/SocketInitClient.cc, client/SocketInitServer.cc,
+	  client/SocketServer.h, client/TV.h, client/TVSetup.c,
+	  client/TVSetup.cc, client/ULMClient.h, client/libmpi.mk,
+	  client/mpirun.mk, include/internal/constants.h, init/environ.cc,
+	  init/init.cc, run/Abort.cc, run/AbortAllHosts.cc,
+	  run/CheckForControlMsgs.cc, run/CmdLineArgs.h, run/Daemonize.cc,
+	  run/FixRunParameters.cc, run/GetAppDir.cc, run/GetAppHostData.cc,
+	  run/GetClientApp.cc, run/GetClientCpus.cc,
+	  run/GetClientProcessCount.cc, run/GetClientWorkingDirectory.cc,
+	  run/GetDebugData.cc, run/GetInterfaces.cc, run/GetLSFResource.cc,
+	  run/GetNetworkDevList.cc, run/InitProc.cc, run/Input.cc,
+	  run/Input.h, run/InstallSigHandler.cc, run/JobParams.h,
+	  run/KillAppProcs.cc, run/ProcessInput.cc,
+	  run/RearrangeHostList.cc, run/Run.h, run/RunParams.cc,
+	  run/RunParams.h, run/SendInputDataToClients.cc,
+	  run/SetCheckArgsFalse.cc, run/SetOutputPrefixTrue.cc,
+	  run/SetupClientHostInfo.cc, run/TV.h, run/TVSetUp.cc,
+	  run/TVSetUpApp.cc, run/TerminateClients.cc,
+	  run/VerifyLsfResources.cc, run/globals.h, run/mpirun.cc,
+	  run/mpirun.mk, run/parseEnvironmentSettings.cc, run/sigalarm.cc,
+	  run/spawn.cc, run/spawn_bproc.cc, run/spawn_exec.cc,
+	  run/spawn_lsf.cc, run/spawn_rms.cc, run/spawn_rsh.cc: Overhauling
+	  start-up and clean-up: - Removing dead code - Simplifying use of
+	  globals vs. parameters - Making Abort() less ambitious in an
+	  attempt to make clean-up more robust
+
+2004-06-11 11:48  ddd
+
+	* src/run/: mpirun.cc, spawn_bproc.cc: Adding an environment
+	  template to enable setting of BPROC_RANK (for bproc version >=
+	  3.2.0)
+
+2004-06-10 18:17  ddd
+
+	* src/run/mpirun.cc: Fix to hostname resolution for Q
+
+2004-06-10 09:25  dgdimick
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Release of 1.5.3 fixed killing of hung jobs. also
+	  a bit more data out for de-bugging errors on start-up
+
+2004-06-09 18:18  ddd
+
+	* src/: init/init.cc, init/init.h, run/Daemonize.cc,
+	  run/JobParams.h, run/KillAppProcs.cc, run/Run.h, run/mpirun.cc:
+	  Fixing collection of application PIDs.
+
+	  More robust killing of application and daemon processes under
+	  bproc.
+
+2004-06-02 13:33  gingery
+
+	* src/collective/ulm_alltoall.cc: Added #idndef GINGER_ALLTOALL so
+	  that the original code would be selected if one didn't specify
+	  -DGINGER_ALLTOALL for the new (untuned) recursive-doubling
+	  recursive halving algorithm.
+
+2004-05-27 19:18  ddd
+
+	* ChangeLog, RELEASE_NOTES: Updating
+
 2004-05-27 18:24  ddd
 
 	* src/: client/adminMessage.h, include/internal/lampi_state.h,

@@ -364,3 +364,9 @@ Version 1.5.4
 - Verbose option for debugging start-up.
 
 - stdio streams explicitly set to no buffering.
+
+- Flow control for stdin to prevent daemon 0 blocking and timing out
+  on its heartbeat.
+
+- Null objects (MPI_DATATYPE_NULL, MPI_OP_NULL, MPI_NULL_REQUEST)
+  redefined to be real memory locations.
