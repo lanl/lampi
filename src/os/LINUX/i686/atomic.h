@@ -56,6 +56,25 @@ typedef struct {
 } bigAtomicUnsignedInt;
 
 
+#ifdef WITH_ICC
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void spinlock(lockStructure_t *lockData);
+    int spintrylock(lockStructure_t *lockData);
+    int fetchNadd(volatile int *addr, int inc);
+    int fetchNset(volatile int *addr, int setValue);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#else
+
 /*
  *  Spin until I can get the lock
  */
@@ -135,6 +154,8 @@ inline static int fetchNset(volatile int *addr, int setValue)
 
     return (inputValue);
 }
+
+#endif		/* WITH_ICC */
 
 
 inline static unsigned long long fetchNaddLong(bigAtomicUnsignedInt *addr,

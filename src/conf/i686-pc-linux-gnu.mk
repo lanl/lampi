@@ -10,18 +10,29 @@
 comma	:=,
 
 # Standard macros
-CC		:= gcc
-CXX		:= g++ 
-CFLAGS		+= -march=i686 -finline-functions
-CPPFLAGS	+= -Wall -Wno-deprecated -I. -Iinclude
 ifdef ULMDEBUG
 CFLAGS		+= -g
 else
 CFLAGS		+= -g -O
 CPPFLAGS	+= -DNDEBUG
 endif
-CXXFLAGS	:= $(CFLAGS)
+
+ifneq (,$(findstring icc, $(CC)))
+CC		:= icc
+CXX		:= $(CC) 
+CPPFLAGS	+= -I. -Iinclude -DWITH_ICC
+ASFLAGS	:= -c
+AS		:= $(CC)
+
+else
+CC		:= gcc
+CXX		:= g++ 
+CFLAGS		+= -march=i686 -finline-functions
+CPPFLAGS	+= -Wall -Wno-deprecated -I. -Iinclude
 ASFLAGS		:= $(CFLAGS)
+endif
+
+CXXFLAGS	:= $(CFLAGS)
 LDFLAGS		:= 
 LDLIBS		:=
 

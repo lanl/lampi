@@ -41,6 +41,18 @@
 #include <endian.h>
 # if BYTE_ORDER == LITTLE_ENDIAN
 #   include <byteswap.h>
+
+#   ifndef bswap_64
+inline ulm_uint64_t bswap_64(ulm_uint64_t x)
+{
+    union { ulm_uint64_t ll;
+        ulm_uint32_t l[2]; } w, r;
+    w.ll = (x);
+    r.l[0] = ntohl(w.l[1]);
+    r.l[1] = ntohl(w.l[0]);
+    return r.ll;
+}
+#   endif
 #   define ulm_ntohl(x)	bswap_64 (x)
 #   define ulm_ntohi(x)	bswap_32 (x)
 #   define ulm_htonl(x)	bswap_64 (x)
