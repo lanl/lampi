@@ -1080,6 +1080,8 @@ public:
     void setTotalNumberOfProcesses(int nprocs);
 
     void setLabelsToRank(int *labelsToRank);
+
+    int *getAuthData(void) { return authData_m; }
 };
 
 #endif
