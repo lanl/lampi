@@ -33,6 +33,7 @@
 #include <sys/errno.h>
 #include <unistd.h>
 #include <elan3/elan3.h>
+#include <elan/elan.h>
 #include <elan/version.h>
 #include <rms/rmscall.h>
 
@@ -404,6 +405,15 @@ void quadricsInitQueueInfo()
 
     base->cap        = cap ;
     base->nrails     = quadricsNRails;
+
+#define elan3_nvps elan_nvps 
+#define elan3_vp2location elan_vp2location
+#define elan3_location2vp elan_location2vp
+#define elan3_maxlocal elan_maxlocal
+#define elan3_nlocal elan_nlocal
+#define Node loc_node
+#define Context loc_context
+
     base->nvp        = elan3_nvps(cap);
     base->myloc      = elan3_vp2location(base->self, cap);
     base->maxlocals  = elan3_maxlocal(cap);
