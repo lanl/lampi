@@ -267,7 +267,7 @@ void GetClientProcessCount(const char *InfoStream)
         if (RunParams.HostListSize == 0) {
             nhosts = RunParams.NHostsSet ? RunParams.NHosts : LSFNumHosts;
             if (nhosts < 1) {
-                ulm_err(("Error: -N option specifies less than 1 host (%d).\n", nhosts));
+                ulm_err(("Error: Invalid argument to -N (%d)\n", nhosts));
                 Abort();
             }
 
@@ -292,26 +292,11 @@ void GetClientProcessCount(const char *InfoStream)
         /* check BJS and reconcile nodes with -H specified nodes */
         getBJSNodes();
         if (RunParams.HostListSize > 0) {
-            /* debug */
-            /*
-               ulm_err(("RunParams.NHostsSet %d RunParams.NHosts %d "
-               "RunParams.HostListSize %d\n",
-               RunParams.NHostsSet,
-               RunParams.NHosts,
-               RunParams.HostListSize));
-             */
-            /* end debug */
-            nhosts =
-                (RunParams.NHostsSet) ? ((RunParams.NHosts >
-                                          RunParams.
-                                          HostListSize) ? RunParams.
-                                         HostListSize : RunParams.
-                                         NHosts) : RunParams.HostListSize;
-            /* debug */
-            /*
-               ulm_err((" nhosts %d \n", nhosts));
-             */
-            /* end debug */
+            nhosts = (RunParams.NHostsSet) ? ((RunParams.NHosts >
+                                               RunParams.
+                                               HostListSize) ? RunParams.
+                                              HostListSize : RunParams.
+                                              NHosts) : RunParams.HostListSize;
             pickNodesFromList(nhosts);
         } else {
             nhosts = (RunParams.NHostsSet) ? RunParams.NHosts : 1;
@@ -331,7 +316,6 @@ void GetClientProcessCount(const char *InfoStream)
         RunParams.NHosts = RunParams.HostListSize;
     } else {
         if (RunParams.HostListSize == 0) {
-
             if (ENABLE_RMS) {
                 if (!RunParams.NHostsSet) {
                     RunParams.NHosts = 1;
@@ -341,7 +325,8 @@ void GetClientProcessCount(const char *InfoStream)
                 if (!RunParams.NHostsSet) {
                     RunParams.NHosts = RunParams.HostListSize;
                 } else if (RunParams.NHosts != 1) {
-                    ulm_err(("Error: -N option did not specify 1 host (machine) " "but there is no host (-H) information.\n"));
+                    ulm_err(("Error: -N %d specified, but no HostList (-H)\n",
+                             RunParams.NHosts));
                     Abort();
                 }
             }
@@ -462,7 +447,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     }
 
     if (!RunParams.UseLSF) {
-        ulm_err(("Error: No input data provided for -np/-n.\n"));
+        ulm_err(("Error: No argument to -np/-n.\n"));
         Abort();
     }
 
@@ -470,7 +455,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     if (RunParams.HostListSize == 0) {
         nhosts = RunParams.NHostsSet ? RunParams.NHosts : LSFNumHosts;
         if (nhosts < 1) {
-            ulm_err(("Error: -N option specifies less than 1 host (%d).\n",
+            ulm_err(("Error: Invalid argument to -N (%d)\n",
                      nhosts));
             Abort();
         }
