@@ -2305,23 +2305,24 @@ echo $ac_n "checking if MPIR_Status_set_bytes is defined""... $ac_c"
 else
 echo $ac_n "checking if MPIR_Status_set_bytes is defined""... $ac_c" 1>&1
 fi
-  rm -f mpitest.c
-  cat > mpitest.c <<EOF
-#include "mpi.h"
-     main(int argc, char **argv)
-     {
-     	 MPI_Status status;
-         MPI_Datatype type;
-	 int err;
+#   rm -f mpitest.c
+#   cat > mpitest.c <<EOF
+# #include "mpi.h"
+#      main(int argc, char **argv)
+#      {
+#      	 MPI_Status status;
+#          MPI_Datatype type;
+# 	 int err;
 
-         MPI_Init(&argc,&argv);
-         MPIR_Status_set_bytes(status,type,err);
-         MPI_Finalize(); 
-     }
-EOF
-  rm -f conftest
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x conftest ; then
+#          MPI_Init(&argc,&argv);
+#          MPIR_Status_set_bytes(status,type,err);
+#          MPI_Finalize(); 
+#      }
+# EOF
+#   rm -f conftest
+#   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+#   if test -x conftest ; then
+if true ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else

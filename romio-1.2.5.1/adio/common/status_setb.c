@@ -31,4 +31,19 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype,
     return MPI_SUCCESS;
 }
 
+#elif defined(MPILAMPI)
+
+void MPID_Status_set_bytes(MPI_Status *status, int nbytes);
+int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, 
+			  int nbytes);
+
+int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, 
+			  int nbytes)
+{
+    if (status != MPI_STATUS_IGNORE) {
+        status->_count = nbytes;
+    }
+    return MPI_SUCCESS;
+}
+
 #endif
