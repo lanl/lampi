@@ -248,4 +248,4 @@ endif
 
 %.$(OBJEXT): %.S
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
