@@ -307,6 +307,9 @@ void quadricsInitQueueInfo()
 
         /* Now map some real main memory against the reserved Elan address
             * space */
+#ifdef ELAN_COLL_SHARED
+        gMemMain = previosly_mmap_shared_memory_pointer;
+#else
         if ((gMemMain = mmap(gMemMain, gMainMemSize,
                              PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED,
                              zfd, 0)) == (void *)-1)
@@ -315,6 +318,7 @@ void quadricsInitQueueInfo()
             fflush(stderr);
             exit(1);
         }
+#endif
 
         /* Now map it into each rail */
         for (int i = 0; i < quadricsNRails; i++)

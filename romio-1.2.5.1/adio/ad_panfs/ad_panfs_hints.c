@@ -157,9 +157,14 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
                         /* open directory */
                         fd_dir = open(path, O_RDONLY);
                         if (fd_dir < 0) {
+#ifdef PRINT_ERR_MSG
+                            FPRINTF(stderr,"I/O Error opening parent directory to create PanFS file using raid groups. %s\n", strerror(errno));
+                            *error_code = MPI_ERR_UNKNOWN;
+#else
                             *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
                                           myname, "I/O Error opening parent directory to create PanFS file using raid groups", "%s", strerror(errno));
                             ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+#endif
                         }
                         else
                         {
@@ -183,9 +188,14 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
                             file_create_args.layout.u.raidgrp1_5.raidgrp_layout_policy   = PAN_FS_CLIENT_LAYOUT_RAIDGRP__ROUND_ROBIN;
                             err = ioctl(fd_dir, PAN_FS_CLIENT_LAYOUT_CREATE_FILE, &file_create_args);
                             if (err < 0) {
+#ifdef PRINT_ERR_MSG
+                                FPRINTF("I/O Error doing ioctl on parent directory to create PanFS file using raid groups %s\n", strerror(errno));
+                                *error_code = MPI_ERR_UNKNOWN;
+#else
                                 *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
                                               myname, "I/O Error doing ioctl on parent directory to create PanFS file using raid groups", "%s", strerror(errno));
                                 ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+#endif
                             }
                             err = close(fd_dir);
                         }

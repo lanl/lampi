@@ -340,7 +340,7 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     else if (!strncmp(filename, "cfs:", 4) || !strncmp(filename, "CFS:", 4)) {
 	*fstype = ADIO_CFS;
     }
-    else if (!strncmp(filename, "panfs:", 4) || !strncmp(filename, "PANFS:", 4)) {
+    else if (!strncmp(filename, "panfs:", 6) || !strncmp(filename, "PANFS:", 6)) {
 	*fstype = ADIO_PANFS;
     }
     else if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4)) {
@@ -625,9 +625,11 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     *fstype = file_system;
 
 
+    /*
     FPRINTF(stderr, "messages from ad_fstype.c\n");
     FPRINTF(stderr, "ADIO_ResolveFileType: using fstype=%i\n",file_system);
     FPRINTF(stderr, "NFS=%i UFS=%i  CFS=%i PANFS=%i\n",ADIO_NFS,ADIO_UFS,ADIO_CFS,ADIO_PANFS);
+    */
 
     return;
 }
