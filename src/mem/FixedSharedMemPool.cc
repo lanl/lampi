@@ -207,25 +207,15 @@ void *FixedSharedMemPool::getMemorySegment(size_t length,
             ptr = (char *) ((size_t) ptr + alignment);
             ptr = (char *) ((size_t) ptr & mask);
 
-            // set the amount of memory available with the requested alignment
-            ssize_t avail =
-                memSegments_m[poolIndex][segment].memAvailable_m - (ptr -
-                                                                    (char
-                                                                     *)
-                                                                    memSegments_m
-                                                                    [poolIndex]
-                                                                    [segment].
-                                                                    currentPtr_m);
+            lengthToAllocate = length +
+                (ptr - (char *) memSegments_m[poolIndex][segment].currentPtr_m);
 
             // continue if not enough memory in this segment
-            if (avail < length)
+            if (lengthToAllocate >
+                memSegments_m[poolIndex][segment].memAvailable_m) {
                 continue;
-
-            //
+            }
             returnPtr = ptr;
-            lengthToAllocate = length +
-                (ptr -
-                 (char *) memSegments_m[poolIndex][segment].currentPtr_m);
         }
 
         if (memSegments_m[poolIndex][segment].memAvailable_m >=
