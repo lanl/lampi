@@ -138,11 +138,12 @@ typedef struct {
 
     int interceptSTDio;             /* will library handle standard I/O? */
     int STDINfdToChild;
-    int commonAlivePipe[2];            /* pipe used by daemon to determine when all procs have exited */
+    int commonAlivePipe[2];         /* pipe used by daemon to determine when all procs have exited */
     int *STDERRfdsFromChildren;     /* stderr file descriptors to redirect */
     int *STDOUTfdsFromChildren;     /* stdout file descriptors to redirect */
     int output_prefix;              /* prepend informative prefix to stdout/stderr ? */
     int quiet;                      /* suppress start-up messages */
+    int isatty;                     /* is mpirun a tty? */
     size_t StderrBytesWritten;      /* number of bytes written to stderr */
     size_t StdoutBytesWritten;      /* number of bytes written to stdout */
     int *NewLineLast;               /* insert newline character? */

@@ -86,6 +86,9 @@ typedef struct ULMRunParams {
     /* prepend output prefix */
     int OutputPrefix;
 
+    /* Is mpirun a terminal? */
+    int isatty;
+
     /* suppress start-up message */
     int Quiet;
 
