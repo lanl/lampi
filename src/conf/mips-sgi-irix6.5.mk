@@ -43,8 +43,8 @@ CPPFLAGS	+= -DUDP
 # LSF support
 USE_LSF		:= 1
 ifdef USE_LSF
-LSF_PREFIX=/usr/local/packages/lsf
-LSF_INCLUDE_PREFIX=/usr/local/share/packages/lsf
+LSF_PREFIX=/lsf
+LSF_INCLUDE_PREFIX=/lsf/share
 CPPFLAGS	+= -DLSF
 CPPFLAGS	+= -I$(LSF_INCLUDE_PREFIX)/include
 LDFLAGS		+= -L $(LSF_PREFIX)/lib64

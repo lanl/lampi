@@ -59,7 +59,7 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
 #ifdef USE_CT
     int			errorCode;
 #else
-    size_t IOReturn;
+    ssize_t IOReturn;
     ulm_iovec_t IOVec[2];
 #endif
     static int Finished = 0;

@@ -64,15 +64,15 @@ int SpawnUserAppRSH(unsigned int *AuthData,
                     ULMRunParams_t *RunParameters,
                     int FirstAppArgument, int argc, char **argv)
 {
-	char TMP[ULM_MAX_CONF_FILELINE_LEN];
-    	int i, RetVal, offset, LenList, STDERRpipe[2], STDOUTpipe[2],
+    char TMP[ULM_MAX_CONF_FILELINE_LEN];
+    int i, RetVal, offset, LenList, STDERRpipe[2], STDOUTpipe[2],
    	dupSTDERRfd, dupSTDOUTfd;
-	int AlarmReturn, *ListHostAppSpawned = 0,NClientsOK = 0;
-      	size_t len, MaxSize;
-    	pid_t Child;
-       	char **ExecArgs;
-	jmp_buf JumpBufferCheckClients; // longjmp buf for VerifyClientStartup
-	int NHostsStarted = 0;
+    int AlarmReturn;
+    size_t len, MaxSize;
+    pid_t Child;
+    char **ExecArgs;
+    jmp_buf JumpBufferCheckClients; // longjmp buf for VerifyClientStartup
+    int NHostsStarted = 0;
 
     /* compute size of execvp argv[] , and max space needed to store the strings */
     MaxSize = 0;
@@ -97,7 +97,7 @@ int SpawnUserAppRSH(unsigned int *AuthData,
        csh/tcsh: setenv X Y ;
        sh : export X ; X=Y ;
 
-     */
+    */
     /* !!!!!!!!!!!! add code for sh */
     len = strlen("setenv");
     if (len > MaxSize)
@@ -109,13 +109,13 @@ int SpawnUserAppRSH(unsigned int *AuthData,
     len = strlen("LAMPI_ADMIN_AUTH0");
     if (len > MaxSize)
         MaxSize = len;
-	for (i = 0; i<3; i++)
-	{
-		sprintf(TMP, "%u", AuthData[i]);
-		len = strlen(TMP);
-		if (len > MaxSize)
-			MaxSize = len;
-	}
+    for (i = 0; i<3; i++)
+    {
+        sprintf(TMP, "%u", AuthData[i]);
+        len = strlen(TMP);
+        if (len > MaxSize)
+            MaxSize = len;
+    }
 
     /* socket number */
     len = strlen("LAMPI_ADMIN_PORT");
@@ -271,10 +271,10 @@ int SpawnUserAppRSH(unsigned int *AuthData,
         // set offsets into ExecArgs
         int HostEntry = 2;
 		
-		/* IMPORTANT: Update this value if you add anything
-		to ExecArgs below where the indices are explicit,
-		e.g. ExecArgs[12] = "foo"
-		*/
+        /* IMPORTANT: Update this value if you add anything
+           to ExecArgs below where the indices are explicit,
+           e.g. ExecArgs[12] = "foo"
+        */
         int EndLibEnvVars = 25;
         int CDEntry = EndLibEnvVars + 1 + nAddedElements;
         int WorkingDirEntry = CDEntry + 1;
@@ -435,25 +435,11 @@ int SpawnUserAppRSH(unsigned int *AuthData,
      */
     AlarmReturn = setjmp(JumpBufferCheckClients);
     if (AlarmReturn != 0) {
-	    goto VerifyClientStartupTag;
+        goto VerifyClientStartupTag;
     }
-
-    /*
-     * Initialize ListHostAppSpawned - need for when the alarm expires
-     */
 
 VerifyClientStartupTag:
     alarm(0);
-
-    /*
-     * Process alarm if rc indicates to do so
-     */
-    if (AlarmReturn != 0) {
-	    if (ListHostAppSpawned == NULL)
-	   	    NClientsOK = 0;
-	    else
-	     	    NClientsOK = FindStartedClients(ListHostAppSpawned);
-    }
 
     return 0;
 }
