@@ -56,7 +56,8 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
 {
     // create pointer to ULM request object
     RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
-    int rc;
+    BaseSendDesc_t *SendDescriptor ;
+    int errorCode = ULM_SUCCESS;
 
     // make sure that he request object is in the inactive state
     if (tmpRequest->status == ULM_STATUS_INVALID) {
@@ -71,35 +72,18 @@ int Communicator::isend_start(ULMRequestHandle_t *request)
     if ((tmpRequest->sendType == ULM_SEND_BUFFERED) && 
         (tmpRequest->persistent)) {
         int offset = 0;
-        rc = PMPI_Pack(tmpRequest->appBufferPointer,
+        errorCode = PMPI_Pack(tmpRequest->appBufferPointer,
                        tmpRequest->bsendDtypeCount, 
 		       (MPI_Datatype)tmpRequest->bsendDtypeType,
                        tmpRequest->pointerToData,
                        tmpRequest->bsendBufferSize, &offset, contextID);
-        if (rc != MPI_SUCCESS) {
-            return rc;
+        if (errorCode != MPI_SUCCESS) {
+            return errorCode;
         }
     }
     // set sent completion to false
     tmpRequest->messageDone = false;
 
-    int retVal = isend_start_network(request);
-    if (retVal != ULM_SUCCESS) {
-    	    return retVal;
-    }
-
-    return ULM_SUCCESS;
-}
-
-// Initial attempt to send data - off host the request object has
-// already been checked for error conditions
-int Communicator::isend_start_network(ULMRequestHandle_t *request)
-{
-    int errorCode = ULM_SUCCESS;
-    // create pointer to ULM request object
-    RequestDesc_t *tmpRequest = (RequestDesc_t *) (*request);
-
-    BaseSendDesc_t *SendDescriptor ;
     // bind send descriptor to a given path....this can fail...
     errorCode = (*pt2ptPathSelectionFunction) (tmpRequest, (void **) 
 		    (&SendDescriptor) );
@@ -173,21 +157,21 @@ int Communicator::isend_start_network(ULMRequestHandle_t *request)
     // get sequence number...now that we can't fail for ordinary reasons...
     //
     unsigned long seq;
-    if (usethreads())
-    	    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
-		    lock();
-    seq =
-    	    next_isendSeqs[tmpRequest->posted_m.proc.destination_m]++;
-    if (usethreads())
-    	    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
-		    unlock();
+    if(SendDescriptor->path_m->pathType_m != SHAREDMEM) {
+	    if (usethreads())
+		    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+			    lock();
+	    seq = next_isendSeqs[tmpRequest->posted_m.proc.destination_m]++;
+	    if (usethreads())
+		    next_isendSeqsLock[tmpRequest->posted_m.proc.destination_m].
+			    unlock();
+	    // set sequence number
+	    tmpRequest->sequenceNumber_m = seq;
+	    SendDescriptor->isendSeq_m = seq;
+    }
 
     if (usethreads())
         SendDescriptor->Lock.lock();
-
-    // set sequence number
-    tmpRequest->sequenceNumber_m = seq;
-    SendDescriptor->isendSeq_m = seq;
 
     // start sending data
     int sendReturn;
