@@ -1,17 +1,17 @@
 SRC_LIBMPI += \
 	src/mpi/c/mpi_abort.c \
 	src/mpi/c/mpi_address.c \
-	src/mpi/c/mpi_allgather.cc \
-	src/mpi/c/mpi_allgatherv.cc \
-	src/mpi/c/mpi_allreduce.cc \
-	src/mpi/c/mpi_alltoall.cc \
-	src/mpi/c/mpi_alltoallv.cc \
-	src/mpi/c/mpi_alltoallw.cc \
+	src/mpi/c/mpi_allgather.c \
+	src/mpi/c/mpi_allgatherv.c \
+	src/mpi/c/mpi_allreduce.c \
+	src/mpi/c/mpi_alltoall.c \
+	src/mpi/c/mpi_alltoallv.c \
+	src/mpi/c/mpi_alltoallw.c \
 	src/mpi/c/mpi_attr_delete.c \
 	src/mpi/c/mpi_attr_get.c \
 	src/mpi/c/mpi_attr_put.c \
-	src/mpi/c/mpi_barrier.cc \
-	src/mpi/c/mpi_bcast.cc \
+	src/mpi/c/mpi_barrier.c \
+	src/mpi/c/mpi_bcast.c \
 	src/mpi/c/mpi_bsend.c \
 	src/mpi/c/mpi_bsend_init.c \
 	src/mpi/c/mpi_buffer_attach.c \
@@ -45,8 +45,8 @@ SRC_LIBMPI += \
 	src/mpi/c/mpi_error_string.c \
 	src/mpi/c/mpi_finalize.c \
 	src/mpi/c/mpi_finalized.c \
-	src/mpi/c/mpi_gather.cc \
-	src/mpi/c/mpi_gatherv.cc \
+	src/mpi/c/mpi_gather.c \
+	src/mpi/c/mpi_gatherv.c \
 	src/mpi/c/mpi_get_count.c \
 	src/mpi/c/mpi_get_elements.c \
 	src/mpi/c/mpi_get_processor_name.c \
@@ -91,14 +91,14 @@ SRC_LIBMPI += \
 	src/mpi/c/mpi_query_thread.c \
 	src/mpi/c/mpi_recv.c \
 	src/mpi/c/mpi_recv_init.c \
-	src/mpi/c/mpi_reduce.cc \
+	src/mpi/c/mpi_reduce.c \
 	src/mpi/c/mpi_reduce_scatter.c \
 	src/mpi/c/mpi_request_free.c \
 	src/mpi/c/mpi_rsend.c \
 	src/mpi/c/mpi_rsend_init.c \
-	src/mpi/c/mpi_scan.cc \
-	src/mpi/c/mpi_scatter.cc \
-	src/mpi/c/mpi_scatterv.cc \
+	src/mpi/c/mpi_scan.c \
+	src/mpi/c/mpi_scatter.c \
+	src/mpi/c/mpi_scatterv.c \
 	src/mpi/c/mpi_send.c \
 	src/mpi/c/mpi_send_init.c \
 	src/mpi/c/mpi_sendrecv.c \
