@@ -62,8 +62,7 @@ void mpi_waitall_f(MPI_Fint *count, MPI_Fint *request_array,
             if ((request_array[i] >= 0)
                 && (status_array[i]._persistent == 0)) {
                 _mpi_ptr_table_free(_mpif.request_table, request_array[i]);
-                /* set to MPI_REQUEST_NULL */
-                request_array[i] = -1;
+                request_array[i] = -1; /* MPI_REQUEST_NULL */
             }
         }
     }

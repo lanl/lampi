@@ -63,11 +63,11 @@ void mpi_waitsome_f(MPI_Fint *count,
          */
         if (*outcount != MPI_UNDEFINED) {
             for (i = 0; i < *outcount; i++) {
-                if (status_array[i]._persistent == 0) {
+                if (request_array[index_array[i]] >= 0 &&
+                    status_array[i]._persistent == 0) {
                     _mpi_ptr_table_free(_mpif.request_table,
                                         request_array[index_array[i]]);
-                    /* set to MPI_REQUEST_NULL */
-                    request_array[index_array[i]] = -1;
+                    request_array[index_array[i]] = -1; /* MPI_REQUEST_NULL */
                 }
                 index_array[i] += 1;
             }

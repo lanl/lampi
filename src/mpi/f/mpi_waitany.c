@@ -60,11 +60,11 @@ void mpi_waitany_f(MPI_Fint *count, MPI_Fint *request_array,
          * 2. Increment index by one for fortran conventions
          */
         if (*index != MPI_UNDEFINED) {
-            if (status->_persistent == 0) {
+            if (request_array[*index] >= 0 &&
+                status->_persistent == 0) {
                 _mpi_ptr_table_free(_mpif.request_table,
                                     request_array[*index]);
-                /* set to MPI_REQUEST_NULL */
-                request_array[*index] = -1;
+                request_array[*index] = -1; /* MPI_REQUEST_NULL */
             }
             *index += 1;
         }

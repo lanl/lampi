@@ -42,11 +42,12 @@ void mpi_wait_f(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
     MPI_Request c_req = MPI_Request_f2c(*req);
 
     *rc = MPI_Wait(&c_req, status);
-    if (*rc == MPI_SUCCESS && status->_persistent == 0 &&
+    if (c_req != MPI_REQUEST_NULL &&
+        *rc == MPI_SUCCESS &&
+        status->_persistent == 0 &&
         status->MPI_SOURCE != MPI_PROC_NULL) {
         _mpi_ptr_table_free(_mpif.request_table, *req);
-        /* reset request handle to MPI_REQUEST_NULL */
-        *req = -1;
+        *req = -1; /* MPI_REQUEST_NULL */
     }
 }
 
