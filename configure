@@ -12148,7 +12148,7 @@ _ACEOF
 
    test "$LSF_INC" = "" || CPPFLAGS="$CPPFLAGS -I$LSF_INC"
    test "$LSF_LIB" = "" || LDFLAGS="$LDFLAGS -L$LSF_LIB"
-   LIBS="$LIBS -llsf"
+   LIBS="$LIBS -llsf -lnsl"
 else
    cat >>confdefs.h <<\_ACEOF
 #define ENABLE_LSF 0
