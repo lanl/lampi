@@ -64,9 +64,7 @@ extern "C" int ulm_barrier_interhost(int comm)
     int nhost;
     int peer;
     int peer_host;
-    int r_tmp;
     int rc;
-    int s_tmp;
     int self;
     int self_host;
     int tag;
@@ -122,14 +120,13 @@ extern "C" int ulm_barrier_interhost(int comm)
     if (nhost != nhost2) {
 	if (self_host < nhost2 && (peer_host = self_host + nhost2) < nhost) {
             peer = group->groupHostData[peer_host].groupProcIDOnHost[0];
-	    rc = ulm_recv(&r_tmp, sizeof(int), NULL, peer, tag, comm, &status);
+	    rc = ulm_recv(NULL, 0, NULL, peer, tag, comm, &status);
 	    if (rc != ULM_SUCCESS) {
 		return rc;
 	    }
 	} else if ((peer_host = self_host - nhost2) >= 0) {
             peer = group->groupHostData[peer_host].groupProcIDOnHost[0];
-	    rc = ulm_send(&s_tmp, sizeof(int), NULL, peer, tag, comm,
-			  ULM_SEND_SYNCHRONOUS);
+	    rc = ulm_send(NULL, 0, NULL, peer, tag, comm, ULM_SEND_STANDARD);
 	    if (rc != ULM_SUCCESS) {
 		return rc;
 	    }
@@ -144,13 +141,11 @@ extern "C" int ulm_barrier_interhost(int comm)
         for (mask = 1; mask < nhost2; mask <<= 1) {
 	    peer_host = self_host ^ mask;
             peer = group->groupHostData[peer_host].groupProcIDOnHost[0];
-	    rc = ulm_irecv(&r_tmp, sizeof(int), NULL,
-			   peer, tag, comm, &r_req);
+	    rc = ulm_irecv(NULL, 0, NULL, peer, tag, comm, &r_req);
 	    if (rc != ULM_SUCCESS) {
 		return rc;
 	    }
-	    rc = ulm_isend(&s_tmp, sizeof(int), NULL,
-			   peer, tag, comm, &s_req, ULM_SEND_SYNCHRONOUS);
+	    rc = ulm_isend(NULL, 0, NULL, peer, tag, comm, &s_req, ULM_SEND_STANDARD);
 
 	    if (rc != ULM_SUCCESS) {
 		return rc;
@@ -173,14 +168,13 @@ extern "C" int ulm_barrier_interhost(int comm)
     if (nhost != nhost2) {
 	if (self_host < nhost2 && (peer_host = self_host + nhost2) < nhost) {
             peer = group->groupHostData[peer_host].groupProcIDOnHost[0];
-	    rc = ulm_send(&s_tmp, sizeof(int), NULL,
-			  peer, tag, comm, ULM_SEND_SYNCHRONOUS);
+	    rc = ulm_send(NULL, 0, NULL, peer, tag, comm, ULM_SEND_STANDARD);
 	    if (rc != ULM_SUCCESS) {
 		return rc;
 	    }
 	} else if ((peer_host = self_host - nhost2) >= 0) {
             peer = group->groupHostData[peer_host].groupProcIDOnHost[0];
-            rc = ulm_recv(&r_tmp, sizeof(int), NULL, peer, tag, comm, &status);
+            rc = ulm_recv(NULL, 0, NULL, peer, tag, comm, &status);
 	    if (rc != ULM_SUCCESS) {
 		return rc;
 	    }

@@ -57,9 +57,7 @@ extern "C" int ulm_barrier_p2p(int comm)
     int nproc2;
     int nproc;
     int peer;
-    int r_tmp;
     int rc;
-    int s_tmp;
     int self;
     int tag;
 
@@ -89,7 +87,6 @@ extern "C" int ulm_barrier_p2p(int comm)
      * If nproc is a power of 2, then only the main phase is necessary.
      */
 
-    r_tmp = s_tmp = 0;
     nproc = communicators[comm]->localGroup->groupSize;
     self = communicators[comm]->localGroup->ProcID;
     tag = communicators[comm]->get_base_tag(1);
@@ -106,13 +103,12 @@ extern "C" int ulm_barrier_p2p(int comm)
 
     if (nproc != nproc2) {
         if (self < nproc2 && (peer = self + nproc2) < nproc) {
-            rc = ulm_recv(&r_tmp, sizeof(int), NULL, peer, tag, comm,
-                          &status);
+            rc = ulm_recv(NULL, 0, NULL, peer, tag, comm, &status);
             if (rc != ULM_SUCCESS) {
                 return rc;
             }
         } else if ((peer = self - nproc2) >= 0) {
-            rc = ulm_send(&s_tmp, sizeof(int), NULL, peer, tag, comm,
+            rc = ulm_send(NULL, 0, NULL, peer, tag, comm,
                           ULM_SEND_STANDARD);
             if (rc != ULM_SUCCESS) {
                 return rc;
@@ -127,13 +123,11 @@ extern "C" int ulm_barrier_p2p(int comm)
     if (self < nproc2) {
         for (mask = 1; mask < nproc2; mask <<= 1) {
             peer = self ^ mask;
-            rc = ulm_irecv(&r_tmp, sizeof(int), NULL,
-                           peer, tag, comm, &r_req);
+            rc = ulm_irecv(NULL, 0, NULL, peer, tag, comm, &r_req);
             if (rc != ULM_SUCCESS) {
                 return rc;
             }
-            rc = ulm_isend(&s_tmp, sizeof(int), NULL,
-                           peer, tag, comm, &s_req, ULM_SEND_STANDARD);
+            rc = ulm_isend(NULL, 0, NULL, peer, tag, comm, &s_req, ULM_SEND_STANDARD);
 
             if (rc != ULM_SUCCESS) {
                 return rc;
@@ -155,14 +149,12 @@ extern "C" int ulm_barrier_p2p(int comm)
 
     if (nproc != nproc2) {
         if (self < nproc2 && (peer = self + nproc2) < nproc) {
-            rc = ulm_send(&s_tmp, sizeof(int), NULL,
-                          peer, tag, comm, ULM_SEND_STANDARD);
+            rc = ulm_send(NULL, 0, NULL, peer, tag, comm, ULM_SEND_STANDARD);
             if (rc != ULM_SUCCESS) {
                 return rc;
             }
         } else if ((peer = self - nproc2) >= 0) {
-            rc = ulm_recv(&r_tmp, sizeof(int), NULL, peer, tag, comm,
-                          &status);
+            rc = ulm_recv(NULL, 0, NULL, peer, tag, comm, &status);
             if (rc != ULM_SUCCESS) {
                 return rc;
             }
