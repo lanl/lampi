@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><title>LA-MPI: The Los Alamos Message Passing Interface</title></head>
+<body bgcolor="white">
+<h1 align=center>
+LA-MPI: The Los Alamos Message Passing Interface
+</h1>
+LA-MPI is a high-performance, network-fault-tolerant implementation of
+MPI developed by CCS-1 with the specific goal of supporting LANL's
+institutional needs.
+<p>
+Specifially it is designed to offer high performance on terascale
+clusters that are inherently unreliable due to their very large number
+of system components and to trade-offs between cost and performance.
+<p>
+LA-MPI offers the following features:
+<ul>
+<li>high performance</li>
+<li>network fault tolerance (end-to-end data integrity)</li>
+<li>thread safe</li>
+<li>open source (LGPL license)</li>
+<li>highly portable</li>
+</ul>
+<p>
+LA-MPI is currently available as a module on LANL's Q systems.  It can
+be used as a drop-in replacement for the vendor-supplied MPI
+libraries, with the following caveats:
+<ul>
+<li>
+LA-MPI uses its own <tt>mpirun</tt> program to start-up parallel jobs
+and not the system <tt>prun</tt> program.
+</li>
+<li>
+Applications must be recompiled using the MPI include files and
+libraries from the LA-MPI modules.
+</li>
+<li>
+C++ applications using the HP C++ complier should use the
+<b>-model ansi</b> option
+</li>
+</ul>
+See the <a href="lampi_man.html">man page</a> for more information.
+<p>
+LA-MPI is also available for Linux (IA32, IA64, AMD64 and Alpha) clusters,
+with a variety of networks (Ethernet, Quadrics, Myrinet).
+<h2>
+Background
+</h2>
+LA-MPI is an implementation of the Message Passing Interface (MPI)
+motivated by a growing need for fault tolerance at the software level
+in large high-performance computing (HPC) systems.
+<p>
+This need is caused by the sheer number of components present in
+modern HPC systems, particularly clusters.  The individual components
+-- processors, memory modules, network interface cards (NICs), etc. --
+are typically manufactured to tolerances adequate for small or desktop
+systems.  When aggregated into a large HPC system, however,
+system-wide error rates may be too great to successfully complete a
+long application run. For example, a network device may have an error
+rate which is perfectly acceptable for a desktop system, but not in a
+cluster of thousands of nodes, which must run error free for many
+hours or even days to complete a scientific calculation.
+<p>
+LA-MPI has two primary goals: <b>network fault tolerance</b> and
+<b>high performance</b>.  Fortunately these goals are partially
+complimentary, since the flexible approach we take to the use of
+redundant network data paths to support fault tolerance also allows
+LA-MPI to exploit all the available network bandwidth in a
+network-device-rich system by sending different messages and/or
+message-fragments over multiple network paths.
+<p>
+Other important features of LA-MPI include an open source license,
+standards compliance (MPI version 1.2 integrated with ROMIO, thread
+safety, and portability to many operating systems, processor
+architectures and network devices.
+</body>
+</html>
+
