@@ -154,7 +154,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
 #endif
         /* find order in list */
         for (j = 0; j < RunParameters->NHosts; j++) {
-            int node = bproc_getnodebyname(RunParameters->HostList[j]);
+            int node = atoi(RunParameters->HostList[j]);
             int foundNode = 0;
 #ifdef BPROC_NODE_NSTATES
             if (node == nodeID)

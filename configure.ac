@@ -506,7 +506,7 @@ AC_ARG_ENABLE(bproc,
               AC_HELP_STRING([--enable-bproc], [use BPROC]))
 echo "feature BPROC... ${enable_bproc:-no}"
 if test "$enable_bproc" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_BPROC -Dbproc_getnodebyname=atoi"
+   CPPFLAGS="$CPPFLAGS -DENABLE_BPROC "
    LIBS="$LIBS -lbproc"
 fi
 

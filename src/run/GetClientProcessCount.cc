@@ -99,7 +99,7 @@ void getBJSNodes(void)
         strncpy(tmp_str, node_str, strlen(node_str));
         p = tmp_str;
         while (p && *p != '\0') {
-            tmp_node = bproc_getnodebyname(strsep(&p, ","));
+            tmp_node = atoi(strsep(&p, ","));
             if (!nodestatus(tmp_node, node_status, NODE_STATUS_LEN)) {
                 ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n",
                          tmp_node, node_status));
@@ -120,7 +120,7 @@ void getBJSNodes(void)
             /* compare each host entry against nodes list */
             for (i = 0; i < RunParameters.HostListSize; i++) {
                 bool found = false;
-                tmp_node = bproc_getnodebyname(RunParameters.HostList[i]);
+                tmp_node = atoi(RunParameters.HostList[i]);
                 for (j = 0; j < nNodes; j++) {
                     if (tmp_node == nodes[j])
                         found = true;
@@ -184,7 +184,7 @@ void pickNodesFromList(int cnt)
     if (RunParameters.HostListSize > 0) {
         /* find cnt nodes among the already listed nodes */
         for (i = 0; i < RunParameters.HostListSize; i++) {
-            tmp_node = bproc_getnodebyname(RunParameters.HostList[i]);
+            tmp_node = atoi(RunParameters.HostList[i]);
             if ((nodestatus(tmp_node, node_status, NODE_STATUS_LEN)) &&
                 (bproc_access(tmp_node, BPROC_X_OK) == 0)) {
                 if (i == j) {

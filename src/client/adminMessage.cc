@@ -101,7 +101,7 @@ int nodeIDToHostRank(int numHosts, HostName_t *hostList, int nodeid)
     int j;
 
     for (j = 0; j < numHosts; j++) {
-        if (bproc_getnodebyname(hostList[j]) == nodeid) {
+        if (atoi(hostList[j]) == nodeid) {
             hostIndex = j;
             break;
         }

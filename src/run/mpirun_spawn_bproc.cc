@@ -299,7 +299,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 
 
     for (i = 0; i < nHosts; i++) {
-        nodes[i] = bproc_getnodebyname(RunParameters->HostList[i]);
+        nodes[i] = atoi(RunParameters->HostList[i]);
         pids[i] = -1;
     }
 
