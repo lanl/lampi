@@ -84,8 +84,13 @@ int TCPSendFrag::init(TCPPeer *tcpPeer, SendDesc_t *message)
     this->WhichQueue = TCPFRAGSTOSEND;
     this->fragMsg = message;
     this->fragMsgIndex = message->NumFragDescAllocated;
-    this->fragMsgType = MSGTYPE_PT2PT;
     this->fragTimeStarted = -1;
+
+    if (message->sendType == ULM_SEND_SYNCHRONOUS &&
+        message->NumFragDescAllocated == 0)
+        this->fragMsgType = MSGTYPE_PT2PT_SYNC;
+    else
+        this->fragMsgType = MSGTYPE_PT2PT;
 
     // determine offset and fragment length
     if(message->NumFragDescAllocated == 0) {

@@ -30,17 +30,16 @@ static DoubleLinkList ifList;
 //  interfaces that are not up or are local loopbacks.
 //
 
-int ulm_ifinit() 
+extern "C" int ulm_ifinit() 
 {
     if (ifList.size() > 0)
         return ULM_SUCCESS;
 
-    struct ifreq ifreq[32];
-    memset(ifreq, 0, sizeof(ifreq));
-
+    char buff[1024];
+    char *ptr;
     struct ifconf ifconf;
-    ifconf.ifc_len = sizeof(ifreq);
-    ifconf.ifc_req = ifreq;
+    ifconf.ifc_len = sizeof(buff);
+    ifconf.ifc_buf = buff;
                                                                                 
     int sd;
     if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -48,21 +47,31 @@ int ulm_ifinit()
         return ULM_ERROR;
     }
                                                                                 
-    int count;
-    if((count = ioctl(sd, SIOCGIFCONF, &ifconf)) < 0) {
+    if(ioctl(sd, SIOCGIFCONF, &ifconf) < 0) {
         ulm_err(("ulm_ifinit: ioctl(SIOCGIFCONF) failed with errno=%d", errno));
         close(sd);
         return ULM_ERROR;
     }
-                                                                                
-    if (count == 0)
-        count=ifconf.ifc_len/sizeof(struct ifreq);
 
-    for(int i=0; i<count; i++) {
-        struct ifreq& ifr = ifreq[i];
-        if(ifr.ifr_name[0] == 0)
+    for(ptr = buff; ptr < buff + ifconf.ifc_len; ) {
+        struct ifreq& ifr = *(struct ifreq*)ptr;
+#if defined(__APPLE__)
+        ptr += (sizeof(ifr.ifr_name) + 
+               MAX(sizeof(struct sockaddr),ifr.ifr_addr.sa_len));
+#else
+        switch(ifr.ifr_addr.sa_family) {
+        case AF_INET6:
+            ptr += sizeof(ifr.ifr_name) + sizeof(struct sockaddr_in6);
+            break;
+        case AF_INET:
+        default:
+            ptr += sizeof(ifr.ifr_name) + sizeof(struct sockaddr);
+            break;
+        }
+#endif
+        if(ifr.ifr_addr.sa_family != AF_INET)
             continue;
-                                                                                
+
         if(ioctl(sd, SIOCGIFFLAGS, &ifr) < 0) {
             ulm_err(("ulm_ifinit: ioctl(SIOCGIFFLAGS) failed with errno=%d", errno));
             continue;
@@ -73,7 +82,10 @@ int ulm_ifinit()
         Interface intf;
         strcpy(intf.if_name, ifr.ifr_name);
         intf.if_flags = ifr.ifr_flags;
-  
+
+#if defined(__APPLE__)
+        intf.if_index = ifList.size() + 1;
+#else
         if(ioctl(sd, SIOCGIFINDEX, &ifr) < 0) {
             ulm_err(("ulm_ifinit: ioctl(SIOCGIFINDEX) failed with errno=%d", errno));
             continue;
@@ -85,6 +97,7 @@ int ulm_ifinit()
 #else
         intf.if_index = -1;
 #endif
+#endif /* __APPLE__ */
 
         if(ioctl(sd, SIOCGIFADDR, &ifr) < 0) {
             ulm_err(("ulm_ifinit: ioctl(SIOCGIFADDR) failed with errno=%d", errno));

@@ -616,14 +616,22 @@ void TCPPeer::sendComplete(TCPSendFrag* sendFrag)
                 tcpPath->removeListener(tcpSocket.sd, sendFrag, Reactor::NotifySend);
             }
 
+            // will send an ack for first fragment of a multi-fragment message,
+            // or for the first fragment of a synchronous message
             SendDesc_t* message = sendFrag->getMessage();
+            if(message->NumSent == 0 && 
+               ((message->numfrags > 1 || message->sendType == ULM_SEND_SYNCHRONOUS)))
+                ; // wait for ack
+            else
+                message->NumAcked++;  
             message->NumSent++; 
-            message->NumAcked++;  
             sendFrag->ReturnDescToPool(getMemPoolIndex());
 
             // check to see if message is complete or need to send next fragment
             if (message->NumSent == message->numfrags) {
-                message->messageDone = REQUEST_COMPLETE;
+                if (message->messageDone == REQUEST_INCOMPLETE &&
+                    message->sendType != ULM_SEND_SYNCHRONOUS)
+                    message->messageDone = REQUEST_COMPLETE;
                 if(usethreads()) tcpSocket.lock.unlock();
             } else if (message->clearToSend_m == false) {
                 if(usethreads()) tcpSocket.lock.unlock();
