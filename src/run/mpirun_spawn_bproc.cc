@@ -333,10 +333,12 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 
     /* adding executable name */
     CHECK_FOR_ERROR(exec_args[EXEC_NAME] =
-		    (char *) ulm_malloc(sizeof(char) * strlen(execName)));
+		    (char *) ulm_malloc(sizeof(char) * (1+strlen(execName)) ));
     sprintf(exec_args[EXEC_NAME], execName);
 
     /* program arguments */
+
+
     if ((argc - FirstAppArgument) > 0) {
 	len = 0;
 	argsUsed = 1;
@@ -346,14 +348,14 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 
 	}
 	CHECK_FOR_ERROR(tmp_args =
-			(char *) ulm_malloc(sizeof(char) * len));
+			(char *) ulm_malloc(sizeof(char) * (1+len)));
 	for (i = FirstAppArgument; i < argc; i++) {
 	    strcat(tmp_args, argv[i]);
 	    strcat(tmp_args, space_str);
 	}
 	CHECK_FOR_ERROR(exec_args[EXEC_ARGS] =
 			(char *) ulm_malloc(sizeof(char) *
-					    strlen(tmp_args)));
+					    (1+strlen(tmp_args))));
 	sprintf(exec_args[EXEC_ARGS], tmp_args);
     }
     /*
