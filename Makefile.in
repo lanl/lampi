@@ -175,9 +175,9 @@ install: all
 	$(INSTALL) -m 664 $(srcdir)/man/mpirun.html $(prefix)/share/lampi ; \
 	$(INSTALL) -m 664 $(srcdir)/etc/lampi.conf $(sysconfdir)/lampi.conf ; \
 	(cd $(prefix) ; test -d man || $(LN_S) share/man .) ; \
-	(cd $(srcdir)/src/include ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
-	(cd $(srcdir)/src/include/mpi ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir)/mpi; done) ; \
-	(cd $(srcdir)/src/include/ulm ; for f in *.h; do $(INSTALL) -m 664 $$f $(includedir)/ulm; done)
+	(for f in $(srcdir)/src/include/*.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \
+	(for f in $(srcdir)/src/include/mpi/*.h; do $(INSTALL) -m 664 $$f $(includedir)/mpi; done) ; \
+	(for f in $(srcdir)/src/include/ulm/*.h; do $(INSTALL) -m 664 $$f $(includedir)/ulm; done)
 ifeq "$(enable_dynamic)" "yes"
 	umask 002; $(INSTALL) -m 775 libmpi.$(DLLEXT) $(libdir)/libmpi.$(DLLEXT)
 endif
