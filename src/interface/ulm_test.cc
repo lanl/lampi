@@ -63,17 +63,21 @@ extern "C" int ulm_test(ULMRequest_t *request, int *completed,
     // initialize completion status to incomplete
     *completed = 0;
 
-    // if request is NULL, follow MPI conventions and return success
-    // with an "empty" status (tag = any, proc = any, error = success)
-    if (*request == NULL) {
-        *completed = 1;
-        status->tag_m = ULM_ANY_TAG;
-        status->peer_m = ULM_ANY_PROC;
-        status->error_m = ULM_SUCCESS;
-        status->state_m = ULM_STATUS_INVALID;
-        status->length_m = 0;
-        status->persistent_m = 0;
-        return ULM_SUCCESS;
+    if (0) { // play fast and loose since the MPI layer checks this
+
+        // if request is null, follow MPI conventions and return success
+        // with an "empty" status (tag = any, proc = any, error = success)
+
+        if (*request == NULL || *request == ULM_REQUEST_NULL) {
+            *completed = 1;
+            status->tag_m = ULM_ANY_TAG;
+            status->peer_m = ULM_ANY_PROC;
+            status->error_m = ULM_SUCCESS;
+            status->state_m = ULM_STATUS_INVALID;
+            status->length_m = 0;
+            status->persistent_m = 0;
+            return ULM_SUCCESS;
+        }
     }
 
     // get pointer to ULM request object

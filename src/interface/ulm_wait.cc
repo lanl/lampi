@@ -57,17 +57,22 @@ extern "C" int ulm_wait(ULMRequest_t *request, ULMStatus_t *status)
     SendDesc_t *SendDesc;
     int rc = ULM_SUCCESS;
 
-    // if request is NULL, follow MPI conventions and return success
-    // with an "empty" status (tag = any, proc = any, error = success)
-    if (*request == NULL) {
-        status->tag_m = ULM_ANY_TAG;
-        status->peer_m = ULM_ANY_PROC;
-        status->error_m = ULM_SUCCESS;
-        status->state_m = ULM_STATUS_INVALID;
-        status->length_m = 0;
-        status->persistent_m = 0;
-        return ULM_SUCCESS;
+    if (0) { // play fast and loose since the MPI layer checks this
+
+        // if request is NULL, follow MPI conventions and return success
+        // with an "empty" status (tag = any, proc = any, error = success)
+
+        if (*request == NULL || *request == ULM_REQUEST_NULL) {
+            status->tag_m = ULM_ANY_TAG;
+            status->peer_m = ULM_ANY_PROC;
+            status->error_m = ULM_SUCCESS;
+            status->state_m = ULM_STATUS_INVALID;
+            status->length_m = 0;
+            status->persistent_m = 0;
+            return ULM_SUCCESS;
+        }
     }
+
     // get pointer to ULM request object
     RequestDesc = (RequestDesc_t *) (*request);
 
