@@ -68,6 +68,15 @@ void ADIOI_SetFunctions(ADIO_File fd)
 #endif
 	break;
 
+    case ADIO_PANFS:
+#ifdef PANFS	
+	*(fd->fns) = ADIO_PANFS_operations;
+#else
+	FPRINTF(stderr, "ADIOI_SetFunctions: ROMIO has not been configured to use the PANFS file system\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+	break;
+
     case ADIO_HFS:
 #ifdef HFS	
 	*(fd->fns) = ADIO_HFS_operations;

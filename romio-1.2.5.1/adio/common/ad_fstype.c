@@ -39,6 +39,13 @@
 #ifdef tflops
 #include <sys/mount.h>
 #endif
+#ifdef PANFS
+/* This constant should match the value of PAN_KERNEL_FS_CLIENT_SUPER_MAGIC
+ * in src/panfs/include/pan/fs/client/linux/pan_kernel_fs_client_super.h
+*/
+#define PAN_KERNEL_FS_CLIENT_SUPER_MAGIC            0xAAD7AAEA
+#endif
+
 
 #ifdef HAVE_UNISTD_H
 /* Needed for readlink */
@@ -212,6 +219,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 # ifdef ROMIO_PVFS
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
 # endif
+#ifdef PANFS
+        else if (fsbuf.f_type == PAN_KERNEL_FS_CLIENT_SUPER_MAGIC) *fstype = ADIO_PANFS;
+#endif
 	else *fstype = ADIO_UFS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
@@ -330,6 +340,9 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     else if (!strncmp(filename, "cfs:", 4) || !strncmp(filename, "CFS:", 4)) {
 	*fstype = ADIO_CFS;
     }
+    else if (!strncmp(filename, "panfs:", 4) || !strncmp(filename, "PANFS:", 4)) {
+	*fstype = ADIO_PANFS;
+    }
     else if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4)) {
 	*fstype = ADIO_HFS;
     }
@@ -441,6 +454,21 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 # endif
 #else
 	*ops = &ADIO_CFS_operations;
+#endif
+    }
+    if (file_system == ADIO_PANFS) {
+#ifndef PANFS
+# ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PANFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+# else
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_CFS,
+				    myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
+# endif
+#else
+	*ops = &ADIO_PANFS_operations;
 #endif
     }
     if (file_system == ADIO_PFS) {
@@ -596,9 +624,10 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     *error_code = MPI_SUCCESS;
     *fstype = file_system;
 
-    /*
+
+    FPRINTF(stderr, "messages from ad_fstype.c\n");
     FPRINTF(stderr, "ADIO_ResolveFileType: using fstype=%i\n",file_system);
-    FPRINTF(stderr, "NFS=%i UFS=%i  CFS=%i \n",ADIO_NFS,ADIO_UFS,ADIO_CFS);
-    */
+    FPRINTF(stderr, "NFS=%i UFS=%i  CFS=%i PANFS=%i\n",ADIO_NFS,ADIO_UFS,ADIO_CFS,ADIO_PANFS);
+
     return;
 }
