@@ -113,6 +113,8 @@ typedef struct {
     Locks lock;
     u_int32_t num_hcas;
     int num_active_hcas;
+    int next_send_hca;
+    int next_send_port;
     int active_hcas[LAMPI_MAX_IB_HCAS];
     VAPI_hca_id_t hca_ids[LAMPI_MAX_IB_HCAS];
     ib_hca_state_t hca[LAMPI_MAX_IB_HCAS];

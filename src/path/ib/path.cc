@@ -31,13 +31,135 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#include <strings.h>			// for bzero
-
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/state.h"
 #include "path/ib/path.h"
+#include "path/ib/sendFrag.h"
+#include "path/ib/recvFrag.h"
+#include "path/ib/header.h"
 #include "client/ULMClient.h"
+
+bool ibPath::canReach(int globalDestProcessID)
+{
+    bool result = false;
+    ib_ud_peer_info_t *info = 
+        &(ib_state.ud_peers.info[ib_state.ud_peers.proc_entries * globalDestProcessID]);
+
+    for (int i = 0; i < ib_state.ud_peers.proc_entries; i++) {
+        if (PEER_INFO_IS_VALID(info[i])) {
+            result = true;
+            break;
+        }
+    }
+
+    return result;
+}
+
+void ibPath::checkSendCQs(void)
+{
+    VAPI_ret_t vapi_result;
+    VAPI_wc_desc_t wc_desc;
+    int i;
+    bool locked = false;
+
+    for (i = 0; i < ib_state.num_active_hcas; i++) {
+        ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
+
+        do {
+
+            // poll completion queue
+            vapi_result = VAPI_poll_cq(h->handle, h->send_cq, &wc_desc);
+            if (vapi_result == VAPI_CQ_EMPTY) {
+                break;
+            }
+            else if (vapi_result != VAPI_OK) {
+                ulm_exit((-1, "ibPath::checkSendCQs VAPI_poll_cq() for HCA %d returned %s\n",
+                    ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            }
+
+            if (usethreads() && !locked) {
+                ib_state.lock.lock();
+                locked = true;
+            }
+
+            // increment CQ tokens
+            (h->send_cq_tokens)++;
+
+            // check for errors from the interface...currently just log them...<memory leak?>
+            if (wc_desc.status != VAPI_SUCCESS) {
+                ulm_err(("ibPath::checkSendCQs HCA %d cq entry status %d syndrome %u\n",
+                    ib_state.active_hcas[i], wc_desc.status, wc_desc.vendor_err_syndrome));
+                continue;
+            }
+
+            // find send frag descriptor and mark desc. as locally acked
+            sd = (ibSendFragDesc *)wc_desc.id;
+            sd->state_m |= ibSendFragDesc::LOCALACKED; 
+            
+            // increment UD QP tokens
+            (h->ud.sq_tokens)++;
+
+        } while (1);
+    }
+
+    if (locked) {
+        ib_state.lock.unlock();
+    }
+}
+
+bool ibPath::sendDone(SendDesc_t *message, double timeNow, int *errorCode)
+{
+    // check send completion queues of all HCAs for local send completion notification
+    checkSendCQs();
+
+    if (ib_state.ack) {
+        if ((message->posted_m.length == message->pathInfo.ib.allocated_offset_m) && 
+            (message->NumAcked >= message->numfrags)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        ibSendFragDesc *sfd, *afd;
+
+        if ((message->sendType != ULM_SEND_SYNCHRONOUS) || (message->NumSent > 1)) {
+            if (timeNow < 0)
+                timeNow = dclock();
+
+            for (sfd = (ibSendFragDesc *)message->FragsToAck.begin();
+                sfd != (ibSendFragDesc *)message->FragsToAck.end();
+                sfd = (ibSendFragDesc *)sfd->next) {
+                if (sfd->done(timeNow, errorCode)) {
+                    // register frag as ACK'ed
+                    message->clearToSend_m = true;
+                    (message->NumAcked)++;
+                    // remove frag from FragsToAck list
+                    afd = sfd;
+                    sfd = (ibSendFragDesc *)message->FragsToAck.RemoveLinkNoLock((Links_t *)afd);
+                    afd->WhichQueue = IBFRAGFREELIST;
+                    // return frag descriptor to free list
+                    // the header holds the global proc id
+                    if (usethreads()) {
+                        ib_state.hca[afd->hca_index_m].send_frag_list.returnElement(afd, 0);
+                    } else {
+                        ib_state.hca[afd->hca_index_m].send_frag_list.returnElementNoLock(afd, 0);
+                    }
+                }
+            }
+        }
+
+        if ((message->posted_m.length == message->pathInfo.ib.allocated_offset_m) && 
+            (message->NumAcked >= message->numfrags)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
 
 // all HCAs version
 bool ibPath::sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode)
@@ -246,14 +368,11 @@ bool ibPath::sendMemoryRequest(SendDesc_t *message, int gldestProc, size_t offse
 
 bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
-    ssize_t offset = 0, leftToSend = 0, fragLength = 0;
     ibSendFragDesc *sfd = 0, *afd;
-    void *dest = 0;
     int returnValue = ULM_SUCCESS;
-    int tmap_index, rail;
-    int gldestProc = -1;
+    int tmap_index;
     double timeNow = -1;
-    int rc;
+    int rc, i, hca_index, port_index;
 
     *errorCode = ULM_SUCCESS;
     *incomplete = true;
@@ -265,8 +384,8 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         sendDone(message, timeNow, errorCode);
     }
 
-    if (message->NumFragDescAllocated == 0) {
-        message->pathInfo.ib.allocated_offset_m = 0;
+    if (usethreads()) {
+        ib_state.lock.lock();
     }
 
     /* create and init frags with all the necessary resources */
@@ -285,76 +404,77 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             }
         }
 
-        // get send fragment descriptor
-        if (usethreads()) {
-            sfd = ib_state.send_frag_list.getElement(0, returnValue);
+        // find HCA to get send fragment descriptor...use round-robin processing 
+        // of active HCAs and ports
+        hca_index = -1;
+        port_index = -1;
+        for (i = 0; i < ib_state.num_active_hcas; i++) {
+            int hca, j, k;
+            j = i + ib_state.next_send_hca;
+            j = (j >= ib_state.num_active_hcas) ? j - ib_state.num_active_hcas : j; 
+            hca = ib_state.active_hcas[j];
+            if ((ib_state.hca[hca].sq_tokens >= 1) && (ib_state.hca[hca].send_cq_tokens >= 1)) {
+                k = ib_state.next_send_port;
+                k = (k >= ib_state.hca[hca].num_active_ports) ? k - ib_state.hca[hca].num_active_ports : k;
+                // set port and hca index values...
+                port_index = ib_state.hca[hca].active_ports[k];
+                hca_index = hca;
+                // store values for next time through...
+                ib_state.next_send_hca = (k == (ib_state.hca[hca].num_active_ports - 1)) ? 
+                    ((j + 1) % ib_state.num_active_hcas) : j;
+                ib_state.next_send_port = (j == ib_state.next_send_hca) ? k : 0;
+                // decrement tokens...
+                (ib_state.hca[hca_index].sq_tokens)--;
+                (ib_state.hca[hca_index].send_cq_tokens)--;
+                break; 
+            }
         }
-        else {
-            sfd = ib_state.send_frag_list.getElementNoLock(0, returnValue);
-        }
-        if (returnValue != ULM_SUCCESS) {
+        
+        // stop allocation, if we don't have a valid hca_index or port_index
+        if ((hca_index < 0) || (port_index < 0)) {
             break;
         }
 
-        // calculate tmap_index for non-zero non-contiguous data
-        if (message->datatype == NULL || message->datatype->layout == CONTIGUOUS) {
-            // an invalid array index is used to indicate that no packedData buffer
-            // is needed
-            tmap_index = -1;
-        }
-        else {
-            int dtype_cnt = offset / message->datatype->packed_size;
-            size_t data_copied = dtype_cnt * message->datatype->packed_size;
-            ssize_t data_remaining = (ssize_t)(offset - data_copied);
-            tmap_index = message->datatype->num_pairs - 1;
-            for (int ti = 0; ti < message->datatype->num_pairs; ti++) {
-                if (message->datatype->type_map[ti].seq_offset == data_remaining) {
-                    tmap_index = ti;
-                    break;
-                } else if (message->datatype->type_map[ti].seq_offset > data_remaining) {
-                    tmap_index = ti - 1;
-                    break;
-                }
+        sfd = ib_state.hca[hca_index].send_frag_list.getElementNoLock(0, returnValue);
+        if (returnValue != ULM_SUCCESS) {
+            // should currently be impossible with just UD QP service since
+            // all of the descriptors should already exist and be available
+            if (usethreads()) {
+                ib_state.lock.unlock();
             }
+            *errorCode = returnValue;
+            return false;
         }
 
         // initialize descriptor...does almost everything if it can...
-        sfd->init(
-            message,
-            hca_index,
-            MESSAGE_DATA,
-            gldestProc,
-            tmap_index,
-            offset,
-            fragLength,
-            );
+        sfd->init(message, hca_index, port_index);
 
         // put on the FragsToSend list -- may not be able to send immediately
         sfd->WhichQueue = IBFRAGSTOSEND;
         message->FragsToSend.AppendNoLock(sfd);
         (message->NumFragDescAllocated)++;
-
+        (message->numfrags)++;
     } while (message->pathInfo.ib.allocated_offset_m < message->posted_m.length_m);
 
-    /* send list -- finish initialization, enqueue DMA, and move to frag ack list if successful */
+    /* send list -- finish initialization, post request, and move to frag ack list if successful */
 
     if ((timeNow < 0) && message->FragsToSend.size())
         timeNow = dclock();
 
-    for (sfd = (quadricsSendFragDesc *) message->FragsToSend.begin();
-         sfd != (quadricsSendFragDesc *) message->FragsToSend.end();
-         sfd = (quadricsSendFragDesc *) sfd->next) {
+    for (sfd = (ibSendFragDesc *) message->FragsToSend.begin();
+         sfd != (ibSendFragDesc *) message->FragsToSend.end();
+         sfd = (ibSendFragDesc *) sfd->next) {
         bool OKToSend = true;
 
-        if ((sfd->flags & QSF_INIT_COMPLETE) == 0) {
+        if ((sfd->flags & ibSendFragDesc::IBINITCOMPLETE) == 0) {
             // we've already saved the frag desc.'s parameters,
             // call init() with default parameters
             OKToSend = sfd->init();
         }
 
         if (OKToSend) {
-            /* enqueue DMA */
-            if (sfd->enqueue(timeNow, errorCode)) {
+            /* post IB request */
+            if (sfd->post(timeNow, errorCode)) {
 #ifdef ENABLE_RELIABILITY
                 sfd->timeSent = timeNow;
                 (sfd->numTransmits)++;
@@ -372,29 +492,21 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 #endif
                 // switch frag to ack list and remove from send list
                 afd = sfd;
-                afd->WhichQueue = QUADRICSFRAGSTOACK;
+                afd->WhichQueue = IBFRAGSTOACK;
                 sfd = (quadricsSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
                 message->FragsToAck.AppendNoLock(afd);
                 (message->NumSent)++;
             }
             else if (*errorCode == ULM_ERR_BAD_SUBPATH) {
-                // mark this rail as bad, if it is not already, and
-                // rebind this frag to another rail if possible
+                // mark this HCA as bad, if it is not already, and
+                // rebind this frag to another HCA if possible
                 // or simply return ULM_ERR_BAD_PATH to force path rebinding
-                ELAN3_CTX *newctx;
-                int newrail;
-                void *newdest = 0;
-                bool needDest = (sfd->destAddr) ? true : false;
-                quadricsQueue[sfd->rail].railOK = false;
-                if (getCtxRailAndDest(message, sfd->globalDestID, &newctx, &newrail,
-                                      &newdest, sfd->destBufType, needDest, errorCode)) {
-                    if (!needDest || (needDest && newdest)) {
-                        sfd->reinit(newctx, newrail, newdest);
-                    }
+                // which is the default for now...
+                *errorCode == ULM_ERR_BAD_PATH;
+                if (usethreads()) {
+                    ib_state.lock.unlock();
                 }
-                else if (*errorCode == ULM_ERR_BAD_PATH) {
-                    return false;
-                }
+                return false;
             }
         }
     }
@@ -407,30 +519,20 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         enum { SEND_COMPLETION_WAIT_FOR_ACK = 0 };
         bool send_done_now = false;
         
-        if (quadricsDoAck) {
+        if (ib_state.ack) {
             if (SEND_COMPLETION_WAIT_FOR_ACK) {
+                // with UD QP buffering we can free right away...later...
                 // only zero length messages can free the user data buffer now
                 send_done_now =
-                    (message->posted_m.length_m == 0) &&
+                    (message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
                     (message->NumSent == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
             } else {
-                // messages which fit in the control header can free the
-                // user data buffer now as long as control header
-                // initialization has been completed
+                // same remark as above...will be changing
                 send_done_now =
-                    (message->posted_m.length_m <= CTLHDR_DATABYTES) &&
-                    (message->NumFragDescAllocated == message->numfrags) &&
+                    (message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
+                    (message->NumSent == message->numfrags) &&
                     (message->sendType != ULM_SEND_SYNCHRONOUS);
-                if (send_done_now) {
-                    // check that the control header has been initialized
-                    if (message->FragsToSend.size()) {
-                        sfd = (quadricsSendFragDesc *) message->FragsToSend.begin();
-                        if (!(sfd->flags & QSF_INIT_COMPLETE)) {
-                            send_done_now = false;
-                        }
-                    }
-                }
             }
         }
         else {
@@ -444,21 +546,17 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         }
     }
 
-    if (message->NumSent == message->numfrags) {
+    if ((message->posted_m.length_m == message->pathInfo.ib.allocated_offset_m) &&
+        (message->NumSent == message->numfrags)) {
         *incomplete = false;
     }
 
     return true;
 }
 
-bool quadricsPath::push(double timeNow, int *errorCode)
+bool ibPath::push(double timeNow, int *errorCode)
 {
     bool result = true;
-
-    if ((timeNow - quadricsLastMemRls) >= QUADRICS_MEMRLS_TIMEOUT) {
-        quadricsLastMemRls = timeNow;
-        result = releaseMemory(timeNow, errorCode);
-    }
 
     result = (sendCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
     result = (cleanCtlMsgs(timeNow, 0, (NUMBER_CTLMSGTYPES - 1), errorCode) && result);
@@ -466,13 +564,13 @@ bool quadricsPath::push(double timeNow, int *errorCode)
     return result;
 }
 
-bool quadricsPath::needsPush(void)
+bool ibPath::needsPush(void)
 {
     bool result = false;
 
-    for (int i = 0; i < quadricsNRails; i++) {
-        if (quadricsQueue[i].railOK &&
-            (quadricsQueue[i].ctlMsgsToSendFlag || quadricsQueue[i].ctlMsgsToAckFlag)) {
+    for (int i = 0; i < ib_state.num_active_hcas; i++) {
+        int j = ib_state.active_hcas[i];
+        if (ib_state.hca[j].ctlMsgsToSendFlag || ib_state.hca[j].ctlMsgsToAckFlag) {
             result = true;
             break;
         }
@@ -485,211 +583,170 @@ bool quadricsPath::needsPush(void)
 #define offsetof(T,F)   ((int)&(((T *)0)->F))
 #endif
 
-bool quadricsPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
+bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
 {
-    quadricsRecvFragDesc *rd;
-    int returnValue;
-    unsigned int chksum, qstate;
-    ELAN3_CTX *ctx;
+    VAPI_ret_t vapi_result;
+    VAPI_wc_desc_t wc_desc;
+    ibRecvFragDesc *rd;
+    int returnValue, msg_type;
+    unsigned int computed_chksum, recvd_chksum;
+    void *addr;
+    bool locked = false;
 
     *errorCode = ULM_SUCCESS;
 
-    for (int i = 0; i < quadricsNRails; i++) {
-        if (EVENT_BLK_READY(quadricsQueue[i].rcvBlk)) {
-            // lock queue if necessary
-            if (usethreads()) {
-                quadricsQueue[i].rcvLock.lock();
-                if (!EVENT_BLK_READY(quadricsQueue[i].rcvBlk)) {
-                    // another thread has already done the work...move along...
-                    quadricsQueue[i].rcvLock.unlock();
-                    continue;
+    for (int i = 0; i < ib_state.num_active_hcas; i++) {
+        ib_hca_state_t *h = &(ib_state.hca[ib_state.active_hcas[i]]);
+
+        do {
+            // poll completion queue for receive
+            vapi_result = VAPI_poll_cq(h->handle, h->recv_cq, &wc_desc);
+            if (vapi_result == VAPI_CQ_EMPTY) {
+                break;
+            } 
+            else if (vapi_result != VAPI_OK) {
+                ulm_exit((-1, "ibPath::receive VAPI_poll_cq() for HCA %d returned %s\n",
+                    ib_state.active_hcas[i], VAPI_strerror(vapi_result)));
+            }
+
+            if (usethreads() && !locked) {
+                ib_state.lock.lock();
+            }
+
+            // increment CQ tokens
+            (h->recv_cq_tokens)++;
+
+            // check for errors from the interface...currently just log them...<memory leak?>
+            if (wc_desc.status != VAPI_SUCCESS) {
+                ulm_err(("ibPath::receive HCA %d cq entry status %d syndrome %u\n",
+                    ib_state.active_hcas[i], wc_desc.status, wc_desc.vendor_err_syndrome));
+                continue;
+            }
+
+            // find pointer to receive fragment descriptor...
+            // for UD QP service, it's in the id of the wc structure returned
+            rd = (ibRecvFragDesc *)wc_desc.id;
+
+            // increment receive UD QP tokens
+            (h->ud.rq_tokens)++;
+
+            // find receive buffer address
+            addr = (ibCtlHdr_t *)rd->sg_m[0].addr;
+
+            // calculate msg_type from first 32-bit integer
+            msg_type = (int)*((ulm_uint32_t *)addr);
+
+            // calculate checksum...if wanted...
+            if (ib_state.checksum) {
+                unsigned long cksum_len;
+                
+                switch(msg_type) {
+                    case MESSAGE_DATA:
+                        cksum_len = sizeof(ibDataHdr_t) - sizeof(ulm_uint32_t);
+                        recvd_chksum = ((ibDataHdr_t *)addr->checksum);
+                        break;
+                    case MESSAGE_DATA_ACK:
+                        cksum_len = sizeof(ibDataAck_t) - sizeof(ulm_uint32_t);
+                        recvd_chksum = ((ibDataAck_t *)addr->checksum);
+                        break;
+                    default:
+                        ulm_warn(("ibPath::receive bad message type %d\n",msg_type));
+                        rd->ReturnDescToPool(getMemPoolIndex());
+                        continue;
+                }
+                     
+                if (usecrc()) {
+                    computed_chksum = uicrc(addr, cksum_len);
+                }
+                else {
+                    computed_chksum = uicsum(addr, cksum_len);
                 }
             }
 
-            ctx = quadricsQueue[i].ctx;
+            // now process the received data
+            if (!ib_state.checksum || (computed_chksum == recvd_chksum)) {
+                // checksum OK (or irrelevant), process ibRecvFragDesc...
+                rd->DataOK = false;
+                rd->path = this;
 
-            do {
-                // retrieve and process entries...if
-                // 1) we can get a quadricsRecvFragDesc descriptor
-                // 2) and the quadricsCtlHdr_t checksum is OK
-                rd = quadricsRecvFragDescs.getElement(getMemPoolIndex(), returnValue);
-                if (returnValue != ULM_SUCCESS) {
-                    if ((returnValue == ULM_ERR_OUT_OF_RESOURCE) ||
-                        (returnValue == ULM_ERR_FATAL)) {
-                        *errorCode = returnValue;
-                        if (usethreads())
-                            quadricsQueue[i].rcvLock.unlock();
-
-                        return false;
-                    }
-                    if (usethreads())
-                        quadricsQueue[i].rcvLock.unlock();
-                    return true;
-                }
-
-                // copy and calculate checksum...if wanted...
-                if (!quadricsDoChecksum) {
-                    MEMCOPY_FUNC(quadricsQueue[i].q_fptr, &(rd->envelope), sizeof(quadricsCtlHdr_t));
-                }
-                else if (usecrc()) {
-                    chksum = bcopy_uicrc(quadricsQueue[i].q_fptr, &(rd->envelope),
-                        sizeof(quadricsCtlHdr_t), sizeof(quadricsCtlHdr_t));
-                }
-                else {
-                    chksum = bcopy_uicsum(quadricsQueue[i].q_fptr, &(rd->envelope),
-                        sizeof(quadricsCtlHdr_t), sizeof(quadricsCtlHdr_t));
-                }
-
-                // update main memory q_fptr
-                quadricsQueue[i].q_fptr += sizeof(quadricsCtlHdr_t);
-
-                // wrap pointer if needed
-                if (quadricsQueue[i].q_fptr > quadricsQueue[i].q_top)
-                    quadricsQueue[i].q_fptr = quadricsQueue[i].q_base;
-
-                // read q_state from ELAN
-                if ( usethreads() )
-                    quadricsState.quadricsLock.lock();
-
-                qstate = elan3_read32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
-                                            offsetof(E3_Queue, q_state));
-
-                // write new q_fptr to ELAN
-                elan3_write32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
-                                    offsetof(E3_Queue, q_fptr),
-                                    quadricsQueue[i].elanQueueSlots + (quadricsQueue[i].q_fptr -
-                                                                       quadricsQueue[i].q_base));
-
-                // clear queue full bit of q_state if previously set
-                if (qstate & E3_QUEUE_FULL) {
-                    elan3_write32_sdram(ctx->sdram, quadricsQueue[i].sdramQAddr +
-                                        offsetof(E3_Queue, q_state), 0);
-                }
-
-                // reset event block
-                E3_RESET_BCOPY_BLOCK(quadricsQueue[i].rcvBlk);
-                    
-                // reprime ELAN q_event with a wait
-                elan3_waitevent(ctx, quadricsQueue[i].sdramQAddr +
-                                offsetof(E3_Queue, q_event));
-
-                if ( usethreads() )
-                    quadricsState.quadricsLock.unlock();
-                
-                // now process the received data so that when we are
-                // done the ELAN will have had the time to reset the
-                // receive event block if more data has arrived...
-
-                if (!quadricsDoChecksum || (!usecrc() && (chksum == (unsigned int)(rd->envelope.commonHdr.checksum +
-                    rd->envelope.commonHdr.checksum))) || (usecrc() && (chksum == 0))) {
-                    // checksum OK (or irrelevant), process quadricsRecvFragDesc...
-                    rd->ctx = ctx;
-                    rd->rail = i;
-                    rd->DataOK = false;
-                    rd->path = this;
-
-                    switch (rd->envelope.commonHdr.type) {
+                switch (msg_type) {
                     case MESSAGE_DATA:
                         rd->msgData(timeNow);
                         break;
                     case MESSAGE_DATA_ACK:
                         rd->msgDataAck(timeNow);
                         break;
-                    case MEMORY_RELEASE:
-                        rd->memRel();
-                        break;
-                    case MEMORY_REQUEST:
-                        rd->memReq(timeNow);
-                        break;
-                    case MEMORY_REQUEST_ACK:
-                        rd->memReqAck();
-                        break;
-                    default:
-                        ulm_exit((-1, "quadricsPath::receive bad type %d\n",
-                                  (int)rd->envelope.commonHdr.type));
-                        break;
+                }
+            }
+            else {
+                // checksum BAD, then abort or return descriptor to pool if
+                // ENABLE_RELIABILITY is defined
+#ifdef ENABLE_RELIABILITY
+                if (ib_state.ack) {
+                    if (usecrc()) {
+                        ulm_warn(("ibPath::receive - bad envelope CRC %u (computed %u)\n",
+                            recvd_chksum, computed_chksum));
                     }
+                    else {
+                        ulm_warn(("ibPath::receive - bad envelope checksum %u "
+                            "(computed %u)\n", recvd_chksum, computed_chksum));
+                    }
+                    // will repost descriptor...
+                    rd->ReturnDescToPool(getMemPoolIndex());
+                    continue;
                 }
                 else {
-                    // checksum BAD, then abort or return descriptor to pool if
-                    // ENABLE_RELIABILITY is defined
-#ifdef ENABLE_RELIABILITY
-                    if (quadricsDoAck) {
-                        if (usecrc()) {
-                            ulm_warn(("quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
-                                rd->envelope.commonHdr.checksum, chksum));
-                        }
-                        else {
-                            ulm_warn(("quadricsPath::receive - bad envelope checksum %u, "
-                                "calculated %u != 2*received %u\n",
-                                rd->envelope.commonHdr.checksum,
-                                chksum,
-                                (rd->envelope.commonHdr.checksum +
-                                rd->envelope.commonHdr.checksum)));
-                        }
-                        rd->ReturnDescToPool(getMemPoolIndex());
-                        continue;
-                    }
-                    else {
-                        if (usecrc()) {
-                            ulm_exit((-1, "quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
-                                rd->envelope.commonHdr.checksum, chksum));
-                        }
-                        else {
-                            ulm_exit((-1, "quadricsPath::receive - bad envelope checksum %u, "
-                                "calculated %u != 2*received %u\n",
-                                rd->envelope.commonHdr.checksum,
-                                chksum,
-                                (rd->envelope.commonHdr.checksum +
-                                rd->envelope.commonHdr.checksum)));
-                        }
-                    }
-#else
                     if (usecrc()) {
-                        ulm_exit((-1, "quadricsPath::receive - bad envelope CRC %u (envelope + CRC = %u)\n",
-                            rd->envelope.commonHdr.checksum, chksum));
+                        ulm_exit((-1, "ibPath::receive - bad envelope CRC %u (computed %u)\n",
+                            recvd_chksum, computed_chksum));
                     }
                     else {
-                        ulm_exit((-1, "quadricsPath::receive - bad envelope checksum %u, "
-                              "calculated %u != 2*received %u\n",
-                              rd->envelope.commonHdr.checksum,
-                              chksum,
-                              (rd->envelope.commonHdr.checksum +
-                               rd->envelope.commonHdr.checksum)));
+                        ulm_exit((-1, "ibPath::receive - bad envelope checksum %u "
+                            "(computed %u)\n", recvd_chksum, computed_chksum));
                     }
-#endif
                 }
-            } while (EVENT_BLK_READY(quadricsQueue[i].rcvBlk));
-
-
-            // unlock the queue...
-            if (usethreads())
-                quadricsQueue[i].rcvLock.unlock();
-        }
+#else
+                if (usecrc()) {
+                    ulm_exit((-1, "ibPath::receive - bad envelope CRC %u (computed %u)\n",
+                        recvd_chksum, computed_chksum));
+                }
+                else {
+                    ulm_exit((-1, "ibPath::receive - bad envelope checksum %u "
+                          "(computed %u)\n", recvd_chksum, computed_chksum));
+                }
+#endif
+            }
+        } while (1);
     }
+
+    if (locked) {
+        ib_state.lock.unlock();
+    }
+
     return true;
 }
 
 #ifdef ENABLE_RELIABILITY
 
-bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
+bool ibPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
 
     // move the timed out frags from FragsToAck back to
     // FragsToSend
-    quadricsSendFragDesc *FragDesc = 0;
-    quadricsSendFragDesc *TmpDesc = 0;
+    ibSendFragDesc *FragDesc = 0;
+    ibSendFragDesc *TmpDesc = 0;
     double curTime = 0;
+    int hca_index;
 
     *errorCode = ULM_SUCCESS;
 
     // reset send descriptor earliestTimeToResend
     message->earliestTimeToResend = -1;
 
-    for (FragDesc = (quadricsSendFragDesc *) message->FragsToAck.begin();
-	 FragDesc != (quadricsSendFragDesc *) message->FragsToAck.end();
-	 FragDesc = (quadricsSendFragDesc *) FragDesc->next) {
+    for (FragDesc = (ibSendFragDesc *) message->FragsToAck.begin();
+	 FragDesc != (ibSendFragDesc *) message->FragsToAck.end();
+	 FragDesc = (ibSendFragDesc *) FragDesc->next) {
 
 	// reset TmpDesc
 	TmpDesc = 0;
@@ -712,8 +769,8 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 	if (delivered_seq_no >= FragDesc->frag_seq) {
 	    // an ACK must have been dropped somewhere along the way...or
 	    // it hasn't been processed yet...
-	    FragDesc->WhichQueue = QUADRICSFRAGFREELIST;
-	    TmpDesc = (quadricsSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+	    FragDesc->WhichQueue = IBFRAGFREELIST;
+	    TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
 	    // set frag_seq value to 0/null/invalid to detect duplicate ACKs
 	    FragDesc->frag_seq = 0;
 	    // reset send descriptor pointer
@@ -726,8 +783,8 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 	    if ((curTime - FragDesc->timeSent) >= (RETRANS_TIME * max_multiple)) {
 		// resend this frag...
 		returnValue = true;
-		FragDesc->WhichQueue = QUADRICSFRAGSTOSEND;
-		TmpDesc = (quadricsSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+		FragDesc->WhichQueue = IBFRAGSTOSEND;
+		TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
 		message->FragsToSend.AppendNoLock(FragDesc);
                 (message->NumSent)--;
                 FragDesc=TmpDesc;
@@ -751,14 +808,16 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 
 	    // free send resources
 	    FragDesc->freeRscs();
-        FragDesc->WhichQueue = QUADRICSFRAGFREELIST;
+        FragDesc->WhichQueue = IBFRAGFREELIST;
 
 	    // return frag descriptor to free list
             //   the header holds the global proc id
 	    if (usethreads()) {
-		quadricsSendFragDescs.returnElement(FragDesc, FragDesc->rail);
-            } else {
-		quadricsSendFragDescs.returnElementNoLock(FragDesc, FragDesc->rail);
+            ib_state.lock.lock();
+	    }
+		ib_state.hca[FragDesc->hca_index_m].send_frag_list.returnElementNoLock(FragDesc, 0);
+	    if (usethreads()) {
+            ib_state.lock.unlock();
 	    }
         }
 	// reset FragDesc to previous value, if appropriate, to iterate over list correctly...
@@ -771,145 +830,3 @@ bool quadricsPath::resend(SendDesc_t *message, int *errorCode)
 }
 
 #endif
-
-bool quadricsPath::releaseMemory(double timeNow, int *errorCode) {
-    quadricsSendFragDesc *sfd = 0;
-    quadricsCtlHdr_t *hdr = 0;
-    ProcessPrivateMemDblLinkList *list;
-    ELAN3_CTX *ctx;
-    bool needSndRscs = true;
-    int procs = nprocs();
-    int rail, returnValue, destID, addrCnt;
-    int bufCounts[NUMBER_BUFTYPES];
-    void *addrs[MEMRLS_MAX_WORDPTRS];
-
-    for (int j = 1; j <= quadricsNRails; j++) {
-        rail = (quadricsLastMemRlsRail + j) % quadricsNRails;
-        ctx = quadricsQueue[rail].ctx;
-
-        if (!quadricsQueue[rail].railOK)
-            continue;
-
-        for (int i = 1; i <= procs; i++) {
-            destID = (quadricsLastMemRlsDest + i) % procs;
-            quadricsPeerMemory[rail]->addrCounts(destID, bufCounts);
-            for (int k = 0; k < NUMBER_BUFTYPES; k++) {
-
-                if (bufCounts[k] == 0)
-                    continue;
-
-                if (needSndRscs) {
-                    hdr = (quadricsCtlHdr_t *)quadricsHdrs.get();
-                    if (!hdr) {
-                        quadricsLastMemRlsRail = rail;
-                        quadricsLastMemRlsDest = destID;
-                        return true;
-                    }
-
-                    if (usethreads())
-                        sfd = quadricsSendFragDescs.getElement(rail, returnValue);
-                    else
-                        sfd = quadricsSendFragDescs.getElementNoLock(rail, returnValue);
-                    if (returnValue != ULM_SUCCESS) {
-                        int dummyCode;
-                        *errorCode = returnValue;
-                        ulm_free(hdr);
-                        quadricsLastMemRlsRail = rail;
-                        quadricsLastMemRlsDest = destID;
-                        cleanCtlMsgs(rail, timeNow, 0, (NUMBER_CTLMSGTYPES - 1), &dummyCode);
-                        return ((returnValue == ULM_ERR_OUT_OF_RESOURCE) ||
-                                (returnValue == ULM_ERR_FATAL)) ? false : true;
-                    }
-
-                    needSndRscs = false;
-                }
-
-
-                if ((addrCnt = quadricsPeerMemory[rail]->
-                     popLRU(destID, k, MEMRLS_MAX_WORDPTRS, addrs)) > 0) {
-                    hdr->memRelease.memType = k;
-                    hdr->memRelease.memBufCount = addrCnt;
-                    if (usethreads())
-                        sndMemRlsSeqsLock.lock();
-                    hdr->memRelease.releaseSeq = (quadricsMemRlsSeqs[destID])++;
-                    if (usethreads())
-                        sndMemRlsSeqsLock.unlock();
-                    for (int m = 0; m < addrCnt; m++) {
-                        hdr->memRelease.memBufPtrs.wordPtrs[m] =
-                            (ulm_uint32_t)addrs[m];
-                    }
-
-                    sfd->init(
-                        0,
-                        ctx,
-                        MEMORY_RELEASE,
-                        rail,
-                        destID,
-                        -1,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        false,
-                        hdr
-                        );
-                    // make sure this message is not sent over
-                    // another rail...
-                    sfd->freeWhenDone = true;
-
-                    list = &(quadricsQueue[rail].ctlMsgsToSend[MEMORY_RELEASE]);
-
-                    if (usethreads()) {
-                        list->Lock.lock();
-                        list->AppendNoLock((Links_t *)sfd);
-                        quadricsQueue[rail].ctlFlagsLock.lock();
-                        quadricsQueue[rail].ctlMsgsToSendFlag |= (1 << MEMORY_RELEASE);
-                        quadricsQueue[rail].ctlFlagsLock.unlock();
-                        list->Lock.unlock();
-                    }
-                    else {
-                        list->AppendNoLock((Links_t *)sfd);
-                        quadricsQueue[rail].ctlMsgsToSendFlag |= (1 << MEMORY_RELEASE);
-                    }
-
-                    hdr = 0;
-                    sfd = 0;
-                    needSndRscs = true;
-
-
-                }
-
-            } // end iteration over memory types
-        } // end iteration over destination processes
-
-        if (hdr || sfd) {
-            if (hdr) {
-                ulm_free(hdr);
-                hdr = 0;
-            }
-            if (sfd) {
-                sfd->freeRscs();
-                sfd->WhichQueue = QUADRICSFRAGFREELIST;
-                if (usethreads()) {
-                    quadricsSendFragDescs.returnElement(sfd, rail);
-                } else {
-                    quadricsSendFragDescs.returnElementNoLock(sfd, rail);
-                }
-                sfd = 0;
-            }
-            needSndRscs = true;
-        }
-
-        if (!sendCtlMsgs(rail, timeNow, MEMORY_RELEASE, MEMORY_RELEASE, errorCode)) {
-            return false;
-        } else if (!cleanCtlMsgs(rail, timeNow, MEMORY_RELEASE, MEMORY_RELEASE, errorCode)) {
-            return false;
-        }
-
-    } // end iteration over rails
-
-    quadricsLastMemRlsRail = rail;
-    quadricsLastMemRlsDest = destID;
-    return true;
-}

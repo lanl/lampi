@@ -34,35 +34,80 @@
 #ifndef IB_PATH_H
 #define IB_PATH_H
 
+#include "ulm/ulm.h"
+#include "util/dclock.h"
 #include "path/common/path.h"
+#include "path/ib/state.h"
 
 #ifdef ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
 class ibPath : public BasePath_t {
-
-    protected:
-
     public:
         
         ibPath() { pathType_m = IBPATH; }
+
         ~ibPath() {}
 
+        bool bind(SendDesc_t *message, int *globalDestProcessIDArray,
+            int destArrayCount, int *errorCode) {
+            if (isActive()) {
+                *errorCode = ULM_SUCCESS;
+                message->path_m = this;
+                return true;
+            }
+            else {
+                *errorCode = ULM_ERR_BAD_PATH;
+                return false;
+            }
+        }
+
+        void unbind(SendDesc_t *message, int *globalDestProcessIDArray,
+            int destArrayCount) {
+            ulm_exit((-1, "ibPath::unbind - called, not implemented yet...\n"));
+        }
+
+        bool init(SendDesc_t *message) {
+            message->pathInfo.ib.allocated_offset_m = -1;
+            message->numfrags = 0;
+            return true;
+        }
 
         bool canReach(int globalDestProcessID);
-        bool init(SendDesc_t *message);
         bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
         bool sendDone(SendDesc_t *message, double timeNow, int *errorCode);
         bool receive(double timeNow, int *errorCode, recvType recvTypeArg);
         bool push(double timeNow, int *errorCode);
         bool needsPush(void);
         void ReturnDesc(SendDesc_t *message, int poolIndex);
+        void checkSendCQs(void);
 
 #ifdef ENABLE_RELIABILITY
-        bool retransmitP(SendDesc_t *message);
+        bool retransmitP(SendDesc_t *message) {
+            if (!ib_state.ack || (RETRANS_TIME == -1) || (message->earliestTimeToResend == -1)
+                || (message->FragsToAck.size() == 0))
+                return false;
+            else if (dclock() >= message->earliestTimeToResend) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         bool resend(SendDesc_t *message, int *errorCode);
 #endif
 
+        bool sendCtlMsgs(int rail, double timeNow, int startIndex, int endIndex,
+            int *errorCode, bool skipCheck = false);
+
+        // all HCAs version
+        bool sendCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
+
+        bool cleanCtlMsgs(int rail, double timeNow, int startIndex, int endIndex,
+            int *errorCode, bool skipCheck = false);
+
+        // all HCAs version
+        bool cleanCtlMsgs(double timeNow, int startIndex, int endIndex, int *errorCode);
 };
 #endif

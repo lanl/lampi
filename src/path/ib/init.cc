@@ -322,6 +322,9 @@ void ibSetup(lampiState_t *s)
         if ((u_int32_t)num_sbufs > h->send_cq_tokens)
             num_sbufs = h->send_cq_tokens;
 
+        // reset the SQ and RQ tokens to new, possibly lower, limit
+        h->ud.sq_tokens = num_sbufs;
+        h->ud.rq_tokens = num_rbufs;
         // cache value of send and receive num_bufs for later reference
         h->ud.num_rbufs = num_rbufs;
         h->ud.num_sbufs = num_sbufs;
@@ -467,7 +470,7 @@ void ibSetup(lampiState_t *s)
             // initialize LA-MPI send frag. desc. 
             sfrag->hca_index_m = ib_state.active_hcas[i];
             sfrag->qp_type_m = ibSendFragDesc::UD_QP;
-            sfrag->state_m = ibSendFragDesc::IBRESOURCESINITED;
+            sfrag->state_m = ibSendFragDesc::IBRESOURCES;
 
             // store pointer to send fragment descriptor as id
             sfrag->sr_desc_m.id = (VAPI_wr_id_t)((unsigned long)sfrag);
@@ -485,10 +488,6 @@ void ibSetup(lampiState_t *s)
         
             // store it on a temporary list...
             dlist.AppendNoLock(sfrag);
-
-            // decrement tokens...don't need to check values...
-            (h->send_cq_tokens)--;
-            (h->ud.sq_tokens)--;
         }
 
         // store the send descriptors on the freelist

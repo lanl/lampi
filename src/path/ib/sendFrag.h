@@ -40,13 +40,19 @@
 class ibSendFragDesc : public BaseSendFragDesc_t {
     public:
         enum qp_type {
+            NOTASSIGNED_QP,
             UD_QP,
-            OTHER_QP
+            RC_QP
         };
 
         enum state {
             UNINITIALIZED = 0,
-            IBRESOURCESINITED = 1 << 1
+            BASICINFO = (1 << 0),
+            IBRESOURCES = (1 << 1),
+            DATACOPIED = (1 << 2),
+            INITCOMPLETE = (1 << 3),
+            POSTED = (1 << 4),
+            LOCALACKED = (1 << 5)
         };
 
         int hca_index_m;
