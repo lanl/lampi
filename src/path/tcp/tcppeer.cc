@@ -273,7 +273,7 @@ bool TCPPeer::send(SendDesc_t *message, bool *incomplete, int *errorCode)
     return true;
 }
 
-void TCPPeer::sendStart(SendDesc_t* message)
+void TCPPeer::sendStart(SendDesc_t* message, int sd)
 {
     // find unused sockets and start send for first fragments
     size_t numSockets = tcpSockets.size();
@@ -282,7 +282,9 @@ void TCPPeer::sendStart(SendDesc_t* message)
         i++) {
 
         TCPSocket& tcpSocket = tcpSockets[i];
-        if(usethreads()) tcpSocket.lock.lock();
+        if(usethreads() && tcpSocket.sd != sd) 
+            tcpSocket.lock.lock();
+ 
         if(tcpSocket.isConnected() && tcpSocket.sendFrag == 0) {
 
             // dont send more than the first fragment until an ack is received
@@ -294,19 +296,25 @@ void TCPPeer::sendStart(SendDesc_t* message)
             TCPSendFrag *sendFrag = (TCPSendFrag*)message->FragsToSend.GetfirstElement();
             tcpSocket.sendFrag = sendFrag;
             sendFrag->WhichQueue = 0;
-            if(usethreads()) tcpSocket.lock.unlock();
+            if(usethreads() && tcpSocket.sd != sd) 
+                tcpSocket.lock.unlock();
 
             // start send, if it doesn't complete add to the select mask
             sendFrag->sendEventHandler(tcpSocket.sd);
             if(tcpSocket.sendFrag == sendFrag) {
-                ScopedLock lock(tcpSocket.lock);
-                if(tcpSocket.sendFrag == sendFrag) { // double-checked lock
+                if(usethreads() && tcpSocket.sd != sd) {
+                    ScopedLock lock(tcpSocket.lock);
+                    if(tcpSocket.sendFrag == sendFrag) { // double-checked lock
+                        tcpSocket.flags |= Reactor::NotifySend;
+                        tcpPath->insertListener(tcpSocket.sd, sendFrag, Reactor::NotifySend);
+                    }
+                } else { 
                     tcpSocket.flags |= Reactor::NotifySend;
                     tcpPath->insertListener(tcpSocket.sd, sendFrag, Reactor::NotifySend);
                 }
             }
 
-        } else if (usethreads())
+        } else if (usethreads() && tcpSocket.sd != sd)
             tcpSocket.lock.unlock();
     }
 }
