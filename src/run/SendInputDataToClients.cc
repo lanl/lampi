@@ -1136,9 +1136,31 @@ int SendTCPInputToClients(ULMRunParams_t *RunParameters, adminMessage *server)
 int SendInterfaceListToClients(ULMRunParams_t *RunParameters, adminMessage *server)
 {
     int errorCode;
+    int tcphosts = 0, udphosts = 0;
 
     // we don't do any of this if there is only one host...
     if (RunParameters->NHosts == 1)
+        return ULM_SUCCESS;
+
+
+    // we don't do any of this if there is only one host...
+    if (RunParameters->NHosts == 1)
+        return ULM_SUCCESS;
+
+    for (int i = 0; i < RunParameters->NHosts; i++) {
+        for (int j = 0; j < RunParameters->NPathTypes[i]; j++) {
+            if (RunParameters->ListPathTypes[i][j] == PATH_TCP) {
+                tcphosts++;
+                break;
+            }
+            if (RunParameters->ListPathTypes[i][j] == PATH_UDP) {
+                tcphosts++;
+                break;
+            }
+        }
+    }
+
+    if(tcphosts == 0 && udphosts == 0)
         return ULM_SUCCESS;
 
     ulm_dbg(("mpirun: Bcasting IF names input...\n"));
