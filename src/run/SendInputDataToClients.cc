@@ -634,13 +634,22 @@ int SendInitialInputDataToClients(void)
         DataError("Quiet");
 
     // verbose
-    tag = adminMessage::VERBOSITY;
+    tag = adminMessage::VERBOSE;
     if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
         TagError("VERBOSE");
     if (!server->
         pack(&(RunParams.Verbose), (adminMessage::packType) sizeof(int),
              1))
         DataError("Verbose");
+
+    // verbose
+    tag = adminMessage::WARN;
+    if (!server->pack(&tag, (adminMessage::packType) sizeof(int), 1))
+        TagError("WARN");
+    if (!server->
+        pack(&(RunParams.Warn), (adminMessage::packType) sizeof(int),
+             1))
+        DataError("Warn");
 
     // isatty
     tag = adminMessage::ISATTY;

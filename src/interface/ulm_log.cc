@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -40,48 +40,46 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "internal/state.h"
+static const int buf_size = 255;
+static char file_line[buf_size + 1] = "";
+static char string[buf_size + 1] = "";
+static char log_file[buf_size + 1] = "lampi.log";
+static FILE *log_stream = NULL;
+static int initialized = 0;
 
-static const int file_line_max = 255;
-static char file_line[file_line_max + 1] = "";
+int ulm_warn_enabled = 0;
+int ulm_dbg_enabled = ENABLE_DBG;
 
-extern "C" void _ulm_log(FILE *fd, const char *fmt, va_list ap)
+static void log(const char *fmt, va_list ap)
 {
-    /* Write to a file descriptor and the log file */
+    /* write to log file */
 
-    FILE *log_fd;
-    
-    if (fd != NULL) {
-	fprintf(fd, file_line);
-	vfprintf(fd, fmt, ap);
-	fflush(fd);
+    if (!initialized) {
+        initialized = 1;
+        if (getenv("LAMPI_LOG")) {
+            snprintf(log_file, buf_size, getenv("LAMPI_LOG"));
+        }
     }
 
-    log_fd = fopen("lampi.log", "a");
-    if (log_fd != NULL) {
-        fprintf(log_fd, file_line);
-        vfprintf(log_fd, fmt, ap);
-        fflush(log_fd);
-        fclose(log_fd);
-    } else {
-        fprintf(stderr,
-                "Unable to append to lampi.log in file %s\n",
-                __FILE__);
+    log_stream = fopen(log_file, "a");
+    if (log_stream) {
+        int n = snprintf(string, buf_size, file_line);
+        vsnprintf(string + n, buf_size - n, fmt, ap);
+        fprintf(log_stream, string);
     }
-    
-    file_line[0] = '\0';
+    fclose(log_stream);
 }
 
-extern "C" void _ulm_print(FILE * fd, const char *fmt, va_list ap)
+static void print(FILE *stream, const char *fmt, va_list ap)
 {
-    /* Write to a file descriptor (usually stdout or stderr) */
+    /* write to a file descriptor (usually stdout or stderr) */
 
-    if (fd != NULL) {
-	fprintf(fd, file_line);
-	vfprintf(fd, fmt, ap);
-	fflush(fd);
+    if (stream != NULL) {
+        int n = snprintf(string, buf_size, file_line);
+        vsnprintf(string + n, buf_size - n, fmt, ap);
+        fprintf(stream, string);
+        fflush(stream);
     }
-    file_line[0] = '\0';
 }
 
 extern "C" void _ulm_set_file_line(const char *name, int line)
@@ -91,9 +89,9 @@ extern "C" void _ulm_set_file_line(const char *name, int line)
     p = strstr(name, "src/");
     if (p) {
         p += strlen("src/");
-        sprintf(file_line, "LA-MPI:%s:%d: ", p, line);
+        snprintf(file_line, buf_size, "LA-MPI:%s:%d: ", p, line);
     } else {
-        sprintf(file_line, "LA-MPI:%s:%d: ", name, line);
+        snprintf(file_line, buf_size, "LA-MPI:%s:%d: ", name, line);
     }
 }
 
@@ -101,75 +99,50 @@ extern "C" void _ulm_err(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    _ulm_log(stderr, fmt, ap);
+    print(stdout, fmt, ap);
+    log(fmt, ap);
     va_end(ap);
+    file_line[0] = '\0';
 }
 
 extern "C" void _ulm_warn(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    _ulm_log(stderr, fmt, ap);
+    print(stdout, fmt, ap);
+    log(fmt, ap);
     va_end(ap);
-}
-
-extern "C" void _ulm_notice(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    vprintf(fmt, ap);
-    fflush(stdout);
-    va_end(ap);
+    file_line[0] = '\0';
 }
 
 extern "C" void _ulm_info(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    _ulm_print(stdout, fmt, ap);
+    print(stdout, fmt, ap);
     va_end(ap);
+    file_line[0] = '\0';
 }
 
 extern "C" void _ulm_dbg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    _ulm_log(stdout, fmt, ap);
+    print(stdout, fmt, ap);
+    log(fmt, ap);
     va_end(ap);
+    file_line[0] = '\0';
 }
 
-extern "C" void _ulm_fdbg(const char *fmt, ...)
-{
-    FILE *log_fd;
-    char	buf[200];
-
-    sprintf(buf, "lampi_%d_%d.log", myhost(), getpid());
-    log_fd = fopen(buf, "a");
-    if (log_fd != NULL) {
-        va_list ap;
-        va_start(ap, fmt);
-        _ulm_log(log_fd, fmt, ap);
-        va_end(ap);
-        fclose(log_fd);
-    } else {
-        fprintf(stderr,
-                "Unable to append to lampi.log in file %s\n",
-                __FILE__);
-    }
-
-}
-
-extern "C" void _ulm_exit(int status, const char* fmt, ...)
+extern "C" void _ulm_exit(int status, const char *fmt, ...)
 {
     va_list ap;
 
     if (fmt) {
         va_start(ap, fmt);
+        print(stdout, fmt, ap);
         if (status != 0) {
-            _ulm_log(stderr, fmt, ap);
-        }
-        else {
-            _ulm_print(stdout, fmt, ap);
+            log(fmt, ap);
         }
         va_end(ap);
     }

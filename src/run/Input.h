@@ -81,5 +81,6 @@ void SetCheckArgsFalse(const char *ErrorString);
 void SetOutputPrefixTrue(const char *ErrorString);
 void SetQuietTrue(const char *ErrorString);
 void SetVerboseTrue(const char *ErrorString);
+void SetWarnTrue(const char *ErrorString);
 
 #endif /* _INPUT */

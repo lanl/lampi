@@ -104,6 +104,9 @@ struct RunParams_t {
     /* verbose start-up messages */
     int Verbose;
 
+    /* enable warning messages */
+    int Warn;
+
     /* hostname of mpirun host */
     HostName_t mpirunName;
 

@@ -177,6 +177,13 @@ Options_t Options[] =
      SetVerboseTrue,
      "Verbose start-up messages", 0, "\0"
     },
+    {"-w",
+     "Warn",
+     NO_ARGS,
+     NoOpFunction,
+     SetWarnTrue,
+     "Enable warning messages", 0, "\0"
+    },
     {"-dapp",
      "DirectoryOfBinary",
      STRING_ARGS,
@@ -454,6 +461,7 @@ void Usage(FILE *stream)
             "                  mechanism is available.\n"
             "-t                Tag standard output/error with source information.\n"
             "-v                Verbose start-up information.\n"
+            "-w                Enable warning messages.\n"
             "-threads          Enable thread safety.\n"
             "-qf FLAGSLIST     A comma-delimited list of keywords for operation on\n"
             "                  Quadrics networks.  The keywords supported are \"ack\",\n"
@@ -1645,6 +1653,13 @@ void SetVerboseTrue(const char *InfoStream)
     RunParams.Quiet = 0;
     RunParams.Verbose = 1;
     RunParams.OutputPrefix = 1;
+}
+
+
+void SetWarnTrue(const char *InfoStream)
+{
+    RunParams.Warn = 1;
+    ulm_warn_enabled = 1;
 }
 
 

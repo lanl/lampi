@@ -44,10 +44,10 @@
  * Set ULM_MALLOC_DEBUG_LEVEL to
  * 0 for no checking
  * 1 for basic error checking
- * 2 for more error checking
+ * 2 more error checking
  */
 
-#define ULM_MALLOC_DEBUG_LEVEL 2
+#define ULM_MALLOC_DEBUG_LEVEL 1
 
 /*
  * malloc and free with error checking
@@ -91,20 +91,23 @@ void _ulm_free(void *addr, int debug_level, char *file, int line)
  * Macros to actually use
  */
 
-#define ulm_free2(ADDR) \
-do { \
-    if ( ADDR ) \
-    { \
-        free(ADDR); \
-    } \
-}while (0)
+#define ulm_free2(ADDR)                         \
+    do {                                        \
+        if (ADDR) {                             \
+            free(ADDR);                         \
+        }                                       \
+    } while (0)
 
 #if ULM_MALLOC_DEBUG_LEVEL > 0
 
-#define ulm_malloc(SIZE) _ulm_malloc(SIZE, ULM_MALLOC_DEBUG_LEVEL, __FILE__, __LINE__)
+#define ulm_malloc(SIZE) \
+    _ulm_malloc(SIZE, ULM_MALLOC_DEBUG_LEVEL, __FILE__, __LINE__)
 
-#define ulm_free(ADDR) \
-    do { _ulm_free((ADDR), ULM_MALLOC_DEBUG_LEVEL, __FILE__, __LINE__); ADDR = NULL; } while (0)
+#define ulm_free(ADDR)                                                  \
+    do {                                                                \
+        _ulm_free((ADDR), ULM_MALLOC_DEBUG_LEVEL, __FILE__, __LINE__);  \
+        ADDR = NULL;                                                    \
+    } while (0)
 
 
 #else				/* ULM_MALLOC_DEBUG_LEVEL */

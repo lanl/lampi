@@ -1122,12 +1122,17 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             s->client->unpack(&(s->quiet),
                               (adminMessage::packType) sizeof(int), 1);
             break;
-        case adminMessage::VERBOSITY:
+        case adminMessage::VERBOSE:
             s->client->unpack(&(s->verbose),
                               (adminMessage::packType) sizeof(int), 1);
             if (s->verbose) {
                 s->output_prefix = 1;
             }
+            break;
+        case adminMessage::WARN:
+            s->client->unpack(&(s->warn),
+                              (adminMessage::packType) sizeof(int), 1);
+            ulm_warn_enabled = s->warn;
             break;
         case adminMessage::ISATTY:
             s->client->unpack(&(s->isatty),
@@ -1910,6 +1915,7 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     memset(s, 0, sizeof(lampiState_t));
     s->error = LAMPI_INIT_SUCCESS;
     s->verbose = 0;
+    s->warn = 0;
     s->debug = 0;
     s->interceptSTDio = 1;
 

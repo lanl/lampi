@@ -353,7 +353,14 @@ Version 1.5.2
 
 Version 1.5.3
 
-- Kill running jobs with a kill -9 if we are able to
+- On abnormal terminations, Kill running jobs with a kill -9 if we can.
 
-- A bit more data output for de-bugging problems 
+- More data output for debugging problems.
 
+Version 1.5.4
+
+- Simplified start-up for more robust abnormal termination.
+
+- Verbose option for debugging start-up.
+
+- stdio streams explicitly set to no buffering.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003. The Regents of the University of
+ * Copyright 2002-2004. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -39,70 +39,40 @@
 
 #include "internal/linkage.h"
 
-#define ulm_dbg(x) \
-do { \
-    if (ENABLE_DBG) { \
-        _ulm_set_file_line( __FILE__, __LINE__) ; \
-        _ulm_dbg x ; \
-    } \
-} while (0)
+#define ulm_dbg(x)                                      \
+    do {                                                \
+        if (ulm_dbg_enabled) {                          \
+            _ulm_set_file_line(__FILE__, __LINE__) ;    \
+            _ulm_dbg x ;                                \
+        }                                               \
+    } while (0)
 
-#define ulm_fdbg(x) \
-do { \
-    if (ENABLE_DBG) { \
-        _ulm_set_file_line( __FILE__, __LINE__) ; \
-        _ulm_fdbg x ; \
-    } \
-} while (0)
+#define ulm_err(x)                                      \
+    do {                                                \
+        _ulm_set_file_line(__FILE__, __LINE__) ;        \
+        _ulm_err x ;                                    \
+    } while (0)
 
-#define ulm_dbg_fp(fp, x) \
-do { \
-    if (ENABLE_DBG) { \
-        fprintf(fp, "%s:%d: (pid = %d): ", __FILE__, __LINE__, getpid()); \
-        fprintf(fp, x); \
-    } \
-} while (0)
+#define ulm_warn(x)                                     \
+    do {                                                \
+        if (ulm_warn_enabled) {                         \
+            _ulm_set_file_line(__FILE__, __LINE__) ;    \
+            _ulm_warn x ;                               \
+        }                                               \
+    } while (0)
 
-#define ulm_err(x) \
-do { \
-    _ulm_set_file_line(__FILE__, __LINE__) ; \
-    _ulm_err x ; \
-} while (0)
+#define ulm_exit(x)                                     \
+    do {                                                \
+        _ulm_set_file_line(__FILE__, __LINE__) ;        \
+        _ulm_exit x ;                                   \
+    } while (0)
 
-#define ulm_ferr(x) \
-do { \
-    _ulm_set_file_line(__FILE__, __LINE__) ; \
-    _ulm_fdbg x ; \
-} while (0)
-
-#define ulm_warn(x) \
-do { \
-    _ulm_set_file_line(__FILE__, __LINE__) ; \
-    _ulm_warn x ; \
-} while (0)
-
-#define ulm_exit(x) \
-do { \
-    _ulm_set_file_line(__FILE__, __LINE__) ; \
-    _ulm_exit x ; \
-} while (0)
-
-#define ulm_info(x) \
-do { \
-    if (ENABLE_VERBOSE) { \
-        _ulm_info x ; \
-    } \
-} while (0)
-
-#define ulm_notice(x) \
-do { \
-    _ulm_notice x ; \
-} while (0)
+#define ulm_info(x)                             \
+    do {                                        \
+        _ulm_info x ;                           \
+    } while (0)
 
 CDECL_BEGIN
-
-void _ulm_log(FILE* fd, const char* fmt, va_list ap);
-void _ulm_print(FILE* fd, const char* fmt, va_list ap);
 
 /* Error condition */
 void _ulm_err(const char* fmt, ...);
@@ -110,23 +80,21 @@ void _ulm_err(const char* fmt, ...);
 /* Warning condition */
 void _ulm_warn(const char* fmt, ...);
 
-/* Normal, but significant, condition */
-void _ulm_notice(const char* fmt, ...);
-
 /* Informational message */
 void _ulm_info(const char* fmt, ...);
 
 /* Debugging message */
 void _ulm_dbg(const char* fmt, ...);
 
-/* Debugging message (outputs to file lampi_<host name>_<pid>.log) */
-void _ulm_fdbg(const char* fmt, ...);
-
 /* Exit with error message */
 void _ulm_exit(int status, const char* fmt, ...);
 
 /* Set file and line info */
 void _ulm_set_file_line(const char *file, int lineno);
+
+/* Runtime control of warning and debug messages */
+extern int ulm_dbg_enabled;
+extern int ulm_warn_enabled;
 
 CDECL_END
 

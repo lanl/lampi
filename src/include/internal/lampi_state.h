@@ -104,7 +104,6 @@ typedef struct {
 
     int debug;
     int error;
-    int verbose;
 
     int quadrics;
     int gm;
@@ -143,6 +142,8 @@ typedef struct {
     int *STDOUTfdsFromChildren;     /* stdout file descriptors to redirect */
     int output_prefix;              /* prepend informative prefix to stdout/stderr ? */
     int quiet;                      /* suppress start-up messages */
+    int verbose;                    /* verbose start-up messages */
+    int warn;                       /* enable warning messages */
     int isatty;                     /* is mpirun a tty? */
     size_t StderrBytesWritten;      /* number of bytes written to stderr */
     size_t StdoutBytesWritten;      /* number of bytes written to stdout */

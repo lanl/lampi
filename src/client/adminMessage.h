@@ -215,7 +215,8 @@ class adminMessage {
         CHECKARGS,              /* function arguments need to be checked */
         OUTPUT_PREFIX,          /* controling if prefix will be added to std i/o */
         QUIET,                  /* supress start-up messages */
-        VERBOSITY,              /* verbose start-up messages */
+        VERBOSE,                /* verbose start-up messages */
+        WARN,                   /* enable warning messages */
         ISATTY,                 /* is mpirun a tty? */
         MAXCOMMUNICATORS,       /* limit on number of communicators */
         IRECVOUTOFRESRCABORT,   /* if set, return error when out of irecv headers - don't abort */
