@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_errhandler(void);
+void mpi_file_get_errhandler(void);
+/*  void pmpi_file_get_errhandler_(void);   this is the real function, below */
+void mpi_file_get_errhandler_(void);   
+void pmpi_file_get_errhandler__(void);
+void mpi_file_get_errhandler__(void);
+void PMPI_FILE_GET_ERRHANDLER(void);
+void MPI_FILE_GET_ERRHANDLER(void);
+
+#pragma weak PMPI_FILE_GET_ERRHANDLER = pmpi_file_get_errhandler_     
+#pragma weak pmpi_file_get_errhandler = pmpi_file_get_errhandler_
+#pragma weak pmpi_file_get_errhandler__ = pmpi_file_get_errhandler_
+#pragma weak MPI_FILE_GET_ERRHANDLER = pmpi_file_get_errhandler_     
+#pragma weak mpi_file_get_errhandler = pmpi_file_get_errhandler_
+/* #pragma weak mpi_file_get_errhandler_ = pmpi_file_get_errhandler_    ROMIO does this one */
+#pragma weak mpi_file_get_errhandler__ = pmpi_file_get_errhandler_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_errhandler_ PMPI_FILE_GET_ERRHANDLER

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_iwrite(void);
+void mpi_file_iwrite(void);
+/*  void pmpi_file_iwrite_(void);   this is the real function, below */
+void mpi_file_iwrite_(void);   
+void pmpi_file_iwrite__(void);
+void mpi_file_iwrite__(void);
+void PMPI_FILE_IWRITE(void);
+void MPI_FILE_IWRITE(void);
+
+#pragma weak PMPI_FILE_IWRITE = pmpi_file_iwrite_     
+#pragma weak pmpi_file_iwrite = pmpi_file_iwrite_
+#pragma weak pmpi_file_iwrite__ = pmpi_file_iwrite_
+#pragma weak MPI_FILE_IWRITE = pmpi_file_iwrite_     
+#pragma weak mpi_file_iwrite = pmpi_file_iwrite_
+/* #pragma weak mpi_file_iwrite_ = pmpi_file_iwrite_    ROMIO does this one */
+#pragma weak mpi_file_iwrite__ = pmpi_file_iwrite_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_iwrite_ PMPI_FILE_IWRITE

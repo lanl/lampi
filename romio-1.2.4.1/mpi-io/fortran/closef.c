@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_close(void);
+void mpi_file_close(void);
+/*  void pmpi_file_close_(void);   this is the real function, below */
+void mpi_file_close_(void);   
+void pmpi_file_close__(void);
+void mpi_file_close__(void);
+void PMPI_FILE_CLOSE(void);
+void MPI_FILE_CLOSE(void);
+
+#pragma weak PMPI_FILE_CLOSE = pmpi_file_close_     
+#pragma weak pmpi_file_close = pmpi_file_close_
+#pragma weak pmpi_file_close__ = pmpi_file_close_
+#pragma weak MPI_FILE_CLOSE = pmpi_file_close_     
+#pragma weak mpi_file_close = pmpi_file_close_
+/* #pragma weak mpi_file_close_ = pmpi_file_close_    ROMIO does this one */
+#pragma weak mpi_file_close__ = pmpi_file_close_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_close_ PMPI_FILE_CLOSE

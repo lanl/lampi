@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_size(void);
+void mpi_file_get_size(void);
+/*  void pmpi_file_get_size_(void);   this is the real function, below */
+void mpi_file_get_size_(void);   
+void pmpi_file_get_size__(void);
+void mpi_file_get_size__(void);
+void PMPI_FILE_GET_SIZE(void);
+void MPI_FILE_GET_SIZE(void);
+
+#pragma weak PMPI_FILE_GET_SIZE = pmpi_file_get_size_     
+#pragma weak pmpi_file_get_size = pmpi_file_get_size_
+#pragma weak pmpi_file_get_size__ = pmpi_file_get_size_
+#pragma weak MPI_FILE_GET_SIZE = pmpi_file_get_size_     
+#pragma weak mpi_file_get_size = pmpi_file_get_size_
+/* #pragma weak mpi_file_get_size_ = pmpi_file_get_size_    ROMIO does this one */
+#pragma weak mpi_file_get_size__ = pmpi_file_get_size_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_size_ PMPI_FILE_GET_SIZE

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_amode(void);
+void mpi_file_get_amode(void);
+/*  void pmpi_file_get_amode_(void);   this is the real function, below */
+void mpi_file_get_amode_(void);   
+void pmpi_file_get_amode__(void);
+void mpi_file_get_amode__(void);
+void PMPI_FILE_GET_AMODE(void);
+void MPI_FILE_GET_AMODE(void);
+
+#pragma weak PMPI_FILE_GET_AMODE = pmpi_file_get_amode_     
+#pragma weak pmpi_file_get_amode = pmpi_file_get_amode_
+#pragma weak pmpi_file_get_amode__ = pmpi_file_get_amode_
+#pragma weak MPI_FILE_GET_AMODE = pmpi_file_get_amode_     
+#pragma weak mpi_file_get_amode = pmpi_file_get_amode_
+/* #pragma weak mpi_file_get_amode_ = pmpi_file_get_amode_    ROMIO does this one */
+#pragma weak mpi_file_get_amode__ = pmpi_file_get_amode_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_amode_ PMPI_FILE_GET_AMODE

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_write_ordered(void);
+void mpi_file_write_ordered(void);
+/*  void pmpi_file_write_ordered_(void);   this is the real function, below */
+void mpi_file_write_ordered_(void);   
+void pmpi_file_write_ordered__(void);
+void mpi_file_write_ordered__(void);
+void PMPI_FILE_WRITE_ORDERED(void);
+void MPI_FILE_WRITE_ORDERED(void);
+
+#pragma weak PMPI_FILE_WRITE_ORDERED = pmpi_file_write_ordered_     
+#pragma weak pmpi_file_write_ordered = pmpi_file_write_ordered_
+#pragma weak pmpi_file_write_ordered__ = pmpi_file_write_ordered_
+#pragma weak MPI_FILE_WRITE_ORDERED = pmpi_file_write_ordered_     
+#pragma weak mpi_file_write_ordered = pmpi_file_write_ordered_
+/* #pragma weak mpi_file_write_ordered_ = pmpi_file_write_ordered_    ROMIO does this one */
+#pragma weak mpi_file_write_ordered__ = pmpi_file_write_ordered_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_write_ordered_ PMPI_FILE_WRITE_ORDERED

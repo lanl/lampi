@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_type_create_subarray(void);
+void mpi_type_create_subarray(void);
+/*  void pmpi_type_create_subarray_(void);   this is the real function, below */
+void mpi_type_create_subarray_(void);   
+void pmpi_type_create_subarray__(void);
+void mpi_type_create_subarray__(void);
+void PMPI_TYPE_CREATE_SUBARRAY(void);
+void MPI_TYPE_CREATE_SUBARRAY(void);
+
+#pragma weak PMPI_TYPE_CREATE_SUBARRAY = pmpi_type_create_subarray_     
+#pragma weak pmpi_type_create_subarray = pmpi_type_create_subarray_
+#pragma weak pmpi_type_create_subarray__ = pmpi_type_create_subarray_
+#pragma weak MPI_TYPE_CREATE_SUBARRAY = pmpi_type_create_subarray_     
+#pragma weak mpi_type_create_subarray = pmpi_type_create_subarray_
+/* #pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_    ROMIO does this one */
+#pragma weak mpi_type_create_subarray__ = pmpi_type_create_subarray_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_type_create_subarray_ PMPI_TYPE_CREATE_SUBARRAY

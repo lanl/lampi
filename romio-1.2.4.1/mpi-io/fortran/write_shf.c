@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_write_shared(void);
+void mpi_file_write_shared(void);
+/*  void pmpi_file_write_shared_(void);   this is the real function, below */
+void mpi_file_write_shared_(void);   
+void pmpi_file_write_shared__(void);
+void mpi_file_write_shared__(void);
+void PMPI_FILE_WRITE_SHARED(void);
+void MPI_FILE_WRITE_SHARED(void);
+
+#pragma weak PMPI_FILE_WRITE_SHARED = pmpi_file_write_shared_     
+#pragma weak pmpi_file_write_shared = pmpi_file_write_shared_
+#pragma weak pmpi_file_write_shared__ = pmpi_file_write_shared_
+#pragma weak MPI_FILE_WRITE_SHARED = pmpi_file_write_shared_     
+#pragma weak mpi_file_write_shared = pmpi_file_write_shared_
+/* #pragma weak mpi_file_write_shared_ = pmpi_file_write_shared_    ROMIO does this one */
+#pragma weak mpi_file_write_shared__ = pmpi_file_write_shared_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_write_shared_ PMPI_FILE_WRITE_SHARED

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_atomicity(void);
+void mpi_file_get_atomicity(void);
+/*  void pmpi_file_get_atomicity_(void);   this is the real function, below */
+void mpi_file_get_atomicity_(void);   
+void pmpi_file_get_atomicity__(void);
+void mpi_file_get_atomicity__(void);
+void PMPI_FILE_GET_ATOMICITY(void);
+void MPI_FILE_GET_ATOMICITY(void);
+
+#pragma weak PMPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity_     
+#pragma weak pmpi_file_get_atomicity = pmpi_file_get_atomicity_
+#pragma weak pmpi_file_get_atomicity__ = pmpi_file_get_atomicity_
+#pragma weak MPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity_     
+#pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity_
+/* #pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_    ROMIO does this one */
+#pragma weak mpi_file_get_atomicity__ = pmpi_file_get_atomicity_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_atomicity_ PMPI_FILE_GET_ATOMICITY

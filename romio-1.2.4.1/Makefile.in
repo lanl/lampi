@@ -46,6 +46,7 @@ mpio:
         fi
 
 clean:
+	@-rm -f objects/*
 	@-rm -f work.pc work.pcl
 	@dirs=`echo "$(DIRS)"`; \
         for x in $(FILE_SYSTEM) ;\

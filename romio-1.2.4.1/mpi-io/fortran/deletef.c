@@ -12,6 +12,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_delete(void);
+void mpi_file_delete(void);
+/*  void pmpi_file_delete_(void);   this is the real function, below */
+void mpi_file_delete_(void);   
+void pmpi_file_delete__(void);
+void mpi_file_delete__(void);
+void PMPI_FILE_DELETE(void);
+void MPI_FILE_DELETE(void);
+
+#pragma weak PMPI_FILE_DELETE = pmpi_file_delete_     
+#pragma weak pmpi_file_delete = pmpi_file_delete_
+#pragma weak pmpi_file_delete__ = pmpi_file_delete_
+#pragma weak MPI_FILE_DELETE = pmpi_file_delete_     
+#pragma weak mpi_file_delete = pmpi_file_delete_
+/* #pragma weak mpi_file_delete_ = pmpi_file_delete_    ROMIO does this one */
+#pragma weak mpi_file_delete__ = pmpi_file_delete_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_delete_ PMPI_FILE_DELETE

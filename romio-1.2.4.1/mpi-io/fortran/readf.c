@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_read(void);
+void mpi_file_read(void);
+/*  void pmpi_file_read_(void);   this is the real function, below */
+void mpi_file_read_(void);   
+void pmpi_file_read__(void);
+void mpi_file_read__(void);
+void PMPI_FILE_READ(void);
+void MPI_FILE_READ(void);
+
+#pragma weak PMPI_FILE_READ = pmpi_file_read_     
+#pragma weak pmpi_file_read = pmpi_file_read_
+#pragma weak pmpi_file_read__ = pmpi_file_read_
+#pragma weak MPI_FILE_READ = pmpi_file_read_     
+#pragma weak mpi_file_read = pmpi_file_read_
+/* #pragma weak mpi_file_read_ = pmpi_file_read_    ROMIO does this one */
+#pragma weak mpi_file_read__ = pmpi_file_read_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_read_ PMPI_FILE_READ

@@ -2349,56 +2349,11 @@ fi
 
 
 if test $NOF77 = 0 ; then
-    echo "checking Fortran external names"
-    
-   rm -f confftest.f confftest.o
-   cat > confftest.f <<EOF
-       subroutine mpir_init_fop( a )
-       integer a
-       a = 1
-       return
-       end
-EOF
-   $F77 $FFLAGS -c confftest.f > /dev/null 2>&1
-   if test ! -s confftest.o ; then
-        print_error "Unable to test Fortran compiler"
-        print_error "(compiling a test program failed to produce an "
-        print_error "object file)."
-	NOF77=1
-   elif test -z "$FORTRANNAMES" ; then
-    if test $arch_CRAY ; then
-     # Cray doesn't accept -a ...
-     nameform1=`strings confftest.o | grep mpir_init_fop_  | head -1`
-     nameform2=`strings confftest.o | grep MPIR_INIT_FOP   | head -1`
-     nameform3=`strings confftest.o | grep mpir_init_fop   | head -1`
-     nameform4=`strings confftest.o | grep mpir_init_fop__ | head -1`
-    else
-     nameform1=`strings -a confftest.o | grep mpir_init_fop_  | head -1`
-     nameform2=`strings -a confftest.o | grep MPIR_INIT_FOP   | head -1`
-     nameform3=`strings -a confftest.o | grep mpir_init_fop   | head -1`
-     nameform4=`strings -a confftest.o | grep mpir_init_fop__ | head -1`
-    fi
-    rm -f confftest.f confftest.o
-    if test -n "$nameform4" ; then
-	echo "Fortran externals are lower case and have two trailing underscores"
-	FORTRANNAMES="FORTRANDOUBLEUNDERSCORE"
-    elif test -n "$nameform1" ; then
-        # We don't set this in CFLAGS; it is a default case
-        echo "Fortran externals have a trailing underscore and are lowercase"
-	FORTRANNAMES="FORTRANUNDERSCORE"
-    elif test -n "$nameform2" ; then
-	echo "Fortran externals are uppercase"     
-	FORTRANNAMES="FORTRANCAPS" 
-    elif test -n "$nameform3" ; then
-	echo "Fortran externals are lower case"
-	FORTRANNAMES="FORTRANNOUNDERSCORE"
-    else
-	print_error "Unable to determine the form of Fortran external names"
-	print_error "Make sure that the compiler $F77 can be run on this system"
-	print_error "Turning off Fortran (-nof77 being assumed)."
-	NOF77=1
-    fi
-    fi
+    # set fortran names to single underscore
+    # lampi build will add the rest of the fortan symbols
+    # with pragma weak
+    FORTRANNAMES="FORTRANUNDERSCORE"
+
     if test -n "$FORTRANNAMES" ; then
         WDEF="-D$FORTRANNAMES"
     fi
@@ -3825,7 +3780,7 @@ fi
 fi
 cat > conftest.$ac_ext <<EOF
 #include "confdefs.h"
-
+int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(a) { return a; }
 

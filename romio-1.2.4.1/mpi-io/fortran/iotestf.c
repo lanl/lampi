@@ -8,6 +8,31 @@
 #include "mpio.h"
 #include "adio.h"
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpio_test(void);
+void mpio_test(void);
+/*  void pmpio_test_(void);   this is the real function, below */
+void mpio_test_(void);   
+void pmpio_test__(void);
+void mpio_test__(void);
+void PMPIO_TEST(void);
+void MPIO_TEST(void);
+
+#pragma weak PMPIO_TEST = pmpio_test_     
+#pragma weak pmpio_test = pmpio_test_
+#pragma weak pmpio_test__ = pmpio_test_
+#pragma weak MPIO_TEST = pmpio_test_     
+#pragma weak mpio_test = pmpio_test_
+/* #pragma weak mpio_test_ = pmpio_test_    ROMIO does this one */
+#pragma weak mpio_test__ = pmpio_test_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpio_test_ PMPIO_TEST

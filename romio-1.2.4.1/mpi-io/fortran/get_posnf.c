@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_position(void);
+void mpi_file_get_position(void);
+/*  void pmpi_file_get_position_(void);   this is the real function, below */
+void mpi_file_get_position_(void);   
+void pmpi_file_get_position__(void);
+void mpi_file_get_position__(void);
+void PMPI_FILE_GET_POSITION(void);
+void MPI_FILE_GET_POSITION(void);
+
+#pragma weak PMPI_FILE_GET_POSITION = pmpi_file_get_position_     
+#pragma weak pmpi_file_get_position = pmpi_file_get_position_
+#pragma weak pmpi_file_get_position__ = pmpi_file_get_position_
+#pragma weak MPI_FILE_GET_POSITION = pmpi_file_get_position_     
+#pragma weak mpi_file_get_position = pmpi_file_get_position_
+/* #pragma weak mpi_file_get_position_ = pmpi_file_get_position_    ROMIO does this one */
+#pragma weak mpi_file_get_position__ = pmpi_file_get_position_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_position_ PMPI_FILE_GET_POSITION

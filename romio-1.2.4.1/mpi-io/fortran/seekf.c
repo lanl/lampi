@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_seek(void);
+void mpi_file_seek(void);
+/*  void pmpi_file_seek_(void);   this is the real function, below */
+void mpi_file_seek_(void);   
+void pmpi_file_seek__(void);
+void mpi_file_seek__(void);
+void PMPI_FILE_SEEK(void);
+void MPI_FILE_SEEK(void);
+
+#pragma weak PMPI_FILE_SEEK = pmpi_file_seek_     
+#pragma weak pmpi_file_seek = pmpi_file_seek_
+#pragma weak pmpi_file_seek__ = pmpi_file_seek_
+#pragma weak MPI_FILE_SEEK = pmpi_file_seek_     
+#pragma weak mpi_file_seek = pmpi_file_seek_
+/* #pragma weak mpi_file_seek_ = pmpi_file_seek_    ROMIO does this one */
+#pragma weak mpi_file_seek__ = pmpi_file_seek_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_seek_ PMPI_FILE_SEEK

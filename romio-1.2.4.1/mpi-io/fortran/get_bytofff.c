@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_byte_offset(void);
+void mpi_file_get_byte_offset(void);
+/*  void pmpi_file_get_byte_offset_(void);   this is the real function, below */
+void mpi_file_get_byte_offset_(void);   
+void pmpi_file_get_byte_offset__(void);
+void mpi_file_get_byte_offset__(void);
+void PMPI_FILE_GET_BYTE_OFFSET(void);
+void MPI_FILE_GET_BYTE_OFFSET(void);
+
+#pragma weak PMPI_FILE_GET_BYTE_OFFSET = pmpi_file_get_byte_offset_     
+#pragma weak pmpi_file_get_byte_offset = pmpi_file_get_byte_offset_
+#pragma weak pmpi_file_get_byte_offset__ = pmpi_file_get_byte_offset_
+#pragma weak MPI_FILE_GET_BYTE_OFFSET = pmpi_file_get_byte_offset_     
+#pragma weak mpi_file_get_byte_offset = pmpi_file_get_byte_offset_
+/* #pragma weak mpi_file_get_byte_offset_ = pmpi_file_get_byte_offset_    ROMIO does this one */
+#pragma weak mpi_file_get_byte_offset__ = pmpi_file_get_byte_offset_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_byte_offset_ PMPI_FILE_GET_BYTE_OFFSET

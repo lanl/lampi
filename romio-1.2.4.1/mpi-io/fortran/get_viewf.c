@@ -12,6 +12,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_view(void);
+void mpi_file_get_view(void);
+/*  void pmpi_file_get_view_(void);   this is the real function, below */
+void mpi_file_get_view_(void);   
+void pmpi_file_get_view__(void);
+void mpi_file_get_view__(void);
+void PMPI_FILE_GET_VIEW(void);
+void MPI_FILE_GET_VIEW(void);
+
+#pragma weak PMPI_FILE_GET_VIEW = pmpi_file_get_view_     
+#pragma weak pmpi_file_get_view = pmpi_file_get_view_
+#pragma weak pmpi_file_get_view__ = pmpi_file_get_view_
+#pragma weak MPI_FILE_GET_VIEW = pmpi_file_get_view_     
+#pragma weak mpi_file_get_view = pmpi_file_get_view_
+/* #pragma weak mpi_file_get_view_ = pmpi_file_get_view_    ROMIO does this one */
+#pragma weak mpi_file_get_view__ = pmpi_file_get_view_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_view_ PMPI_FILE_GET_VIEW

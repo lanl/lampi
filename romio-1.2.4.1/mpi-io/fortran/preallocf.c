@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_preallocate(void);
+void mpi_file_preallocate(void);
+/*  void pmpi_file_preallocate_(void);   this is the real function, below */
+void mpi_file_preallocate_(void);   
+void pmpi_file_preallocate__(void);
+void mpi_file_preallocate__(void);
+void PMPI_FILE_PREALLOCATE(void);
+void MPI_FILE_PREALLOCATE(void);
+
+#pragma weak PMPI_FILE_PREALLOCATE = pmpi_file_preallocate_     
+#pragma weak pmpi_file_preallocate = pmpi_file_preallocate_
+#pragma weak pmpi_file_preallocate__ = pmpi_file_preallocate_
+#pragma weak MPI_FILE_PREALLOCATE = pmpi_file_preallocate_     
+#pragma weak mpi_file_preallocate = pmpi_file_preallocate_
+/* #pragma weak mpi_file_preallocate_ = pmpi_file_preallocate_    ROMIO does this one */
+#pragma weak mpi_file_preallocate__ = pmpi_file_preallocate_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_preallocate_ PMPI_FILE_PREALLOCATE

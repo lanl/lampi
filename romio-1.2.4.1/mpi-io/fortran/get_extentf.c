@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_type_extent(void);
+void mpi_file_get_type_extent(void);
+/*  void pmpi_file_get_type_extent_(void);   this is the real function, below */
+void mpi_file_get_type_extent_(void);   
+void pmpi_file_get_type_extent__(void);
+void mpi_file_get_type_extent__(void);
+void PMPI_FILE_GET_TYPE_EXTENT(void);
+void MPI_FILE_GET_TYPE_EXTENT(void);
+
+#pragma weak PMPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent_     
+#pragma weak pmpi_file_get_type_extent = pmpi_file_get_type_extent_
+#pragma weak pmpi_file_get_type_extent__ = pmpi_file_get_type_extent_
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent_     
+#pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent_
+/* #pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_    ROMIO does this one */
+#pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_type_extent_ PMPI_FILE_GET_TYPE_EXTENT

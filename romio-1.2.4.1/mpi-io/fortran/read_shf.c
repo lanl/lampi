@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_read_shared(void);
+void mpi_file_read_shared(void);
+/*  void pmpi_file_read_shared_(void);   this is the real function, below */
+void mpi_file_read_shared_(void);   
+void pmpi_file_read_shared__(void);
+void mpi_file_read_shared__(void);
+void PMPI_FILE_READ_SHARED(void);
+void MPI_FILE_READ_SHARED(void);
+
+#pragma weak PMPI_FILE_READ_SHARED = pmpi_file_read_shared_     
+#pragma weak pmpi_file_read_shared = pmpi_file_read_shared_
+#pragma weak pmpi_file_read_shared__ = pmpi_file_read_shared_
+#pragma weak MPI_FILE_READ_SHARED = pmpi_file_read_shared_     
+#pragma weak mpi_file_read_shared = pmpi_file_read_shared_
+/* #pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_    ROMIO does this one */
+#pragma weak mpi_file_read_shared__ = pmpi_file_read_shared_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_read_shared_ PMPI_FILE_READ_SHARED

@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_get_group(void);
+void mpi_file_get_group(void);
+/*  void pmpi_file_get_group_(void);   this is the real function, below */
+void mpi_file_get_group_(void);   
+void pmpi_file_get_group__(void);
+void mpi_file_get_group__(void);
+void PMPI_FILE_GET_GROUP(void);
+void MPI_FILE_GET_GROUP(void);
+
+#pragma weak PMPI_FILE_GET_GROUP = pmpi_file_get_group_     
+#pragma weak pmpi_file_get_group = pmpi_file_get_group_
+#pragma weak pmpi_file_get_group__ = pmpi_file_get_group_
+#pragma weak MPI_FILE_GET_GROUP = pmpi_file_get_group_     
+#pragma weak mpi_file_get_group = pmpi_file_get_group_
+/* #pragma weak mpi_file_get_group_ = pmpi_file_get_group_    ROMIO does this one */
+#pragma weak mpi_file_get_group__ = pmpi_file_get_group_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_group_ PMPI_FILE_GET_GROUP

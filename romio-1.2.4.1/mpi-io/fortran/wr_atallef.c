@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_file_write_at_all_end(void);
+void mpi_file_write_at_all_end(void);
+/*  void pmpi_file_write_at_all_end_(void);   this is the real function, below */
+void mpi_file_write_at_all_end_(void);   
+void pmpi_file_write_at_all_end__(void);
+void mpi_file_write_at_all_end__(void);
+void PMPI_FILE_WRITE_AT_ALL_END(void);
+void MPI_FILE_WRITE_AT_ALL_END(void);
+
+#pragma weak PMPI_FILE_WRITE_AT_ALL_END = pmpi_file_write_at_all_end_     
+#pragma weak pmpi_file_write_at_all_end = pmpi_file_write_at_all_end_
+#pragma weak pmpi_file_write_at_all_end__ = pmpi_file_write_at_all_end_
+#pragma weak MPI_FILE_WRITE_AT_ALL_END = pmpi_file_write_at_all_end_     
+#pragma weak mpi_file_write_at_all_end = pmpi_file_write_at_all_end_
+/* #pragma weak mpi_file_write_at_all_end_ = pmpi_file_write_at_all_end_    ROMIO does this one */
+#pragma weak mpi_file_write_at_all_end__ = pmpi_file_write_at_all_end_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_write_at_all_end_ PMPI_FILE_WRITE_AT_ALL_END

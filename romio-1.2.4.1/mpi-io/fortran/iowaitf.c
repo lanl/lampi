@@ -8,6 +8,31 @@
 #include "mpio.h"
 #include "adio.h"
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpio_wait(void);
+void mpio_wait(void);
+/*  void pmpio_wait_(void);   this is the real function, below */
+void mpio_wait_(void);   
+void pmpio_wait__(void);
+void mpio_wait__(void);
+void PMPIO_WAIT(void);
+void MPIO_WAIT(void);
+
+#pragma weak PMPIO_WAIT = pmpio_wait_     
+#pragma weak pmpio_wait = pmpio_wait_
+#pragma weak pmpio_wait__ = pmpio_wait_
+#pragma weak MPIO_WAIT = pmpio_wait_     
+#pragma weak mpio_wait = pmpio_wait_
+/* #pragma weak mpio_wait_ = pmpio_wait_    ROMIO does this one */
+#pragma weak mpio_wait__ = pmpio_wait_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpio_wait_ PMPIO_WAIT

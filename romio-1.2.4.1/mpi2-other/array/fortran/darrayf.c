@@ -9,6 +9,31 @@
 #include "adio.h"
 
 
+
+
+
+#if defined(HAVE_WEAK_SYMBOLS) && defined(FORTRANUNDERSCORE) 
+
+void pmpi_type_create_darray(void);
+void mpi_type_create_darray(void);
+/*  void pmpi_type_create_darray_(void);   this is the real function, below */
+void mpi_type_create_darray_(void);   
+void pmpi_type_create_darray__(void);
+void mpi_type_create_darray__(void);
+void PMPI_TYPE_CREATE_DARRAY(void);
+void MPI_TYPE_CREATE_DARRAY(void);
+
+#pragma weak PMPI_TYPE_CREATE_DARRAY = pmpi_type_create_darray_     
+#pragma weak pmpi_type_create_darray = pmpi_type_create_darray_
+#pragma weak pmpi_type_create_darray__ = pmpi_type_create_darray_
+#pragma weak MPI_TYPE_CREATE_DARRAY = pmpi_type_create_darray_     
+#pragma weak mpi_type_create_darray = pmpi_type_create_darray_
+/* #pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_    ROMIO does this one */
+#pragma weak mpi_type_create_darray__ = pmpi_type_create_darray_
+#endif
+
+
+
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_type_create_darray_ PMPI_TYPE_CREATE_DARRAY
