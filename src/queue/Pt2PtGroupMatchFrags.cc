@@ -250,6 +250,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 			ProcessMatchedData(MatchedPostedRecvHeader, RecvDesc,
 			 		timeNow, &recvDone);
 			if( recvDone ){
+                assert(request->messageDone != REQUEST_COMPLETE);
 			    	request->messageDone = REQUEST_COMPLETE;
 			}
 
@@ -291,6 +292,7 @@ int Communicator::matchFragsInAheadOfSequenceList(int proc,
 				ProcessMatchedData(MatchedPostedRecvHeader,
 				 		RDesc, timeNow, &recvDone);
 				if( recvDone ){
+                    assert(request->messageDone != REQUEST_COMPLETE);
 				    	request->messageDone = REQUEST_COMPLETE;
 				}
                         } else {

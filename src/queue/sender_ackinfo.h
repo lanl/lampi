@@ -40,6 +40,7 @@ typedef struct _sender_ackinfo
 {
     unsigned long long delivered_largest_inorder_seq;
     unsigned long long received_largest_inorder_seq;
+    double weighted_average_rtt;
 } sender_ackinfo_t;
 
 typedef struct _sender_ackinfo_control

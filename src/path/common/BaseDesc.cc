@@ -348,6 +348,7 @@ void RecvDesc_t::DeliveredToApp(unsigned long bytesCopied, unsigned long bytesDi
     if ((DataReceived + DataInBitBucket) >= reslts_m.length_m) {
 
         // mark recv as complete
+        assert(messageDone != REQUEST_COMPLETE);
         messageDone = REQUEST_COMPLETE;
         if (recvDone)
             *recvDone = true;

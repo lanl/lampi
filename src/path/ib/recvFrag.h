@@ -66,7 +66,7 @@ class ibRecvFragDesc : public BaseRecvFragDesc_t {
             ibSendFragDesc *sfd, bool already_locked);
 
 #ifdef ENABLE_RELIABILITY
-        bool checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd);
+        bool checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd, double timeNow);
 #endif
 
         bool AckData(double timeNow);

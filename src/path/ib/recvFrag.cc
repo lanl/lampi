@@ -153,7 +153,16 @@ bool ibRecvFragDesc::AckData(double timeNow)
     list = &(ib_state.hca[hca_index].ctlMsgsToSend[MESSAGE_DATA_ACK]);
     list->AppendNoLock((Links_t *)sfd);
     ib_state.hca[hca_index].ctlMsgsToSendFlag |= (1 << MESSAGE_DATA_ACK);
-
+/* DEBUG */
+/*
+    if (DUPLICATE_DELIVERD == isDuplicate_m) {
+        ulm_warn(("extra ack: %d -> %d tag %d comm %d msg len %lld offset %lld\n",
+                    p->src_proc, p->dest_proc, msg_m->header.tag_m, 
+                    EXTRACT_CTX(msg_m->header.ctxAndMsgType),
+                    msg_m->header.msgLength, msg_m->header.dataSeqOffset));
+    }
+*/
+/* DEBUG */
     path->sendCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, 
         &errorCode, false, locked_here);
     path->cleanCtlMsgs(hca_index, timeNow, MESSAGE_DATA_ACK, MESSAGE_DATA_ACK, 
@@ -319,7 +328,7 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
         }
 
 #ifdef ENABLE_RELIABILITY
-        if (checkForDuplicateAndNonSpecificAck(sfd)) {
+        if (checkForDuplicateAndNonSpecificAck(sfd, timeNow)) {
             ((SendDesc_t *)bsd)->Lock.unlock();
             ReturnDescToPool(getMemPoolIndex());
             return;
@@ -335,11 +344,12 @@ void ibRecvFragDesc::msgDataAck(double timeNow)
 
 #ifdef ENABLE_RELIABILITY
 
-inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd)
+inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *sfd, double timeNow)
 {
     ibDataAck_t *p = (ibDataAck_t *)addr_m;
     sender_ackinfo_control_t *sptr;
     sender_ackinfo_t *tptr;
+    double rtt;
 
     // update sender ACK info -- largest in-order delivered and received frag sequence
     // numbers received by our peers (or peer box, in the case of collective communication)
@@ -359,17 +369,27 @@ inline bool ibRecvFragDesc::checkForDuplicateAndNonSpecificAck(ibSendFragDesc *s
     }
     // received is not guaranteed to be a strictly increasing series...
     tptr->received_largest_inorder_seq = p->receivedFragSeq;
-    sptr->Lock.unlock();
 
     // check to see if this ACK is for a specific frag or not
     // if not, then we don't need to do anything else...
     if (p->ackStatus == ACKSTATUS_AGGINFO_ONLY) {
+        sptr->Lock.unlock();
         return true;
     } else if ((sfd->frag_seq_m != p->thisFragSeq)) {
         // this ACK is a duplicate...or just screwed up...just ignore it...
+        sptr->Lock.unlock();
         return true;
     }
 
+    // update weighted_average_rtt
+    rtt = timeNow - sfd->timeSent_m;
+    if (tptr->weighted_average_rtt == 0.0) {
+        tptr->weighted_average_rtt = rtt;
+    }
+    else {
+        tptr->weighted_average_rtt = 0.1*rtt + 0.9*tptr->weighted_average_rtt; 
+    }
+    sptr->Lock.unlock();
     return false;
 }
 
@@ -382,6 +402,9 @@ inline void ibRecvFragDesc::handlePt2PtMessageAck(double timeNow, SendDesc_t *bs
     ibDataAck_t *p = (ibDataAck_t *)addr_m;
     bool locked_here = false;
     int errorCode;
+
+    // set last ack processed time...match has been made
+    bsd->pathInfo.ib.last_ack_time_m = timeNow;
 
     if (p->ackStatus == ACKSTATUS_DATAGOOD) {
 

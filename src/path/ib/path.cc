@@ -752,8 +752,10 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 {
     bool returnValue = false;
     bool resent_one = false;
+    bool got_reliability_info = false;
 	// retrieve largest_inorder_seq sequence numbers
-	unsigned long long received_seq_no, delivered_seq_no;
+	unsigned long long received_seq_no = 0, delivered_seq_no = 0;
+    double weighted_average_rtt = 0.0;
 
     // move the timed out frags from FragsToAck back to
     // FragsToSend
@@ -772,15 +774,28 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	 FragDesc != (ibSendFragDesc *) message->FragsToAck.end();
 	 FragDesc = (ibSendFragDesc *) FragDesc->next) {
 
+	unsigned long long max_multiple = 
+        (FragDesc->numTransmits_m < ib_state.maxretrans_poweroftwo_multiple) ?
+	    (1 << FragDesc->numTransmits_m) : (1 << ib_state.maxretrans_poweroftwo_multiple);
+    double timeToResend = (FragDesc->timeSent_m < message->pathInfo.ib.last_ack_time_m ?
+        message->pathInfo.ib.last_ack_time_m : FragDesc->timeSent_m) + 
+        (ib_state.retrans_time * max_multiple);
+
 	// reset TmpDesc
 	TmpDesc = 0;
 
 	bool free_send_resources = false;
+    ib_hca_state_t *h = &(ib_state.hca[FragDesc->hca_index_m]);
 
-	received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].received_largest_inorder_seq;
-	delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
-		[FragDesc->globalDestID_m].delivered_largest_inorder_seq;
+    if (!got_reliability_info) {
+	    received_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		    [FragDesc->globalDestID_m].received_largest_inorder_seq;
+	    delivered_seq_no = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		    [FragDesc->globalDestID_m].delivered_largest_inorder_seq;
+	    weighted_average_rtt = reliabilityInfo->sender_ackinfo[getMemPoolIndex()].process_array
+		    [FragDesc->globalDestID_m].weighted_average_rtt;
+        got_reliability_info = true;
+    }
 
 	// move frag if timed out and not sitting at the
 	// receiver
@@ -795,12 +810,10 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
 	    FragDesc->parentSendDesc_m = 0;
 	    // free all of the other resources after we unlock the frag
 	    free_send_resources = true;
-	} else {
-	    unsigned long long max_multiple = 
-        (FragDesc->numTransmits_m < ib_state.maxretrans_poweroftwo_multiple) ?
-		(1 << FragDesc->numTransmits_m) : (1 << ib_state.maxretrans_poweroftwo_multiple);
-        double timeToResend = FragDesc->timeSent_m + (ib_state.retrans_time * max_multiple);
-	    if (curTime >= timeToResend) {
+	} else if (FragDesc->frag_seq_m > received_seq_no) {
+        // only retransmit this fragment if we've drained possible acks from receive queue...
+	    if ((curTime >= timeToResend) && ((curTime - FragDesc->timeSent_m) > weighted_average_rtt)
+                    && (EVAPI_peek_cq(h->handle, h->recv_cq, 1) == VAPI_CQ_EMPTY)) {
 		    // resend this frag...
             if (ib_state.ack && (0 == message->NumAcked)) {
                 if (resent_one) {
@@ -826,6 +839,21 @@ bool ibPath::resend(SendDesc_t *message, int *errorCode)
             // update earliestTimeToResend...
             message->earliestTimeToResend = timeToResend;
         }
+    }
+    else if ((curTime - timeToResend) > ib_state.nack_lost_retrans_time) {
+        // retransmit no matter what...NACK is probably lost
+		returnValue = true;
+		FragDesc->WhichQueue = IBFRAGSTOSEND;
+		TmpDesc = (ibSendFragDesc *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
+		message->FragsToSend.AppendNoLock(FragDesc);
+        (message->NumSent)--;
+        FragDesc=TmpDesc;
+        continue;
+    }
+    else if ((message->earliestTimeToResend == -1) || 
+        (timeToResend < message->earliestTimeToResend)) {
+        // update earliestTimeToResend...
+        message->earliestTimeToResend = timeToResend;
     }
     
 	if (free_send_resources) {

@@ -144,6 +144,7 @@ void ibSetup(lampiState_t *s)
     ib_state.max_ud_2k_buffers = getenv_int("LAMPI_IB_MAX_UD_2K_BUFFERS", 2048);
     ib_state.max_outst_frags = getenv_int("LAMPI_IB_MAX_OUTST_FRAGS", 10);
     ib_state.retrans_time = getenv_double("LAMPI_IB_RETRANS_TIME", 1.0);
+    ib_state.nack_lost_retrans_time = getenv_double("LAMPI_IB_NACK_LOST_RETRANS_TIME", 300.0);
     ib_state.maxretrans_poweroftwo_multiple = getenv_int("LAMPI_IB_MAXRETRANS_POWEROFTWO_MULTIPLE", 5);
 
     // client daemon does info exchanges only

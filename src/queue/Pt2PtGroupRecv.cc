@@ -100,6 +100,7 @@ int Communicator::irecv_start(ULMRequest_t *request)
                 recvLock[i].lock();
             }
         }
+        assert(RecvDesc->messageDone != REQUEST_COMPLETE);
         // check list for match - posted receive is put on a list at this stage
         checkFragListsForWildMatch((RecvDesc_t *) RecvDesc);
 
@@ -118,6 +119,7 @@ int Communicator::irecv_start(ULMRequest_t *request)
             recvLock[srcProc].lock();
         }
 
+        assert(RecvDesc->messageDone != REQUEST_COMPLETE);
         //  check list for match - posted receive is put on a list at
         //  this stage
         checkFragListsForSpecificMatch((RecvDesc_t *) RecvDesc);

@@ -258,8 +258,10 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
             // we don't care either way since we call AckData in either case
             recvDone = false;
             IRDesc->CopyToAppLock(RecDesc, &recvDone);
-            if (recvDone)
+            if (recvDone) {
+                assert(requestDesc->messageDone != REQUEST_COMPLETE);
                 requestDesc->messageDone = REQUEST_COMPLETE;
+            }
 
             //  ReturnDescToPool sets the WhichQueue correctly - this is just to
             //    make sure that the frag is not processed as privateQueues.OkToMatchRecvFrags.

@@ -314,6 +314,8 @@ typedef struct {
     unsigned long long chunk_size;
     /* the base retransmit time */
     double retrans_time;
+    /* the maximum time to wait to retransmit if a NACK has been lost */
+    double nack_lost_retrans_time;
     /* the maximum power of two to multiply the retransmit time by */
     int maxretrans_poweroftwo_multiple;
 } ib_state_t;

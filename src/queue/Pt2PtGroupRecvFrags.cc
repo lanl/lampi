@@ -195,6 +195,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	 *   this communicator
 	 */
 	if( recvDone ){
+        assert(MatchedPostedRecvHeader->messageDone != REQUEST_COMPLETE);
 		MatchedPostedRecvHeader->messageDone = 
 			REQUEST_COMPLETE;
 	}
@@ -246,6 +247,7 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 		ProcessMatchedData(MatchedPostedRecvHeader,
 		 		DataHeader, timeNow, &recvDone);
 		if( recvDone ){
+            assert(MatchedPostedRecvHeader->messageDone != REQUEST_COMPLETE);
 		    	MatchedPostedRecvHeader->messageDone = REQUEST_COMPLETE;
 		}
 	}

@@ -71,6 +71,7 @@ class ibPath : public BasePath_t {
 
         bool init(SendDesc_t *message) {
             message->pathInfo.ib.allocated_offset_m = -1;
+            message->pathInfo.ib.last_ack_time_m = 0.0;
             message->numfrags = 0;
             return true;
         }

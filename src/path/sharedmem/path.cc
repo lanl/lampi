@@ -566,6 +566,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
         if (receiver->DataReceived + receiver->DataInBitBucket >=
             receiver->reslts_m.length_m) {
             //mark recv request as complete
+            assert(receiver->messageDone != REQUEST_COMPLETE);
             receiver->messageDone = REQUEST_COMPLETE;
             wmb();
             Comm = communicators[receiver->ctx_m];
@@ -631,6 +632,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
                         matchedRecv->reslts_m.length_m) {
                         //mark recv request as complete
+                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
                         matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
@@ -688,6 +690,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     if (matchedRecv->DataReceived+matchedRecv->DataInBitBucket>=
                         matchedRecv->reslts_m.length_m) {
                         //mark recv request as complete
+                        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
                         matchedRecv->messageDone = REQUEST_COMPLETE;
                         wmb();
                         Comm = communicators[matchedRecv->ctx_m];
@@ -938,6 +941,7 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 		}
 	} else {
 		/* zero byte message */
+            assert(matchedRecv->messageDone != REQUEST_COMPLETE);
     		matchedRecv->messageDone = REQUEST_COMPLETE;
     		matchedSender->NumAcked = 1;
             if (matchedRecv->freeCalled)
@@ -992,6 +996,7 @@ int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,
 	if (matchedRecv->DataReceived + matchedRecv->DataInBitBucket >=
 			matchedRecv->reslts_m.length_m) {
 		//mark recv request as complete
+        assert(matchedRecv->messageDone != REQUEST_COMPLETE);
 		matchedRecv->messageDone = REQUEST_COMPLETE;
 		if (matchedRecv->freeCalled) 
 			matchedRecv->requestFree();

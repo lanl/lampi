@@ -37,6 +37,7 @@
 class ibSendInfo {
     public:
         ssize_t allocated_offset_m;
+        double last_ack_time_m;
 };
 
 #endif
