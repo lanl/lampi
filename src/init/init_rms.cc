@@ -32,10 +32,13 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include <stdlib.h>
-
 #include <elan/elan.h>
+#include <elan/version.h>
 #include <elan3/elan3.h>
 #include <rms/rmscall.h>
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+#include <elan/elanctrl.h>
+#endif
 
 #include "init/environ.h"
 #include "init/init.h"
@@ -43,10 +46,11 @@
 #include "internal/options.h"
 #include "queue/globals.h"
 
+
+
 void lampi_init_prefork_rms(lampiState_t *s)
 {
     ELAN_CAPABILITY cap;
-    ELAN3_DEVINFO devinfo;
     int elan_nodeId;
 
     if (s->error) {
@@ -61,10 +65,6 @@ void lampi_init_prefork_rms(lampiState_t *s)
         return;
     }
 
-    if (elan3_devinfo(0, &devinfo) != 0) {
-        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
-        return;
-    }
 
     /*
      * Set up various structural info
@@ -80,10 +80,40 @@ void lampi_init_prefork_rms(lampiState_t *s)
 
 #ifdef QSNETLIBS_VERSION_STRING
 
-#if QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
+#if QSNETLIBS_VERSION_CODE >= QSNETLIBS_VERSION(1,4,14)
+
+    ELANCTRL_HANDLE handle;
+    if(elanctrl_open(&handle) < 0) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
+        return;
+    }
+    ELAN_POSITION position;
+    if(elanctrl_get_position(handle,0,&position) < 0) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
+        return;
+    }
+    elan_nodeId = position.pos_nodeid;
+    elanctrl_close(handle);
+
+    int host_rank = atoi(getenv("RMS_RANK"));
+    s->local_size = elan_nlocal(host_rank, &cap);
+
+#elif QSNETLIBS_VERSION_CODE  < QSNETLIBS_VERSION(1,4,0)
+    ELAN3_DEVINFO devinfo;
+    if (elan3_devinfo(0, &devinfo) != 0) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
+        return;
+    }
+
     // This should never be true, but...
     elan_nodeId = devinfo.NodeId - cap.LowNode;
 #else
+    ELAN3_DEVINFO devinfo;
+    if (elan3_devinfo(0, &devinfo) != 0) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
+        return;
+    }
+
     // For the latest linux releases, I *think* this is what we want...
     elan_nodeId = devinfo.Position.NodeId - cap.LowNode;
 
@@ -93,8 +123,13 @@ void lampi_init_prefork_rms(lampiState_t *s)
      */
 
 #endif
-
 #else 
+    ELAN3_DEVINFO devinfo;
+    if (elan3_devinfo(0, &devinfo) != 0) {
+        s->error = ERROR_LAMPI_INIT_PREFORK_RESOURCE_MANAGEMENT;
+        return;
+    }
+
     // ASCI-Q  this is okay if we compile with our elan3 header files:
     elan_nodeId = devinfo.NodeId - cap.LowNode;
 
@@ -103,12 +138,14 @@ void lampi_init_prefork_rms(lampiState_t *s)
 
 #endif // QSNETLIBS_VERSION_STRING
 
+#if !defined(QSNETLIBS_VERSION_CODE) || QSNETLIBS_VERSION_CODE < QSNETLIBS_VERSION(1,4,14)
     s->local_size = elan3_nlocal(elan_nodeId, &cap);
     if (s->local_size <= 0) {
         ulm_err(("fatal libelan3 error: elan3_nlocal(devinfo=%d, cap=%p) = %d\n",
                  elan_nodeId, &cap, s->local_size));
         s->error = ERROR_LAMPI_INIT_PREFORK_RMS;
     }
+#endif
     
     /*
      * RMS_NODEIDs are allocated contiguously from zero;

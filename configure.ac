@@ -120,7 +120,6 @@ LDFLAGS_MPIRUN=""
 LDLIBS_MPIRUN=""
 LIBEXT="a"
 DLLEXT="so"
-RMS_BROKEN_PREFIX=""
 
 romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
@@ -350,7 +349,6 @@ alpha*-dec*)
         LSF_INC="/lsf/share/include"
 
         # on ASCI-Q, header files are broken. Use alternate ones.
-        RMS_BROKEN_PREFIX="/usr/local/compaq/test"
         RMS_PREFIX="${RMS_PREFIX:-/usr/opt/rms}"
         ROMIO_FS="ufs nfs cfs"
 
@@ -486,10 +484,9 @@ AC_ARG_ENABLE(rms,
 echo "feature RMS... ${enable_rms:-no}"
 if test "$enable_rms" = "yes" ; then
    CPPFLAGS="$CPPFLAGS -DENABLE_RMS"   
-   test "$RMS_BROKEN_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$RMS_BROKEN_PREFIX"
    test "$RMS_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$RMS_PREFIX/include"
    test "$RMS_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$RMS_PREFIX/lib"
-   LIBS="$LIBS -lrt -lrmscall -lelan -lelan3"
+   LIBS="$LIBS -lrt -lrmscall -lelan -lelan3 -lelanctrl"
 fi
 
 AC_ARG_ENABLE(bproc,
