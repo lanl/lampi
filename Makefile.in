@@ -21,6 +21,7 @@ comma		:=,
 # GNU / autoconf conforming variable names
 
 srcdir		:= @srcdir@
+abs_srcdir	:= @abs_srcdir@
 top_srcdir	:= @top_srcdir@
 VPATH		:= @srcdir@
 prefix		:= @prefix@
@@ -77,14 +78,14 @@ ifeq "$(with_romio)" "yes"
 ROMIODIR	:= @romiodir@
 ROMIOLIB	:= $(PWD)/$(ROMIODIR)/objects/romio.$(LIBEXT)
 OBJ_ROMIO	:= $(ROMIODIR)/objects/*.$(OBJEXT)
-ROMIOCONFIGURE  := $(srcdir)/$(ROMIODIR)/configure
+ROMIOCONFIGURE  := $(abs_srcdir)/$(ROMIODIR)/configure
 ROMIOCONFIGURE	+= -noprofile -cc=$(CC) -fc=$(FC) -f90=$(F90)
 ifeq "$(enable_debug)" "yes"
 ROMIOCONFIGURE	+= -debug
 endif
 ROMIOCONFIGURE	+= -mpi=lampi
 ROMIOCONFIGURE	+= -mpiolib=$(ROMIOLIB)
-ROMIOCONFIGURE	+= -mpiincdir=$(srcdir)/src/include
+ROMIOCONFIGURE	+= -mpiincdir=$(abs_srcdir)/src/include
 ROMIOCONFIGURE	+= -mpilib=$(PWD)/lampi.$(DLLEXT)
 ROMIOCONFIGURE	+= -make=$(MAKE) 
 endif
