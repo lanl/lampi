@@ -202,16 +202,16 @@ so the following distribution trees should be created
   $RELEASEROOT/i686-pc-linux-gnu-bproc/lampi-X.Y.Z/
   $RELEASEROOT/mips-sgi-irix6.5/lampi-X.Y.Z/
 
-To create a binary distribution:
+To create a binary distribution:  First do a clean checkout of the taged 
+release (to verify the tags are correct).  To get better looking
+error messages, compile from a suitably named subdirectory of your
+home directory:
 
-  cvs co -d $WORKDIR/lampi_patch -r PATCH_RELEASE_X_Y_Z lampi
-  cd
-  ln -s $WORKDIR/lampi_patch lampi-X.Y.Z 
+  cd 
+  cvs co -d lampi-X.Y.Z -r PATCH_RELEASE_X_Y_Z lampi
   cd lampi-X.Y.Z
   make prefix=$RELEASEROOT/alphaev6-dec-osf5.1/lampi-X.Y.Z/ install
  
-  (compiling from within a directory such as ~/lampi-X.Y.Z will
-   give better looking error messages)
 
 To create a distributable tar file of the binary distrubtion:
   
