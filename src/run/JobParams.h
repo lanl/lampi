@@ -172,6 +172,9 @@ typedef struct ULMRunParams {
     // LSF being used
     int UseLSF;
 
+    // Bproc being used
+    int UseBproc;
+
     /* indicate if being debugged by TotalView */
     int TVDebug;
 

@@ -93,6 +93,11 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->quadricsRailMask = 0;
 
     RunParameters->UseLSF = 0;
+#ifdef BPROC
+    RunParameters->UseBproc = 1;
+#else
+    RunParameters->UseBproc = 0;
+#endif
     lampi_environ_find_string("LSB_MCPU_HOSTS", &val);
     if ( strlen(val) ) {
         RunParameters->UseLSF = 1;

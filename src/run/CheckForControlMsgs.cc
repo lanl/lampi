@@ -121,7 +121,8 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 			break;
 		case ACKACKNORMALTERM:
 			ulm_dbg(("ACKACKNORMALTERM host %d\n", rank));
-			(*HostsNormalTerminated)++;
+            if (ActiveHosts[rank])
+			    (*HostsNormalTerminated)++;
 			ActiveHosts[rank] = 0;
 			// if all hosts have terminated normally
 			//  notify all hosts, so that they can stop network processing
@@ -156,7 +157,7 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 			{
 				Inp = (unsigned int *) ReadBuffer;
 				printf
-					("Abnormal termination: Global Rank %u Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
+					("Abnormal termination: Global Rank %u Local Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
 						*(Inp + 2), *(Inp + 1), *Inp, rank, *(Inp + 3),
 						*(Inp + 4));
 				fflush(stdout);
@@ -168,7 +169,8 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 			{
 				/* assume connection no longer available */
 				ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", rank));
-				(*HostsAbNormalTerminated)++;
+                if (ActiveHosts[rank])
+				    (*HostsAbNormalTerminated)++;
 				ActiveHosts[rank] = 0;
 			}
 			/* notify all other clients to terminate immediately */
@@ -179,16 +181,15 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 				ulm_err( ("Error: bcasting TERMINATENOW.\n") );
 				Abort();
 			}
-/* temp */
-			ActiveHosts[rank] = 0;
-/* end temp - can lead to infinte loop */
 			break;
 		case ACKTERMINATENOW:
-			(*HostsAbNormalTerminated)++;
+            if (ActiveHosts[rank])
+			    (*HostsAbNormalTerminated)++;
 			ActiveHosts[rank] = 0;
 			break;
 		case ACKACKABNORMALTERM:
-			(*HostsAbNormalTerminated)++;
+            if (ActiveHosts[rank])
+			    (*HostsAbNormalTerminated)++;
 			ActiveHosts[rank] = 0;
 			break;
 		case APPPIDS:
@@ -294,7 +295,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     ulm_dbg(("IOReturn = 0 host %d, error = %d\n", i,
                              error));
                     ClientSocketFDList[i] = -1;
-                    (*HostsAbNormalTerminated)++;
+                    if (ActiveHosts[i])
+                        (*HostsAbNormalTerminated)++;
                     continue;
                 }
                 if (IOReturn < 0) {
@@ -351,7 +353,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     break;
                 case ACKACKNORMALTERM:
                     ulm_dbg(("ACKACKNORMALTERM host %d\n", i));
-                    (*HostsNormalTerminated)++;
+                    if (ActiveHosts[i])
+                        (*HostsNormalTerminated)++;
                     ActiveHosts[i] = 0;
                     // if all hosts have terminated normally
                     //  notify all hosts, so that they can stop network processing
@@ -370,7 +373,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                                                      1, &IOVec);
                                 /* if IOReturn <= 0 assume connection no longer available */
                                 if (IOReturn <= 0) {
-                                    (*HostsAbNormalTerminated)++;
+                                    if (ActiveHosts[i])
+                                        (*HostsAbNormalTerminated)++;
                                     ActiveHosts[i] = 0;
                                 }
                             }
@@ -380,6 +384,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                 case ACKALLHOSTSDONE:
                     ulm_dbg((" ACKALLHOSTSDONE host %d\n", i));
                     (*ActiveClients)--;
+                    ClientSocketFDList[i] = -1;
                     break;
                 case CONFIRMABORTCHILDPROC:
                     break;
@@ -395,7 +400,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     if (IOReturn > 0 || error != ULM_SUCCESS) {
                         Inp = (unsigned int *) ReadBuffer;
                         printf
-                            ("Abnormal termination: Global Rank %u Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
+                            ("Abnormal termination: Global Rank %u Local Host Rank %u PID %u HostID %d Signal %d ExitStatus %d\n",
                              *(Inp + 2), *(Inp + 1), *Inp, i, *(Inp + 3),
                              *(Inp + 4));
                         fflush(stdout);
@@ -409,7 +414,8 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                     if (IOReturn <= 0) {
                         /* assume connection no longer available */
                         ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", i));
-                        (*HostsAbNormalTerminated)++;
+                        if (ActiveHosts[i])
+                            (*HostsAbNormalTerminated)++;
                         ClientSocketFDList[i] = -1;
                         ActiveHosts[i] = 0;
                     }
@@ -425,24 +431,26 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                                                  &IOVec);
                             /* if IOReturn <= 0 assume connection no longer available */
                             if (IOReturn <= 0) {
-                                (*HostsAbNormalTerminated)++;
+                                if (ActiveHosts[i])
+                                    (*HostsAbNormalTerminated)++;
                                 ActiveHosts[i] = 0;
                             }
                         }
                     }
-/* temp */
-                    ActiveHosts[i] = 0;
-/* end temp - can lead to infinte loop */
                     break;
                 case ACKTERMINATENOW:
-                    (*HostsAbNormalTerminated)++;
+                    if (ActiveHosts[i])
+                        (*HostsAbNormalTerminated)++;
                     ClientSocketFDList[i] = -1;
                     ActiveHosts[i] = 0;
+                    (*ActiveClients)--;
                     break;
                 case ACKACKABNORMALTERM:
-                    (*HostsAbNormalTerminated)++;
+                    if (ActiveHosts[i])
+                        (*HostsAbNormalTerminated)++;
                     ClientSocketFDList[i] = -1;
                     ActiveHosts[i] = 0;
+                    (*ActiveClients)--;
                     break;
                 case APPPIDS:
                     /* read in app process pid's */

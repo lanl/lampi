@@ -219,7 +219,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         /* abnormal exit */
         if (((HostsNormalTerminated + HostsAbNormalTerminated) == NHosts)
             && (HostsAbNormalTerminated > 0)) {
-            /* !!!!!!!!  may want to cleanup */
             /* last check if any messages have arrived and process */
 #ifdef USE_CT
 			RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
@@ -244,7 +243,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                           &TimeFirstCheckin,
                                           &ActiveClients);
 #endif
-
             // Terminate all hosts
             Abort();
             ulm_dbg(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));

@@ -76,7 +76,6 @@ enum {
     EXEC_ARGS,
     END
 };
-#define DEFAULT_SOCKET_PATH "/tmp/.sob"
 #define CHECK_FOR_ERROR(RC)   if ((RC) == NULL) { \
                                         ERROR_FILE = __FILE__;\
                                         ERROR_LINE = __LINE__;\
@@ -148,30 +147,6 @@ static int setup_socket(struct sockaddr_in *listenaddr)
     return fd;
 }
 
-// stolen from sob code.
-// watch for changes
-int sob_connect(char *path)
-{
-    struct sockaddr_un addr;
-    int fd;
-    
-    if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-	fprintf(stderr, "socket(AF_UNIX, SOCK_STREAM): %s\n",
-		strerror(errno));
-	return -1;
-    }
-
-    addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, path);
-
-    if (connect(fd, (struct sockaddr *) &addr, sizeof(addr))) {
-	fprintf(stderr, "connect(\"%s\"): %s\n", path, strerror(errno));
-	close(fd);
-	return -1;
-    }
-    return 0;
-}
-
 #endif
 
 int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
@@ -180,10 +155,8 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
 {
 #ifdef BPROC
     /*     Strings with pre-assigned values  */
-    bool SOB = false;
     char *execName = NULL;
     char *exec_args[END];
-    char *hostname = NULL;
     char *tmp_args = NULL;
     char hostList[MAXHOSTNAMELEN];
     int *nodes = 0;
@@ -192,10 +165,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     int i = 0;
     int nHosts = 0;
     int hostID = 0;
-    int rc;
     int ret_status = 0;
-    int tmp_node = 0;
-    int totalNumProcs = 0;
     size_t len = 0;
     struct bproc_io_t io[3];
     struct sockaddr_in addr;
@@ -203,14 +173,12 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     int max_sock_fd = -1, connectCount = 0;
     fd_set rset;
     struct timeval tmo = { 300, 0 };
-	
     char *auth0_str = "LAMPI_ADMIN_AUTH0";
     char *auth1_str = "LAMPI_ADMIN_AUTH1";
     char *auth2_str = "LAMPI_ADMIN_AUTH2";
     char *server_str = "LAMPI_ADMIN_IP";
     char *socket_str = "LAMPI_ADMIN_PORT";
     char *space_str = " ";
-    char *sob_path;
     /*   constructed pre-assigned string */
     char LAMPI_SOCKET[MAXBUFFERLEN];
     char LAMPI_AUTH[MAXBUFFERLEN];
@@ -226,100 +194,17 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     exec_args[EXEC_ARGS] = NULL;
     exec_args[END] = NULL;
 
-
-
-
-
-    // is the job scheduler working?
-    //  i get the feeling that this bit is going to change
-    //  alot 9/18/2002 nnd 
-
-    lampi_environ_find_string("SOB_SOCKET", &sob_path);
-    if (!sob_path)
-	sob_path = DEFAULT_SOCKET_PATH;
-
-    rc = sob_connect(sob_path);
-    if (rc == 0) {		// ob is running
-	SOB = true;
-	fprintf(stderr,"abusus non tollit usum\n");
-	}
-    else
-	SOB = false;
-
-    
-
-    if (SOB == true) {
-	int count = 0;
-	char *node_string;
-
-	lampi_environ_find_string("NODES", &node_string);
-	while (node_string != NULL && *node_string != 0) {
-	    tmp_node = atoi(strsep(&node_string, ","));
-	    if ((bproc_nodestatus(tmp_node) != bproc_node_up)) {
-		fprintf(stderr, "The requested node (%i) is not up\n",
-			tmp_node);
-		goto CLEANUP_ABNORMAL;
-	    }
-	    count++;
-	}
-	// get some memory 
-	CHECK_FOR_ERROR(nodes =
-			(int *) ulm_malloc(sizeof(int) * count));
-	CHECK_FOR_ERROR(pids =
-			(int *) ulm_malloc(sizeof(int) * count));
-
-
-
-	count=0;
-	while (node_string != NULL && *node_string != 0) {
-	    tmp_node = atoi(strsep(&node_string, ","));
-	    if ((bproc_nodestatus(tmp_node) != bproc_node_up)) {
-		fprintf(stderr, "The requested node (%i) is not up\n",
-			tmp_node);
-		goto CLEANUP_ABNORMAL;
-	    }
-	    nodes[count] = tmp_node;
-	    count++;
-	}
-
-	hostname = RunParameters->mpirunName;
-	// number of hosts to spawn on 
-	nHosts = count;
-	// at this point nHost == totalNumProcs
-	totalNumProcs = nHosts;
-
-    }
-    if (SOB == false) {		// old path through code.. assumes host on the cmdline
-	// the local hostname
-	hostname = RunParameters->mpirunName;
-
-	// number of hosts
 	nHosts = RunParameters->NHosts;
 
-	// executable name
-	// total number of procs
-	for (i = 0; i < nHosts; i++)
-	    totalNumProcs += RunParameters->ProcessCount[i];
-
-
-	// get some memory 
 	CHECK_FOR_ERROR(nodes =
-			(int *) ulm_malloc(sizeof(int) * totalNumProcs));
+			(int *) ulm_malloc(sizeof(int) * nHosts));
 	CHECK_FOR_ERROR(pids =
-			(int *) ulm_malloc(sizeof(int) * totalNumProcs));
+			(int *) ulm_malloc(sizeof(int) * nHosts));
 
-
-	for (i = 0; i < nHosts; i++) {
-	    CHECK_FOR_ERROR(RunParameters->HostList[i]);
-	    tmp_node = (int) atoi(RunParameters->HostList[i]);
-	    if ((bproc_nodestatus(tmp_node) != bproc_node_up)) {
-		fprintf(stderr, "The requested node (%i) is not up\n",
-			tmp_node);
-		goto CLEANUP_ABNORMAL;
-	    }
-	    nodes[i] = tmp_node;
-	}
+    for (i = 0; i < nHosts; i++) {
+        nodes[i] = bproc_getnodebyname(RunParameters->HostList[i]);
     }
+
     // allocate space for stdio file handles
     RunParameters->STDERRfds = ulm_new(int, nHosts);
     RunParameters->STDOUTfds = ulm_new(int, nHosts);
@@ -334,7 +219,7 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     execName = RunParameters->ExeList[0];
 
     sprintf(LAMPI_SOCKET, "%d", ReceivingSocket);
-    sprintf(LAMPI_SERVER, "%s", hostname);
+    sprintf(LAMPI_SERVER, "%s", RunParameters->mpirunName);
 
     /* SERVER ENV */
     SETENV(server_str, LAMPI_SERVER);
@@ -350,15 +235,12 @@ int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
     /* SOCKET ENV */
     SETENV(socket_str, LAMPI_SOCKET);
 
-    
-
     /* adding executable name */
     CHECK_FOR_ERROR(exec_args[EXEC_NAME] =
 		    (char *) ulm_malloc(sizeof(char) * strlen(execName)));
     sprintf(exec_args[EXEC_NAME], execName);
 
     /* program arguments */
-
     if ((argc - FirstAppArgument) > 0) {
 	len = 0;
 	argsUsed = 1;
