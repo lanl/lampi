@@ -40,6 +40,9 @@
 
 #ifdef HAVE_PRAGMA_WEAK
 #pragma weak MPI_Type_hindexed = PMPI_Type_hindexed
+
+#pragma weak PMPI_Type_create_hindexed = PMPI_Type_hindexed
+#pragma weak MPI_Type_create_hindexed = PMPI_Type_hindexed
 #endif
 
 int PMPI_Type_hindexed(int count, int *blocklength_array,
