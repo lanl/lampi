@@ -36,7 +36,6 @@ LDLIBS_LIBMPI	:=
 CPPFLAGS	+=
 MODULES_OS	:= os
 MODULES_OS	+= os/LINUX
-MODULES_OS	+= os/common
 MODULES_OS	+= os/LINUX/i686
 
 # hardware defines and modules

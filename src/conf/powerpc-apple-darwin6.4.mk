@@ -36,7 +36,6 @@ LDLIBS_LIBMPI	:=
 CPPFLAGS	+=
 MODULES_OS	:= os
 MODULES_OS	+= os/DARWIN
-MODULES_OS	+= os/common
 MODULES_OS	+= os/DARWIN/powerpc
 
 # hardware defines and modules

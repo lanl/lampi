@@ -35,14 +35,12 @@ LDLIBS_LIBMPI	:= -lftn
 CPPFLAGS	+=
 MODULES_OS	:= os
 MODULES_OS	+= os/IRIX
-#MODULES_OS	+= os/LINUX
-#MODULES_OS	+= os/TRU64
 
 # hardware defines and modules
 CPPFLAGS	+= -DSHARED_MEMORY
 CPPFLAGS	+= -DUDP
 
-# LSF changes
+# LSF support
 USE_LSF		:= 1
 ifdef USE_LSF
 LSF_PREFIX=/usr/local/packages/lsf
@@ -53,11 +51,17 @@ LDFLAGS		+= -L $(LSF_PREFIX)/lib64
 LDLIBS		+= -llsf
 endif
 
+# NUMA support
+#USE_NUMA	:= 1
+ifdef USE_NUMA
+CPPFLAGS	+= -DNUMA
+MODULES_OS	+= os/IRIX/SN0
+endif
+
 # miscellaneous defines
 CPPFLAGS	+= -DRELIABILITY_ON
 CPPFLAGS	+= -DCHECK_API_ARGS
-CPPFLAGS	+= -DSN0
-#CPPFLAGS	+= -DPURIFY
+#CPPFLAGS	+= -DSN0
 #CPPFLAGS	+= -D_DEBUGQUEUES
 #CPPFLAGS	+= -D_DEBUGMEMORYSTACKS
 
