@@ -40,6 +40,9 @@ typedef struct
 	thread_t	tid;
 } mpi_thread_info_t;
 
+
+#ifdef USE_CT
+
 static void *_exec_thread(void *arg)
 {
 	Thread		*targ = (Thread*)arg;
@@ -53,6 +56,8 @@ static void *_exec_thread(void *arg)
 		
 	return NULL;
 }
+
+#endif
 
 void Thread::createThread(Runnable *target, runImpl_t tmethod, void *targ)
 {
