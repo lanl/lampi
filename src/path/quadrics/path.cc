@@ -458,7 +458,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
     *incomplete = true;
 
     /* destination memory? */
-   if (message->sendType != ULM_SEND_MULTICAST && 
+   if ((message->sendType != ULM_SEND_MULTICAST) && 
        (nDescToAllocate && (message->PostedLength > CTLHDR_DATABYTES))) {
         gldestProc = communicators[message->ctx_m]->remoteGroup->
             mapGroupProcIDToGlobalProcID[message->dstProcID_m];
@@ -497,7 +497,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
    
     /* NO, send memory request over any rail */
 
-    if (!enoughMemory && message->sendType != ULM_SEND_MULTICAST) {
+    if (!enoughMemory && (message->sendType != ULM_SEND_MULTICAST)) {
         int bufsNeeded = (smallBufs) ? (smallBufs - bufCounts[smallBufType]) : (largeBufs - bufCounts[largeBufType]);
         size_t memNeeded = (smallBufs) ? (bufsNeeded * quadricsBufSizes[smallBufType]) :
             (bufsNeeded * quadricsBufSizes[largeBufType]);
@@ -542,7 +542,7 @@ bool quadricsPath::send(BaseSendDesc_t *message, bool *incomplete, int *errorCod
             needsDest = (message->PostedLength <= CTLHDR_DATABYTES) ? false : true;
         }
         else {
-            needsDest = smallBufs || largeBufs;
+            needsDest = (smallBufs || largeBufs) ? true : false;
         }
         if (!getCtxRailAndDest(message,
                                gldestProc,

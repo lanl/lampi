@@ -155,7 +155,7 @@ public:
             }
 
             /* calculate how many DMA descriptors are needed */
-            if (fragLength <= CTLHDR_DATABYTES && message) {
+            if (fragLength <= CTLHDR_DATABYTES) {
                 nDMADescsNeeded = 1;
             }
             else {
