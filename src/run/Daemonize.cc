@@ -74,40 +74,6 @@ void runSendHeartbeat(ULMRunParams_t *RunParameters)
 
 
 /*
- * Read from stdin and copy to socket descriptor connected
- * to process zero.
- */
-int mpirunScanStdIn(int fdin, int fdout)
-{
-    char buff[512];
-    int rc = read(fdin, buff, sizeof(buff));
-    if(rc == 0) {
-        if(isatty(fdin))
-            return ULM_SUCCESS;
-        return ULM_ERROR;
-    }
-
-    if(rc < 0) {
-        switch(errno) {
-        case EINTR:
-        case EAGAIN:
-            return ULM_SUCCESS;
-        default:
-            ulm_err(("mpirunScanStdIn: read(stdin) failed with errno=%d\n", errno));
-            return ULM_ERROR;
-        }
-    }
-
-    if (write(fdout, buff, rc) == rc) {
-        return ULM_SUCCESS;
-    } else {
-        ulm_err(("mpirunScanStdIn: write failed with errno=%d\n", errno));
-        return ULM_ERROR;
-    }
-}
-
-
-/*
  * Read from stdin and create an admin message to host rank 0.
  */
 int mpirunScanStdIn(int fdin)
@@ -135,7 +101,8 @@ int mpirunScanStdIn(int fdin)
     adminMessage *server = RunParameters.server;
     server->reset(adminMessage::SEND);
     server->pack(&cnt, adminMessage::INTEGER, 1);
-    server->pack(buff, adminMessage::BYTE, cnt);
+    if(cnt > 0)
+        server->pack(buff, adminMessage::BYTE, cnt);
 
     if (false == server->send(0, STDIOMSG, &rc)) {
 	ulm_err(("mpirunScanStdIn: error sending STDIOMSG: errno=%d\n", rc));
@@ -178,16 +145,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     ProcessCnt = RunParameters->ProcessCount;
     HostList = RunParameters->HostList;
     ActiveClients = RunParameters->NHosts;
-//    /* temporary fix */
-//    ClientSocketFDList = (int *) ulm_malloc(sizeof(int)*RunParameters->NHosts);
-//    for(i=0 ; i < RunParameters->NHosts ; i++ ) {
-//	    ClientSocketFDList[i]=server->clientRank2FD(i);
-//    }
-//    RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients=
-//	    ClientSocketFDList;
     ClientSocketFDList = 
 	    RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients;
-//    /* end temporary fix */
 
     /* setup list of active hosts */
     ActiveHosts = ulm_new(int, NHosts);
@@ -239,41 +198,41 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 #endif
 
     /* setup stdin file descriptor to be non-blocking */
-    if(RunParameters->STDINsrc >= 0) {
+    if(RunParameters->STDINfd >= 0) {
         /* input from terminal */
-        if(isatty(RunParameters->STDINsrc)) {
+        if(isatty(RunParameters->STDINfd)) {
          
             struct termio term;
-            if(ioctl(RunParameters->STDINsrc, TCGETA, &term) != 0) {
+            if(ioctl(RunParameters->STDINfd, TCGETA, &term) != 0) {
                 ulm_err(("ioctl(%d,TCGETA) failed with errno=%d\n", 
-                    RunParameters->STDINsrc,errno));
-                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+                    RunParameters->STDINfd,errno));
+                RunParameters->STDINfd = -1;
             }
             term.c_lflag &= ~ICANON;
             term.c_cc[VMIN] = 0;
             term.c_cc[VTIME] = 0;
-            if(ioctl(RunParameters->STDINsrc, TCSETA, &term) != 0) {
+            if(ioctl(RunParameters->STDINfd, TCSETA, &term) != 0) {
                 ulm_err(("ioctl(%d,TCSETA) failed with errno=%d\n", 
-                    RunParameters->STDINsrc,errno));
-                RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+                    RunParameters->STDINfd,errno));
+                RunParameters->STDINfd = -1;
             }
         /* input from pipe or file */
         } else {
             struct stat sbuf;
-            if(fstat(RunParameters->STDINsrc, &sbuf) != 0) {
-                ulm_err(("stat(%d) failed with errno=%d\n", RunParameters->STDINsrc, errno));
+            if(fstat(RunParameters->STDINfd, &sbuf) != 0) {
+                ulm_err(("stat(%d) failed with errno=%d\n", RunParameters->STDINfd, errno));
             } else if (S_ISFIFO(sbuf.st_mode)) {
                 int flags;
-                if(fcntl(RunParameters->STDINsrc, F_GETFL, &flags) != 0) {
+                if(fcntl(RunParameters->STDINfd, F_GETFL, &flags) != 0) {
                     ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n", 
-                        RunParameters->STDINsrc,errno));
-                    RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+                        RunParameters->STDINfd,errno));
+                    RunParameters->STDINfd = -1;
                 }
                 flags |= O_NONBLOCK;
-                if (fcntl(RunParameters->STDINsrc, F_SETFL, flags) != 0) {
+                if (fcntl(RunParameters->STDINfd, F_SETFL, flags) != 0) {
                     ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", 
-                        RunParameters->STDINsrc,errno));
-                    RunParameters->STDINsrc = RunParameters->STDINdst = -1;
+                        RunParameters->STDINfd,errno));
+                    RunParameters->STDINfd = -1;
                 }
             }
         }
@@ -283,22 +242,16 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     for (;;) {
 
         /* check to see if there is any stdin/stdout/stderr data to read and then write */
-	    if( RunParameters->handleSTDio ) {
-                    if(RunParameters->STDINsrc >= 0 && RunParameters->STDINdst >= 0) {
-                        if(mpirunScanStdIn(RunParameters->STDINsrc,RunParameters->STDINdst) != ULM_SUCCESS) {
-                            close(RunParameters->STDINsrc);
-                            close(RunParameters->STDINdst);
-                            RunParameters->STDINsrc = RunParameters->STDINdst = -1;
-                        }
-                    } else if (RunParameters->UseBproc == 0 && RunParameters->STDINsrc >= 0) {
-                        if(mpirunScanStdIn(RunParameters->STDINsrc) != ULM_SUCCESS) {
-                            close(RunParameters->STDINsrc);
-                            RunParameters->STDINsrc = -1;
-                        }
-                    }
-		    RetVal = mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, NHosts,
-			     	    MaxDescriptorSTDIO, StderrBytesRead, StdoutBytesRead);
-	    }
+	if( RunParameters->handleSTDio ) {
+            if (RunParameters->STDINfd >= 0) {
+                if(mpirunScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
+                    close(RunParameters->STDINfd);
+                    RunParameters->STDINfd = -1;
+                }
+            }
+            RetVal = mpirunScanStdErrAndOut(STDERRfds, STDOUTfds, NHosts,
+                MaxDescriptorSTDIO, StderrBytesRead, StdoutBytesRead);
+        }
 
         /* send heartbeat */
 #if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)

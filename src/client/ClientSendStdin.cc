@@ -59,14 +59,19 @@ int ClientSendStdin(int* src, int* dst)
         ulm_exit((-1, "Error: reading STDIOMSG.  RetVal = %ld, error = %d\n", IOReturn, error));
     }
 
+    /* close stdin to child */
+    if(size == 0) {
+        close(*dst);
+        *dst = -1;
+        return 0;
+    }
+
     char *buff = new char[size];
     if(buff == 0) {
         ulm_exit((-1, "ClientSendStdin: unable to allocate buffer for STDIOMSG\n"));
     }
-
     IOReturn = _ulm_Recv_Socket(*src, buff, size, &error);
-    /* socket connection closed */
-    if (IOReturn == 0 || size == 0) {
+    if (IOReturn == 0) {
         close(*src);
         close(*dst);
         *src = *dst = -1;
@@ -80,9 +85,8 @@ int ClientSendStdin(int* src, int* dst)
 
     IOReturn = write(*dst, buff, size);
     if(IOReturn < 0) {
-        close(*src);
         close(*dst);
-        *src = *dst = -1;
+        *dst = -1;
     }
     delete[] buff;
     return 0;

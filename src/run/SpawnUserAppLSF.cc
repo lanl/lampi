@@ -225,7 +225,7 @@ int SpawnUserAppLSF(unsigned int *AuthData, int ReceivingSocket,
     strncpy(LocalHostName, RunParameters->mpirunName,
             ULM_MAX_HOSTNAME_LEN);
 
-    RunParameters->STDINsrc = dup(STDIN_FILENO);
+    RunParameters->STDINfd = dup(STDIN_FILENO);
     RunParameters->STDERRfds = ulm_new(int, RunParameters->NHosts);
     RunParameters->STDOUTfds = ulm_new(int, RunParameters->NHosts);
     for (host = 0; host < RunParameters->NHosts; host++) {

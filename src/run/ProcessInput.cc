@@ -78,8 +78,7 @@ int MPIrunProcessInput(int argc, char **argv,
     RunParameters->quadricsRailMask = 0;
 
     /* stdio input handling */
-    RunParameters->STDINsrc = STDIN_FILENO;
-    RunParameters->STDINdst = -1;
+    RunParameters->STDINfd = STDIN_FILENO;
 
     /* schedulers to try (determined at compile time) */
 
