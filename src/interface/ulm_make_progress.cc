@@ -138,10 +138,6 @@ extern "C" int ulm_make_progress(void)
         }
     }
 
-    //
-    // On host traffic
-    //
-
     // check for completed sends
     double now = dclock();
     CheckForAckedMessages(now);
@@ -171,26 +167,23 @@ extern "C" int ulm_make_progress(void)
         t[3] = dclock();
         pt[2] += (t[3] - t[6]);
     }
-//#ifndef SHARED_MEMORY
-//    if (lampiState.nhosts > 1) {
-//#endif
-        BasePath_t *pathArray[MAX_PATHS];
-        int pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
-        for (i = 0; i < pathCount; i++) {
-            if (!pathArray[i]->push(now, &returnValue)) {
-                if (returnValue == ULM_ERR_OUT_OF_RESOURCE
-                    || returnValue == ULM_ERR_FATAL)
-                    return returnValue;
-            }
-            if (!pathArray[i]->receive(now, &returnValue)) {
+
+    BasePath_t *pathArray[MAX_PATHS];
+    int pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
+    for (i = 0; i < pathCount; i++) {
+        if (pathArray[i]->needsPush()) {
+            if (pathArray[i]->push(now, &returnValue)) {
                 if (returnValue == ULM_ERR_OUT_OF_RESOURCE
                     || returnValue == ULM_ERR_FATAL)
                     return returnValue;
             }
         }
-//#ifndef SHARED_MEMORY
-//    }
-//#endif
+        if (!pathArray[i]->receive(now, &returnValue)) {
+            if (returnValue == ULM_ERR_OUT_OF_RESOURCE
+                || returnValue == ULM_ERR_FATAL)
+                return returnValue;
+        }
+    }
 
     if (DEBUG_TIMES) {
         t[4] = dclock();
