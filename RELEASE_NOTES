@@ -285,3 +285,9 @@ Version 1.4.14
 
 - Fixes to read STDIN from mpirun and direct it to proccess 0 of the application
 
+Version 1.4.15
+
+- There were some problems w/ the stdin forwarding in the 1.4.14 release. Specifically
+, bproc support for LSF/RSH and LSF/RSH appears to have been incomplete.
+
+
