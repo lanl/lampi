@@ -78,6 +78,19 @@ struct RequestDesc_t : public Links_t {
     RequestDesc_t(int poolIndex) {
         WhichQueue = REQUESTFREELIST;
     }
+
+    virtual void shallowCopyTo(RequestDesc_t *request)
+    {
+        /* Copies field values of current object to passed request.  This is mainly
+           used for persistent requests where the underlying send descriptor could
+           change (refer to ulm_start() logic).
+        */
+        request->datatype = datatype;
+        request->ctx_m = ctx_m;
+        request->messageType = messageType;
+        request->requestType = requestType;
+        request->persistent = persistent;
+    }
 };
 
 #endif				/* _CLIENTTYPES */
