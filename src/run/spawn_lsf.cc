@@ -172,7 +172,6 @@ int SpawnLsf(unsigned int *AuthData, int ReceivingSocket,
 {
     char LocalHostName[ULM_MAX_HOSTNAME_LEN + 1];
     int idx, host;
-    int RetVal;
     struct sigaction action;
     int NHostsStarted=0;
 #if ENABLE_LSF
