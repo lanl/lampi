@@ -88,7 +88,7 @@ public:
         }
 
     // default destructor
-    virtual ~BasePath_t() {}
+    virtual ~BasePath_t();
 
     // set Handle to this path in the pathContainer
     void bindToContainer(pathContainer_t *container, int pathHandle) {

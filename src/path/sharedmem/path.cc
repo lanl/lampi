@@ -38,20 +38,6 @@
 
 static int maxOutstandingSMPFrags = 30;
 
-inline bool sharedmemPath::canReach(int globalDestProcessID)
-{
-    // return true only for processes on our "box"
-
-    int destinationHostID;
-    bool returnValue=false;
-
-    destinationHostID = global_proc_to_host(globalDestProcessID);
-    if (myhost() == destinationHostID)
-	    returnValue=true;
-
-    return returnValue;
-}
-
 // initialization function - first frag is posted on the receive side
 bool sharedmemPath::init(SendDesc_t *message)
 {
@@ -860,7 +846,7 @@ void sharedmemSendInfo::CopyToULMBuffers(SMPSecondFragDesc_t * descriptor,
     }
 }
 
-void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex=-1)
+void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex)
 {
     // sanity check - list must be empty
 #ifndef _DEBUGQUEUES
@@ -898,7 +884,6 @@ void sharedmemPath::ReturnDesc(SendDesc_t *message, int poolIndex=-1)
     //  put descriptor is cache
     sendDescCache.Append(message);
 }
-
 
 //! process on host frags
 int sharedmemPath::processMatch(SMPFragDesc_t * incomingFrag,

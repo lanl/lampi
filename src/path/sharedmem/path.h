@@ -42,24 +42,34 @@
 
 
 class sharedmemPath : public BasePath_t {
-
-    // data members
- protected:
-
+  
     // methods
  public:
 
     sharedmemPath() { pathType_m = SHAREDMEM; }
     ~sharedmemPath() {}
 
-    bool canReach(int globalDestProcessID);
+    bool canReach(int globalDestProcessID)
+    {
+        // return true only for processes on our "box"
+    
+        int destinationHostID;
+        bool returnValue=false;
+    
+        destinationHostID = global_proc_to_host(globalDestProcessID);
+        if (myhost() == destinationHostID)
+            returnValue=true;
+    
+        return returnValue;
+    }
+
     bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
     bool receive(double timeNow, int *errorCode, recvType recvTypeArg);
-    void ReturnDesc(SendDesc_t *message, int poolIndex);
+    void ReturnDesc(SendDesc_t *message, int poolIndex=-1);
     bool push(double timeNow, int *errorCode);
     bool needsPush(void);
     bool init(SendDesc_t *message);
-
+    
     int processMatch(SMPFragDesc_t * incomingFrag, RecvDesc_t *matchedRecv);
 };
 

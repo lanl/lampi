@@ -38,6 +38,8 @@
 #include "path/common/path.h"
 #include "queue/globals.h"
 
+BasePath_t::~BasePath_t(){}
+
 void BasePath_t::ReturnDesc(SendDesc_t *message, int poolIndex)
 {
     // sanity check - list must be empty
