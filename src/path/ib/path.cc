@@ -50,6 +50,8 @@ extern "C" {
 
 static unsigned int cq_empty_cnt = 0;
 
+#define IB_MIN_SEND_FRAGS_FOR_ACK  10
+
 bool ibPath::canReach(int globalDestProcessID)
 {
     bool result = false;
@@ -426,7 +428,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             j = i + ib_state.next_send_hca;
             j = (j >= ib_state.num_active_hcas) ? j - ib_state.num_active_hcas : j; 
             hca = ib_state.active_hcas[j];
-            if (ib_state.hca[hca].send_frag_avail >= 1) {
+            if (ib_state.hca[hca].send_frag_avail >= IB_MIN_SEND_FRAGS_FOR_ACK) {
                 k = ib_state.next_send_port;
                 k = (k >= ib_state.hca[hca].num_active_ports) ? k - ib_state.hca[hca].num_active_ports : k;
                 // set port and hca index values...
