@@ -97,47 +97,7 @@ ssize_t *StdoutBytesRead;       // number of bytes read per stdout socket
 
 static adminMessage *server = NULL;
 
-#ifdef ENABLE_RMS
-bool broadcastQuadricsFlags(int *errorCode)
-{
-    bool returnValue = true;
-    int quadricshosts = 0;
 
-    // we don't do any of this if there is only one host...
-    if (RunParameters.NHosts == 1)
-        return returnValue;
-
-    for (int i = 0; i < RunParameters.NHosts; i++) {
-        for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
-            if (RunParameters.ListPathTypes[i][j] == PATH_QUADRICS) {
-                quadricshosts++;
-                break;
-            }
-        }
-    }
-
-    if (quadricshosts == 0) {
-        return returnValue;
-    } else if (quadricshosts != RunParameters.NHosts) {
-        ulm_err(("Error: broadcastQuadricsFlags %d hosts out of %d using Quadrics!\n",
-                 quadricshosts, RunParameters.NHosts));
-        returnValue = false;
-        return returnValue;
-    }
-
-    server->reset(adminMessage::SEND);
-    server->pack(&(RunParameters.quadricsDoAck), (adminMessage::packType)sizeof(bool), 1);
-    server->pack(&(RunParameters.quadricsDoChecksum), (adminMessage::packType)sizeof(bool), 1);
-    if ( !server->broadcast(adminMessage::QUADRICSFLAGS, errorCode) )
-    {
-        ulm_err(("Error: Unable to broadcast QUADRICSFLAGS message (error %d)\n", *errorCode));
-        Abort();
-    }
-
-    return returnValue;
-}
-
-#endif
 
 bool getClientPidsMsg(pid_t ** hostarray, int *errorCode)
 {
