@@ -1,4 +1,4 @@
-%define version 1.4.X
+%define version 1.5.X
 %define name lampi
 %define release 1
 
@@ -40,7 +40,7 @@ The current API supported being MPI 1.2 (C and Fortran bindings).
 # rm -f /usr/man (useless symlink)
 %{__rm} -f %{buildroot}/man
 
-# populate /usr/share/doc/lampi-1.3.X/ by hand
+# populate /usr/share/doc/lampi-1.X.Y/ by hand
 %define mydocdir /usr/share/doc/%{name}-%{version}
 %define mydocroot %{buildroot}%{mydocdir}
 %{__mkdir} -p %{mydocroot}

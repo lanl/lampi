@@ -38,7 +38,7 @@
 #include "path/gm/recvFrag.h"
 #include "path/gm/sendFrag.h"
 
-// Initialize GM with a receive buffer for every receive token 
+// Initialize GM with a receive buffer for every receive token
 
 static void initRecvBuffers(void)
 {
@@ -52,25 +52,28 @@ static void initRecvBuffers(void)
         if (devInfo->recvTokens) {
             if (usethreads())
                 devInfo->Lock.lock();
-            
+
             while (devInfo->recvTokens) {
                 // get another buffer
                 gmFragBuffer *buf = devInfo->bufList.getElementNoLock(0, rc);
                 if (rc != ULM_SUCCESS) {
                     break;
                 }
-            
+
                 // give it to GM...
                 buf->me = buf;
                 void *addr = &(buf->header);
                 gm_provide_receive_buffer_with_tag(devInfo->gmPort,
-                    addr, gmState.log2Size, GM_LOW_PRIORITY, i);
-            
+                                                   addr,
+                                                   gmState.log2Size,
+                                                   GM_LOW_PRIORITY,
+                                                   i);
+
                 // decrement recvTokens
                 (devInfo->recvTokens)--;
 
             }
-            
+
             if (usethreads())
                 devInfo->Lock.unlock();
         }
@@ -107,7 +110,7 @@ static void initFragFreelists(void)
     for (i = 0; i < local_nprocs(); i++) {
         affinity[i] = i;
     }
-    
+
     for (i = 0; i < gmState.nDevsAllocated; i++) {
         totalRecvTokens += gmState.localDevList[i].recvTokens;
         totalSendTokens += gmState.localDevList[i].sendTokens;
@@ -180,9 +183,9 @@ void gmSetup(lampiState_t *s)
 
     /* sanity checks */
     if( sizeof(gmHeaderDataAck) != HEADER_SIZE ) {
-	    ulm_err((" sizeof gmHeaderDataAck = %ld - should be %ld \n",sizeof(gmHeaderDataAck),HEADER_SIZE));
-	    s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
-    	    return;
+        ulm_err((" sizeof gmHeaderDataAck = %ld - should be %ld \n",sizeof(gmHeaderDataAck),HEADER_SIZE));
+        s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+        return;
     }
 
     unsigned long long PoolSize;
@@ -257,26 +260,27 @@ void gmSetup(lampiState_t *s)
                     continue;
                 }
 
-                /* 
-                 * got port 
+                /*
+                 * got port
                  */
                 gm_get_node_id(tmpPort, &tmpNodeID);
                 gmState.localDevList[gmState.nDevsAllocated].node_id = tmpNodeID;
 
-/* GM 2.x now uses local node ID and a global node ID.  For versions earlier
-	than 2.x, the local ID is the same as the global ID.
-*/
-#if GM_API_VERSION >= 0x200				
-                returnValue = gm_node_id_to_global_id(tmpPort, tmpNodeID, 
-                                &(gmState.localDevList[gmState.nDevsAllocated].global_node_id));
+/*
+ * GM 2.x uses local node ID and a global node ID.  For versions
+ * earlier than 2.x, the local ID is the same as the global ID.
+ */
+#if GM_API_VERSION >= 0x200
+                returnValue = gm_node_id_to_global_id(tmpPort, tmpNodeID,
+                                                      &(gmState.localDevList[gmState.nDevsAllocated].global_node_id));
                 if (returnValue != GM_SUCCESS) {
                     ulm_err(("Error: gm_node_id_to_global_id() node %d port %d"
-                       " returned %d\n", dev, port, (int) returnValue));
+                             " returned %d\n", dev, port, (int) returnValue));
                     s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
                     return;
                 }
 #else
-                gmState.localDevList[gmState.nDevsAllocated].global_node_id = tmpNodeID;             
+                gmState.localDevList[gmState.nDevsAllocated].global_node_id = tmpNodeID;
 #endif
 
                 gmState.localDevList[gmState.nDevsAllocated].port_id = port;
@@ -288,12 +292,11 @@ void gmSetup(lampiState_t *s)
                     gm_num_receive_tokens(tmpPort);
                 returnValue =
                     gm_get_unique_board_id(tmpPort,
-                                       gmState.localDevList[gmState.
-                                                            nDevsAllocated].
-                                       macAddress);
+                                           gmState.localDevList[gmState.nDevsAllocated].
+                                           macAddress);
                 if (returnValue != GM_SUCCESS) {
                     ulm_err(("Error: gm_get_unique_board_id() node %d port %d"
-                       " returned %d\n", dev, port, (int) returnValue));
+                             " returned %d\n", dev, port, (int) returnValue));
                     s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
                     return;
                 }
@@ -306,24 +309,27 @@ void gmSetup(lampiState_t *s)
 
             }                       /* end port loop */
 
-            /* see if limit on number of ports reached.
-            *   if no limit set of maxGMDevs, this value
-            *   will be negative, and the condition never met */
+            /*
+             * see if limit on number of ports reached.  if no limit
+             * set of maxGMDevs, this value will be negative, and the
+             * condition never met
+             */
             if ( (gmState.nDevsAllocated == gmState.maxGMDevs) ||
                  (GM_NO_SUCH_DEVICE == returnValue) )
                 break;
 
         }                           /* end dev loop */
 
-        if ( 0 == gmState.nDevsAllocated )
-            ulm_warn(("Process %d: Warning! No Myrinet GM devices found!\n",myproc()));
+        if ( 0 == gmState.nDevsAllocated ) {
+            ulm_warn(("Warning: No Myrinet GM devices found\n"));
+        }
     }
 
-
     /*
-     * gather hostID, nodeID, portID, and MAC address for
-     *   all remote NIC's used in the job
+     * gather hostID, nodeID, portID, and MAC address for all remote
+     * NIC's used in the job
      */
+
     /* gather the number of devices for each process */
     nDevsPerProc = (int *) ulm_malloc(sizeof(int) * s->global_size);
     if (!nDevsPerProc) {
@@ -340,12 +346,13 @@ void gmSetup(lampiState_t *s)
         return;
     }
 
-    /* 
-     * gather all the data 
+    /*
+     * gather all the data
+     *
+     * for now, since we don't have allgatherv implemented, use
+     * allgather to get all the data, padding with 0's where needed
      */
-    /* for now, since we don't have allgatherv implemented, use allgather
-     *   to get all the data, padding with 0's where needed
-     */
+
     /* figure out process with max number of GM devices */
     maxDevs = 0;
     for (i = 0; i < s->global_size; i++) {
@@ -354,8 +361,8 @@ void gmSetup(lampiState_t *s)
     }
 
 #ifndef ENABLE_CT
-    if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) || 
-        (!s->useDaemon && (local_myproc() == 0)))) {
+    if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) ||
+                            (!s->useDaemon && (local_myproc() == 0)))) {
         /* send maxDevs to mpirun */
         s->client->reset(adminMessage::SEND);
         s->client->pack(&maxDevs, adminMessage::INTEGER, 1);
@@ -387,7 +394,7 @@ void gmSetup(lampiState_t *s)
                 localBaseDevInfo[i].global_node_id = gmState.localDevList[i].global_node_id;
                 localBaseDevInfo[i].port_id = gmState.localDevList[i].port_id;
                 bcopy(gmState.localDevList[i].macAddress, localBaseDevInfo[i].macAddress,
-                    LENMACADDR);
+                      LENMACADDR);
             }
             else {
                 localBaseDevInfo[i].node_id = (unsigned int)-1;
@@ -400,7 +407,7 @@ void gmSetup(lampiState_t *s)
     /* allocate space to store device information from all hosts */
     allBaseDevInfo =
         (localBaseDevInfo_t *) ulm_malloc(sizeof(localBaseDevInfo_t) *
-                                      s->global_size * maxDevs);
+                                          s->global_size * maxDevs);
     if (!allBaseDevInfo) {
         ulm_err(("Error: Out of memory\n"));
         s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
@@ -417,131 +424,134 @@ void gmSetup(lampiState_t *s)
     }
 
     if (!s->iAmDaemon) {
-	    /* allocate memory for remote device list for each local device */
-	    for (i = 0; i < gmState.nDevsAllocated; i++) {
-	        gmState.localDevList[i].remoteDevList =
-	            (remoteDevInfo_t *) ulm_malloc(sizeof(remoteDevInfo_t) *
-	                                           s->global_size);
-	        if (!gmState.localDevList[i].remoteDevList) {
-	            ulm_err(("Error: allocating memory for %d remoteDevList"
-                   " (processes %d" " local device count %d)\n", i, 
-                   s->global_size, gmState.nDevsAllocated));
-	            s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
-	            return;
-	        }
-	        /* initialize node and port ids to "unused" value, -1 */
-	        for (j = 0; j < s->global_size; j++) {
-	            gmState.localDevList[i].remoteDevList[j].node_id =
-	                (unsigned int) -1;
-	            gmState.localDevList[i].remoteDevList[j].global_node_id =
-	                (unsigned int) -1;
-	            gmState.localDevList[i].remoteDevList[j].port_id =
-	                (unsigned int) -1;
-	        }
-	    }
-	
-	    /*
-	     * figure out network connectivity
-	     */
-            /* loop over all procs */
-            devs=(int *)ulm_malloc(sizeof(int)*maxDevs);
-            for(proc=0 ; proc < s->global_size ; proc++ ) {
-	          /* loop over local devices */
-	          for (localDev = 0; localDev < gmState.nDevsAllocated; 
-                    localDev++) {
-                      /* figure out how many remote devices one can
-                       *   commnicate with via this local device */
-                       int count=0;
-                       for(i=0 ; i < maxDevs ; i++)
-                         devs[i]=-1;
-	               for( rDevIndex = proc * maxDevs;
-                            rDevIndex < (proc+1) * maxDevs ;
-                            rDevIndex++ ) {
-	                  /* check to make sure this is not just dummied up data */
-	                  if ( (allBaseDevInfo[rDevIndex].node_id == 
-                                (unsigned int)-1))
-	                  continue;
-                          /* check and see if the devices are connected */
-#if GM_API_VERSION >= 0x200
-	                  gm_global_id_to_node_id(
-                              gmState.localDevList[localDev].gmPort,
-                              allBaseDevInfo[rDevIndex].global_node_id,
-                              &(allBaseDevInfo[rDevIndex].node_id));
-#endif
-	                  /* check to see if remote device is reachable from
-	                   *   the local device */
-	                  returnValue =
-	                      gm_node_id_to_unique_id(gmState.
-                               localDevList[localDev].gmPort,
-	                       allBaseDevInfo[rDevIndex].node_id,tmpMacAddress);
-	                  if (returnValue != GM_SUCCESS) {
-	                      continue;
-	                  }
-	                  /* compare mac addresses to see if rDevIndex matches
-	                   *   up with the device accessible by the local
-	                   *   device */
-	                  if ((rc = memcmp
-	                      (tmpMacAddress, allBaseDevInfo[rDevIndex].macAddress,
-	                       LENMACADDR)) != 0) {
-	                      /* if both mac addresses match, the return
-	                       * value from memcmp is 0 */
-	                      continue;
-	                  }
-                          devs[count]=rDevIndex;
-                          count++;
+        /* allocate memory for remote device list for each local device */
+        for (i = 0; i < gmState.nDevsAllocated; i++) {
+            gmState.localDevList[i].remoteDevList =
+                (remoteDevInfo_t *) ulm_malloc(sizeof(remoteDevInfo_t) *
+                                               s->global_size);
+            if (!gmState.localDevList[i].remoteDevList) {
+                ulm_err(("Error: allocating memory for %d remoteDevList"
+                         " (processes %d" " local device count %d)\n", i,
+                         s->global_size, gmState.nDevsAllocated));
+                s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+                return;
+            }
+            /* initialize node and port ids to "unused" value, -1 */
+            for (j = 0; j < s->global_size; j++) {
+                gmState.localDevList[i].remoteDevList[j].node_id =
+                    (unsigned int) -1;
+                gmState.localDevList[i].remoteDevList[j].global_node_id =
+                    (unsigned int) -1;
+                gmState.localDevList[i].remoteDevList[j].port_id =
+                    (unsigned int) -1;
+            }
+        }
 
-                       }  /*  end rDevIndex loop */
-                       /* now we know how many remote devices we can connect
-                        *   to, and which ones they are.  Set connectivity
-                        *   information */
-                        rDevIndex= localDev%count;
-                        rDevIndex=devs[rDevIndex];
-	                gmState.localDevList[localDev].remoteDevList[proc].
-                          node_id=allBaseDevInfo[rDevIndex].node_id;
-	                gmState.localDevList[localDev].remoteDevList[proc].
-                          port_id=allBaseDevInfo[rDevIndex].port_id;
-                  }
-            }  /* end proc loop */
-            ulm_free(devs);
-	
-	    /* initialize pinned memory buffer pool and freelist for each local device */
-	    for (i = 0; i < gmState.nDevsAllocated; i++) {
-	        unsigned long long initialSize = 300 * sizeof(gmFragBuffer);
-	        long long poolChunkSize = 50 * sizeof(gmFragBuffer);
-	        gmState.localDevList[i].memPool.gmPort =
-	            gmState.localDevList[i].gmPort;
-	        rc = gmState.localDevList[i].memPool.Init(PoolSize = initialSize, 
+        /*
+         * figure out network connectivity
+         */
+        /* loop over all procs */
+        devs=(int *)ulm_malloc(sizeof(int)*maxDevs);
+        for(proc=0 ; proc < s->global_size ; proc++ ) {
+            /* loop over local devices */
+            for (localDev = 0; localDev < gmState.nDevsAllocated;
+                 localDev++) {
+                /* figure out how many remote devices one can
+                 *   commnicate with via this local device */
+                int count=0;
+                for(i=0 ; i < maxDevs ; i++)
+                    devs[i]=-1;
+                for( rDevIndex = proc * maxDevs;
+                     rDevIndex < (proc+1) * maxDevs ;
+                     rDevIndex++ ) {
+                    /* check to make sure this is not just dummied up data */
+                    if ( (allBaseDevInfo[rDevIndex].node_id ==
+                          (unsigned int)-1))
+                        continue;
+                    /* check and see if the devices are connected */
+#if GM_API_VERSION >= 0x200
+                    gm_global_id_to_node_id(gmState.localDevList[localDev].gmPort,
+                                            allBaseDevInfo[rDevIndex].global_node_id,
+                                            &(allBaseDevInfo[rDevIndex].node_id));
+#endif
+                    /* check to see if remote device is reachable from
+                     *   the local device */
+                    returnValue =
+                        gm_node_id_to_unique_id(gmState.
+                                                localDevList[localDev].gmPort,
+                                                allBaseDevInfo[rDevIndex].node_id,tmpMacAddress);
+                    if (returnValue != GM_SUCCESS) {
+                        continue;
+                    }
+                    /*
+                     * compare mac addresses to see if rDevIndex
+                     * matches up with the device accessible by the
+                     * local device
+                     */
+                    if ((rc = memcmp
+                         (tmpMacAddress, allBaseDevInfo[rDevIndex].macAddress,
+                          LENMACADDR)) != 0) {
+                        /* if both mac addresses match, the return
+                         * value from memcmp is 0 */
+                        continue;
+                    }
+                    devs[count]=rDevIndex;
+                    count++;
+
+                }  /*  end rDevIndex loop */
+                /*
+                 * now we know how many remote devices we can connect
+                 * to, and which ones they are.  Set connectivity
+                 * information
+                 */
+                rDevIndex= localDev%count;
+                rDevIndex=devs[rDevIndex];
+                gmState.localDevList[localDev].remoteDevList[proc].
+                    node_id=allBaseDevInfo[rDevIndex].node_id;
+                gmState.localDevList[localDev].remoteDevList[proc].
+                    port_id=allBaseDevInfo[rDevIndex].port_id;
+            }
+        }  /* end proc loop */
+        ulm_free(devs);
+
+        /* initialize pinned memory buffer pool and freelist for each local device */
+        for (i = 0; i < gmState.nDevsAllocated; i++) {
+            unsigned long long initialSize = 300 * sizeof(gmFragBuffer);
+            long long poolChunkSize = 50 * sizeof(gmFragBuffer);
+            gmState.localDevList[i].memPool.gmPort =
+                gmState.localDevList[i].gmPort;
+            rc = gmState.localDevList[i].memPool.Init(PoolSize = initialSize,
                                                       maxLen = -1,
-	                                                  (long long)PoolChunkSize = poolChunkSize,
-	                                                  PgSize = getpagesize());
-	        if (rc != ULM_SUCCESS) {
-	            ulm_err(("Error: GM memory pool initialization "
-	                     "(local device %d) failed with error %d\n", i, rc));
-	            s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
-	            return;
-	        }
-	        rc = gmState.localDevList[i].bufList.Init(Nlsts = 1,
-	                                                  nPagesPerList = 0,
-	                                                  PoolChunkSize = poolChunkSize,
-	                                                  PageSize = getpagesize(),
-	                                                  ElementSize = sizeof(gmFragBuffer),
-	                                                  minPagesPerList = (poolChunkSize / getpagesize()),
-	                                                  maxPagesPerList = -1,
-	                                                  mxConsecReqFailures = 1000,
-	                                                  lstlistDescription = "GM buffer list",
-	                                                  retryForMoreResources = 1,
-	                                                  affinity = 0,
-	                                                  enforceMemAffinity = false,
-	                                                  inputPool = &(gmState.localDevList[i].memPool),
+                                                      (long long)PoolChunkSize = poolChunkSize,
+                                                      PgSize = getpagesize());
+            if (rc != ULM_SUCCESS) {
+                ulm_err(("Error: GM memory pool initialization "
+                         "(local device %d) failed with error %d\n", i, rc));
+                s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+                return;
+            }
+            rc = gmState.localDevList[i].bufList.Init(Nlsts = 1,
+                                                      nPagesPerList = 0,
+                                                      PoolChunkSize = poolChunkSize,
+                                                      PageSize = getpagesize(),
+                                                      ElementSize = sizeof(gmFragBuffer),
+                                                      minPagesPerList = (poolChunkSize / getpagesize()),
+                                                      maxPagesPerList = -1,
+                                                      mxConsecReqFailures = 1000,
+                                                      lstlistDescription = "GM buffer list",
+                                                      retryForMoreResources = 1,
+                                                      affinity = 0,
+                                                      enforceMemAffinity = false,
+                                                      inputPool = &(gmState.localDevList[i].memPool),
                                                       Abort = true,
                                                       threshToGrowList = 0,
                                                       freeMemPool = false);
-	        if (rc != ULM_SUCCESS) {
-	            ulm_err(("Error: GM buffer list initialization "
-	                     "(local device %d) failed with error %d\n", i, rc));
-	            s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
-	            return;
-	        }
+            if (rc != ULM_SUCCESS) {
+                ulm_err(("Error: GM buffer list initialization "
+                         "(local device %d) failed with error %d\n", i, rc));
+                s->error = ERROR_LAMPI_INIT_POSTFORK_GM;
+                return;
+            }
         }
 
         /* initialize send and recv fragment lists - uses send/recv token max. count */
@@ -562,5 +572,5 @@ void gmSetup(lampiState_t *s)
     gmState.inited = true;
 
     if (usethreads())
-       gmState.gmLock.unlock();
+        gmState.gmLock.unlock();
 }

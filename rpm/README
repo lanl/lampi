@@ -1,0 +1,45 @@
+
+        Some hints for building rpms when you are *NOT* root.
+
+1. Create a directory to serve as your work area
+
+mkdir rpm
+
+2. Set up a .rpmmacros file
+
+cat .rpmmacros 
+%_topdir        /home/ddd/rpm
+%_dbpath        /home/ddd/rpm/var/lib/rpm
+
+3. Initialize your own rpm database (so you can test installation)
+
+rpm --initdb --dbpath=$HOME/rpm/var/lib/rpm
+
+4. To build a package, lampi-1.4.1 say, put a tar file for it into the
+   SOURCES directory:
+
+        cp lampi.tar.gz /home/ddd/rpm/var/SOURCES
+
+5. Build the SRPM from the SPEC file
+
+        rpmbuild -bs lampi.spec
+
+6. Build the RPMs from the SRPM
+        
+        rpmbuild --rebuild \
+                 -with bproc -without udp -with gm -with tcp \
+                 -with romio \
+                 rpm/SRPMS/lampi-1.4.1-1.src.rpm
+
+
+7. To test installation
+
+        rpm --nodeps \
+            --relocate /usr=/home/ddd/rpm/usr \
+            -Uvh \
+            rpm/RPMS/i386/lampi-1.4.1-1.i386.rpm
+
+   Then look in rpm/usr rpm/etc to see if the tree is correct.
+
+   Note that the ClusterMatic /etc/clustermatic files will fail with
+   the current spec file.
