@@ -191,20 +191,43 @@ ssize_t udpRecvFragDesc::handleShortSocket()
     
 	if (count > 0) {
 #ifdef HEADER_ON
-	 long type = ulm_ntohi(header.msg.type);
-#else
-	    long type = header.msg.type;
+	    	header.msg.type=ulm_ntohi(header.msg.type);
 #endif     
+	    long type = header.msg.type;
        	    dataReadFromSocket = true;
             reread = false;
 
 
             switch (type) {
             case UDP_MESSAGETYPE_MESSAGE:
+#ifdef HEADER_ON
+	    	header.msg.ctxAndMsgType=ulm_ntohi(header.msg.ctxAndMsgType);
+	    	header.msg.src_proc=ulm_ntohi(header.msg.src_proc);
+	    	header.msg.dest_proc=ulm_ntohi(header.msg.dest_proc);
+	    	header.msg.udpio=ulm_ntohp(header.msg.udpio);
+		header.msg.length=ulm_ntohl(header.msg.length);
+	    	header.msg.messageLength=ulm_ntohl(header.msg.messageLength);
+	    	header.msg.tag_m=ulm_ntohi(header.msg.tag_m);
+		header.msg.fragIndex_m=ulm_ntohi(header.msg.fragIndex_m);
+	    	header.msg.isendSeq_m=ulm_ntohl(header.msg.isendSeq_m);
+	    	header.msg.frag_seq=ulm_ntohl(header.msg.frag_seq);
+	    	header.msg.refCnt=ulm_ntohi(header.msg.refCnt);
+#endif     
                 processMessage(header.msg);
                 break;
 
             case UDP_MESSAGETYPE_ACK:
+#ifdef HEADER_ON 
+	    	header.ack.type=ulm_ntohi(header.ack.type);
+		header.ack.ctxAndMsgType=ulm_ntohi(header.ack.ctxAndMsgType);
+		header.ack.dest_proc=ulm_ntohi(header.ack.dest_proc);
+		header.ack.src_proc=ulm_ntohi(header.ack.src_proc);
+	    	header.ack.udpio=ulm_ntohp(header.ack.udpio);
+	    	header.ack.thisFragSeq=ulm_ntohl(header.ack.thisFragSeq);
+	    	header.ack.receivedFragSeq=ulm_ntohl(header.ack.receivedFragSeq);
+	    	header.ack.deliveredFragSeq=ulm_ntohl(header.ack.deliveredFragSeq);
+	    	header.ack.ackStatus=ulm_ntohi(header.ack.ackStatus);
+#endif
                 processAck(header.ack);
                 break;
 
@@ -259,15 +282,27 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     
 	if (count > 0) {
 #ifdef HEADER_ON
-            long type = ulm_ntohi(header.msg.type);
-#else
-	    long type = header.msg.type;
+	    	header.msg.type=ulm_ntohi(header.msg.type);
 #endif
+	    long type = header.msg.type;
 	    dataReadFromSocket = false;
             reread = false;
 
             switch (type) {
             case UDP_MESSAGETYPE_MESSAGE:
+#ifdef HEADER_ON
+	    	header.msg.ctxAndMsgType=ulm_ntohi(header.msg.ctxAndMsgType);
+	    	header.msg.src_proc=ulm_ntohi(header.msg.src_proc);
+	    	header.msg.dest_proc=ulm_ntohi(header.msg.dest_proc);
+	    	header.msg.udpio=ulm_ntohp(header.msg.udpio);
+		header.msg.length=ulm_ntohl(header.msg.length);
+	    	header.msg.messageLength=ulm_ntohl(header.msg.messageLength);
+	    	header.msg.tag_m=ulm_ntohi(header.msg.tag_m);
+		header.msg.fragIndex_m=ulm_ntohi(header.msg.fragIndex_m);
+	    	header.msg.isendSeq_m=ulm_ntohl(header.msg.isendSeq_m);
+	    	header.msg.frag_seq=ulm_ntohl(header.msg.frag_seq);
+	    	header.msg.refCnt=ulm_ntohi(header.msg.refCnt);
+#endif     
                 processMessage(header.msg);
                 break;
 
@@ -291,57 +326,6 @@ ssize_t udpRecvFragDesc::handleLongSocket()
     return count;
 }
 
-#ifdef ENABLE_RELIABILITY
-bool udpRecvFragDesc::isDuplicateCollectiveFrag()
-{
-    int source_box = global_proc_to_host(srcProcID_m);
-
-    // duplicate/dropped message frag support only for those
-    // communication paths that overwrite the fragment sequence number
-    // (seq_m) value from its default constructor value of 0 -- valid
-    // sequence numbers are from (1 .. (2^64 - 1)))
-
-    if (seq_m != 0) {
-	bool sendthisack;
-	bool recorded;
-	reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-	if (reliabilityInfo->coll_receivedDataSeqs[source_box].recordIfNotRecorded(seq_m, &recorded)) {
-	    // this is a duplicate from a retransmission...maybe a previous ACK was lost?
-	    // unlock so we can lock while building the ACK...
-	    if (reliabilityInfo->coll_deliveredDataSeqs[source_box].isRecorded(seq_m)) {
-		// send another ACK for this specific frag...
-		isDuplicate_m = true;
-		sendthisack = true;
-	    } else if (reliabilityInfo->coll_receivedDataSeqs[source_box].largestInOrder() >= seq_m) {
-		// send a non-specific ACK that should prevent this frag from being retransmitted...
-		isDuplicate_m = true;
-		sendthisack = true;
-	    } else {
-		// no acknowledgment is appropriate, just discard this frag and continue...
-		sendthisack = false;
-	    }
-	    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-	    // do we send an ACK for this frag?
-	    if (!sendthisack) {
-		return true;
-	    }
-	    // try our best to ACK otherwise..don't worry about outcome
-	    MarkDataOK(true);
-	    AckData();
-	    return true;
-	}			// end duplicate frag processing
-	// record the fragment sequence number
-	if (!recorded) {
-	    reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-	    ulm_exit((-1, "unable to record frag sequence number(1)\n"));
-	}
-	reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-	// continue on...
-    }
-    return false;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 //! Process a message that has just arrived.
 //! Returns true if the long message socket is clear for reading the next
@@ -352,21 +336,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     //
     // initialize frag descriptor
     //
-#ifdef HEADER_ON
-    length_m            = ulm_ntohl(msg.length);
-    fragIndex_m         = ulm_ntohi(msg.fragIndex_m);
-    maxSegSize_m        = maxPayloadSize_g;
-    msgLength_m         = ulm_ntohl(msg.messageLength);
-    addr_m              = (shortMsg) ? data : 0;
-    srcProcID_m         = ulm_ntohi(msg.src_proc);
-    dstProcID_m         = ulm_ntohi(msg.dest_proc);
-    tag_m               = ulm_ntohi(msg.tag_m);
-    ctx_m               = EXTRACT_CTX(ulm_ntohi(msg.ctxAndMsgType));
-    msgType_m           = EXTRACT_MSG_TYPE(ulm_ntohi(msg.ctxAndMsgType));
-    isendSeq_m          = ulm_ntohl(msg.isendSeq_m);
-    seq_m               = ulm_ntohl(msg.frag_seq);
-    seqOffset_m         = dataOffset();
-#else 
     length_m            = msg.length;
     fragIndex_m         = msg.fragIndex_m;
     maxSegSize_m        = maxPayloadSize_g;
@@ -380,7 +349,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     isendSeq_m          = msg.isendSeq_m;
     seq_m               = msg.frag_seq;
     seqOffset_m         = dataOffset();
-#endif 
 
 #ifdef ENABLE_RELIABILITY
     isDuplicate_m = false;
@@ -417,20 +385,6 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
 //-----------------------------------------------------------------------------
 void udpRecvFragDesc::processAck(udp_ack_header & ack)
 {
-    // translate the ack header to host order
-#ifdef HEADER_ON 
-    ack.type 		= ulm_ntohi(ack.type);
-    ack.ctxAndMsgType = ulm_ntohi(ack.ctxAndMsgType);
-    ack.dest_proc 	= ulm_ntohi(ack.dest_proc);
-    ack.src_proc 	= ulm_ntohi(ack.src_proc);
-    ack.udpio 		= ulm_ntohp(ack.udpio);
-    //ack.single_mseq 	= ulm_ntohl(ack.single_mseq);
-    //ack.single_fseq 	= ulm_ntohl(ack.single_fseq);
-    ack.thisFragSeq = ulm_ntohl(ack.thisFragSeq);
-    ack.receivedFragSeq = ulm_ntohl(ack.receivedFragSeq);
-    ack.deliveredFragSeq = ulm_ntohl(ack.deliveredFragSeq);
-    ack.ackStatus 	= ulm_ntohi(ack.ackStatus);
-#endif
     // setup pointer to fragment and send descriptor, so that after
     //  memory is freed, we still have valid pointers.
     //  volatile udpSendFragDesc* fragDesc = (udpSendFragDesc*) ack.udpio.ptr;
@@ -495,27 +449,6 @@ bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag,
     // if not, then we don't need to do anything else...
     if (ack.thisFragSeq == 0) {
 	return true;
-#ifdef HEADER_ON
-    } else if ((Frag->frag_seq != ack.thisFragSeq)
-	       || ((ulm_int32_t)ulm_ntohi(Frag->header.src_proc) != ack.dest_proc)
-	       || ((ulm_int32_t)ulm_ntohi(Frag->header.dest_proc) != ack.src_proc)
-	       || ((ulm_int32_t)ulm_ntohi(Frag->header.ctxAndMsgType) != ack.ctxAndMsgType)) {
-	// this ACK is a duplicate...or just screwed up...just ignore it...
-#ifdef _DEBUG_RECVACK
-	fprintf(stderr, "udpRecvFragDesc::checkForDuplicateAndNonSpecificAck() processed a bad/duplicate ACK...\n");
-	fprintf(stderr,
-		"Frag: seq=%lld, sproc=%d, dproc=%d, comm=%d\n",
-		Frag->frag_seq,
-		ulm_ntohi(Frag->header.src_proc), ulm_ntohi(Frag->header.dest_proc),
-		ulm_ntohi(Frag->header.ctxAndMsgType));
-	fprintf(stderr,
-		"ACK: seq=%lld, sproc=%d, dproc=%d, comm=%d\n",
-		ack.thisFragSeq, ack.src_proc, ack.dest_proc, ack.ctxAndMsgType);
-	fflush(stderr);
-#endif				/* _DEBUG_RECVACK */
-	return true;
-    }
-#else
   } else if ((Frag->frag_seq != ack.thisFragSeq)
                || ((ulm_int32_t)Frag->header.src_proc != ack.dest_proc)
                || ((ulm_int32_t)Frag->header.dest_proc != ack.src_proc)
@@ -535,7 +468,6 @@ bool udpRecvFragDesc::checkForDuplicateAndNonSpecificAck(udpSendFragDesc * Frag,
 #endif                          /* _DEBUG_RECVACK */
         return true;
     }
-#endif  	// endif for  HEADER_ON
 
     return false;
 }
@@ -582,11 +514,8 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	Frag->parentSendDesc = 0;
 
 	//  the header holds the global proc id
-#ifdef HEADER_ON	
-	DescPoolIndex = global_to_local_proc(ulm_ntohi(Frag->header.src_proc));
-#else
         DescPoolIndex = global_to_local_proc((Frag->header.src_proc));
-#endif	
+
         // free iovecs array possibly associated with the send frag descriptor;
 	if (Frag->nonContigData) {
 	    free(Frag->nonContigData);
@@ -615,11 +544,7 @@ void udpRecvFragDesc::handlePt2PtMessageAck(SendDesc_t *sendDesc, udpSendFragDes
 	udpSendFragDescs.returnElement(Frag, DescPoolIndex);
 
     } 
-#ifdef HEADER_ON 
-    else if (myproc() == (ulm_int32_t)ulm_ntohi(Frag->header.src_proc)) {
-#else
     else if (myproc() == (ulm_int32_t)(Frag->header.src_proc)) {
-#endif 
         /*
 	 * only process negative acknowledgements if we are
 	 * the process that sent the original message; otherwise,
@@ -943,8 +868,6 @@ bool udpRecvFragDesc::AckData(double timeNow)
     ack.dest_proc 	= ulm_htoni(ack.dest_proc);
     ack.src_proc 	= ulm_htoni(ack.src_proc);
     ack.udpio 		= ulm_htonp(ack.udpio);
-    //ack.single_mseq 	= ulm_htonl(ack.single_mseq);
-    //ack.single_fseq 	= ulm_htonl(ack.single_fseq);
     ack.thisFragSeq 	= ulm_htonl(ack.thisFragSeq);
     ack.receivedFragSeq 	= ulm_htonl(ack.receivedFragSeq);
     ack.deliveredFragSeq 	= ulm_htonl(ack.deliveredFragSeq);

@@ -151,9 +151,6 @@ public:
     virtual ~quadricsRecvFragDesc() {}
 
 #ifdef ENABLE_RELIABILITY
-    // check to see if multicast frag is a duplicate
-    bool isDuplicateCollectiveFrag();
-
     // check to see if an ACK is a duplicate or non-specific only
     bool checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd);
 #endif

@@ -187,14 +187,11 @@ bool gmRecvFragDesc::AckData(double timeNow)
     // send the ACK
 
     gm_send_with_callback(gmState.localDevList[dev_m].gmPort,
-                          p,
-                          gmState.log2Size,
-                          sizeof(gmHeader),
-                          GM_LOW_PRIORITY,
-                          gmState.localDevList[dev_m].remoteDevList[p->dest_proc].node_id,
-                          gmState.localDevList[dev_m].remoteDevList[p->dest_proc].port_id,
-                          ackCallback,
-                          (void *) buf);
+		    p, gmState.log2Size, sizeof(gmHeader),
+		    GM_LOW_PRIORITY,
+	      	    gmState.localDevList[dev_m].remoteDevList[p->dest_proc].node_id,
+	      	    gmState.localDevList[dev_m].remoteDevList[p->dest_proc].port_id,
+	      	    ackCallback, (void *) buf);
 
     return true;
 }

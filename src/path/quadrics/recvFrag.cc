@@ -218,56 +218,6 @@ bool quadricsRecvFragDesc::AckData(double timeNow)
 
 #ifdef ENABLE_RELIABILITY
 
-bool quadricsRecvFragDesc::isDuplicateCollectiveFrag()
-{
-    int source_box = global_proc_to_host(srcProcID_m);
-    // duplicate/dropped message frag support
-    // only for those communication paths that overwrite
-    // the seq_m value from its default constructor
-    // value of 0 -- valid sequence numbers are from
-    // (1 .. (2^64 - 1)))
-
-    if (seq_m != 0) {
-        bool sendthisack;
-        bool recorded;
-        reliabilityInfo->coll_dataSeqsLock[source_box].lock();
-        if (reliabilityInfo->coll_receivedDataSeqs[source_box].recordIfNotRecorded(seq_m, &recorded)) {
-            // this is a duplicate from a retransmission...maybe a previous ACK was lost?
-            // unlock so we can lock while building the ACK...
-            if (reliabilityInfo->coll_deliveredDataSeqs[source_box].isRecorded(seq_m)) {
-                // send another ACK for this specific frag...
-                isDuplicate_m = true;
-                sendthisack = true;
-            } else if (reliabilityInfo->coll_receivedDataSeqs[source_box].largestInOrder() >= seq_m) {
-                // send a non-specific ACK that should prevent this frag from being retransmitted...
-                isDuplicate_m = true;
-                sendthisack = true;
-            } else {
-                // no acknowledgment is appropriate, just discard this frag and continue...
-                sendthisack = false;
-            }
-            reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-            // do we send an ACK for this frag?
-            if (!sendthisack) {
-                return true;
-            }
-            // try our best to ACK otherwise..don't worry about outcome
-            MarkDataOK(true);
-            AckData();
-            return true;
-        }                       // end duplicate frag processing
-        // record the fragment sequence number
-        if (!recorded) {
-            reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-            ulm_exit((-1, "unable to record frag sequence number(1)\n"));
-        }
-        reliabilityInfo->coll_dataSeqsLock[source_box].unlock();
-        // continue on...
-    }
-    return false;
-}
-
-
 bool quadricsRecvFragDesc::checkForDuplicateAndNonSpecificAck(quadricsSendFragDesc *sfd)
 {
     quadricsDataAck_t *p = &(envelope.msgDataAck);
