@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_KEYVAL_FREE = mpi_keyval_free_f
 #pragma weak pmpi_keyval_free = mpi_keyval_free_f
 #pragma weak pmpi_keyval_free_ = mpi_keyval_free_f
@@ -46,3 +48,47 @@ void mpi_keyval_free_f(int *keyval, MPI_Fint *rc)
 {
     *rc = MPI_Keyval_free(keyval);
 }
+
+#else
+
+void PMPI_KEYVAL_FREE(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void pmpi_keyval_free(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void pmpi_keyval_free_(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void pmpi_keyval_free__(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void MPI_KEYVAL_FREE(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void mpi_keyval_free(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void mpi_keyval_free_(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+void mpi_keyval_free__(int *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Keyval_free(keyval);
+}
+
+#endif

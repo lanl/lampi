@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_SCAN = mpi_scan_f
 #pragma weak pmpi_scan = mpi_scan_f
 #pragma weak pmpi_scan_ = mpi_scan_f
@@ -50,3 +52,79 @@ void mpi_scan_f(void *sendbuf, void *recvbuf, MPI_Fint *count,
 
     *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
 }
+
+#else
+
+void PMPI_SCAN(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void pmpi_scan(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void pmpi_scan_(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void pmpi_scan__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void MPI_SCAN(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void mpi_scan(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void mpi_scan_(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+void mpi_scan__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Scan(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+#endif

@@ -60,7 +60,7 @@ typedef enum
     kCTChannelClosed,                   /* channel is not open */
     kCTChannelConnLost,                 /* lost connection */
     kCTChannelInvalidMsg,               /* unable to pack/unpack msg or msg is NULL */
-    kCTChannelTimedOut                  /* channel operation timed out. */
+    kCTChannelTimedOut                 /* channel operation timed out. */
 } CTChannelStatus;
 
 
@@ -128,7 +128,11 @@ public:
     virtual CTChannelStatus sendMessage(CTMessage *msg) = 0;
                 
     unsigned int timeout() {return timeoutSecs_m;}
-    virtual void setTimeout(unsigned int secs) {timeoutSecs_m = secs;}
+    virtual bool setTimeout(unsigned int secs)
+    {
+        timeoutSecs_m = secs;
+        return true;
+    }
                 
     unsigned int tag() {return tag_m;}
     void setTag(unsigned int tag) {tag_m = tag;}
@@ -180,13 +184,13 @@ class CTTCPChannel : public CTChannel
 {
 private:
         bool    blocking_m;
-        
+        int		maxto_m;		/* maximum timeout value. lazily computed. */
 protected:
         int    sockfd_m;
         struct sockaddr_in      addr_m;
 
 private:
-        void CTTCPChannelInit();
+    void CTTCPChannelInit();
         
 public:
     static CTChannel *createChannel(const char *connectionInfo);
@@ -239,7 +243,12 @@ public:
     bool isBlocking() {return blocking_m;}
     bool setIsBlocking(bool tf);
     
-    void setTimeout(unsigned int secs);
+    bool setTimeout(unsigned int secs);
+    bool setMaximumTimeout(unsigned int secs);
+    /*
+     POST:	Attempts to set the socket timeout to secs.  If secs exceeds the upper limit, then
+            the method will set to the maximum allowed timeout.
+     */
     
     struct sockaddr_in *socketAddress() {return &addr_m;}
 };

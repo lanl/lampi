@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ABORT = mpi_abort_f
 #pragma weak pmpi_abort = mpi_abort_f
 #pragma weak pmpi_abort_ = mpi_abort_f
@@ -46,3 +48,50 @@ void mpi_abort_f(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
     *rc = ulm_abort(*comm, *errorcode);
 }
+
+#else
+
+void PMPI_ABORT(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void pmpi_abort(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void pmpi_abort_(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void pmpi_abort__(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void MPI_ABORT(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void mpi_abort(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void mpi_abort_(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+void mpi_abort__(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
+{
+    *rc = ulm_abort(*comm, *errorcode);
+}
+
+
+
+#endif
+

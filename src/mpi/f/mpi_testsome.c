@@ -28,20 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TESTSOME = mpi_testsome_f
-#pragma weak pmpi_testsome = mpi_testsome_f
-#pragma weak pmpi_testsome_ = mpi_testsome_f
-#pragma weak pmpi_testsome__ = mpi_testsome_f
-
-#pragma weak MPI_TESTSOME = mpi_testsome_f
-#pragma weak mpi_testsome = mpi_testsome_f
-#pragma weak mpi_testsome_ = mpi_testsome_f
-#pragma weak mpi_testsome__ = mpi_testsome_f
 
 void mpi_testsome_f(MPI_Fint *count,
                     MPI_Fint *request_array, MPI_Fint *outcount,
@@ -86,3 +75,91 @@ void mpi_testsome_f(MPI_Fint *count,
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TESTSOME = mpi_testsome_f
+#pragma weak pmpi_testsome = mpi_testsome_f
+#pragma weak pmpi_testsome_ = mpi_testsome_f
+#pragma weak pmpi_testsome__ = mpi_testsome_f
+
+#pragma weak MPI_TESTSOME = mpi_testsome_f
+#pragma weak mpi_testsome = mpi_testsome_f
+#pragma weak mpi_testsome_ = mpi_testsome_f
+#pragma weak mpi_testsome__ = mpi_testsome_f
+
+#else
+
+void PMPI_TESTSOME(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_testsome(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_testsome_(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_testsome__(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void MPI_TESTSOME(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_testsome(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_testsome_(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_testsome__(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+#endif

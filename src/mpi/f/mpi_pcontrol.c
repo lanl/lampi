@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_PCONTROL = mpi_pcontrol_f
 #pragma weak pmpi_pcontrol = mpi_pcontrol_f
 #pragma weak pmpi_pcontrol_ = mpi_pcontrol_f
@@ -46,3 +48,47 @@ void mpi_pcontrol_f(int *level)
 {
     return;
 }
+
+#else
+
+void PMPI_PCONTROL(int *level)
+{
+    return;
+}
+
+void pmpi_pcontrol(int *level)
+{
+    return;
+}
+
+void pmpi_pcontrol_(int *level)
+{
+    return;
+}
+
+void pmpi_pcontrol__(int *level)
+{
+    return;
+}
+
+void MPI_PCONTROL(int *level)
+{
+    return;
+}
+
+void mpi_pcontrol(int *level)
+{
+    return;
+}
+
+void mpi_pcontrol_(int *level)
+{
+    return;
+}
+
+void mpi_pcontrol__(int *level)
+{
+    return;
+}
+
+#endif

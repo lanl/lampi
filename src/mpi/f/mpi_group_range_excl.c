@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_RANGE_EXCL = mpi_group_range_excl_f
 #pragma weak pmpi_group_range_excl = mpi_group_range_excl_f
 #pragma weak pmpi_group_range_excl_ = mpi_group_range_excl_f
@@ -47,3 +49,55 @@ void mpi_group_range_excl_f(MPI_Group * group, MPI_Fint *n,
 {
     *rc = MPI_Group_range_excl(*group, *n, ranges, new);
 }
+
+#else
+
+void PMPI_GROUP_RANGE_EXCL(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void pmpi_group_range_excl(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void pmpi_group_range_excl_(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void pmpi_group_range_excl__(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void MPI_GROUP_RANGE_EXCL(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void mpi_group_range_excl(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void mpi_group_range_excl_(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+void mpi_group_range_excl__(MPI_Group * group, MPI_Fint *n,
+                            int ranges[][3], MPI_Group * new, MPI_Fint *rc)
+{
+    *rc = MPI_Group_range_excl(*group, *n, ranges, new);
+}
+
+#endif

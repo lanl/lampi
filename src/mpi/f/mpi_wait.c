@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_WAIT = mpi_wait_f
-#pragma weak pmpi_wait = mpi_wait_f
-#pragma weak pmpi_wait_ = mpi_wait_f
-#pragma weak pmpi_wait__ = mpi_wait_f
-
-#pragma weak MPI_WAIT = mpi_wait_f
-#pragma weak mpi_wait = mpi_wait_f
-#pragma weak mpi_wait_ = mpi_wait_f
-#pragma weak mpi_wait__ = mpi_wait_f
-
 void mpi_wait_f(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
 {
     MPI_Request c_req = MPI_Request_f2c(*req);
@@ -54,3 +44,59 @@ void mpi_wait_f(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
         *req = -1;
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_WAIT = mpi_wait_f
+#pragma weak pmpi_wait = mpi_wait_f
+#pragma weak pmpi_wait_ = mpi_wait_f
+#pragma weak pmpi_wait__ = mpi_wait_f
+
+#pragma weak MPI_WAIT = mpi_wait_f
+#pragma weak mpi_wait = mpi_wait_f
+#pragma weak mpi_wait_ = mpi_wait_f
+#pragma weak mpi_wait__ = mpi_wait_f
+
+#else
+
+void PMPI_WAIT(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void pmpi_wait(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void pmpi_wait_(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void pmpi_wait__(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void MPI_WAIT(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void mpi_wait(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void mpi_wait_(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+void mpi_wait__(MPI_Fint *req, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_wait_f(req, status, rc);
+}
+
+#endif

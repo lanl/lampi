@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_TRANSLATE_RANKS = mpi_group_translate_ranks_f
 #pragma weak pmpi_group_translate_ranks = mpi_group_translate_ranks_f
 #pragma weak pmpi_group_translate_ranks_ = mpi_group_translate_ranks_f
@@ -49,3 +51,71 @@ void mpi_group_translate_ranks_f(MPI_Group * group1, MPI_Fint *n,
 {
     *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
 }
+
+#else
+
+void PMPI_GROUP_TRANSLATE_RANKS(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void pmpi_group_translate_ranks(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void pmpi_group_translate_ranks_(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void pmpi_group_translate_ranks__(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void MPI_GROUP_TRANSLATE_RANKS(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void mpi_group_translate_ranks(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void mpi_group_translate_ranks_(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+void mpi_group_translate_ranks__(MPI_Group * group1, MPI_Fint *n,
+                                 MPI_Fint *ranks1,
+                                 MPI_Group * group2,
+                                 MPI_Fint *ranks2, MPI_Fint *rc)
+{
+    *rc = MPI_Group_translate_ranks(*group1, *n, ranks1, *group2, ranks2);
+}
+
+#endif

@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_ALLTOALL = mpi_alltoall_f
-#pragma weak pmpi_alltoall = mpi_alltoall_f
-#pragma weak pmpi_alltoall_ = mpi_alltoall_f
-#pragma weak pmpi_alltoall__ = mpi_alltoall_f
-
-#pragma weak MPI_ALLTOALL = mpi_alltoall_f
-#pragma weak mpi_alltoall = mpi_alltoall_f
-#pragma weak mpi_alltoall_ = mpi_alltoall_f
-#pragma weak mpi_alltoall__ = mpi_alltoall_f
-
 void mpi_alltoall_f(void *sendbuf,
                     MPI_Fint *sendcount, MPI_Fint *sendtype,
                     void *recvbuf, MPI_Fint *recvcount,
@@ -53,3 +43,91 @@ void mpi_alltoall_f(void *sendbuf,
     *rc = MPI_Alltoall(sendbuf, *sendcount, c_sendtype,
                        recvbuf, *recvcount, c_recvtype, *comm);
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ALLTOALL = mpi_alltoall_f
+#pragma weak pmpi_alltoall = mpi_alltoall_f
+#pragma weak pmpi_alltoall_ = mpi_alltoall_f
+#pragma weak pmpi_alltoall__ = mpi_alltoall_f
+
+#pragma weak MPI_ALLTOALL = mpi_alltoall_f
+#pragma weak mpi_alltoall = mpi_alltoall_f
+#pragma weak mpi_alltoall_ = mpi_alltoall_f
+#pragma weak mpi_alltoall__ = mpi_alltoall_f
+
+#else
+
+void PMPI_ALLTOALL(void *sendbuf,
+                   MPI_Fint *sendcount, MPI_Fint *sendtype,
+                   void *recvbuf, MPI_Fint *recvcount,
+                   MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void pmpi_alltoall(void *sendbuf,
+                   MPI_Fint *sendcount, MPI_Fint *sendtype,
+                   void *recvbuf, MPI_Fint *recvcount,
+                   MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void pmpi_alltoall_(void *sendbuf,
+                    MPI_Fint *sendcount, MPI_Fint *sendtype,
+                    void *recvbuf, MPI_Fint *recvcount,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void pmpi_alltoall__(void *sendbuf,
+                     MPI_Fint *sendcount, MPI_Fint *sendtype,
+                     void *recvbuf, MPI_Fint *recvcount,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void MPI_ALLTOALL(void *sendbuf,
+                   MPI_Fint *sendcount, MPI_Fint *sendtype,
+                   void *recvbuf, MPI_Fint *recvcount,
+                   MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void mpi_alltoall(void *sendbuf,
+                   MPI_Fint *sendcount, MPI_Fint *sendtype,
+                   void *recvbuf, MPI_Fint *recvcount,
+                   MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void mpi_alltoall_(void *sendbuf,
+                    MPI_Fint *sendcount, MPI_Fint *sendtype,
+                    void *recvbuf, MPI_Fint *recvcount,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+void mpi_alltoall__(void *sendbuf,
+                     MPI_Fint *sendcount, MPI_Fint *sendtype,
+                     void *recvbuf, MPI_Fint *recvcount,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoall_f(sendbuf, sendcount, sendtype,
+                   recvbuf, recvcount, recvtype, comm, rc);
+}
+
+#endif

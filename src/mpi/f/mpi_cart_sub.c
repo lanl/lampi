@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_SUB = mpi_cart_sub_f
 #pragma weak pmpi_cart_sub = mpi_cart_sub_f
 #pragma weak pmpi_cart_sub_ = mpi_cart_sub_f
@@ -47,3 +49,55 @@ void mpi_cart_sub_f(MPI_Comm *comm_old, MPI_Fint *remain_dims,
 {
     *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
 }
+
+#else
+
+void PMPI_CART_SUB(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                   MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void pmpi_cart_sub(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                   MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void pmpi_cart_sub_(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                    MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void pmpi_cart_sub__(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                     MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void MPI_CART_SUB(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                   MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void mpi_cart_sub(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                   MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void mpi_cart_sub_(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                    MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+void mpi_cart_sub__(MPI_Comm *comm_old, MPI_Fint *remain_dims,
+                     MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_sub(*comm_old, remain_dims, comm_new);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_FINALIZE = mpi_finalize_f
 #pragma weak pmpi_finalize = mpi_finalize_f
 #pragma weak pmpi_finalize_ = mpi_finalize_f
@@ -46,3 +48,47 @@ void mpi_finalize_f(MPI_Fint *rc)
 {
     *rc = MPI_Finalize();
 }
+
+#else
+
+void PMPI_FINALIZE(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void pmpi_finalize(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void pmpi_finalize_(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void pmpi_finalize__(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void MPI_FINALIZE(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void mpi_finalize(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void mpi_finalize_(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+void mpi_finalize__(MPI_Fint *rc)
+{
+    *rc = MPI_Finalize();
+}
+
+#endif

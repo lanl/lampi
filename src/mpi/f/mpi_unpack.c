@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_UNPACK = mpi_unpack_f
 #pragma weak pmpi_unpack = mpi_unpack_f
 #pragma weak pmpi_unpack_ = mpi_unpack_f
@@ -55,3 +57,119 @@ void mpi_unpack_f(void *inbuf,
     *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
                      *comm);
 }
+
+#else
+
+void PMPI_UNPACK(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void pmpi_unpack(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void pmpi_unpack_(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void pmpi_unpack__(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void MPI_UNPACK(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void mpi_unpack(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void mpi_unpack_(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+void mpi_unpack__(void *inbuf,
+                  MPI_Fint *insize,
+                  MPI_Fint *position,
+                  void *outbuf,
+                  MPI_Fint *outcount,
+                  MPI_Fint *f_type, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype datatype;
+    datatype = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Unpack(inbuf, *insize, position, outbuf, *outcount, datatype,
+                     *comm);
+}
+
+#endif

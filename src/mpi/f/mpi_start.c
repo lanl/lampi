@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_START = mpi_start_f
 #pragma weak pmpi_start = mpi_start_f
 #pragma weak pmpi_start_ = mpi_start_f
@@ -48,3 +50,63 @@ void mpi_start_f(MPI_Fint *req, MPI_Fint *rc)
 
     *rc = MPI_Start(&c_req);
 }
+
+#else
+
+void PMPI_START(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void pmpi_start(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void pmpi_start_(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void pmpi_start__(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void MPI_START(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void mpi_start(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void mpi_start_(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+void mpi_start__(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Start(&c_req);
+}
+
+#endif

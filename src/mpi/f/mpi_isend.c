@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_ISEND = mpi_isend_f
-#pragma weak pmpi_isend = mpi_isend_f
-#pragma weak pmpi_isend_ = mpi_isend_f
-#pragma weak pmpi_isend__ = mpi_isend_f
-
-#pragma weak MPI_ISEND = mpi_isend_f
-#pragma weak mpi_isend = mpi_isend_f
-#pragma weak mpi_isend_ = mpi_isend_f
-#pragma weak mpi_isend__ = mpi_isend_f
 
 void mpi_isend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
                  MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
@@ -55,3 +44,83 @@ void mpi_isend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
         *req = MPI_Request_c2f(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ISEND = mpi_isend_f
+#pragma weak pmpi_isend = mpi_isend_f
+#pragma weak pmpi_isend_ = mpi_isend_f
+#pragma weak pmpi_isend__ = mpi_isend_f
+
+#pragma weak MPI_ISEND = mpi_isend_f
+#pragma weak mpi_isend = mpi_isend_f
+#pragma weak mpi_isend_ = mpi_isend_f
+#pragma weak mpi_isend__ = mpi_isend_f
+
+#else
+
+void PMPI_ISEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void pmpi_isend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void pmpi_isend_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void pmpi_isend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void MPI_ISEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void mpi_isend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void mpi_isend_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+void mpi_isend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_isend_f(buf, count, type, dest, tag, comm,
+                req, rc);
+}
+
+#endif

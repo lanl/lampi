@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_ALLTOALLV = mpi_alltoallv_f
-#pragma weak pmpi_alltoallv = mpi_alltoallv_f
-#pragma weak pmpi_alltoallv_ = mpi_alltoallv_f
-#pragma weak pmpi_alltoallv__ = mpi_alltoallv_f
-
-#pragma weak MPI_ALLTOALLV = mpi_alltoallv_f
-#pragma weak mpi_alltoallv = mpi_alltoallv_f
-#pragma weak mpi_alltoallv_ = mpi_alltoallv_f
-#pragma weak mpi_alltoallv__ = mpi_alltoallv_f
-
 void mpi_alltoallv_f(void *sendbuf,
                      MPI_Fint *sendcounts,
                      MPI_Fint *senddisps,
@@ -56,3 +46,108 @@ void mpi_alltoallv_f(void *sendbuf,
                         c_sendtype, recvbuf, recvcount,
                         recvdisps, c_recvtype, *comm);
 }
+
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ALLTOALLV = mpi_alltoallv_f
+#pragma weak pmpi_alltoallv = mpi_alltoallv_f
+#pragma weak pmpi_alltoallv_ = mpi_alltoallv_f
+#pragma weak pmpi_alltoallv__ = mpi_alltoallv_f
+
+#pragma weak MPI_ALLTOALLV = mpi_alltoallv_f
+#pragma weak mpi_alltoallv = mpi_alltoallv_f
+#pragma weak mpi_alltoallv_ = mpi_alltoallv_f
+#pragma weak mpi_alltoallv__ = mpi_alltoallv_f
+
+#else
+
+void PMPI_ALLTOALLV(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *senddisps,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void pmpi_alltoallv(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *senddisps,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void pmpi_alltoallv_(void *sendbuf,
+                     MPI_Fint *sendcounts,
+                     MPI_Fint *senddisps,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void pmpi_alltoallv__(void *sendbuf,
+                     MPI_Fint *sendcounts,
+                     MPI_Fint *senddisps,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void MPI_ALLTOALLV(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *senddisps,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void mpi_alltoallv(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *senddisps,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                    MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void mpi_alltoallv_(void *sendbuf,
+                     MPI_Fint *sendcounts,
+                     MPI_Fint *senddisps,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+void mpi_alltoallv__(void *sendbuf,
+                     MPI_Fint *sendcounts,
+                     MPI_Fint *senddisps,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcount, MPI_Fint *recvdisps,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_alltoallv_f(sendbuf, sendcounts, senddisps, sendtype, recvbuf,
+                    recvcount, recvdisps, recvtype, comm, rc);
+}
+
+#endif

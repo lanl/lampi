@@ -30,16 +30,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_OP_CREATE = mpi_op_create_f
-#pragma weak pmpi_op_create = mpi_op_create_f
-#pragma weak pmpi_op_create_ = mpi_op_create_f
-#pragma weak pmpi_op_create__ = mpi_op_create_f
-
-#pragma weak MPI_OP_CREATE = mpi_op_create_f
-#pragma weak mpi_op_create = mpi_op_create_f
-#pragma weak mpi_op_create_ = mpi_op_create_f
-#pragma weak mpi_op_create__ = mpi_op_create_f
-
 void mpi_op_create_f(MPI_User_function *func,
                      MPI_Fint *commute,
                      MPI_Fint *f_op,
@@ -57,3 +47,83 @@ void mpi_op_create_f(MPI_User_function *func,
         *f_op = op->fhandle;
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_OP_CREATE = mpi_op_create_f
+#pragma weak pmpi_op_create = mpi_op_create_f
+#pragma weak pmpi_op_create_ = mpi_op_create_f
+#pragma weak pmpi_op_create__ = mpi_op_create_f
+
+#pragma weak MPI_OP_CREATE = mpi_op_create_f
+#pragma weak mpi_op_create = mpi_op_create_f
+#pragma weak mpi_op_create_ = mpi_op_create_f
+#pragma weak mpi_op_create__ = mpi_op_create_f
+
+#else
+
+void PMPI_OP_CREATE(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void pmpi_op_create(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void pmpi_op_create_(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void pmpi_op_create__(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void MPI_OP_CREATE(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void mpi_op_create(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void mpi_op_create_(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+void mpi_op_create__(MPI_User_function *func,
+                     MPI_Fint *commute,
+                     MPI_Fint *f_op,
+                     MPI_Fint *rc)
+{
+    mpi_op_create_f(func, commute, f_op, rc);
+}
+
+#endif

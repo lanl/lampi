@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_REMOTE_SIZE = mpi_comm_remote_size_f
 #pragma weak pmpi_comm_remote_size = mpi_comm_remote_size_f
 #pragma weak pmpi_comm_remote_size_ = mpi_comm_remote_size_f
@@ -46,3 +48,47 @@ void mpi_comm_remote_size_f(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
 {
     *rc = MPI_Comm_remote_size(*comm, size);
 }
+
+#else
+
+void PMPI_COMM_REMOTE_SIZE(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void pmpi_comm_remote_size(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void pmpi_comm_remote_size_(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void pmpi_comm_remote_size__(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void MPI_COMM_REMOTE_SIZE(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void mpi_comm_remote_size(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void mpi_comm_remote_size_(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+void mpi_comm_remote_size__(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_remote_size(*comm, size);
+}
+
+#endif

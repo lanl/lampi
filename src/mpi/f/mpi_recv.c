@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_RECV = mpi_recv_f
 #pragma weak pmpi_recv = mpi_recv_f
 #pragma weak pmpi_recv_ = mpi_recv_f
@@ -50,3 +52,79 @@ void mpi_recv_f(void *buf, MPI_Fint *count, MPI_Fint *type,
 
     *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
 }
+
+#else
+
+void PMPI_RECV(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void pmpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void pmpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void pmpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void MPI_RECV(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void mpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void mpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+void mpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+}
+
+#endif

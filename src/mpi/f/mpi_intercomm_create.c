@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_INTERCOMM_CREATE = mpi_intercomm_create_f
 #pragma weak pmpi_intercomm_create = mpi_intercomm_create_f
 #pragma weak pmpi_intercomm_create_ = mpi_intercomm_create_f
@@ -51,3 +53,87 @@ void mpi_intercomm_create_f(MPI_Fint *local_comm,
     *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
                                *remote_leader, *tag, intercomm);
 }
+
+#else
+
+void PMPI_INTERCOMM_CREATE(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void pmpi_intercomm_create(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void pmpi_intercomm_create_(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void pmpi_intercomm_create__(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void MPI_INTERCOMM_CREATE(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void mpi_intercomm_create(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void mpi_intercomm_create_(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+void mpi_intercomm_create__(MPI_Fint *local_comm,
+                            MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm,
+                            MPI_Fint *remote_leader, MPI_Fint *tag,
+                            MPI_Fint *intercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_create(*local_comm, *local_leader, *peer_comm,
+                               *remote_leader, *tag, intercomm);
+}
+
+#endif

@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_CONTIGUOUS = mpi_type_contiguous_f
-#pragma weak pmpi_type_contiguous = mpi_type_contiguous_f
-#pragma weak pmpi_type_contiguous_ = mpi_type_contiguous_f
-#pragma weak pmpi_type_contiguous__ = mpi_type_contiguous_f
-
-#pragma weak MPI_TYPE_CONTIGUOUS = mpi_type_contiguous_f
-#pragma weak mpi_type_contiguous = mpi_type_contiguous_f
-#pragma weak mpi_type_contiguous_ = mpi_type_contiguous_f
-#pragma weak mpi_type_contiguous__ = mpi_type_contiguous_f
 
 void mpi_type_contiguous_f(MPI_Fint *count,
                            MPI_Fint *f_type_old,
@@ -57,3 +46,75 @@ void mpi_type_contiguous_f(MPI_Fint *count,
         *f_type_new = MPI_Type_c2f(c_type_new);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_CONTIGUOUS = mpi_type_contiguous_f
+#pragma weak pmpi_type_contiguous = mpi_type_contiguous_f
+#pragma weak pmpi_type_contiguous_ = mpi_type_contiguous_f
+#pragma weak pmpi_type_contiguous__ = mpi_type_contiguous_f
+
+#pragma weak MPI_TYPE_CONTIGUOUS = mpi_type_contiguous_f
+#pragma weak mpi_type_contiguous = mpi_type_contiguous_f
+#pragma weak mpi_type_contiguous_ = mpi_type_contiguous_f
+#pragma weak mpi_type_contiguous__ = mpi_type_contiguous_f
+
+#else
+
+void PMPI_TYPE_CONTIGUOUS(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_contiguous(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_contiguous_(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_contiguous__(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void MPI_TYPE_CONTIGUOUS(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_contiguous(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_contiguous_(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_contiguous__(MPI_Fint *count,
+                           MPI_Fint *f_type_old,
+                           MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_contiguous_f(count, f_type_old, f_type_new, rc);
+}
+
+#endif

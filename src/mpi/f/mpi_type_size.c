@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_TYPE_SIZE = mpi_type_size_f
 #pragma weak pmpi_type_size = mpi_type_size_f
 #pragma weak pmpi_type_size_ = mpi_type_size_f
@@ -49,3 +51,71 @@ void mpi_type_size_f(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
     c_type = MPI_Type_f2c(*f_type);
     *rc = MPI_Type_size(c_type, size);
 }
+
+#else
+
+void PMPI_TYPE_SIZE(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void pmpi_type_size(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void pmpi_type_size_(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void pmpi_type_size__(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void MPI_TYPE_SIZE(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void mpi_type_size(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void mpi_type_size_(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+void mpi_type_size__(MPI_Fint *f_type, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+    *rc = MPI_Type_size(c_type, size);
+}
+
+#endif

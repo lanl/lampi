@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_RSEND = mpi_rsend_f
 #pragma weak pmpi_rsend = mpi_rsend_f
 #pragma weak pmpi_rsend_ = mpi_rsend_f
@@ -50,3 +52,79 @@ void mpi_rsend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
 
     *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
 }
+
+#else
+
+void PMPI_RSEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void pmpi_rsend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void pmpi_rsend_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void pmpi_rsend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void MPI_RSEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void mpi_rsend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void mpi_rsend_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+void mpi_rsend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Rsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+#endif

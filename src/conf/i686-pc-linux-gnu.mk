@@ -12,7 +12,7 @@ comma	:=,
 # Standard macros
 CC		:= gcc
 CXX		:= g++ 
-CFLAGS		:= -march=i686 -finline-functions
+CFLAGS		+= -march=i686 -finline-functions
 CPPFLAGS	:= -Wall -Wno-deprecated -I. -Iinclude
 ifdef ULMDEBUG
 CFLAGS		+= -g

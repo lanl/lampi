@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_REQUEST_FREE = mpi_request_free_f
-#pragma weak pmpi_request_free = mpi_request_free_f
-#pragma weak pmpi_request_free_ = mpi_request_free_f
-#pragma weak pmpi_request_free__ = mpi_request_free_f
-
-#pragma weak MPI_REQUEST_FREE = mpi_request_free_f
-#pragma weak mpi_request_free = mpi_request_free_f
-#pragma weak mpi_request_free_ = mpi_request_free_f
-#pragma weak mpi_request_free__ = mpi_request_free_f
 
 void mpi_request_free_f(MPI_Fint *req, MPI_Fint *rc)
 {
@@ -54,3 +43,59 @@ void mpi_request_free_f(MPI_Fint *req, MPI_Fint *rc)
         *req = -1;
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_REQUEST_FREE = mpi_request_free_f
+#pragma weak pmpi_request_free = mpi_request_free_f
+#pragma weak pmpi_request_free_ = mpi_request_free_f
+#pragma weak pmpi_request_free__ = mpi_request_free_f
+
+#pragma weak MPI_REQUEST_FREE = mpi_request_free_f
+#pragma weak mpi_request_free = mpi_request_free_f
+#pragma weak mpi_request_free_ = mpi_request_free_f
+#pragma weak mpi_request_free__ = mpi_request_free_f
+
+#else
+
+void PMPI_REQUEST_FREE(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void pmpi_request_free(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void pmpi_request_free_(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void pmpi_request_free__(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void MPI_REQUEST_FREE(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void mpi_request_free(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void mpi_request_free_(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+void mpi_request_free__(MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_request_free_f(req, rc);
+}
+
+#endif

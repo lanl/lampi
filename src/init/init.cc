@@ -133,22 +133,13 @@ void lampi_init(void)
     /*
      * connect back to mpirun
      */
-#ifdef USE_CT
     ulm_dbg( ("host %s: daemon %d: connecting to mpirun...\n", _ulm_host(), getpid()) );
-    timing_cur = second();
-    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_connect_to_mpirun (t = 0)\n");
-#endif
     lampi_init_prefork_connect_to_mpirun(&lampiState);
 
     /*
      * receive initial input parameters
      */
-#ifdef USE_CT
     ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_receive_setup_params (t = %lf)\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
-#endif
     lampi_init_prefork_receive_setup_params(&lampiState);
 
     if (lampiState.hostid == 0) {
@@ -164,23 +155,12 @@ void lampi_init(void)
      * path initialization that needs to happen before the child
      * processes are created
      */
-#ifdef USE_CT
-    ulm_fdbg( ("host %s: node %u: calling lampi_init_paths_prefork...\n", _ulm_host(), lampiState.client->nodeLabel()) );
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Calling lampi_init_prefork_paths (t = %lf)\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
-#endif
     lampi_init_prefork_paths(&lampiState);
 
     /* if library is to handle stdio, prefork data is set up */
     lampi_init_prefork_stdio(&lampiState);
 
     /* fork the rest of the la-mpi processes */
-#ifdef USE_CT
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Calling lampi_init_fork (t = %lf)\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
-#endif
     lampi_init_fork(&lampiState);
     /*
      * all la-mpi procs have been created at this stage
@@ -198,56 +178,12 @@ void lampi_init(void)
     //lampi_init_debug(&lampiState);
 
     /* post fork path setup */
-#ifdef USE_CT
-    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
-        (!lampiState.useDaemon && (local_myproc() == 0)))
-    {
-        timing_stmp = second();
-        sprintf(timing_out[timing_scnt++], "Calling lampi_init_postfork_paths (t = %lf)\n", timing_stmp - timing_cur);
-        timing_cur = timing_stmp;
-        ulm_fdbg(("node %u: calling lampi_init_postfork_paths...\n", lampiState.client->nodeLabel()));
-    }
-#endif
     lampi_init_postfork_paths(&lampiState);
 
     /* barrier until all procs - local and remote - have started up */
-#ifdef USE_CT
-    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
-        (!lampiState.useDaemon && (local_myproc() == 0)))
-    {
-        timing_stmp = second();
-        sprintf(timing_out[timing_scnt++], "Calling lampi_init_wait_for_start_message (t = %lf)\n", timing_stmp - timing_cur);
-        timing_cur = timing_stmp;
-    }
-#endif
     lampi_init_wait_for_start_message(&lampiState);
 
-#ifdef USE_CT
-    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
-        (!lampiState.useDaemon && (local_myproc() == 0)))
-    {
-        timing_stmp = second();
-        sprintf(timing_out[timing_scnt++], "Done with init (t = %lf)\n", timing_stmp - timing_cur);
-        timing_cur = timing_stmp;
-    }
-#endif
     lampi_init_check_for_error(&lampiState);
-
-#ifdef USE_CT
-    if ((lampiState.useDaemon && lampiState.iAmDaemon) ||
-        (!lampiState.useDaemon && (local_myproc() == 0)))
-    {
-        FILE *fp;
-        if ( (fp = fopen("./timing.out", "a")) )
-        {
-            fprintf(fp, "\n");
-            for ( int k=0; k<timing_scnt; k++ )
-                fprintf(fp, "%s", timing_out[k]);
-            fflush(fp);
-            fclose(fp);
-        }
-    }
-#endif
     
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )

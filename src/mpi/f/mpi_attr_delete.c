@@ -33,6 +33,8 @@
 #include "internal/mpif.h"
 #include "internal/ftoc.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ATTR_DELETE = mpi_attr_delete_f
 #pragma weak pmpi_attr_delete = mpi_attr_delete_f
 #pragma weak pmpi_attr_delete_ = mpi_attr_delete_f
@@ -47,3 +49,48 @@ void mpi_attr_delete_f(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
 {
     *rc = MPI_Attr_delete(*comm, *keyval);
 }
+
+#else
+
+void PMPI_ATTR_DELETE(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void pmpi_attr_delete(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void pmpi_attr_delete_(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void pmpi_attr_delete__(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void MPI_ATTR_DELETE(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void mpi_attr_delete(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void mpi_attr_delete_(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+void mpi_attr_delete__(MPI_Comm *comm, MPI_Fint *keyval, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_delete(*comm, *keyval);
+}
+
+
+#endif

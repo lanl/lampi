@@ -29,8 +29,19 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
+
+void mpi_initialized_f(MPI_Fint *flag, MPI_Fint *rc)
+{
+    if (_mpif.initialized) {
+        *flag = 1;
+    } else {
+        *flag = 0;
+    }
+    *rc = MPI_SUCCESS;
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
 
 #pragma weak PMPI_INITIALIZED = mpi_initialized_f
 #pragma weak pmpi_initialized = mpi_initialized_f
@@ -42,12 +53,46 @@
 #pragma weak mpi_initialized_ = mpi_initialized_f
 #pragma weak mpi_initialized__ = mpi_initialized_f
 
-void mpi_initialized_f(MPI_Fint *flag, MPI_Fint *rc)
+#else
+
+void PMPI_INITIALIZED(MPI_Fint *flag, MPI_Fint *rc)
 {
-    if (_mpif.initialized) {
-        *flag = 1;
-    } else {
-        *flag = 0;
-    }
-    *rc = MPI_SUCCESS;
+    mpi_initialized_f(flag, rc);
 }
+
+void pmpi_initialized(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void pmpi_initialized_(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void pmpi_initialized__(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void MPI_INITIALIZED(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void mpi_initialized(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void mpi_initialized_(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+void mpi_initialized__(MPI_Fint *flag, MPI_Fint *rc)
+{
+    mpi_initialized_f(flag, rc);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ATTR_PUT = mpi_attr_put_f
 #pragma weak pmpi_attr_put = mpi_attr_put_f
 #pragma weak pmpi_attr_put_ = mpi_attr_put_f
@@ -47,3 +49,57 @@ void mpi_attr_put_f(MPI_Comm *comm, MPI_Fint *keyval,
 {
     *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
 }
+
+#else
+
+void PMPI_ATTR_PUT(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void pmpi_attr_put(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void pmpi_attr_put_(MPI_Comm *comm, MPI_Fint *keyval,
+                    MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void pmpi_attr_put__(MPI_Comm *comm, MPI_Fint *keyval,
+                     MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void MPI_ATTR_PUT(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void mpi_attr_put(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void mpi_attr_put_(MPI_Comm *comm, MPI_Fint *keyval,
+                    MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+void mpi_attr_put__(MPI_Comm *comm, MPI_Fint *keyval,
+                     MPI_Fint *attribute_val, MPI_Fint *rc)
+{
+    *rc = MPI_Attr_put(*comm, *keyval, (void *) *attribute_val);
+}
+
+
+#endif
+

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_DUP = mpi_comm_dup_f
 #pragma weak pmpi_comm_dup = mpi_comm_dup_f
 #pragma weak pmpi_comm_dup_ = mpi_comm_dup_f
@@ -46,3 +48,47 @@ void mpi_comm_dup_f(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
 {
     *rc = MPI_Comm_dup(*in, out);
 }
+
+#else
+
+void PMPI_COMM_DUP(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void pmpi_comm_dup(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void pmpi_comm_dup_(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void pmpi_comm_dup__(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void MPI_COMM_DUP(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void mpi_comm_dup(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void mpi_comm_dup_(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+void mpi_comm_dup__(MPI_Comm *in, MPI_Comm *out, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_dup(*in, out);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_IPROBE = mpi_iprobe_f
 #pragma weak pmpi_iprobe = mpi_iprobe_f
 #pragma weak pmpi_iprobe_ = mpi_iprobe_f
@@ -47,3 +49,55 @@ void mpi_iprobe_f(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
 {
     *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
 }
+
+#else
+
+void PMPI_IPROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void pmpi_iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void pmpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void pmpi_iprobe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void MPI_IPROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void mpi_iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void mpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+void mpi_iprobe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *flag, MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Iprobe(*source, *tag, *comm, flag, status);
+}
+
+#endif

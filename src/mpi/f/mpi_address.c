@@ -33,6 +33,15 @@
 #include "internal/mpif.h"
 
 /* no one should use this function, no matter what the standard says! */
+void mpi_address_f(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    MPI_Aint cAddress;
+
+    *rc = MPI_Address(location, &cAddress);
+    *address = (int) cAddress & 0x7fffffff;
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
 
 #pragma weak PMPI_ADDRESS = mpi_address_f
 #pragma weak pmpi_address = mpi_address_f
@@ -44,10 +53,50 @@
 #pragma weak mpi_address_ = mpi_address_f
 #pragma weak mpi_address__ = mpi_address_f
 
-void mpi_address_f(void *location, MPI_Fint *address, MPI_Fint *rc)
-{
-    MPI_Aint cAddress;
 
-    *rc = MPI_Address(location, &cAddress);
-    *address = (int) cAddress & 0x7fffffff;
+#else
+
+void PMPI_ADDRESS(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
 }
+
+void pmpi_address(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void pmpi_address_(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void pmpi_address__(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void MPI_ADDRESS(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void mpi_address(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void mpi_address_(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+void mpi_address__(void *location, MPI_Fint *address, MPI_Fint *rc)
+{
+    mpi_address_f(location, address, rc);
+}
+
+
+#endif
+
+

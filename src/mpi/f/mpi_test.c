@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TEST = mpi_test_f
-#pragma weak pmpi_test = mpi_test_f
-#pragma weak pmpi_test_ = mpi_test_f
-#pragma weak pmpi_test__ = mpi_test_f
-
-#pragma weak MPI_TEST = mpi_test_f
-#pragma weak mpi_test = mpi_test_f
-#pragma weak mpi_test_ = mpi_test_f
-#pragma weak mpi_test__ = mpi_test_f
 
 void mpi_test_f(MPI_Fint *req, MPI_Fint *flag,
                 MPI_Status *status, MPI_Fint *rc)
@@ -55,3 +44,67 @@ void mpi_test_f(MPI_Fint *req, MPI_Fint *flag,
         *req = -1;
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TEST = mpi_test_f
+#pragma weak pmpi_test = mpi_test_f
+#pragma weak pmpi_test_ = mpi_test_f
+#pragma weak pmpi_test__ = mpi_test_f
+
+#pragma weak MPI_TEST = mpi_test_f
+#pragma weak mpi_test = mpi_test_f
+#pragma weak mpi_test_ = mpi_test_f
+#pragma weak mpi_test__ = mpi_test_f
+
+#else
+
+void PMPI_TEST(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void pmpi_test(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void pmpi_test_(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void pmpi_test__(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void MPI_TEST(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void mpi_test(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void mpi_test_(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+void mpi_test__(MPI_Fint *req, MPI_Fint *flag,
+                MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_test_f(req, flag, status, rc);
+}
+
+#endif

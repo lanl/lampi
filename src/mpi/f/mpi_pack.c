@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_PACK = mpi_pack_f
-#pragma weak pmpi_pack = mpi_pack_f
-#pragma weak pmpi_pack_ = mpi_pack_f
-#pragma weak pmpi_pack__ = mpi_pack_f
-
-#pragma weak MPI_PACK = mpi_pack_f
-#pragma weak mpi_pack = mpi_pack_f
-#pragma weak mpi_pack_ = mpi_pack_f
-#pragma weak mpi_pack__ = mpi_pack_f
 
 void mpi_pack_f(void *inbuf,
                 MPI_Fint *incount,
@@ -56,3 +45,107 @@ void mpi_pack_f(void *inbuf,
     *rc = MPI_Pack(inbuf, *incount, c_type, outbuf,
                    *outcount, position, *comm);
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_PACK = mpi_pack_f
+#pragma weak pmpi_pack = mpi_pack_f
+#pragma weak pmpi_pack_ = mpi_pack_f
+#pragma weak pmpi_pack__ = mpi_pack_f
+
+#pragma weak MPI_PACK = mpi_pack_f
+#pragma weak mpi_pack = mpi_pack_f
+#pragma weak mpi_pack_ = mpi_pack_f
+#pragma weak mpi_pack__ = mpi_pack_f
+
+#else
+
+void PMPI_PACK(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void pmpi_pack(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void pmpi_pack_(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void pmpi_pack__(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void MPI_PACK(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void mpi_pack(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void mpi_pack_(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+void mpi_pack__(void *inbuf,
+                MPI_Fint *incount,
+                MPI_Fint *f_type,
+                void *outbuf,
+                MPI_Fint *outcount, MPI_Fint *position,
+                MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_pack_f(inbuf, incount, f_type, outbuf,
+               outcount, position, comm, rc);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CANCEL = mpi_cancel_f
 #pragma weak pmpi_cancel = mpi_cancel_f
 #pragma weak pmpi_cancel_ = mpi_cancel_f
@@ -48,3 +50,63 @@ void mpi_cancel_f(MPI_Fint *req, MPI_Fint *rc)
 
     *rc = MPI_Cancel(&c_req);
 }
+
+#else
+
+void PMPI_CANCEL(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void pmpi_cancel(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void pmpi_cancel_(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void pmpi_cancel__(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void MPI_CANCEL(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void mpi_cancel(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void mpi_cancel_(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+void mpi_cancel__(MPI_Fint *req, MPI_Fint *rc)
+{
+    MPI_Request c_req = MPI_Request_f2c(*req);
+
+    *rc = MPI_Cancel(&c_req);
+}
+
+#endif

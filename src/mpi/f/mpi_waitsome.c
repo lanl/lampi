@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_WAITSOME = mpi_waitsome_f
-#pragma weak pmpi_waitsome = mpi_waitsome_f
-#pragma weak pmpi_waitsome_ = mpi_waitsome_f
-#pragma weak pmpi_waitsome__ = mpi_waitsome_f
-
-#pragma weak MPI_WAITSOME = mpi_waitsome_f
-#pragma weak mpi_waitsome = mpi_waitsome_f
-#pragma weak mpi_waitsome_ = mpi_waitsome_f
-#pragma weak mpi_waitsome__ = mpi_waitsome_f
 
 void mpi_waitsome_f(MPI_Fint *count,
                     MPI_Fint *request_array, MPI_Fint *outcount,
@@ -86,3 +75,91 @@ void mpi_waitsome_f(MPI_Fint *count,
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_WAITSOME = mpi_waitsome_f
+#pragma weak pmpi_waitsome = mpi_waitsome_f
+#pragma weak pmpi_waitsome_ = mpi_waitsome_f
+#pragma weak pmpi_waitsome__ = mpi_waitsome_f
+
+#pragma weak MPI_WAITSOME = mpi_waitsome_f
+#pragma weak mpi_waitsome = mpi_waitsome_f
+#pragma weak mpi_waitsome_ = mpi_waitsome_f
+#pragma weak mpi_waitsome__ = mpi_waitsome_f
+
+#else
+
+void PMPI_WAITSOME(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_waitsome(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_waitsome_(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void pmpi_waitsome__(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void MPI_WAITSOME(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_waitsome(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_waitsome_(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+void mpi_waitsome__(MPI_Fint *count,
+                    MPI_Fint *request_array, MPI_Fint *outcount,
+                    MPI_Fint *index_array,
+                    MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitsome_f(count, request_array, outcount,
+                   index_array, status_array, rc);
+}
+
+#endif

@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_LB = mpi_type_lb_f
-#pragma weak pmpi_type_lb = mpi_type_lb_f
-#pragma weak pmpi_type_lb_ = mpi_type_lb_f
-#pragma weak pmpi_type_lb__ = mpi_type_lb_f
-
-#pragma weak MPI_TYPE_LB = mpi_type_lb_f
-#pragma weak mpi_type_lb = mpi_type_lb_f
-#pragma weak mpi_type_lb_ = mpi_type_lb_f
-#pragma weak mpi_type_lb__ = mpi_type_lb_f
 
 void mpi_type_lb_f(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
 {
@@ -52,3 +41,59 @@ void mpi_type_lb_f(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
     *rc = MPI_Type_lb(c_type, &c_lb);
     *f_lb = (MPI_Fint) c_lb & 0xffffffff;
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_LB = mpi_type_lb_f
+#pragma weak pmpi_type_lb = mpi_type_lb_f
+#pragma weak pmpi_type_lb_ = mpi_type_lb_f
+#pragma weak pmpi_type_lb__ = mpi_type_lb_f
+
+#pragma weak MPI_TYPE_LB = mpi_type_lb_f
+#pragma weak mpi_type_lb = mpi_type_lb_f
+#pragma weak mpi_type_lb_ = mpi_type_lb_f
+#pragma weak mpi_type_lb__ = mpi_type_lb_f
+
+#else
+
+void PMPI_TYPE_LB(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void pmpi_type_lb(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void pmpi_type_lb_(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void pmpi_type_lb__(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void MPI_TYPE_LB(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void mpi_type_lb(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void mpi_type_lb_(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+void mpi_type_lb__(MPI_Fint *f_type, MPI_Fint *f_lb, MPI_Fint *rc)
+{
+    mpi_type_lb_f(f_type, f_lb, rc);
+}
+
+#endif

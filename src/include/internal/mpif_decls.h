@@ -49,6 +49,19 @@ CDECL_BEGIN
 /*
  * MPI prototypes (includes most of MPI2)
  */
+
+#ifdef MPI_DUP_FN
+#undef MPI_DUP_FN
+#endif
+#ifdef MPI_NULL_COPY_FN
+#undef MPI_NULL_COPY_FN
+#endif
+#ifdef MPI_NULL_DELETE_FN
+#undef MPI_NULL_DELETE_FN
+#endif
+
+#if defined(HAVE_PRAGMA_WEAK)
+
 void MPI_WTICK(void);
 void mpi_wtick(void);
 void mpi_wtick_(void);
@@ -1248,16 +1261,6 @@ void pmpi_win_set_errhandler__(void);
 
 /* default attribute functions */
 
-#ifdef MPI_DUP_FN
-#undef MPI_DUP_FN
-#endif
-#ifdef MPI_NULL_COPY_FN
-#undef MPI_NULL_COPY_FN
-#endif
-#ifdef MPI_NULL_DELETE_FN
-#undef MPI_NULL_DELETE_FN
-#endif
-
 void MPI_DUP_FN(void);
 void mpi_dup_fn(void);
 void mpi_dup_fn_(void);
@@ -1270,6 +1273,8 @@ void MPI_NULL_DELETE_FN(void);
 void mpi_null_delete_fn(void);
 void mpi_null_delete_fn_(void);
 void mpi_null_delete_fn__(void);
+
+#endif		/* HAVE_PRAGMA_WEAK */
 
 CDECL_END
 

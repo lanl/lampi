@@ -33,6 +33,8 @@
 #include "internal/mpif.h"
 #include "internal/ftoc.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_KEYVAL_CREATE = mpi_keyval_create_f
 #pragma weak pmpi_keyval_create = mpi_keyval_create_f
 #pragma weak pmpi_keyval_create_ = mpi_keyval_create_f
@@ -50,3 +52,71 @@ void mpi_keyval_create_f(Fortran_Copy_function * copyFunction,
     *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
                               keyval, extraState);
 }
+
+#else
+
+void PMPI_KEYVAL_CREATE(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void pmpi_keyval_create(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void pmpi_keyval_create_(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void pmpi_keyval_create__(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void MPI_KEYVAL_CREATE(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void mpi_keyval_create(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void mpi_keyval_create_(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+void mpi_keyval_create__(Fortran_Copy_function * copyFunction,
+                         Fortran_Delete_function * deleteFunction,
+                         MPI_Fint *keyval, void *extraState, MPI_Fint *rc)
+{
+    *rc = ulm_f_keyval_create(copyFunction, deleteFunction,
+                              keyval, extraState);
+}
+
+#endif

@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_BSEND_INIT = mpi_bsend_init_f
-#pragma weak pmpi_bsend_init = mpi_bsend_init_f
-#pragma weak pmpi_bsend_init_ = mpi_bsend_init_f
-#pragma weak pmpi_bsend_init__ = mpi_bsend_init_f
-
-#pragma weak MPI_BSEND_INIT = mpi_bsend_init_f
-#pragma weak mpi_bsend_init = mpi_bsend_init_f
-#pragma weak mpi_bsend_init_ = mpi_bsend_init_f
-#pragma weak mpi_bsend_init__ = mpi_bsend_init_f
-
 void mpi_bsend_init_f(void *buf, MPI_Fint *count, MPI_Fint *type,
                       MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
                       MPI_Fint *request, MPI_Fint *rc)
@@ -55,3 +45,83 @@ void mpi_bsend_init_f(void *buf, MPI_Fint *count, MPI_Fint *type,
         *request = MPI_Request_c2f(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_BSEND_INIT = mpi_bsend_init_f
+#pragma weak pmpi_bsend_init = mpi_bsend_init_f
+#pragma weak pmpi_bsend_init_ = mpi_bsend_init_f
+#pragma weak pmpi_bsend_init__ = mpi_bsend_init_f
+
+#pragma weak MPI_BSEND_INIT = mpi_bsend_init_f
+#pragma weak mpi_bsend_init = mpi_bsend_init_f
+#pragma weak mpi_bsend_init_ = mpi_bsend_init_f
+#pragma weak mpi_bsend_init__ = mpi_bsend_init_f
+
+#else
+
+void PMPI_BSEND_INIT(void *buf, MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                     MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void pmpi_bsend_init(void *buf, MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                     MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void pmpi_bsend_init_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                      MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                      MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void pmpi_bsend_init__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                       MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                       MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void MPI_BSEND_INIT(void *buf, MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                     MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void mpi_bsend_init(void *buf, MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                     MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void mpi_bsend_init_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                      MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                      MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+void mpi_bsend_init__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                       MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                       MPI_Fint *request, MPI_Fint *rc)
+{
+    mpi_bsend_init_f(buf, count, type, dest, tag, comm,
+                     request, rc);
+}
+
+#endif

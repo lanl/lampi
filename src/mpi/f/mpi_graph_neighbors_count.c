@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPH_NEIGHBORS_COUNT = mpi_graph_neighbors_count_f
 #pragma weak pmpi_graph_neighbors_count = mpi_graph_neighbors_count_f
 #pragma weak pmpi_graph_neighbors_count_ = mpi_graph_neighbors_count_f
@@ -47,3 +49,55 @@ void mpi_graph_neighbors_count_f(MPI_Comm *comm, MPI_Fint *rank,
 {
     *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
 }
+
+#else
+
+void PMPI_GRAPH_NEIGHBORS_COUNT(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void pmpi_graph_neighbors_count(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void pmpi_graph_neighbors_count_(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void pmpi_graph_neighbors_count__(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void MPI_GRAPH_NEIGHBORS_COUNT(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void mpi_graph_neighbors_count(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void mpi_graph_neighbors_count_(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+void mpi_graph_neighbors_count__(MPI_Comm *comm, MPI_Fint *rank,
+                                 MPI_Fint *nneighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors_count(*comm, *rank, nneighbors);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPHDIMS_GET = mpi_graphdims_get_f
 #pragma weak pmpi_graphdims_get = mpi_graphdims_get_f
 #pragma weak pmpi_graphdims_get_ = mpi_graphdims_get_f
@@ -47,3 +49,55 @@ void mpi_graphdims_get_f(MPI_Comm *comm,
 {
     *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
 }
+
+#else
+
+void PMPI_GRAPHDIMS_GET(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void pmpi_graphdims_get(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void pmpi_graphdims_get_(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void pmpi_graphdims_get__(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void MPI_GRAPHDIMS_GET(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void mpi_graphdims_get(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void mpi_graphdims_get_(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+void mpi_graphdims_get__(MPI_Comm *comm,
+                         MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *rc)
+{
+    *rc = MPI_Graphdims_get(*comm, nnodes, nedges);
+}
+
+#endif

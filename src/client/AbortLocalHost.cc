@@ -179,5 +179,7 @@ void AbortAndDrainLocalHost(int ServerSocketFD, int *ProcessCount, int hostIndex
 #endif
     }
 
+#ifndef USE_CT
     exit(2);
+#endif
 }

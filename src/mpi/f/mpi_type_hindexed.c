@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_HINDEXED = mpi_type_hindexed_f
-#pragma weak pmpi_type_hindexed = mpi_type_hindexed_f
-#pragma weak pmpi_type_hindexed_ = mpi_type_hindexed_f
-#pragma weak pmpi_type_hindexed__ = mpi_type_hindexed_f
-
-#pragma weak MPI_TYPE_HINDEXED = mpi_type_hindexed_f
-#pragma weak mpi_type_hindexed = mpi_type_hindexed_f
-#pragma weak mpi_type_hindexed_ = mpi_type_hindexed_f
-#pragma weak mpi_type_hindexed__ = mpi_type_hindexed_f
 
 void mpi_type_hindexed_f(MPI_Fint *count,
                          MPI_Fint *blklen_array,
@@ -80,3 +69,99 @@ void mpi_type_hindexed_f(MPI_Fint *count,
 
     ulm_free(c_disp_array);
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_HINDEXED = mpi_type_hindexed_f
+#pragma weak pmpi_type_hindexed = mpi_type_hindexed_f
+#pragma weak pmpi_type_hindexed_ = mpi_type_hindexed_f
+#pragma weak pmpi_type_hindexed__ = mpi_type_hindexed_f
+
+#pragma weak MPI_TYPE_HINDEXED = mpi_type_hindexed_f
+#pragma weak mpi_type_hindexed = mpi_type_hindexed_f
+#pragma weak mpi_type_hindexed_ = mpi_type_hindexed_f
+#pragma weak mpi_type_hindexed__ = mpi_type_hindexed_f
+
+#else
+
+void PMPI_TYPE_HINDEXED(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_hindexed(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_hindexed_(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_hindexed__(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void MPI_TYPE_HINDEXED(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void mpi_type_hindexed(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void mpi_type_hindexed_(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+void mpi_type_hindexed__(MPI_Fint *count,
+                         MPI_Fint *blklen_array,
+                         MPI_Fint *f_disp_array,
+                         MPI_Fint *f_type_old,
+                         MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_hindexed_f(count, blklen_array, f_disp_array,
+                        f_type_old, f_type_new, rc);
+}
+
+#endif

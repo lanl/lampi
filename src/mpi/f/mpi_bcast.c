@@ -32,6 +32,16 @@
 
 #include "internal/mpif.h"
 
+void mpi_bcast_f(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Bcast(buffer, *count, c_type, *root, *comm);
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_BCAST = mpi_bcast_f
 #pragma weak pmpi_bcast = mpi_bcast_f
 #pragma weak pmpi_bcast_ = mpi_bcast_f
@@ -42,10 +52,54 @@
 #pragma weak mpi_bcast_ = mpi_bcast_f
 #pragma weak mpi_bcast__ = mpi_bcast_f
 
-void mpi_bcast_f(void *buffer, MPI_Fint *count, MPI_Fint *type,
+#else
+
+void PMPI_BCAST(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void pmpi_bcast(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void pmpi_bcast_(void *buffer, MPI_Fint *count, MPI_Fint *type,
                  MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
 {
-    MPI_Datatype c_type = MPI_Type_f2c(*type);
-
-    *rc = MPI_Bcast(buffer, *count, c_type, *root, *comm);
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
 }
+
+void pmpi_bcast__(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                  MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void MPI_BCAST(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void mpi_bcast(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void mpi_bcast_(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+void mpi_bcast__(void *buffer, MPI_Fint *count, MPI_Fint *type,
+                  MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_bcast_f(buffer, count, type, root, comm, rc);
+}
+
+#endif

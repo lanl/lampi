@@ -31,16 +31,6 @@
 #include "internal/malloc.h"
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TYPE_STRUCT = mpi_type_struct_f
-#pragma weak pmpi_type_struct = mpi_type_struct_f
-#pragma weak pmpi_type_struct_ = mpi_type_struct_f
-#pragma weak pmpi_type_struct__ = mpi_type_struct_f
-
-#pragma weak MPI_TYPE_STRUCT = mpi_type_struct_f
-#pragma weak mpi_type_struct = mpi_type_struct_f
-#pragma weak mpi_type_struct_ = mpi_type_struct_f
-#pragma weak mpi_type_struct__ = mpi_type_struct_f
-
 void mpi_type_struct_f(MPI_Fint *count,
                        MPI_Fint *blklen_array,
                        MPI_Fint *f_disp_array,
@@ -84,3 +74,99 @@ void mpi_type_struct_f(MPI_Fint *count,
     ulm_free(c_type_old_array);
     ulm_free(c_disp_array);
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_STRUCT = mpi_type_struct_f
+#pragma weak pmpi_type_struct = mpi_type_struct_f
+#pragma weak pmpi_type_struct_ = mpi_type_struct_f
+#pragma weak pmpi_type_struct__ = mpi_type_struct_f
+
+#pragma weak MPI_TYPE_STRUCT = mpi_type_struct_f
+#pragma weak mpi_type_struct = mpi_type_struct_f
+#pragma weak mpi_type_struct_ = mpi_type_struct_f
+#pragma weak mpi_type_struct__ = mpi_type_struct_f
+
+#else
+
+void PMPI_TYPE_STRUCT(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void pmpi_type_struct(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void pmpi_type_struct_(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void pmpi_type_struct__(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void MPI_TYPE_STRUCT(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void mpi_type_struct(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void mpi_type_struct_(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+void mpi_type_struct__(MPI_Fint *count,
+                       MPI_Fint *blklen_array,
+                       MPI_Fint *f_disp_array,
+                       MPI_Fint *f_type_old_array,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_struct_f(count, blklen_array, f_disp_array,
+                      f_type_old_array, f_type_new, rc);
+}
+
+#endif

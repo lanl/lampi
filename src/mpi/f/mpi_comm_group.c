@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_GROUP = mpi_comm_group_f
 #pragma weak pmpi_comm_group = mpi_comm_group_f
 #pragma weak pmpi_comm_group_ = mpi_comm_group_f
@@ -46,3 +48,47 @@ void mpi_comm_group_f(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
 {
     *rc = MPI_Comm_group(*comm, group);
 }
+
+#else
+
+void PMPI_COMM_GROUP(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void pmpi_comm_group(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void pmpi_comm_group_(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void pmpi_comm_group__(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void MPI_COMM_GROUP(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void mpi_comm_group(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void mpi_comm_group_(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+void mpi_comm_group__(MPI_Comm *comm, MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_group(*comm, group);
+}
+
+#endif

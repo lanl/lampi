@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ERROR_CLASS = mpi_error_class_f
 #pragma weak pmpi_error_class = mpi_error_class_f
 #pragma weak pmpi_error_class_ = mpi_error_class_f
@@ -47,3 +49,55 @@ void mpi_error_class_f(MPI_Fint *errcode, MPI_Fint *errorclass,
 {
     *rc = MPI_Error_class(*errcode, errorclass);
 }
+
+#else
+
+void PMPI_ERROR_CLASS(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void pmpi_error_class(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void pmpi_error_class_(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void pmpi_error_class__(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void MPI_ERROR_CLASS(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void mpi_error_class(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void mpi_error_class_(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+void mpi_error_class__(MPI_Fint *errcode, MPI_Fint *errorclass,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Error_class(*errcode, errorclass);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPH_GET = mpi_graph_get_f
 #pragma weak pmpi_graph_get = mpi_graph_get_f
 #pragma weak pmpi_graph_get_ = mpi_graph_get_f
@@ -48,3 +50,63 @@ void mpi_graph_get_f(MPI_Comm *comm,
 {
     *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
 }
+
+#else
+
+void PMPI_GRAPH_GET(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void pmpi_graph_get(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void pmpi_graph_get_(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void pmpi_graph_get__(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void MPI_GRAPH_GET(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void mpi_graph_get(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void mpi_graph_get_(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+void mpi_graph_get__(MPI_Comm *comm,
+                     MPI_Fint *maxindex, MPI_Fint *maxedges,
+                     MPI_Fint *index, MPI_Fint *edges, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_get(*comm, *maxindex, *maxedges, index, edges);
+}
+
+#endif

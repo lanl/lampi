@@ -29,8 +29,22 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
+
+void mpi_gather_f(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Gather(sendbuf, *sendcount, c_sendtype,
+                     recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
 
 #pragma weak PMPI_GATHER = mpi_gather_f
 #pragma weak pmpi_gather = mpi_gather_f
@@ -42,15 +56,78 @@
 #pragma weak mpi_gather_ = mpi_gather_f
 #pragma weak mpi_gather__ = mpi_gather_f
 
-void mpi_gather_f(void *sendbuf,
-                  MPI_Fint *sendcount,
-                  MPI_Fint *sendtype, void *recvbuf,
-                  MPI_Fint *recvcount, MPI_Fint *recvtype,
-                  MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
-{
-    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
-    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+#else
 
-    *rc = MPI_Gather(sendbuf, *sendcount, c_sendtype,
-                     recvbuf, *recvcount, c_recvtype, *root, *comm);
+void PMPI_GATHER(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
 }
+void pmpi_gather(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void pmpi_gather_(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void pmpi_gather__(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void MPI_GATHER(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void mpi_gather(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void mpi_gather_(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+void mpi_gather__(void *sendbuf,
+                   MPI_Fint *sendcount,
+                   MPI_Fint *sendtype, void *recvbuf,
+                   MPI_Fint *recvcount, MPI_Fint *recvtype,
+                   MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_gather_f(sendbuf, sendcount, sendtype, recvbuf,
+                 recvcount, recvtype, root, comm, rc);
+}
+#endif

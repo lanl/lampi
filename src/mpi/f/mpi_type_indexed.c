@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_INDEXED = mpi_type_indexed_f
-#pragma weak pmpi_type_indexed = mpi_type_indexed_f
-#pragma weak pmpi_type_indexed_ = mpi_type_indexed_f
-#pragma weak pmpi_type_indexed__ = mpi_type_indexed_f
-
-#pragma weak MPI_TYPE_INDEXED = mpi_type_indexed_f
-#pragma weak mpi_type_indexed = mpi_type_indexed_f
-#pragma weak mpi_type_indexed_ = mpi_type_indexed_f
-#pragma weak mpi_type_indexed__ = mpi_type_indexed_f
 
 void mpi_type_indexed_f(MPI_Fint *count,
                         MPI_Fint *blklen_array,
@@ -60,3 +49,99 @@ void mpi_type_indexed_f(MPI_Fint *count,
         *f_type_new = MPI_Type_c2f(c_type_new);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_INDEXED = mpi_type_indexed_f
+#pragma weak pmpi_type_indexed = mpi_type_indexed_f
+#pragma weak pmpi_type_indexed_ = mpi_type_indexed_f
+#pragma weak pmpi_type_indexed__ = mpi_type_indexed_f
+
+#pragma weak MPI_TYPE_INDEXED = mpi_type_indexed_f
+#pragma weak mpi_type_indexed = mpi_type_indexed_f
+#pragma weak mpi_type_indexed_ = mpi_type_indexed_f
+#pragma weak mpi_type_indexed__ = mpi_type_indexed_f
+
+#else
+
+void PMPI_TYPE_INDEXED(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_indexed(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_indexed_(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_indexed__(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void MPI_TYPE_INDEXED(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void mpi_type_indexed(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void mpi_type_indexed_(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+void mpi_type_indexed__(MPI_Fint *count,
+                        MPI_Fint *blklen_array,
+                        MPI_Fint *disp_array,
+                        MPI_Fint *f_type_old,
+                        MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_indexed_f(count, blklen_array, disp_array,
+                       f_type_old, f_type_new, rc);
+}
+
+#endif

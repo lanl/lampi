@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_WTICK = mpi_wtick_f
 #pragma weak pmpi_wtick = mpi_wtick_f
 #pragma weak pmpi_wtick_ = mpi_wtick_f
@@ -46,3 +48,47 @@ double mpi_wtick_f(void)
 {
     return MPI_Wtick();
 }
+
+#else
+
+double PMPI_WTICK(void)
+{
+    return MPI_Wtick();
+}
+
+double pmpi_wtick(void)
+{
+    return MPI_Wtick();
+}
+
+double pmpi_wtick_(void)
+{
+    return MPI_Wtick();
+}
+
+double pmpi_wtick__(void)
+{
+    return MPI_Wtick();
+}
+
+double MPI_WTICK(void)
+{
+    return MPI_Wtick();
+}
+
+double mpi_wtick(void)
+{
+    return MPI_Wtick();
+}
+
+double mpi_wtick_(void)
+{
+    return MPI_Wtick();
+}
+
+double mpi_wtick__(void)
+{
+    return MPI_Wtick();
+}
+
+#endif

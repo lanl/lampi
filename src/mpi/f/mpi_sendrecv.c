@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_SENDRECV = mpi_sendrecv_f
 #pragma weak pmpi_sendrecv = mpi_sendrecv_f
 #pragma weak pmpi_sendrecv_ = mpi_sendrecv_f
@@ -56,3 +58,127 @@ void mpi_sendrecv_f(void *sendbuf, MPI_Fint *sendcount,
                        *dest, *sendtag, recvbuf, *recvcount,
                        c_recvtype, *src, *recvtag, *comm, status);
 }
+
+#else
+
+void PMPI_SENDRECV(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void MPI_SENDRECV(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
+                    MPI_Fint *sendtype, MPI_Fint *dest,
+                    MPI_Fint *sendtag, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *src, MPI_Fint *recvtag,
+                    MPI_Comm *comm, MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
+                       *dest, *sendtag, recvbuf, *recvcount,
+                       c_recvtype, *src, *recvtag, *comm, status);
+}
+
+#endif

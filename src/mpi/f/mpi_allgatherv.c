@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_ALLGATHERV = mpi_allgatherv_f
-#pragma weak pmpi_allgatherv = mpi_allgatherv_f
-#pragma weak pmpi_allgatherv_ = mpi_allgatherv_f
-#pragma weak pmpi_allgatherv__ = mpi_allgatherv_f
-
-#pragma weak MPI_ALLGATHERV = mpi_allgatherv_f
-#pragma weak mpi_allgatherv = mpi_allgatherv_f
-#pragma weak mpi_allgatherv_ = mpi_allgatherv_f
-#pragma weak mpi_allgatherv__ = mpi_allgatherv_f
-
 void mpi_allgatherv_f(void *sendbuf,
                       MPI_Fint *sendcount,
                       MPI_Fint *sendtype, void *recvbuf,
@@ -54,3 +44,100 @@ void mpi_allgatherv_f(void *sendbuf,
     *rc = MPI_Allgatherv(sendbuf, *sendcount, c_sendtype, recvbuf,
                          recvcounts, displs, c_recvtype, *comm);
 }
+
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ALLGATHERV = mpi_allgatherv_f
+#pragma weak pmpi_allgatherv = mpi_allgatherv_f
+#pragma weak pmpi_allgatherv_ = mpi_allgatherv_f
+#pragma weak pmpi_allgatherv__ = mpi_allgatherv_f
+
+#pragma weak MPI_ALLGATHERV = mpi_allgatherv_f
+#pragma weak mpi_allgatherv = mpi_allgatherv_f
+#pragma weak mpi_allgatherv_ = mpi_allgatherv_f
+#pragma weak mpi_allgatherv__ = mpi_allgatherv_f
+
+#else
+
+void PMPI_ALLGATHERV(void *sendbuf,
+                     MPI_Fint *sendcount,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcounts, MPI_Fint *displs,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void pmpi_allgatherv(void *sendbuf,
+                     MPI_Fint *sendcount,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcounts, MPI_Fint *displs,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void pmpi_allgatherv_(void *sendbuf,
+                      MPI_Fint *sendcount,
+                      MPI_Fint *sendtype, void *recvbuf,
+                      MPI_Fint *recvcounts, MPI_Fint *displs,
+                      MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void pmpi_allgatherv__(void *sendbuf,
+                       MPI_Fint *sendcount,
+                       MPI_Fint *sendtype, void *recvbuf,
+                       MPI_Fint *recvcounts, MPI_Fint *displs,
+                       MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void MPI_ALLGATHERV(void *sendbuf,
+                     MPI_Fint *sendcount,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcounts, MPI_Fint *displs,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void mpi_allgatherv(void *sendbuf,
+                     MPI_Fint *sendcount,
+                     MPI_Fint *sendtype, void *recvbuf,
+                     MPI_Fint *recvcounts, MPI_Fint *displs,
+                     MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void mpi_allgatherv_(void *sendbuf,
+                      MPI_Fint *sendcount,
+                      MPI_Fint *sendtype, void *recvbuf,
+                      MPI_Fint *recvcounts, MPI_Fint *displs,
+                      MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+void mpi_allgatherv__(void *sendbuf,
+                       MPI_Fint *sendcount,
+                       MPI_Fint *sendtype, void *recvbuf,
+                       MPI_Fint *recvcounts, MPI_Fint *displs,
+                       MPI_Fint *recvtype, MPI_Comm *comm, MPI_Fint *rc)
+{
+    mpi_allgatherv_f(sendbuf, sendcount, sendtype, recvbuf,
+                     recvcounts, displs, recvtype, comm, rc);
+}
+
+#endif

@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TESTALL = mpi_testall_f
-#pragma weak pmpi_testall = mpi_testall_f
-#pragma weak pmpi_testall_ = mpi_testall_f
-#pragma weak pmpi_testall__ = mpi_testall_f
-
-#pragma weak MPI_TESTALL = mpi_testall_f
-#pragma weak mpi_testall = mpi_testall_f
-#pragma weak mpi_testall_ = mpi_testall_f
-#pragma weak mpi_testall__ = mpi_testall_f
 
 void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
                    MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
@@ -80,3 +69,67 @@ void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TESTALL = mpi_testall_f
+#pragma weak pmpi_testall = mpi_testall_f
+#pragma weak pmpi_testall_ = mpi_testall_f
+#pragma weak pmpi_testall__ = mpi_testall_f
+
+#pragma weak MPI_TESTALL = mpi_testall_f
+#pragma weak mpi_testall = mpi_testall_f
+#pragma weak mpi_testall_ = mpi_testall_f
+#pragma weak mpi_testall__ = mpi_testall_f
+
+#else
+
+void PMPI_TESTALL(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void pmpi_testall(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void pmpi_testall_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void pmpi_testall__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void MPI_TESTALL(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void mpi_testall(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void mpi_testall_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+void mpi_testall__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_testall_f(count, request_array, flag, status_array, rc);
+}
+
+#endif

@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TYPE_VECTOR = mpi_type_vector_f
-#pragma weak pmpi_type_vector = mpi_type_vector_f
-#pragma weak pmpi_type_vector_ = mpi_type_vector_f
-#pragma weak pmpi_type_vector__ = mpi_type_vector_f
-
-#pragma weak MPI_TYPE_VECTOR = mpi_type_vector_f
-#pragma weak mpi_type_vector = mpi_type_vector_f
-#pragma weak mpi_type_vector_ = mpi_type_vector_f
-#pragma weak mpi_type_vector__ = mpi_type_vector_f
-
 void mpi_type_vector_f(MPI_Fint *count,
                        MPI_Fint *blocklength,
                        MPI_Fint *stride,
@@ -60,3 +50,83 @@ void mpi_type_vector_f(MPI_Fint *count,
         *f_type_new = MPI_Type_c2f(c_type_new);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_VECTOR = mpi_type_vector_f
+#pragma weak pmpi_type_vector = mpi_type_vector_f
+#pragma weak pmpi_type_vector_ = mpi_type_vector_f
+#pragma weak pmpi_type_vector__ = mpi_type_vector_f
+
+#pragma weak MPI_TYPE_VECTOR = mpi_type_vector_f
+#pragma weak mpi_type_vector = mpi_type_vector_f
+#pragma weak mpi_type_vector_ = mpi_type_vector_f
+#pragma weak mpi_type_vector__ = mpi_type_vector_f
+
+#else
+
+void PMPI_TYPE_VECTOR(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_vector(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_vector_(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_vector__(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void MPI_TYPE_VECTOR(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void mpi_type_vector(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void mpi_type_vector_(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+void mpi_type_vector__(MPI_Fint *count, MPI_Fint *blocklength,
+                       MPI_Fint *stride, MPI_Fint *f_type_old,
+                       MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_vector_f(count, blocklength, stride,
+                      f_type_old, f_type_new, rc);
+}
+
+#endif

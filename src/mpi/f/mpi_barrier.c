@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_BARRIER = mpi_barrier_f
 #pragma weak pmpi_barrier = mpi_barrier_f
 #pragma weak pmpi_barrier_ = mpi_barrier_f
@@ -46,3 +48,47 @@ void mpi_barrier_f(MPI_Comm *comm, MPI_Fint *rc)
 {
     *rc = MPI_Barrier(*comm);
 }
+
+#else
+
+void PMPI_BARRIER(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void pmpi_barrier(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void pmpi_barrier_(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void pmpi_barrier__(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void MPI_BARRIER(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void mpi_barrier(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void mpi_barrier_(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+void mpi_barrier__(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Barrier(*comm);
+}
+
+#endif

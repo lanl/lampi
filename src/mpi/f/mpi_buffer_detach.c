@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_BUFFER_DETACH = mpi_buffer_detach_f
 #pragma weak pmpi_buffer_detach = mpi_buffer_detach_f
 #pragma weak pmpi_buffer_detach_ = mpi_buffer_detach_f
@@ -47,3 +49,55 @@ void mpi_buffer_detach_f(void *buffer, MPI_Fint *size, MPI_Fint *rc)
     void *dummy;
     *rc = MPI_Buffer_detach(&dummy, size);
 }
+
+#else
+
+void PMPI_BUFFER_DETACH(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void pmpi_buffer_detach(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void pmpi_buffer_detach_(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void pmpi_buffer_detach__(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void MPI_BUFFER_DETACH(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void mpi_buffer_detach(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void mpi_buffer_detach_(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+void mpi_buffer_detach__(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    void *dummy;
+    *rc = MPI_Buffer_detach(&dummy, size);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ERRHANDLER_GET = mpi_errhandler_get_f
 #pragma weak pmpi_errhandler_get = mpi_errhandler_get_f
 #pragma weak pmpi_errhandler_get_ = mpi_errhandler_get_f
@@ -47,3 +49,55 @@ void mpi_errhandler_get_f(MPI_Comm *comm,
 {
     *rc = MPI_Errhandler_get(*comm, errhandler);
 }
+
+#else
+
+void PMPI_ERRHANDLER_GET(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void pmpi_errhandler_get(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void pmpi_errhandler_get_(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void pmpi_errhandler_get__(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void MPI_ERRHANDLER_GET(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void mpi_errhandler_get(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void mpi_errhandler_get_(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+void mpi_errhandler_get__(MPI_Comm *comm,
+                          MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_get(*comm, errhandler);
+}
+
+#endif

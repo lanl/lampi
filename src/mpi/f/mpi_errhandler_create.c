@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ERRHANDLER_CREATE = mpi_errhandler_create_f
 #pragma weak pmpi_errhandler_create = mpi_errhandler_create_f
 #pragma weak pmpi_errhandler_create_ = mpi_errhandler_create_f
@@ -47,3 +49,55 @@ void mpi_errhandler_create_f(MPI_Handler_function * function,
 {
     *rc = MPI_Errhandler_create(function, errhandler);
 }
+
+#else
+
+void PMPI_ERRHANDLER_CREATE(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void pmpi_errhandler_create(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void pmpi_errhandler_create_(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void pmpi_errhandler_create__(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void MPI_ERRHANDLER_CREATE(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void mpi_errhandler_create(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void mpi_errhandler_create_(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+void mpi_errhandler_create__(MPI_Handler_function * function,
+                             MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_create(function, errhandler);
+}
+
+#endif

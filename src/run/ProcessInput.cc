@@ -68,7 +68,7 @@ int MPIrunProcessInput(int argc, char **argv,
                        ULMRunParams_t *RunParameters,
                        int *FirstAppArgument)
 {
-    int 	i,j;
+    int 	i,j, ival;
     char	*val;
 	
     RunParameters->UserAppDirList = NULL;
@@ -98,6 +98,13 @@ int MPIrunProcessInput(int argc, char **argv,
 #else
     RunParameters->UseBproc = 0;
 #endif
+
+#ifdef USE_RMS
+    RunParameters->UseRMS = 1;
+#else
+    RunParameters->UseRMS = 0;
+#endif
+    
     lampi_environ_find_string("LSB_MCPU_HOSTS", &val);
     if ( strlen(val) ) {
         RunParameters->UseLSF = 1;

@@ -12,7 +12,7 @@ comma   :=,
 # Standard macros
 CC		:= cc
 CXX		:= CC 
-CFLAGS		:= -64 -mips4 -LANG:ansi-for-init-scope=ON
+CFLAGS		+= -64 -mips4 -LANG:ansi-for-init-scope=ON
 CFLAGS		+= -woff 1682 # don't warn about incomplete overrides
 CPPFLAGS	:= -I. -Iinclude
 ifdef ULMDEBUG

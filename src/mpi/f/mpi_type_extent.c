@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_EXTENT = mpi_type_extent_f
-#pragma weak pmpi_type_extent = mpi_type_extent_f
-#pragma weak pmpi_type_extent_ = mpi_type_extent_f
-#pragma weak pmpi_type_extent__ = mpi_type_extent_f
-
-#pragma weak MPI_TYPE_EXTENT = mpi_type_extent_f
-#pragma weak mpi_type_extent = mpi_type_extent_f
-#pragma weak mpi_type_extent_ = mpi_type_extent_f
-#pragma weak mpi_type_extent__ = mpi_type_extent_f
 
 void mpi_type_extent_f(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
 {
@@ -52,3 +41,59 @@ void mpi_type_extent_f(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
     *rc = MPI_Type_extent(c_type, &c_extent);
     *f_extent = (int) c_extent & 0xffffffff;
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_EXTENT = mpi_type_extent_f
+#pragma weak pmpi_type_extent = mpi_type_extent_f
+#pragma weak pmpi_type_extent_ = mpi_type_extent_f
+#pragma weak pmpi_type_extent__ = mpi_type_extent_f
+
+#pragma weak MPI_TYPE_EXTENT = mpi_type_extent_f
+#pragma weak mpi_type_extent = mpi_type_extent_f
+#pragma weak mpi_type_extent_ = mpi_type_extent_f
+#pragma weak mpi_type_extent__ = mpi_type_extent_f
+
+#else
+
+void PMPI_TYPE_EXTENT(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void pmpi_type_extent(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void pmpi_type_extent_(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void pmpi_type_extent__(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void MPI_TYPE_EXTENT(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void mpi_type_extent(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void mpi_type_extent_(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+void mpi_type_extent__(MPI_Fint *f_type, MPI_Fint *f_extent, MPI_Fint *rc)
+{
+    mpi_type_extent_f(f_type, f_extent, rc);
+}
+
+#endif

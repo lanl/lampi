@@ -33,16 +33,6 @@
 #include "internal/mpif.h"
 #include "internal/ftoc.h"
 
-#pragma weak PMPI_ATTR_GET = mpi_attr_get_f
-#pragma weak pmpi_attr_get = mpi_attr_get_f
-#pragma weak pmpi_attr_get_ = mpi_attr_get_f
-#pragma weak pmpi_attr_get__ = mpi_attr_get_f
-
-#pragma weak MPI_ATTR_GET = mpi_attr_get_f
-#pragma weak mpi_attr_get = mpi_attr_get_f
-#pragma weak mpi_attr_get_ = mpi_attr_get_f
-#pragma weak mpi_attr_get__ = mpi_attr_get_f
-
 void mpi_attr_get_f(MPI_Comm *comm, MPI_Fint *keyval,
                     MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
 {
@@ -66,3 +56,67 @@ void mpi_attr_get_f(MPI_Comm *comm, MPI_Fint *keyval,
     /* set the fortran logical return value */
     LOGICAL_SET((*flag), &tmpFlag);
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ATTR_GET = mpi_attr_get_f
+#pragma weak pmpi_attr_get = mpi_attr_get_f
+#pragma weak pmpi_attr_get_ = mpi_attr_get_f
+#pragma weak pmpi_attr_get__ = mpi_attr_get_f
+
+#pragma weak MPI_ATTR_GET = mpi_attr_get_f
+#pragma weak mpi_attr_get = mpi_attr_get_f
+#pragma weak mpi_attr_get_ = mpi_attr_get_f
+#pragma weak mpi_attr_get__ = mpi_attr_get_f
+
+#else
+
+void PMPI_ATTR_GET(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void pmpi_attr_get(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void pmpi_attr_get_(MPI_Comm *comm, MPI_Fint *keyval,
+                    MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void pmpi_attr_get__(MPI_Comm *comm, MPI_Fint *keyval,
+                     MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void MPI_ATTR_GET(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void mpi_attr_get(MPI_Comm *comm, MPI_Fint *keyval,
+                   MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void mpi_attr_get_(MPI_Comm *comm, MPI_Fint *keyval,
+                    MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+void mpi_attr_get__(MPI_Comm *comm, MPI_Fint *keyval,
+                     MPI_Fint *attribute_val, MPI_Fint *flagp, MPI_Fint *rc)
+{
+    mpi_attr_get_f(comm, keyval, attribute_val, flagp, rc);
+}
+
+#endif

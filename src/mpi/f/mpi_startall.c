@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_STARTALL = mpi_startall_f
-#pragma weak pmpi_startall = mpi_startall_f
-#pragma weak pmpi_startall_ = mpi_startall_f
-#pragma weak pmpi_startall__ = mpi_startall_f
-
-#pragma weak MPI_STARTALL = mpi_startall_f
-#pragma weak mpi_startall = mpi_startall_f
-#pragma weak mpi_startall_ = mpi_startall_f
-#pragma weak mpi_startall__ = mpi_startall_f
 
 void mpi_startall_f(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
 {
@@ -64,3 +53,59 @@ void mpi_startall_f(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_STARTALL = mpi_startall_f
+#pragma weak pmpi_startall = mpi_startall_f
+#pragma weak pmpi_startall_ = mpi_startall_f
+#pragma weak pmpi_startall__ = mpi_startall_f
+
+#pragma weak MPI_STARTALL = mpi_startall_f
+#pragma weak mpi_startall = mpi_startall_f
+#pragma weak mpi_startall_ = mpi_startall_f
+#pragma weak mpi_startall__ = mpi_startall_f
+
+#else
+
+void PMPI_STARTALL(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void pmpi_startall(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void pmpi_startall_(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void pmpi_startall__(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void MPI_STARTALL(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void mpi_startall(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void mpi_startall_(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+void mpi_startall__(MPI_Fint *count, MPI_Fint *request_array, MPI_Fint *rc)
+{
+    mpi_startall_f(count, request_array, rc);
+}
+
+#endif

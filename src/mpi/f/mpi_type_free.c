@@ -30,16 +30,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TYPE_FREE = mpi_type_free_f
-#pragma weak pmpi_type_free = mpi_type_free_f
-#pragma weak pmpi_type_free_ = mpi_type_free_f
-#pragma weak pmpi_type_free__ = mpi_type_free_f
-
-#pragma weak MPI_TYPE_FREE = mpi_type_free_f
-#pragma weak mpi_type_free = mpi_type_free_f
-#pragma weak mpi_type_free_ = mpi_type_free_f
-#pragma weak mpi_type_free__ = mpi_type_free_f
-
 void mpi_type_free_f(MPI_Fint *f_type, MPI_Fint *rc)
 {
     MPI_Datatype c_type;
@@ -61,3 +51,59 @@ void mpi_type_free_f(MPI_Fint *f_type, MPI_Fint *rc)
         *f_type = -1;
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_FREE = mpi_type_free_f
+#pragma weak pmpi_type_free = mpi_type_free_f
+#pragma weak pmpi_type_free_ = mpi_type_free_f
+#pragma weak pmpi_type_free__ = mpi_type_free_f
+
+#pragma weak MPI_TYPE_FREE = mpi_type_free_f
+#pragma weak mpi_type_free = mpi_type_free_f
+#pragma weak mpi_type_free_ = mpi_type_free_f
+#pragma weak mpi_type_free__ = mpi_type_free_f
+
+#else
+
+void PMPI_TYPE_FREE(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void pmpi_type_free(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void pmpi_type_free_(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void pmpi_type_free__(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void MPI_TYPE_FREE(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void mpi_type_free(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void mpi_type_free_(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+void mpi_type_free__(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    mpi_type_free_f(f_type, rc);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_SENDRECV_REPLACE = mpi_sendrecv_replace_f
 #pragma weak pmpi_sendrecv_replace = mpi_sendrecv_replace_f
 #pragma weak pmpi_sendrecv_replace_ = mpi_sendrecv_replace_f
@@ -53,3 +55,103 @@ void mpi_sendrecv_replace_f(void *buf, MPI_Fint *count,
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
                                *sendtag, *src, *recvtag, *comm, status);
 }
+
+#else
+
+void PMPI_SENDRECV_REPLACE(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv_replace(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv_replace_(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void pmpi_sendrecv_replace__(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void MPI_SENDRECV_REPLACE(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv_replace(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv_replace_(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+void mpi_sendrecv_replace__(void *buf, MPI_Fint *count,
+                            MPI_Fint *type, MPI_Fint *dest,
+                            MPI_Fint *sendtag, MPI_Fint *src,
+                            MPI_Fint *recvtag, MPI_Comm *comm,
+                            MPI_Status *status, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
+                               *sendtag, *src, *recvtag, *comm, status);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_SHIFT = mpi_cart_shift_f
 #pragma weak pmpi_cart_shift = mpi_cart_shift_f
 #pragma weak pmpi_cart_shift_ = mpi_cart_shift_f
@@ -49,3 +51,71 @@ void mpi_cart_shift_f(MPI_Comm *comm,
 {
     *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
 }
+
+#else
+
+void PMPI_CART_SHIFT(MPI_Comm *comm,
+                     MPI_Fint *direction, MPI_Fint *disp,
+                     MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                     MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void pmpi_cart_shift(MPI_Comm *comm,
+                     MPI_Fint *direction, MPI_Fint *disp,
+                     MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                     MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void pmpi_cart_shift_(MPI_Comm *comm,
+                      MPI_Fint *direction, MPI_Fint *disp,
+                      MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                      MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void pmpi_cart_shift__(MPI_Comm *comm,
+                       MPI_Fint *direction, MPI_Fint *disp,
+                       MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void MPI_CART_SHIFT(MPI_Comm *comm,
+                     MPI_Fint *direction, MPI_Fint *disp,
+                     MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                     MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void mpi_cart_shift(MPI_Comm *comm,
+                     MPI_Fint *direction, MPI_Fint *disp,
+                     MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                     MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void mpi_cart_shift_(MPI_Comm *comm,
+                      MPI_Fint *direction, MPI_Fint *disp,
+                      MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                      MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+void mpi_cart_shift__(MPI_Comm *comm,
+                       MPI_Fint *direction, MPI_Fint *disp,
+                       MPI_Fint *rank_source, MPI_Fint *rank_dest,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Cart_shift(*comm, *direction, *disp, rank_source, rank_dest);
+}
+
+#endif

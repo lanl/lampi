@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_DIMS_CREATE = mpi_dims_create_f
 #pragma weak pmpi_dims_create = mpi_dims_create_f
 #pragma weak pmpi_dims_create_ = mpi_dims_create_f
@@ -47,3 +49,55 @@ void mpi_dims_create_f(MPI_Fint *nnodes, MPI_Fint *ndims,
 {
     *rc = MPI_Dims_create(*nnodes, *ndims, dims);
 }
+
+#else
+
+void PMPI_DIMS_CREATE(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void pmpi_dims_create(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void pmpi_dims_create_(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void pmpi_dims_create__(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void MPI_DIMS_CREATE(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void mpi_dims_create(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void mpi_dims_create_(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+void mpi_dims_create__(MPI_Fint *nnodes, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *rc)
+{
+    *rc = MPI_Dims_create(*nnodes, *ndims, dims);
+}
+
+#endif

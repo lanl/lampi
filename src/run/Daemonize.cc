@@ -80,6 +80,8 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     int *ClientSocketFDList, NHosts, *STDERRfds, *STDOUTfds, *ProcessCnt;
     HostName_t *HostList;
 	adminMessage	*server;
+    int		terminateMsgSent = 0;
+    
 #if defined (__linux__) || defined (__APPLE__)
     struct timeval Time;
 #else
@@ -197,12 +199,10 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 #ifdef USE_CT
 		RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
                                       &HostsNormalTerminated,
-                                      StderrBytesRead, StdoutBytesRead,
-                                      STDERRfds, STDOUTfds,
                                       &HostsAbNormalTerminated,
                                       ActiveHosts, ProcessCnt,
                                       PIDsOfAppProcs,
-                                      &ActiveClients, server);
+                                      &ActiveClients, &terminateMsgSent, server);
 #else
         RetVal =
             mpirunCheckForControlMsgs(MaxDescriptorCtl, ClientSocketFDList,
@@ -229,12 +229,10 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 #ifdef USE_CT
 			RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
                                       &HostsNormalTerminated,
-                                      StderrBytesRead, StdoutBytesRead,
-                                      STDERRfds, STDOUTfds,
                                       &HostsAbNormalTerminated,
                                       ActiveHosts, ProcessCnt,
                                       PIDsOfAppProcs,
-                                      &ActiveClients, server);
+                                      &ActiveClients, &terminateMsgSent, server);
 #else
             RetVal =
                 mpirunCheckForControlMsgs(MaxDescriptorCtl,

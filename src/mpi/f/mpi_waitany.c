@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_WAITANY = mpi_waitany_f
-#pragma weak pmpi_waitany = mpi_waitany_f
-#pragma weak pmpi_waitany_ = mpi_waitany_f
-#pragma weak pmpi_waitany__ = mpi_waitany_f
-
-#pragma weak MPI_WAITANY = mpi_waitany_f
-#pragma weak mpi_waitany = mpi_waitany_f
-#pragma weak mpi_waitany_ = mpi_waitany_f
-#pragma weak mpi_waitany__ = mpi_waitany_f
 
 void mpi_waitany_f(MPI_Fint *count, MPI_Fint *request_array,
                    MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
@@ -82,3 +71,67 @@ void mpi_waitany_f(MPI_Fint *count, MPI_Fint *request_array,
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_WAITANY = mpi_waitany_f
+#pragma weak pmpi_waitany = mpi_waitany_f
+#pragma weak pmpi_waitany_ = mpi_waitany_f
+#pragma weak pmpi_waitany__ = mpi_waitany_f
+
+#pragma weak MPI_WAITANY = mpi_waitany_f
+#pragma weak mpi_waitany = mpi_waitany_f
+#pragma weak mpi_waitany_ = mpi_waitany_f
+#pragma weak mpi_waitany__ = mpi_waitany_f
+
+#else
+
+void PMPI_WAITANY(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void pmpi_waitany(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void pmpi_waitany_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void pmpi_waitany__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void MPI_WAITANY(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void mpi_waitany(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void mpi_waitany_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+void mpi_waitany__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Fint *index, MPI_Status *status, MPI_Fint *rc)
+{
+    mpi_waitany_f(count, request_array, index, status, rc);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_SIZE = mpi_comm_size_f
 #pragma weak pmpi_comm_size = mpi_comm_size_f
 #pragma weak pmpi_comm_size_ = mpi_comm_size_f
@@ -46,3 +48,47 @@ void mpi_comm_size_f(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
 {
     *rc = MPI_Comm_size(*comm, size);
 }
+
+#else
+
+void PMPI_COMM_SIZE(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void pmpi_comm_size(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void pmpi_comm_size_(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void pmpi_comm_size__(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void MPI_COMM_SIZE(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void mpi_comm_size(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void mpi_comm_size_(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+void mpi_comm_size__(MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_size(*comm, size);
+}
+
+#endif

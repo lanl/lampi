@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_REDUCE = mpi_reduce_f
 #pragma weak pmpi_reduce = mpi_reduce_f
 #pragma weak pmpi_reduce_ = mpi_reduce_f
@@ -51,3 +53,87 @@ void mpi_reduce_f(void *sendbuf, void *recvbuf, MPI_Fint *count,
 
     *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
 }
+
+#else
+
+void PMPI_REDUCE(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void pmpi_reduce(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void pmpi_reduce_(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void pmpi_reduce__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void MPI_REDUCE(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void mpi_reduce(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void mpi_reduce_(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+void mpi_reduce__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                  MPI_Fint *type, MPI_Fint *op, MPI_Fint *root,
+                  MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce(sendbuf, recvbuf, *count, c_type, c_op, *root, *comm);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_RANK = mpi_group_rank_f
 #pragma weak pmpi_group_rank = mpi_group_rank_f
 #pragma weak pmpi_group_rank_ = mpi_group_rank_f
@@ -46,3 +48,47 @@ void mpi_group_rank_f(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
 {
     *rc = MPI_Group_rank(*group, rank);
 }
+
+#else
+
+void PMPI_GROUP_RANK(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void pmpi_group_rank(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void pmpi_group_rank_(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void pmpi_group_rank__(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void MPI_GROUP_RANK(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void mpi_group_rank(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void mpi_group_rank_(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+void mpi_group_rank__(MPI_Group * group, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Group_rank(*group, rank);
+}
+
+#endif

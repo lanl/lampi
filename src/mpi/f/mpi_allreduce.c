@@ -32,6 +32,18 @@
 
 #include "internal/mpif.h"
 
+void mpi_allreduce_f(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                     MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                     MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Allreduce(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ALLREDUCE = mpi_allreduce_f
 #pragma weak pmpi_allreduce = mpi_allreduce_f
 #pragma weak pmpi_allreduce_ = mpi_allreduce_f
@@ -42,12 +54,62 @@
 #pragma weak mpi_allreduce_ = mpi_allreduce_f
 #pragma weak mpi_allreduce__ = mpi_allreduce_f
 
-void mpi_allreduce_f(void *sendbuf, void *recvbuf, MPI_Fint *count,
+#else
+
+void PMPI_ALLREDUCE(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                    MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                    MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void pmpi_allreduce(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                    MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                    MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void pmpi_allreduce_(void *sendbuf, void *recvbuf, MPI_Fint *count,
                      MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
                      MPI_Fint *rc)
 {
-    MPI_Datatype c_type = MPI_Type_f2c(*type);
-    MPI_Op c_op = MPI_Op_f2c(*op);
-
-    *rc = MPI_Allreduce(sendbuf, recvbuf, *count, c_type, c_op, *comm);
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
 }
+
+void pmpi_allreduce__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                      MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                      MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void MPI_ALLREDUCE(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                    MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                    MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void mpi_allreduce(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                    MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                    MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void mpi_allreduce_(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                     MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                     MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+void mpi_allreduce__(void *sendbuf, void *recvbuf, MPI_Fint *count,
+                      MPI_Fint *type, MPI_Fint *op, MPI_Comm *comm,
+                      MPI_Fint *rc)
+{
+    mpi_allreduce_f(sendbuf, recvbuf, count, type, op, comm, rc);
+}
+
+#endif

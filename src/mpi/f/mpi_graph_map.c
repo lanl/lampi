@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPH_MAP = mpi_graph_map_f
 #pragma weak pmpi_graph_map = mpi_graph_map_f
 #pragma weak pmpi_graph_map_ = mpi_graph_map_f
@@ -48,3 +50,63 @@ void mpi_graph_map_f(MPI_Comm *comm, MPI_Fint *nnodes,
 {
     *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
 }
+
+#else
+
+void PMPI_GRAPH_MAP(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void pmpi_graph_map(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void pmpi_graph_map_(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void pmpi_graph_map__(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void MPI_GRAPH_MAP(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void mpi_graph_map(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void mpi_graph_map_(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+void mpi_graph_map__(MPI_Comm *comm, MPI_Fint *nnodes,
+                     MPI_Fint *index, MPI_Fint *edges,
+                     MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_map(*comm, *nnodes, index, edges, newrank);
+}
+
+#endif

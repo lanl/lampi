@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_SCATTERV = mpi_scatterv_f
 #pragma weak pmpi_scatterv = mpi_scatterv_f
 #pragma weak pmpi_scatterv_ = mpi_scatterv_f
@@ -55,3 +57,119 @@ void mpi_scatterv_f(void *sendbuf,
     *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
                        recvbuf, *recvcount, c_recvtype, *root, *comm);
 }
+
+#else
+
+void PMPI_SCATTERV(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void pmpi_scatterv(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void pmpi_scatterv_(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void pmpi_scatterv__(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void MPI_SCATTERV(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void mpi_scatterv(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void mpi_scatterv_(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+void mpi_scatterv__(void *sendbuf,
+                    MPI_Fint *sendcounts,
+                    MPI_Fint *displs,
+                    MPI_Fint *sendtype, void *recvbuf,
+                    MPI_Fint *recvcount, MPI_Fint *recvtype,
+                    MPI_Fint *root, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_sendtype = MPI_Type_f2c(*sendtype);
+    MPI_Datatype c_recvtype = MPI_Type_f2c(*recvtype);
+
+    *rc = MPI_Scatterv(sendbuf, sendcounts, displs, c_sendtype,
+                       recvbuf, *recvcount, c_recvtype, *root, *comm);
+}
+
+#endif

@@ -28,28 +28,16 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TYPE_GET_CONTENTS = mpi_type_get_contents_f
-#pragma weak pmpi_type_get_contents = mpi_type_get_contents_f
-#pragma weak pmpi_type_get_contents_ = mpi_type_get_contents_f
-#pragma weak pmpi_type_get_contents__ = mpi_type_get_contents_f
-
-#pragma weak MPI_TYPE_GET_CONTENTS = mpi_type_get_contents_f
-#pragma weak mpi_type_get_contents = mpi_type_get_contents_f
-#pragma weak mpi_type_get_contents_ = mpi_type_get_contents_f
-#pragma weak mpi_type_get_contents__ = mpi_type_get_contents_f
-
 void mpi_type_get_contents_f(MPI_Fint *datatype,
-                       MPI_Fint *max_integers,
-                       MPI_Fint *max_addresses,
-                       MPI_Fint *max_datatypes,
-                       MPI_Fint *array_of_integers,
-                       MPI_Fint *array_of_addresses,
-                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+                             MPI_Fint *max_integers,
+                             MPI_Fint *max_addresses,
+                             MPI_Fint *max_datatypes,
+                             MPI_Fint *array_of_integers,
+                             MPI_Fint *array_of_addresses,
+                             MPI_Fint *array_of_datatypes, MPI_Fint *rc)
 {
     MPI_Aint *c_address_array = NULL;
     MPI_Datatype *c_datatype_array = NULL;
@@ -73,7 +61,7 @@ void mpi_type_get_contents_f(MPI_Fint *datatype,
     }
 
     *rc = MPI_Type_get_contents(mtype, *max_integers, *max_addresses,
-        *max_datatypes, array_of_integers, c_address_array, c_datatype_array);
+                                *max_datatypes, array_of_integers, c_address_array, c_datatype_array);
 
     if (*rc == MPI_SUCCESS) {
         for (i = 0; i < *max_addresses; i++) {
@@ -96,3 +84,100 @@ void mpi_type_get_contents_f(MPI_Fint *datatype,
     if (c_datatype_array != NULL)
         ulm_free(c_datatype_array);
 }
+
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_GET_CONTENTS = mpi_type_get_contents_f
+#pragma weak pmpi_type_get_contents = mpi_type_get_contents_f
+#pragma weak pmpi_type_get_contents_ = mpi_type_get_contents_f
+#pragma weak pmpi_type_get_contents__ = mpi_type_get_contents_f
+
+#pragma weak MPI_TYPE_GET_CONTENTS = mpi_type_get_contents_f
+#pragma weak mpi_type_get_contents = mpi_type_get_contents_f
+#pragma weak mpi_type_get_contents_ = mpi_type_get_contents_f
+#pragma weak mpi_type_get_contents__ = mpi_type_get_contents_f
+
+#else
+
+void PMPI_TYPE_GET_CONTENTS(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void pmpi_type_get_contents(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void pmpi_type_get_contents_(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void pmpi_type_get_contents__(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void MPI_TYPE_GET_CONTENTS(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void mpi_type_get_contents(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void mpi_type_get_contents_(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+void mpi_type_get_contents__(MPI_Fint *datatype, MPI_Fint *max_integers,
+                       MPI_Fint *max_addresses, MPI_Fint *max_datatypes,
+                       MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses,
+                       MPI_Fint *array_of_datatypes, MPI_Fint *rc)
+{
+    mpi_type_get_contents_f(datatype, max_integers, max_addresses,
+                            max_datatypes, array_of_integers,
+                            array_of_addresses, array_of_datatypes, rc);
+}
+
+#endif

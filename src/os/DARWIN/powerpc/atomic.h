@@ -42,7 +42,10 @@
 extern "C" {
 #endif
 
-
+#define mb()    __asm__ __volatile__("sync")
+#define rmb()    __asm__ __volatile__("sync")
+#define wmb()    __asm__ __volatile__("sync")
+    
 /*
  * Lock structure
  */

@@ -30,6 +30,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_TYPE_COMMIT = mpi_type_commit_f
 #pragma weak pmpi_type_commit = mpi_type_commit_f
 #pragma weak pmpi_type_commit_ = mpi_type_commit_f
@@ -48,3 +50,79 @@ void mpi_type_commit_f(MPI_Fint *f_type, MPI_Fint *rc)
 
     *rc = MPI_Type_commit(&c_type);
 }
+
+#else
+
+void PMPI_TYPE_COMMIT(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void pmpi_type_commit(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void pmpi_type_commit_(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void pmpi_type_commit__(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void MPI_TYPE_COMMIT(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void mpi_type_commit(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void mpi_type_commit_(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+void mpi_type_commit__(MPI_Fint *f_type, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Type_commit(&c_type);
+}
+
+#endif

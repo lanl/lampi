@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_INTERSECTION = mpi_group_intersection_f
 #pragma weak pmpi_group_intersection = mpi_group_intersection_f
 #pragma weak pmpi_group_intersection_ = mpi_group_intersection_f
@@ -47,3 +49,55 @@ void mpi_group_intersection_f(MPI_Group * group1, MPI_Group * group2,
 {
     *rc = MPI_Group_intersection(*group1, *group2, new_group);
 }
+
+#else
+
+void PMPI_GROUP_INTERSECTION(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void pmpi_group_intersection(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void pmpi_group_intersection_(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void pmpi_group_intersection__(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void MPI_GROUP_INTERSECTION(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void mpi_group_intersection(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void mpi_group_intersection_(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+void mpi_group_intersection__(MPI_Group * group1, MPI_Group * group2,
+                              MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_intersection(*group1, *group2, new_group);
+}
+
+#endif

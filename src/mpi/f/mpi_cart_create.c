@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_CREATE = mpi_cart_create_f
 #pragma weak pmpi_cart_create = mpi_cart_create_f
 #pragma weak pmpi_cart_create_ = mpi_cart_create_f
@@ -49,3 +51,71 @@ void mpi_cart_create_f(MPI_Comm *comm_old, MPI_Fint *ndims,
     *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
                           comm_new);
 }
+
+#else
+
+void PMPI_CART_CREATE(MPI_Comm *comm_old, MPI_Fint *ndims,
+                      MPI_Fint *dims, MPI_Fint *periods,
+                      MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void pmpi_cart_create(MPI_Comm *comm_old, MPI_Fint *ndims,
+                      MPI_Fint *dims, MPI_Fint *periods,
+                      MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void pmpi_cart_create_(MPI_Comm *comm_old, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *periods,
+                       MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void pmpi_cart_create__(MPI_Comm *comm_old, MPI_Fint *ndims,
+                        MPI_Fint *dims, MPI_Fint *periods,
+                        MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void MPI_CART_CREATE(MPI_Comm *comm_old, MPI_Fint *ndims,
+                      MPI_Fint *dims, MPI_Fint *periods,
+                      MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void mpi_cart_create(MPI_Comm *comm_old, MPI_Fint *ndims,
+                      MPI_Fint *dims, MPI_Fint *periods,
+                      MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void mpi_cart_create_(MPI_Comm *comm_old, MPI_Fint *ndims,
+                       MPI_Fint *dims, MPI_Fint *periods,
+                       MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+void mpi_cart_create__(MPI_Comm *comm_old, MPI_Fint *ndims,
+                        MPI_Fint *dims, MPI_Fint *periods,
+                        MPI_Fint *reorder, MPI_Comm *comm_new, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_create(*comm_old, *ndims, dims, periods, *reorder,
+                          comm_new);
+}
+
+#endif

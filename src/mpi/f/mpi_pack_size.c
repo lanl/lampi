@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_PACK_SIZE = mpi_pack_size_f
 #pragma weak pmpi_pack_size = mpi_pack_size_f
 #pragma weak pmpi_pack_size_ = mpi_pack_size_f
@@ -52,3 +54,95 @@ void mpi_pack_size_f(MPI_Fint *incount,
 
     *rc = MPI_Pack_size(*incount, c_type, *comm, size);
 }
+
+#else
+
+void PMPI_PACK_SIZE(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void pmpi_pack_size(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void pmpi_pack_size_(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void pmpi_pack_size__(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void MPI_PACK_SIZE(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void mpi_pack_size(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void mpi_pack_size_(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+void mpi_pack_size__(MPI_Fint *incount,
+                     MPI_Fint *f_type,
+                     MPI_Comm *comm, MPI_Fint *size, MPI_Fint *rc)
+{
+    MPI_Datatype c_type;
+
+    c_type = MPI_Type_f2c(*f_type);
+
+    *rc = MPI_Pack_size(*incount, c_type, *comm, size);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_GET = mpi_cart_get_f
 #pragma weak pmpi_cart_get = mpi_cart_get_f
 #pragma weak pmpi_cart_get_ = mpi_cart_get_f
@@ -48,3 +50,63 @@ void mpi_cart_get_f(MPI_Comm *comm,
 {
     *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
 }
+
+#else
+
+void PMPI_CART_GET(MPI_Comm *comm,
+                   MPI_Fint *maxdims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void pmpi_cart_get(MPI_Comm *comm,
+                   MPI_Fint *maxdims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void pmpi_cart_get_(MPI_Comm *comm,
+                    MPI_Fint *maxdims, MPI_Fint *dims,
+                    MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void pmpi_cart_get__(MPI_Comm *comm,
+                     MPI_Fint *maxdims, MPI_Fint *dims,
+                     MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void MPI_CART_GET(MPI_Comm *comm,
+                   MPI_Fint *maxdims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void mpi_cart_get(MPI_Comm *comm,
+                   MPI_Fint *maxdims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void mpi_cart_get_(MPI_Comm *comm,
+                    MPI_Fint *maxdims, MPI_Fint *dims,
+                    MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+void mpi_cart_get__(MPI_Comm *comm,
+                     MPI_Fint *maxdims, MPI_Fint *dims,
+                     MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_get(*comm, *maxdims, dims, periods, coords);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_TEST_INTER = mpi_comm_test_inter_f
 #pragma weak pmpi_comm_test_inter = mpi_comm_test_inter_f
 #pragma weak pmpi_comm_test_inter_ = mpi_comm_test_inter_f
@@ -46,3 +48,47 @@ void mpi_comm_test_inter_f(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
 {
     *rc = MPI_Comm_test_inter(*comm, flag);
 }
+
+#else
+
+void PMPI_COMM_TEST_INTER(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void pmpi_comm_test_inter(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void pmpi_comm_test_inter_(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void pmpi_comm_test_inter__(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void MPI_COMM_TEST_INTER(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void mpi_comm_test_inter(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void mpi_comm_test_inter_(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+void mpi_comm_test_inter__(MPI_Comm *comm, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_test_inter(*comm, flag);
+}
+
+#endif

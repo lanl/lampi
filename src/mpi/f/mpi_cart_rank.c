@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_RANK = mpi_cart_rank_f
 #pragma weak pmpi_cart_rank = mpi_cart_rank_f
 #pragma weak pmpi_cart_rank_ = mpi_cart_rank_f
@@ -47,3 +49,55 @@ void mpi_cart_rank_f(MPI_Comm *comm, MPI_Fint *coords,
 {
     *rc = MPI_Cart_rank(*comm, coords, rank);
 }
+
+#else
+
+void PMPI_CART_RANK(MPI_Comm *comm, MPI_Fint *coords,
+                    MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void pmpi_cart_rank(MPI_Comm *comm, MPI_Fint *coords,
+                    MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void pmpi_cart_rank_(MPI_Comm *comm, MPI_Fint *coords,
+                     MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void pmpi_cart_rank__(MPI_Comm *comm, MPI_Fint *coords,
+                      MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void MPI_CART_RANK(MPI_Comm *comm, MPI_Fint *coords,
+                    MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void mpi_cart_rank(MPI_Comm *comm, MPI_Fint *coords,
+                    MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void mpi_cart_rank_(MPI_Comm *comm, MPI_Fint *coords,
+                     MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+void mpi_cart_rank__(MPI_Comm *comm, MPI_Fint *coords,
+                      MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_rank(*comm, coords, rank);
+}
+
+#endif

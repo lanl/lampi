@@ -129,14 +129,21 @@ void lampi_daemon_loop(lampiState_t *s)
         DeltaTime = TimeInSeconds - LastTime;
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
+#ifdef USE_CT
+            daemonAbnormalChildTermination(s->AbnormalExit->pid,
+                                           NChildren, ChildPIDs, IAmAlive,
+                                           s);
+#else
             ClientAbnormalChildTermination(s->AbnormalExit->pid,
                                            NChildren, ChildPIDs, IAmAlive,
                                            ServerSocketFD);
+#endif
             /*
              * set abnormal termination flag to 2, so that termination
              * sequence does not start up again.
              */
             s->AbnormalExit->flag = 2;
+            shuttingDown = true;
         }
         /* handle stdio */
         ClientScanStdoutStderr(STDOUTfdsFromChildren,

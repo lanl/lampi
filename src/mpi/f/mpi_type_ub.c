@@ -32,16 +32,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_TYPE_UB = mpi_type_ub_f
-#pragma weak pmpi_type_ub = mpi_type_ub_f
-#pragma weak pmpi_type_ub_ = mpi_type_ub_f
-#pragma weak pmpi_type_ub__ = mpi_type_ub_f
-
-#pragma weak MPI_TYPE_UB = mpi_type_ub_f
-#pragma weak mpi_type_ub = mpi_type_ub_f
-#pragma weak mpi_type_ub_ = mpi_type_ub_f
-#pragma weak mpi_type_ub__ = mpi_type_ub_f
-
 void mpi_type_ub_f(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
 {
     MPI_Datatype c_type;
@@ -52,3 +42,59 @@ void mpi_type_ub_f(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
     *rc = MPI_Type_ub(c_type, &c_ub);
     *f_ub = (MPI_Fint) c_ub & 0xffffffff;
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_UB = mpi_type_ub_f
+#pragma weak pmpi_type_ub = mpi_type_ub_f
+#pragma weak pmpi_type_ub_ = mpi_type_ub_f
+#pragma weak pmpi_type_ub__ = mpi_type_ub_f
+
+#pragma weak MPI_TYPE_UB = mpi_type_ub_f
+#pragma weak mpi_type_ub = mpi_type_ub_f
+#pragma weak mpi_type_ub_ = mpi_type_ub_f
+#pragma weak mpi_type_ub__ = mpi_type_ub_f
+
+#else
+
+void PMPI_TYPE_UB(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void pmpi_type_ub(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void pmpi_type_ub_(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void pmpi_type_ub__(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void MPI_TYPE_UB(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void mpi_type_ub(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void mpi_type_ub_(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+void mpi_type_ub__(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
+{
+    mpi_type_ub_f(f_type, f_ub, rc);
+}
+
+#endif

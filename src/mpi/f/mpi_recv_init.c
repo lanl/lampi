@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_RECV_INIT = mpi_recv_init_f
-#pragma weak pmpi_recv_init = mpi_recv_init_f
-#pragma weak pmpi_recv_init_ = mpi_recv_init_f
-#pragma weak pmpi_recv_init__ = mpi_recv_init_f
-
-#pragma weak MPI_RECV_INIT = mpi_recv_init_f
-#pragma weak mpi_recv_init = mpi_recv_init_f
-#pragma weak mpi_recv_init_ = mpi_recv_init_f
-#pragma weak mpi_recv_init__ = mpi_recv_init_f
 
 void mpi_recv_init_f(void *buf,
                      MPI_Fint *count, MPI_Fint *type,
@@ -56,3 +45,91 @@ void mpi_recv_init_f(void *buf,
         *req = MPI_Request_c2f(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_RECV_INIT = mpi_recv_init_f
+#pragma weak pmpi_recv_init = mpi_recv_init_f
+#pragma weak pmpi_recv_init_ = mpi_recv_init_f
+#pragma weak pmpi_recv_init__ = mpi_recv_init_f
+
+#pragma weak MPI_RECV_INIT = mpi_recv_init_f
+#pragma weak mpi_recv_init = mpi_recv_init_f
+#pragma weak mpi_recv_init_ = mpi_recv_init_f
+#pragma weak mpi_recv_init__ = mpi_recv_init_f
+
+#else
+
+void PMPI_RECV_INIT(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void pmpi_recv_init(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void pmpi_recv_init_(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void pmpi_recv_init__(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void MPI_RECV_INIT(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void mpi_recv_init(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void mpi_recv_init_(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+void mpi_recv_init__(void *buf,
+                     MPI_Fint *count, MPI_Fint *type,
+                     MPI_Fint *source, MPI_Fint *tag,
+                     MPI_Comm *comm, MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_recv_init_f(buf, count, type, source, tag,
+                    comm, req, rc);
+}
+
+#endif

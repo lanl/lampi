@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_RANK = mpi_comm_rank_f
 #pragma weak pmpi_comm_rank = mpi_comm_rank_f
 #pragma weak pmpi_comm_rank_ = mpi_comm_rank_f
@@ -46,3 +48,47 @@ void mpi_comm_rank_f(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
 {
     *rc = MPI_Comm_rank(*comm, rank);
 }
+
+#else
+
+void PMPI_COMM_RANK(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void pmpi_comm_rank(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void pmpi_comm_rank_(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void pmpi_comm_rank__(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void MPI_COMM_RANK(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void mpi_comm_rank(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void mpi_comm_rank_(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+void mpi_comm_rank__(MPI_Comm *comm, MPI_Fint *rank, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_rank(*comm, rank);
+}
+
+#endif

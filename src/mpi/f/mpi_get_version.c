@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GET_VERSION = mpi_get_version_f
 #pragma weak pmpi_get_version = mpi_get_version_f
 #pragma weak pmpi_get_version_ = mpi_get_version_f
@@ -47,3 +49,55 @@ void mpi_get_version_f(MPI_Fint *version, MPI_Fint *subversion,
 {
     *rc = MPI_Get_version(version, subversion);
 }
+
+#else
+
+void PMPI_GET_VERSION(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void pmpi_get_version(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void pmpi_get_version_(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void pmpi_get_version__(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void MPI_GET_VERSION(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void mpi_get_version(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void mpi_get_version_(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+void mpi_get_version__(MPI_Fint *version, MPI_Fint *subversion,
+                       MPI_Fint *rc)
+{
+    *rc = MPI_Get_version(version, subversion);
+}
+
+#endif

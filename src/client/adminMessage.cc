@@ -171,7 +171,8 @@ adminMessage::adminMessage()
     svrChannel_m = NULL;
     netconn_m = NULL;
     recvlens_m = NULL;
-    
+
+    nhosts_m = 0;
     hostRank_m = -2;
     sendBufferSize_m = DEFAULTBUFFERSIZE;
     recvBufferSize_m = DEFAULTBUFFERSIZE;
@@ -712,7 +713,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     {
         daemon_to = timeout / numHosts;
     }
-    svrChannel_m->channel()->setTimeout(daemon_to);
+    ((CTTCPChannel *)svrChannel_m->channel())->setMaximumTimeout(daemon_to);
         
     // wait for all clients to connect
 
@@ -749,7 +750,6 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
     hostcnt = 0;
 
     daemon = new CTTCPChannel((struct sockaddr_in *)NULL);
-    daemon->setTimeout(daemon_to);
     while ( (np < totalNProcesses_m) && (true == success) )
     {
         status = svrChannel_m->acceptConnections(daemon_to, daemon);
@@ -774,7 +774,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             continue;
         }
                         
-        //daemon->setTimeout(daemon_to);
+        daemon->setMaximumTimeout(daemon_to);
         // get daemon info: 
         //      tag: auth data : host rank : nprocesses : daemon PID : connection info string           
         status = daemon->receive(iovecs, 6, &rcvdlen);
@@ -907,7 +907,7 @@ bool adminMessage::collectDaemonInfo(int* procList, HostName_t* hostList, int nu
             }
 
         }       // if ( true == success )
-        //delete daemon;
+        daemon->closeChannel();
     }       // while ( (np < totalNProcesses_m) && (false == done) )
 
     

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_REDUCE_SCATTER = mpi_reduce_scatter_f
 #pragma weak pmpi_reduce_scatter = mpi_reduce_scatter_f
 #pragma weak pmpi_reduce_scatter_ = mpi_reduce_scatter_f
@@ -49,6 +51,89 @@ void mpi_reduce_scatter_f(void *sendbuf, void *recvbuf,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
     MPI_Op c_op = MPI_Op_f2c(*op);
 
-    *rc =
-        MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
 }
+
+#else
+
+void PMPI_REDUCE_SCATTER(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void pmpi_reduce_scatter(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void pmpi_reduce_scatter_(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void pmpi_reduce_scatter__(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void MPI_REDUCE_SCATTER(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void mpi_reduce_scatter(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void mpi_reduce_scatter_(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+void mpi_reduce_scatter__(void *sendbuf, void *recvbuf,
+                          MPI_Fint *counts, MPI_Fint *type,
+                          MPI_Fint *op, MPI_Comm *comm, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+    MPI_Op c_op = MPI_Op_f2c(*op);
+
+    *rc = MPI_Reduce_scatter(sendbuf, recvbuf, counts, c_type, c_op, *comm);
+}
+
+#endif

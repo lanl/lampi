@@ -45,6 +45,40 @@
 #include "client/SocketGeneric.h"
 #include "queue/globals.h"
 
+void doRollingShutdown(int tag, int *numberDaemonChildren, lampiState_t *state)
+{
+    int				cid, errorCode;
+    unsigned int	parent;
+    adminMessage 	*client;
+    
+    if ( 0 == *numberDaemonChildren )
+    {
+        client = state->client;
+        if ( 0 == client->nodeLabel() )
+        {
+            parent = 0;
+            cid = state->channelID;
+        }
+        else
+        {
+            cid = 0;
+            parent = client->parentHostRank();
+        }
+        ulm_fdbg(("Node %d: Leaf sending tag %d to host rank %d.\n",
+                  client->nodeLabel(), tag, parent));
+        client->reset(adminMessage::SEND);
+        if (false ==
+            client->sendMessage(parent, tag, cid, &errorCode)) {
+            ulm_exit((-1,
+                      "Error: sending tag %d.  "
+                      "RetVal: %ld\n", tag, errorCode));
+        }
+        // ok, the client daemon can now exit...
+        ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
+        exit(0);
+    }    
+}
+
 int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *numberDaemonChildren,
                               int hostIndex, pid_t *ChildPIDs,
                               int *STDOUTfdsFromChildren,
@@ -53,8 +87,7 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
                               int *NewLineLast, PrefixName_t *IOPreFix,
                               int *LenIOPreFix, lampiState_t *state)
 {
-    int 			rank, Tag, i, errorCode, parent;
-    int				cid;
+    int 			rank, Tag, i, errorCode;
     adminMessage 	*client;
     int 			NotifyServer, NFDs, MaxDesc;
     double 			Message;
@@ -95,13 +128,14 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
         case TERMINATENOW:
             /* recieve request to teminate immediately */
             Message = ACKTERMINATENOW;
-            NotifyServer = 1;
+            NotifyServer = 0;
             AbortAndDrainLocalHost(-1, ProcessCount, hostIndex,
                            ChildPIDs, (unsigned int) Message,
                            NotifyServer, STDOUTfdsFromChildren,
                            STDERRfdsFromChildren, -1, -1,
                            IOPreFix, LenIOPreFix, StderrBytesWritten, 
                            StdoutBytesWritten, NewLineLast, state);
+            doRollingShutdown(ACKTERMINATENOW, numberDaemonChildren, state);
             break;
         case ACKABNORMALTERM:
             Tag = ACKACKABNORMALTERM;
@@ -156,67 +190,17 @@ int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *number
             an ACKALLHOSTSDONE, then forward to this daemon's parent and
             exit.
             */
-            if ( 0 == *numberDaemonChildren )
-            {
-                if ( 0 == client->nodeLabel() )
-                {
-                    parent = 0;
-                    cid = state->channelID;
-                }
-                else
-                {
-                    cid = 0;
-                    parent = client->parentHostRank();                    
-                }
-                Tag = ACKALLHOSTSDONE;
-                ulm_fdbg(("Node %d: Leaf sending ACKALLHOSTSDONE to host rank %d.\n",
-                          client->nodeLabel(), parent));
-                client->reset(adminMessage::SEND);
-                if (false ==
-                    client->sendMessage(parent, Tag, cid, &errorCode)) {
-                    ulm_exit((-1,
-                              "Error: sending ACKACKABNORMALTERM.  "
-                              "RetVal: %ld\n", errorCode));
-                }
-                // ok, the client daemon can now exit...
-                ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
-                exit(0);
-            }
-                
-            // check if we should send ACKALLHOSTSDONE immediately;daemon is a leaf node.
+            doRollingShutdown(ACKALLHOSTSDONE, numberDaemonChildren, state);
+            
             *lampiState.sync.AllHostsDone = 1;
             break;
-            
+
+        case ACKTERMINATENOW:
         case ACKALLHOSTSDONE:
-            ulm_fdbg(("Node %d: Recvd ACKALLHOSTSDONE from host rank %d.\n",
-                      client->nodeLabel(), rank));
+            ulm_fdbg(("Node %d: Recvd tag %d from host rank %d.\n",
+                      client->nodeLabel(), Tag, rank));
             (*numberDaemonChildren)--;
-            if ( 0 == *numberDaemonChildren )
-            {
-                if ( 0 == client->nodeLabel() )
-                {
-                    parent = 0;
-                    cid = state->channelID;
-                }
-                else
-                {
-                    cid = 0;
-                    parent = client->parentHostRank();
-                }
-                Tag = ACKALLHOSTSDONE;
-                client->reset(adminMessage::SEND);
-                ulm_fdbg(("Node %d: Sending ACKALLHOSTSDONE to host rank %d.\n",
-                          client->nodeLabel(), parent));
-                if (false ==
-                    client->sendMessage(parent, Tag, cid, &errorCode)) {
-                    ulm_exit((-1,
-                              "Error: sending ACKACKABNORMALTERM.  "
-                              "RetVal: %ld\n", errorCode));
-                }
-                // ok, the client daemon can now exit...
-                ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
-                exit(0);
-            }                
+            doRollingShutdown(Tag, numberDaemonChildren, state);
             break;
             
         default:

@@ -172,6 +172,9 @@ typedef struct ULMRunParams {
     // LSF being used
     int UseLSF;
 
+    // RMS being used
+    int UseRMS;
+
     // Bproc being used
     int UseBproc;
 

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GET_PROCESSOR_NAME = mpi_get_processor_name_f
 #pragma weak pmpi_get_processor_name = mpi_get_processor_name_f
 #pragma weak pmpi_get_processor_name_ = mpi_get_processor_name_f
@@ -47,3 +49,55 @@ void mpi_get_processor_name_f(char *name, MPI_Fint *resultlen,
 {
     *rc = MPI_Get_processor_name(name, resultlen);
 }
+
+#else
+
+void PMPI_GET_PROCESSOR_NAME(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void pmpi_get_processor_name(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void pmpi_get_processor_name_(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void pmpi_get_processor_name__(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void MPI_GET_PROCESSOR_NAME(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void mpi_get_processor_name(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void mpi_get_processor_name_(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+void mpi_get_processor_name__(char *name, MPI_Fint *resultlen,
+                              MPI_Fint *rc)
+{
+    *rc = MPI_Get_processor_name(name, resultlen);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPH_CREATE = mpi_graph_create_f
 #pragma weak pmpi_graph_create = mpi_graph_create_f
 #pragma weak pmpi_graph_create_ = mpi_graph_create_f
@@ -50,3 +52,79 @@ void mpi_graph_create_f(MPI_Comm *comm_old, MPI_Fint *nnodes,
     *rc = MPI_Graph_create(*comm_old, *nnodes, index,
                            edges, *reorder, comm_new);
 }
+
+#else
+
+void PMPI_GRAPH_CREATE(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void pmpi_graph_create(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void pmpi_graph_create_(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void pmpi_graph_create__(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void MPI_GRAPH_CREATE(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void mpi_graph_create(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void mpi_graph_create_(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+void mpi_graph_create__(MPI_Comm *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges,
+                        MPI_Fint *reorder, MPI_Comm *comm_new,
+                        MPI_Fint *rc)
+{
+    *rc = MPI_Graph_create(*comm_old, *nnodes, index,
+                           edges, *reorder, comm_new);
+}
+
+#endif

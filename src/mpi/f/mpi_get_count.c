@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GET_COUNT = mpi_get_count_f
 #pragma weak pmpi_get_count = mpi_get_count_f
 #pragma weak pmpi_get_count_ = mpi_get_count_f
@@ -49,3 +51,71 @@ void mpi_get_count_f(MPI_Status *status, MPI_Fint *type,
 
     *rc = MPI_Get_count(status, c_type, count);
 }
+
+#else
+
+void PMPI_GET_COUNT(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void pmpi_get_count(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void pmpi_get_count_(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void pmpi_get_count__(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void MPI_GET_COUNT(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void mpi_get_count(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void mpi_get_count_(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+void mpi_get_count__(MPI_Status *status, MPI_Fint *type,
+                     MPI_Fint *count, MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Get_count(status, c_type, count);
+}
+
+#endif

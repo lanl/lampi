@@ -32,6 +32,17 @@
 
 #include "internal/mpif.h"
 
+void mpi_bsend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    MPI_Datatype c_type = MPI_Type_f2c(*type);
+
+    *rc = MPI_Bsend(buf, *count, c_type, *dest, *tag, *comm);
+}
+
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_BSEND = mpi_bsend_f
 #pragma weak pmpi_bsend = mpi_bsend_f
 #pragma weak pmpi_bsend_ = mpi_bsend_f
@@ -42,11 +53,62 @@
 #pragma weak mpi_bsend_ = mpi_bsend_f
 #pragma weak mpi_bsend__ = mpi_bsend_f
 
-void mpi_bsend_f(void *buf, MPI_Fint *count, MPI_Fint *type,
+#else
+
+void PMPI_BSEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void pmpi_bsend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void pmpi_bsend_(void *buf, MPI_Fint *count, MPI_Fint *type,
                  MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Fint *rc)
 {
-    MPI_Datatype c_type = MPI_Type_f2c(*type);
-
-    *rc = MPI_Bsend(buf, *count, c_type, *dest, *tag, *comm);
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
 }
+
+void pmpi_bsend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                  MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void MPI_BSEND(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void mpi_bsend(void *buf, MPI_Fint *count, MPI_Fint *type,
+                MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void mpi_bsend_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+void mpi_bsend__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                  MPI_Fint *dest, MPI_Fint *tag, MPI_Comm *comm,
+                  MPI_Fint *rc)
+{
+    mpi_bsend_f(buf, count, type, dest, tag, comm, rc);
+}
+
+#endif

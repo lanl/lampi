@@ -28,19 +28,7 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_IRECV = mpi_irecv_f
-#pragma weak pmpi_irecv = mpi_irecv_f
-#pragma weak pmpi_irecv_ = mpi_irecv_f
-#pragma weak pmpi_irecv__ = mpi_irecv_f
-
-#pragma weak MPI_IRECV = mpi_irecv_f
-#pragma weak mpi_irecv = mpi_irecv_f
-#pragma weak mpi_irecv_ = mpi_irecv_f
-#pragma weak mpi_irecv__ = mpi_irecv_f
 
 void mpi_irecv_f(void *buf, MPI_Fint *count, MPI_Fint *type,
                  MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
@@ -55,3 +43,84 @@ void mpi_irecv_f(void *buf, MPI_Fint *count, MPI_Fint *type,
         *req = MPI_Request_c2f(c_req);
     }
 }
+
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_IRECV = mpi_irecv_f
+#pragma weak pmpi_irecv = mpi_irecv_f
+#pragma weak pmpi_irecv_ = mpi_irecv_f
+#pragma weak pmpi_irecv__ = mpi_irecv_f
+
+#pragma weak MPI_IRECV = mpi_irecv_f
+#pragma weak mpi_irecv = mpi_irecv_f
+#pragma weak mpi_irecv_ = mpi_irecv_f
+#pragma weak mpi_irecv__ = mpi_irecv_f
+
+#else
+
+void PMPI_IRECV(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void pmpi_irecv(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void pmpi_irecv_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void pmpi_irecv__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void MPI_IRECV(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void mpi_irecv(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void mpi_irecv_(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+void mpi_irecv__(void *buf, MPI_Fint *count, MPI_Fint *type,
+                 MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Fint *req, MPI_Fint *rc)
+{
+    mpi_irecv_f(buf, count, type, source, tag, comm,
+                req, rc);
+}
+
+#endif

@@ -465,7 +465,6 @@ int main(int argc, char **argv)
     int ReceivingSocket;
     unsigned int AuthData[3];
     int errorCode = 0;
-    double t;
     pthread_t sc_thread;
     void *sc_thread_return;
     sigset_t newsignals, oldsignals;
@@ -553,15 +552,12 @@ int main(int argc, char **argv)
      *   is unknown
      */
 
-    t = second();
     /*
      * Finish setting up administrative connections - time out proportional
      *   to number of processes (not number of hosts, since we don't always 
      *   know the number of hosts)...with minimum connect timeout 
      */
     ulm_dbg(("\nmpirun: collecting daemon info...\n"));
-    timing_cur = second();
-    sprintf(timing_out[timing_scnt++], "Collecting daemon info (t = 0).\n");
 
     /* join with serverConnect() processing thread */
     if (pthread_join(sc_thread, &sc_thread_return) == 0) {
@@ -578,10 +574,6 @@ int main(int argc, char **argv)
 
     /* set signal mask to unblock SIGALRM */
     sigprocmask(SIG_SETMASK, &oldsignals, (sigset_t *)NULL);
-
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Done collecting daemon info (t = %lf).\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
 
     if (server->nhosts() < 1) {
         ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
@@ -685,21 +677,8 @@ int main(int argc, char **argv)
         Abort();
     }
 
-    /* wait for child prun process to complete */
-    t = second() - t;
-#ifdef USE_CT
-    if ( (fp = fopen("./startup_time.out", "a")) )
-    {
-        for ( int k = 0; k  < timing_scnt; k++ )
-            fprintf(fp, "%s", timing_out[k]);
-            
-        fprintf(fp, "%lf\n", t);
-        fflush(fp);
-        fclose(fp);
-    }
-#endif
-    
-    if (RunParameters.Networks.UseQSW) {
+    /* wait for child prun process to complete */    
+    if (RunParameters.UseRMS) {
         int term_status;
         wait(&term_status);
     } else {

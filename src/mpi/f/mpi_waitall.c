@@ -29,19 +29,8 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/malloc.h"
 #include "internal/mpif.h"
-
-#pragma weak PMPI_WAITALL = mpi_waitall_f
-#pragma weak pmpi_waitall = mpi_waitall_f
-#pragma weak pmpi_waitall_ = mpi_waitall_f
-#pragma weak pmpi_waitall__ = mpi_waitall_f
-
-#pragma weak MPI_WAITALL = mpi_waitall_f
-#pragma weak mpi_waitall = mpi_waitall_f
-#pragma weak mpi_waitall_ = mpi_waitall_f
-#pragma weak mpi_waitall__ = mpi_waitall_f
 
 void mpi_waitall_f(MPI_Fint *count, MPI_Fint *request_array,
                    MPI_Status *status_array, MPI_Fint *rc)
@@ -80,3 +69,67 @@ void mpi_waitall_f(MPI_Fint *count, MPI_Fint *request_array,
         ulm_free(c_req);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_WAITALL = mpi_waitall_f
+#pragma weak pmpi_waitall = mpi_waitall_f
+#pragma weak pmpi_waitall_ = mpi_waitall_f
+#pragma weak pmpi_waitall__ = mpi_waitall_f
+
+#pragma weak MPI_WAITALL = mpi_waitall_f
+#pragma weak mpi_waitall = mpi_waitall_f
+#pragma weak mpi_waitall_ = mpi_waitall_f
+#pragma weak mpi_waitall__ = mpi_waitall_f
+
+#else
+
+void PMPI_WAITALL(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void pmpi_waitall(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void pmpi_waitall_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void pmpi_waitall__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void MPI_WAITALL(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void mpi_waitall(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void mpi_waitall_(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+void mpi_waitall__(MPI_Fint *count, MPI_Fint *request_array,
+                   MPI_Status *status_array, MPI_Fint *rc)
+{
+    mpi_waitall_f(count, request_array, status_array, rc);
+}
+
+#endif

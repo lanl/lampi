@@ -56,6 +56,13 @@ int PMPI_Type_vector(int count, int blocklen, int stride,
         return rc;
     }
 
+    if (olddatatype == NULL) {
+        ulm_err(("Error: MPI_Type_vector: Invalid olddatatype pointer\n"));
+        rc = MPI_ERR_TYPE;
+        _mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
+        return rc;
+    }
+
     if (count == 0) {
         newtype = (ULMType_t *) ulm_malloc(sizeof(ULMType_t));
         if (newtype == NULL) {

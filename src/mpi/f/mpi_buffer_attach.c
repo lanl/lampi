@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_BUFFER_ATTACH = mpi_buffer_attach_f
 #pragma weak pmpi_buffer_attach = mpi_buffer_attach_f
 #pragma weak pmpi_buffer_attach_ = mpi_buffer_attach_f
@@ -46,3 +48,47 @@ void mpi_buffer_attach_f(void *buffer, MPI_Fint *size, MPI_Fint *rc)
 {
     *rc = MPI_Buffer_attach(buffer, *size);
 }
+
+#else
+
+void PMPI_BUFFER_ATTACH(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void pmpi_buffer_attach(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void pmpi_buffer_attach_(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void pmpi_buffer_attach__(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void MPI_BUFFER_ATTACH(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void mpi_buffer_attach(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void mpi_buffer_attach_(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+void mpi_buffer_attach__(void *buffer, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Buffer_attach(buffer, *size);
+}
+
+#endif

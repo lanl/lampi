@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_INIT = mpi_init_f
 #pragma weak pmpi_init = mpi_init_f
 #pragma weak pmpi_init_ = mpi_init_f
@@ -46,3 +48,47 @@ void mpi_init_f(MPI_Fint *rc)
 {
     *rc = MPI_Init(NULL, NULL);
 }
+
+#else
+
+void PMPI_INIT(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void pmpi_init(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void pmpi_init_(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void pmpi_init__(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void MPI_INIT(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void mpi_init(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void mpi_init_(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+void mpi_init__(MPI_Fint *rc)
+{
+    *rc = MPI_Init(NULL, NULL);
+}
+
+#endif

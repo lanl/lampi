@@ -51,7 +51,7 @@ int mpirunCheckHeartBeat(double *HeartBeatTime, double Time, int NHosts,
 
     for (i = 0; i < NHosts; i++) {
         DeltaT = Time - HeartBeatTime[i];
-        if ((DeltaT > HeartBeatTimeOut) && (ActiveHosts[i] == 1))
+        if ((DeltaT > HeartBeatTimeOut) && (ActiveHosts[i] != 0))
             return i;
     }
 

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_COMPARE = mpi_group_compare_f
 #pragma weak pmpi_group_compare = mpi_group_compare_f
 #pragma weak pmpi_group_compare_ = mpi_group_compare_f
@@ -47,3 +49,55 @@ void mpi_group_compare_f(MPI_Group * group1, MPI_Group * group2,
 {
     *rc = MPI_Group_compare(*group1, *group2, result);
 }
+
+#else
+
+void PMPI_GROUP_COMPARE(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void pmpi_group_compare(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void pmpi_group_compare_(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void pmpi_group_compare__(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void MPI_GROUP_COMPARE(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void mpi_group_compare(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void mpi_group_compare_(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+void mpi_group_compare__(MPI_Group * group1, MPI_Group * group2,
+                         MPI_Fint *result, MPI_Fint *rc)
+{
+    *rc = MPI_Group_compare(*group1, *group2, result);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_SPLIT = mpi_comm_split_f
 #pragma weak pmpi_comm_split = mpi_comm_split_f
 #pragma weak pmpi_comm_split_ = mpi_comm_split_f
@@ -47,3 +49,55 @@ void mpi_comm_split_f(MPI_Comm *comm, MPI_Fint *color,
 {
     *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
 }
+
+#else
+
+void PMPI_COMM_SPLIT(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void pmpi_comm_split(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void pmpi_comm_split_(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void pmpi_comm_split__(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void MPI_COMM_SPLIT(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void mpi_comm_split(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void mpi_comm_split_(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+void mpi_comm_split__(MPI_Comm *comm, MPI_Fint *color,
+                      MPI_Fint *key, MPI_Comm *newcomm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_split(*comm, *color, *key, newcomm);
+}
+
+#endif

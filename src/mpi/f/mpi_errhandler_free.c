@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_ERRHANDLER_FREE = mpi_errhandler_free_f
 #pragma weak pmpi_errhandler_free = mpi_errhandler_free_f
 #pragma weak pmpi_errhandler_free_ = mpi_errhandler_free_f
@@ -46,3 +48,47 @@ void mpi_errhandler_free_f(MPI_Errhandler * errhandler, MPI_Fint *rc)
 {
     *rc = MPI_Errhandler_free(errhandler);
 }
+
+#else
+
+void PMPI_ERRHANDLER_FREE(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void pmpi_errhandler_free(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void pmpi_errhandler_free_(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void pmpi_errhandler_free__(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void MPI_ERRHANDLER_FREE(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void mpi_errhandler_free(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void mpi_errhandler_free_(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+void mpi_errhandler_free__(MPI_Errhandler * errhandler, MPI_Fint *rc)
+{
+    *rc = MPI_Errhandler_free(errhandler);
+}
+
+#endif

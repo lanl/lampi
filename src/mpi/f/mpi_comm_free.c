@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_COMM_FREE = mpi_comm_free_f
 #pragma weak pmpi_comm_free = mpi_comm_free_f
 #pragma weak pmpi_comm_free_ = mpi_comm_free_f
@@ -46,3 +48,47 @@ void mpi_comm_free_f(MPI_Comm *comm, MPI_Fint *rc)
 {
     *rc = MPI_Comm_free(comm);
 }
+
+#else
+
+void PMPI_COMM_FREE(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void pmpi_comm_free(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void pmpi_comm_free_(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void pmpi_comm_free__(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void MPI_COMM_FREE(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void mpi_comm_free(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void mpi_comm_free_(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+void mpi_comm_free__(MPI_Comm *comm, MPI_Fint *rc)
+{
+    *rc = MPI_Comm_free(comm);
+}
+
+#endif

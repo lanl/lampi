@@ -286,7 +286,8 @@ void gmSetup(lampiState_t *s)
             /* see if limit on number of ports reached.
             *   if no limit set of maxGMDevs, this value
             *   will be negative, and the condition never met */
-            if (gmState.nDevsAllocated == gmState.maxGMDevs)
+            if ( (gmState.nDevsAllocated == gmState.maxGMDevs) ||
+                 (GM_NO_SUCH_DEVICE == returnValue) )
                 break;
 
         }                           /* end dev loop */

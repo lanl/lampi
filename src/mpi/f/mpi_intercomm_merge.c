@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_INTERCOMM_MERGE = mpi_intercomm_merge_f
 #pragma weak pmpi_intercomm_merge = mpi_intercomm_merge_f
 #pragma weak pmpi_intercomm_merge_ = mpi_intercomm_merge_f
@@ -47,3 +49,55 @@ void mpi_intercomm_merge_f(MPI_Fint *intercomm, MPI_Fint *high,
 {
     *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
 }
+
+#else
+
+void PMPI_INTERCOMM_MERGE(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void pmpi_intercomm_merge(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void pmpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void pmpi_intercomm_merge__(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void MPI_INTERCOMM_MERGE(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void mpi_intercomm_merge(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void mpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+void mpi_intercomm_merge__(MPI_Fint *intercomm, MPI_Fint *high,
+                           MPI_Fint *newintercomm, MPI_Fint *rc)
+{
+    *rc = MPI_Intercomm_merge(*intercomm, *high, newintercomm);
+}
+
+#endif

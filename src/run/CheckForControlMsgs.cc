@@ -58,12 +58,11 @@ static int NumHostPIDsRecved = 0;
 
 int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
                               int *HostsNormalTerminated,
-                              ssize_t *StderrBytesRead,
-                              ssize_t *StdoutBytesRead, int *STDERRfds,
-                              int *STDOUTfds, int *HostsAbNormalTerminated,
+                              int *HostsAbNormalTerminated,
                               int *ActiveHosts, int *ProcessCnt,
                               pid_t ** PIDsOfAppProcs,
                               int *ActiveClients,
+                              int *terminateMsgSent,
 							  adminMessage *server)
 {
 	/*
@@ -154,8 +153,16 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 				}
 			}           // end sending ALLHOSTSDONE
 			break;
+            /*
+                Network performs a rolling shutdown so that only the network root node should send the
+                acknowledgement.
+             */
+        case ACKTERMINATENOW:
 		case ACKALLHOSTSDONE:
-			ulm_fdbg((" ACKALLHOSTSDONE host %d\n", rank));
+            if ( ACKALLHOSTSDONE == tag )
+                ulm_dbg((" ACKALLHOSTSDONE host %d\n", rank));
+            else
+                ulm_dbg((" ACKTERMINATENOW host %d\n", rank));
             *ActiveClients = 0;
 			break;
 		case CONFIRMABORTCHILDPROC:
@@ -177,30 +184,39 @@ int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
 						*(Inp + 4)));
 			}
 			/* send ack to Client */
+            /*
 			tag = ACKABNORMALTERM;
             ulm_fdbg(("Sending ACKABNORMALTERM to rank %d.\n", rank));
 			server->reset(adminMessage::SEND);
 			if ( false == server->sendMessage(rank, tag, server->channelID(), &errorCode) )
 			{
-				/* assume connection no longer available */
+				// assume connection no longer available
 				ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", rank));
 				(*HostsAbNormalTerminated)++;
 				ActiveHosts[rank] = 0;
 			}
+             */
+                
 			/* notify all other clients to terminate immediately */
-			tag = TERMINATENOW;
-			server->reset(adminMessage::SEND);
-			if ( false == server->broadcastMessage(tag, &errorCode) )
-			{
-				ulm_err( ("Error: bcasting TERMINATENOW.\n") );
-				Abort();
-			}
+            if ( 0 == *terminateMsgSent )
+            {
+                tag = TERMINATENOW;
+                server->reset(adminMessage::SEND);
+                if ( false == server->broadcastMessage(tag, &errorCode) )
+                {
+                    ulm_err( ("Error: bcasting TERMINATENOW.\n") );
+                    Abort();
+                }
+                *terminateMsgSent = 1;
+            }
 			break;
+            /*
 		case ACKTERMINATENOW:
             if (ActiveHosts[rank])
                 (*HostsAbNormalTerminated)++;
 			ActiveHosts[rank] = 0;
 			break;
+            */
 		case ACKACKABNORMALTERM:
             if (ActiveHosts[rank])
                 (*HostsAbNormalTerminated)++;

@@ -41,17 +41,6 @@
  * For eccentric platforms (CRAY, IBM?) this implementation will not work.
  */
 
-
-#pragma weak PMPI_ERROR_STRING = mpi_error_string_f
-#pragma weak pmpi_error_string = mpi_error_string_f
-#pragma weak pmpi_error_string_ = mpi_error_string_f
-#pragma weak pmpi_error_string__ = mpi_error_string_f
-
-#pragma weak MPI_ERROR_STRING = mpi_error_string_f
-#pragma weak mpi_error_string = mpi_error_string_f
-#pragma weak mpi_error_string_ = mpi_error_string_f
-#pragma weak mpi_error_string__ = mpi_error_string_f
-
 void mpi_error_string_f(MPI_Fint *errorcode, char *errstring,
                         MPI_Fint *resultlen, MPI_Fint *rc,
                         int string_length)
@@ -64,3 +53,75 @@ void mpi_error_string_f(MPI_Fint *errorcode, char *errstring,
         memmove(errstring, s, *resultlen);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_ERROR_STRING = mpi_error_string_f
+#pragma weak pmpi_error_string = mpi_error_string_f
+#pragma weak pmpi_error_string_ = mpi_error_string_f
+#pragma weak pmpi_error_string__ = mpi_error_string_f
+
+#pragma weak MPI_ERROR_STRING = mpi_error_string_f
+#pragma weak mpi_error_string = mpi_error_string_f
+#pragma weak mpi_error_string_ = mpi_error_string_f
+#pragma weak mpi_error_string__ = mpi_error_string_f
+
+#else
+
+void PMPI_ERROR_STRING(MPI_Fint *errorcode, char *errstring,
+                       MPI_Fint *resultlen, MPI_Fint *rc,
+                       int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void pmpi_error_string(MPI_Fint *errorcode, char *errstring,
+                       MPI_Fint *resultlen, MPI_Fint *rc,
+                       int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void pmpi_error_string_(MPI_Fint *errorcode, char *errstring,
+                        MPI_Fint *resultlen, MPI_Fint *rc,
+                        int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void pmpi_error_string__(MPI_Fint *errorcode, char *errstring,
+                         MPI_Fint *resultlen, MPI_Fint *rc,
+                         int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void MPI_ERROR_STRING(MPI_Fint *errorcode, char *errstring,
+                       MPI_Fint *resultlen, MPI_Fint *rc,
+                       int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void mpi_error_string(MPI_Fint *errorcode, char *errstring,
+                       MPI_Fint *resultlen, MPI_Fint *rc,
+                       int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void mpi_error_string_(MPI_Fint *errorcode, char *errstring,
+                        MPI_Fint *resultlen, MPI_Fint *rc,
+                        int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+void mpi_error_string__(MPI_Fint *errorcode, char *errstring,
+                         MPI_Fint *resultlen, MPI_Fint *rc,
+                         int string_length)
+{
+    mpi_error_string_f(errorcode, errstring, resultlen, rc, string_length);
+}
+
+#endif

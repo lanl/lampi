@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_WTIME = mpi_wtime_f
 #pragma weak pmpi_wtime = mpi_wtime_f
 #pragma weak pmpi_wtime_ = mpi_wtime_f
@@ -46,3 +48,48 @@ double mpi_wtime_f(void)
 {
     return MPI_Wtime();
 }
+
+#else
+
+
+double PMPI_WTIME(void)
+{
+    return MPI_Wtime();
+}
+
+double pmpi_wtime(void)
+{
+    return MPI_Wtime();
+}
+
+double pmpi_wtime_(void)
+{
+    return MPI_Wtime();
+}
+
+double pmpi_wtime__(void)
+{
+    return MPI_Wtime();
+}
+
+double MPI_WTIME(void)
+{
+    return MPI_Wtime();
+}
+
+double mpi_wtime(void)
+{
+    return MPI_Wtime();
+}
+
+double mpi_wtime_(void)
+{
+    return MPI_Wtime();
+}
+
+double mpi_wtime__(void)
+{
+    return MPI_Wtime();
+}
+
+#endif

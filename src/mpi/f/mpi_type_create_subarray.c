@@ -29,18 +29,7 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 
-
 #include "internal/mpif.h"
-
-#pragma weak PMPI_TYPE_CREATE_SUBARRAY = mpi_type_create_subarray_f
-#pragma weak pmpi_type_create_subarray = mpi_type_create_subarray_f
-#pragma weak pmpi_type_create_subarray_ = mpi_type_create_subarray_f
-#pragma weak pmpi_type_create_subarray__ = mpi_type_create_subarray_f
-
-#pragma weak MPI_TYPE_CREATE_SUBARRAY = mpi_type_create_subarray_f
-#pragma weak mpi_type_create_subarray = mpi_type_create_subarray_f
-#pragma weak mpi_type_create_subarray_ = mpi_type_create_subarray_f
-#pragma weak mpi_type_create_subarray__ = mpi_type_create_subarray_f
 
 void mpi_type_create_subarray_f(MPI_Fint *ndims,
                                 MPI_Fint *size_array,
@@ -65,3 +54,91 @@ void mpi_type_create_subarray_f(MPI_Fint *ndims,
         *f_type_new = MPI_Type_c2f(c_type_new);
     }
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_TYPE_CREATE_SUBARRAY = mpi_type_create_subarray_f
+#pragma weak pmpi_type_create_subarray = mpi_type_create_subarray_f
+#pragma weak pmpi_type_create_subarray_ = mpi_type_create_subarray_f
+#pragma weak pmpi_type_create_subarray__ = mpi_type_create_subarray_f
+
+#pragma weak MPI_TYPE_CREATE_SUBARRAY = mpi_type_create_subarray_f
+#pragma weak mpi_type_create_subarray = mpi_type_create_subarray_f
+#pragma weak mpi_type_create_subarray_ = mpi_type_create_subarray_f
+#pragma weak mpi_type_create_subarray__ = mpi_type_create_subarray_f
+
+#else
+
+void PMPI_TYPE_CREATE_SUBARRAY(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_create_subarray(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_create_subarray_(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void pmpi_type_create_subarray__(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void MPI_TYPE_CREATE_SUBARRAY(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_create_subarray(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_create_subarray_(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+void mpi_type_create_subarray__(MPI_Fint *ndims, MPI_Fint *size_array,
+                                MPI_Fint *subsize_array, MPI_Fint *start_array,
+                                MPI_Fint *order, MPI_Fint *f_type_old,
+                                MPI_Fint *f_type_new, MPI_Fint *rc)
+{
+    mpi_type_create_subarray_f(ndims, size_array, subsize_array, start_array,
+                               order, f_type_old, f_type_new, rc);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_TOPO_TEST = mpi_topo_test_f
 #pragma weak pmpi_topo_test = mpi_topo_test_f
 #pragma weak pmpi_topo_test_ = mpi_topo_test_f
@@ -46,3 +48,47 @@ void mpi_topo_test_f(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
 {
     *rc = MPI_Topo_test(*comm, status);
 }
+
+#else
+
+void PMPI_TOPO_TEST(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void pmpi_topo_test(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void pmpi_topo_test_(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void pmpi_topo_test__(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void MPI_TOPO_TEST(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void mpi_topo_test(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void mpi_topo_test_(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+void mpi_topo_test__(MPI_Comm *comm, MPI_Fint *status, MPI_Fint *rc)
+{
+    *rc = MPI_Topo_test(*comm, status);
+}
+
+#endif

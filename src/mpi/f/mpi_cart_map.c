@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CART_MAP = mpi_cart_map_f
 #pragma weak pmpi_cart_map = mpi_cart_map_f
 #pragma weak pmpi_cart_map_ = mpi_cart_map_f
@@ -47,3 +49,55 @@ void mpi_cart_map_f(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
 {
     *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
 }
+
+#else
+
+void PMPI_CART_MAP(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void pmpi_cart_map(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void pmpi_cart_map_(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                    MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void pmpi_cart_map__(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                     MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void MPI_CART_MAP(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void mpi_cart_map(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                   MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void mpi_cart_map_(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                    MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+void mpi_cart_map__(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *dims,
+                     MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *rc)
+{
+    *rc = MPI_Cart_map(*comm, *ndims, dims, periods, newrank);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_TEST_CANCELLED = mpi_test_cancelled_f
 #pragma weak pmpi_test_cancelled = mpi_test_cancelled_f
 #pragma weak pmpi_test_cancelled_ = mpi_test_cancelled_f
@@ -46,3 +48,47 @@ void mpi_test_cancelled_f(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
 {
     *rc = MPI_Test_cancelled(status, flag);
 }
+
+#else
+
+void PMPI_TEST_CANCELLED(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void pmpi_test_cancelled(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void pmpi_test_cancelled_(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void pmpi_test_cancelled__(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void MPI_TEST_CANCELLED(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void mpi_test_cancelled(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void mpi_test_cancelled_(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+void mpi_test_cancelled__(MPI_Status *status, MPI_Fint *flag, MPI_Fint *rc)
+{
+    *rc = MPI_Test_cancelled(status, flag);
+}
+
+#endif

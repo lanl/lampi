@@ -38,10 +38,25 @@
  * MPI_Abort is a macro which calls this function
  */
 
-#pragma weak _MPI_Abort = _PMPI_Abort
 int _PMPI_Abort(MPI_Comm comm, int errorcode, char *file, int line)
 {
     _ulm_abort(comm, errorcode, file, line);
 
     return errorcode;
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak _MPI_Abort = _PMPI_Abort
+
+#else
+
+int _MPI_Abort(MPI_Comm comm, int errorcode, char *file, int line)
+{
+    _ulm_abort(comm, errorcode, file, line);
+
+    return errorcode;
+}
+
+#endif
+

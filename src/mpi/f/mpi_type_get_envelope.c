@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_TYPE_GET_ENVELOPE = mpi_type_get_envelope_f
 #pragma weak pmpi_type_get_envelope = mpi_type_get_envelope_f
 #pragma weak pmpi_type_get_envelope_ = mpi_type_get_envelope_f
@@ -52,3 +54,95 @@ void mpi_type_get_envelope_f(MPI_Fint *datatype,
 
     *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
 }
+
+#else
+
+void PMPI_TYPE_GET_ENVELOPE(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void pmpi_type_get_envelope(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void pmpi_type_get_envelope_(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void pmpi_type_get_envelope__(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void MPI_TYPE_GET_ENVELOPE(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void mpi_type_get_envelope(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void mpi_type_get_envelope_(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+void mpi_type_get_envelope__(MPI_Fint *datatype,
+                       MPI_Fint *num_integers,
+                       MPI_Fint *num_addresses,
+                       MPI_Fint *num_datatypes,
+                       MPI_Fint *combiner, MPI_Fint *rc)
+{
+    MPI_Datatype mtype = MPI_Type_f2c(*datatype);
+
+    *rc = MPI_Type_get_envelope(mtype, num_integers, num_addresses, num_datatypes, combiner);
+}
+
+#endif

@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_CARTDIM_GET = mpi_cartdim_get_f
 #pragma weak pmpi_cartdim_get = mpi_cartdim_get_f
 #pragma weak pmpi_cartdim_get_ = mpi_cartdim_get_f
@@ -46,3 +48,47 @@ void mpi_cartdim_get_f(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
 {
     *rc = MPI_Cartdim_get(*comm, ndims);
 }
+
+#else
+
+void PMPI_CARTDIM_GET(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void pmpi_cartdim_get(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void pmpi_cartdim_get_(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void pmpi_cartdim_get__(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void MPI_CARTDIM_GET(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void mpi_cartdim_get(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void mpi_cartdim_get_(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+void mpi_cartdim_get__(MPI_Comm *comm, MPI_Fint *ndims, MPI_Fint *rc)
+{
+    *rc = MPI_Cartdim_get(*comm, ndims);
+}
+
+#endif

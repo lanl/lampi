@@ -30,16 +30,6 @@
 
 #include "internal/mpif.h"
 
-#pragma weak PMPI_OP_FREE = mpi_op_free_f
-#pragma weak pmpi_op_free = mpi_op_free_f
-#pragma weak pmpi_op_free_ = mpi_op_free_f
-#pragma weak pmpi_op_free__ = mpi_op_free_f
-
-#pragma weak MPI_OP_FREE = mpi_op_free_f
-#pragma weak mpi_op_free = mpi_op_free_f
-#pragma weak mpi_op_free_ = mpi_op_free_f
-#pragma weak mpi_op_free__ = mpi_op_free_f
-
 void mpi_op_free_f(MPI_Fint *op, MPI_Fint *rc)
 {
     MPI_Op c_op = MPI_Op_f2c(*op);
@@ -50,3 +40,59 @@ void mpi_op_free_f(MPI_Fint *op, MPI_Fint *rc)
     }
     *op = -1;
 }
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak PMPI_OP_FREE = mpi_op_free_f
+#pragma weak pmpi_op_free = mpi_op_free_f
+#pragma weak pmpi_op_free_ = mpi_op_free_f
+#pragma weak pmpi_op_free__ = mpi_op_free_f
+
+#pragma weak MPI_OP_FREE = mpi_op_free_f
+#pragma weak mpi_op_free = mpi_op_free_f
+#pragma weak mpi_op_free_ = mpi_op_free_f
+#pragma weak mpi_op_free__ = mpi_op_free_f
+
+#else
+
+void PMPI_OP_FREE(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void pmpi_op_free(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void pmpi_op_free_(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void pmpi_op_free__(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void MPI_OP_FREE(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void mpi_op_free(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void mpi_op_free_(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+void mpi_op_free__(MPI_Fint *op, MPI_Fint *rc)
+{
+    mpi_op_free_f(op, rc);
+}
+
+#endif

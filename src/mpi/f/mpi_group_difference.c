@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_DIFFERENCE = mpi_group_difference_f
 #pragma weak pmpi_group_difference = mpi_group_difference_f
 #pragma weak pmpi_group_difference_ = mpi_group_difference_f
@@ -47,3 +49,55 @@ void mpi_group_difference_f(MPI_Group * group1, MPI_Group * group2,
 {
     *rc = MPI_Group_difference(*group1, *group2, new_group);
 }
+
+#else
+
+void PMPI_GROUP_DIFFERENCE(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void pmpi_group_difference(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void pmpi_group_difference_(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void pmpi_group_difference__(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void MPI_GROUP_DIFFERENCE(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void mpi_group_difference(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void mpi_group_difference_(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+void mpi_group_difference__(MPI_Group * group1, MPI_Group * group2,
+                            MPI_Group * new_group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_difference(*group1, *group2, new_group);
+}
+
+#endif

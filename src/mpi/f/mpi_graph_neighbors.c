@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GRAPH_NEIGHBORS = mpi_graph_neighbors_f
 #pragma weak pmpi_graph_neighbors = mpi_graph_neighbors_f
 #pragma weak pmpi_graph_neighbors_ = mpi_graph_neighbors_f
@@ -48,3 +50,63 @@ void mpi_graph_neighbors_f(MPI_Comm *comm,
 {
     *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
 }
+
+#else
+
+void PMPI_GRAPH_NEIGHBORS(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void pmpi_graph_neighbors(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void pmpi_graph_neighbors_(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void pmpi_graph_neighbors__(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void MPI_GRAPH_NEIGHBORS(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void mpi_graph_neighbors(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void mpi_graph_neighbors_(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+void mpi_graph_neighbors__(MPI_Comm *comm,
+                           MPI_Fint *rank, MPI_Fint *maxneighbors,
+                           MPI_Fint *neighbors, MPI_Fint *rc)
+{
+    *rc = MPI_Graph_neighbors(*comm, *rank, *maxneighbors, neighbors);
+}
+
+#endif

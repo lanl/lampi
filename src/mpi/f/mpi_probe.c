@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_PROBE = mpi_probe_f
 #pragma weak pmpi_probe = mpi_probe_f
 #pragma weak pmpi_probe_ = mpi_probe_f
@@ -47,3 +49,55 @@ void mpi_probe_f(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
 {
     *rc = MPI_Probe(*source, *tag, *comm, status);
 }
+
+#else
+
+void PMPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void pmpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void pmpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void pmpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void MPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void mpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void mpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+void mpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
+                 MPI_Status *status, MPI_Fint *rc)
+{
+    *rc = MPI_Probe(*source, *tag, *comm, status);
+}
+
+#endif

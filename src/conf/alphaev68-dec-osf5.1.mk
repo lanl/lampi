@@ -12,7 +12,7 @@ CC		:= cc
 ifneq ($(CC),gcc)
 
 CXX		:= cxx 
-CFLAGS		:= -arch host -accept restrict_keyword
+CFLAGS		+= -arch host -accept restrict_keyword
 CPPFLAGS	:= -pthread -w -I. -Iinclude -I/usr/opt/rms/include 
 ifdef ULMDEBUG
 CFLAGS		+= -g -gall -trapuv
@@ -80,6 +80,12 @@ CPPFLAGS	+= -DLSF
 CPPFLAGS	+= -I$(LSF_PREFIX)/share/include
 LDFLAGS		+= -L$(LSF_PREFIX)/lib 
 LDLIBS		+= -llsf
+endif
+
+# Quadrics RMS support
+USE_RMS		:= 1
+ifdef USE_RMS
+CPPFLAGS	+= -DUSE_RMS
 endif
 
 # BPROC support

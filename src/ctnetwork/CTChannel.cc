@@ -224,6 +224,7 @@ void CTTCPChannel::CTTCPChannelInit()
     sockfd_m = INVALID_SOCKET;
     blocking_m = true;
     timeoutSecs_m = 0;
+    maxto_m = -1;
 }
 
 
@@ -297,6 +298,7 @@ CTTCPChannel::~CTTCPChannel()
 {
     closeChannel();
 }
+
 
 /* checking status of channel */
 bool CTTCPChannel::isReadable()
@@ -795,9 +797,10 @@ bool CTTCPChannel::setIsBlocking(bool tf)
 }
 
 
-void CTTCPChannel::setTimeout(unsigned int secs)
+bool CTTCPChannel::setTimeout(unsigned int secs)
 {
     struct timeval		tval;
+    bool				success = true;
     
     CTChannel::setTimeout(secs);
     // set the socket option
@@ -806,12 +809,83 @@ void CTTCPChannel::setTimeout(unsigned int secs)
         tval.tv_sec = secs;
         tval.tv_usec = 0;
         if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
-            ulm_err(("Error: Can't set recv timeout. errno = %d.\n", errno));
-        if ( setsockopt(sockfd_m, SOL_SOCKET, SO_SNDTIMEO, &tval, sizeof(tval)) < 0 )
-            ulm_err(("Error: Can't set send timeout. errno = %d.\n", errno));
+        {
+            success = false;
+            ulm_dbg(("Error: Can't set recv timeout. errno = %d.\n", errno));
+        }
+        else if ( setsockopt(sockfd_m, SOL_SOCKET, SO_SNDTIMEO, &tval, sizeof(tval)) < 0 )
+        {
+            success = false;
+            ulm_dbg(("Error: Can't set send timeout. errno = %d.\n", errno));            
+        }
     }
+    return success;
 }
 
+
+bool CTTCPChannel::setMaximumTimeout(unsigned int secs)
+{
+    struct timeval		tval;
+    bool				success = true, done;
+    int					err, lowto, highto;
+
+    // set the socket option
+    if ( INVALID_SOCKET != sockfd_m )
+    {
+        tval.tv_sec = secs;
+        tval.tv_usec = 0;
+        err = 0;
+        if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
+        {
+            success = false;
+            err = errno;
+        }
+
+        if ( EDOM == err )
+        {
+            // do a binary search to find max timeout value allowed.
+            lowto = 1;
+            highto = secs;
+            done = false;
+            if ( maxto_m > 0)
+            {
+                done = true;
+                tval.tv_sec = maxto_m;
+            }
+            while ( !done )
+            {
+                tval.tv_sec = (lowto + highto)/2;
+                if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
+                    highto = tval.tv_sec - 1;
+                else
+                    lowto = tval.tv_sec + 1;
+
+                if ( highto < lowto )
+                {
+                    done = true;
+                    maxto_m = lowto - 1;
+                    tval.tv_sec = maxto_m;
+                }
+            }
+
+            if ( setsockopt(sockfd_m, SOL_SOCKET, SO_RCVTIMEO, &tval, sizeof(tval)) < 0 )
+            {
+                success = false;
+                ulm_dbg(("Error: Can't set recv timeout. errno = %d.\n", errno));
+            }
+        }
+
+        if ( setsockopt(sockfd_m, SOL_SOCKET, SO_SNDTIMEO, &tval, sizeof(tval)) < 0 )
+        {
+            success = false;
+            ulm_dbg(("Error: Can't set send timeout. errno = %d.\n", errno));
+        }
+
+        if ( true == success )
+            CTChannel::setTimeout(secs);
+    }
+    return success;
+}
 
 
 /*
@@ -1025,6 +1099,7 @@ CTChannelStatus CTTCPSvrChannel::acceptConnections(int timeoutSecs, CTTCPChannel
             {
                 client->setSocketfd(clientfd);
                 client->setAddress(&clientaddr);
+                client->setIsBlocking(true);
                 done = true;
             }
         }

@@ -84,17 +84,12 @@ int mpi_null_delete_fn_c(int oldcomm,
 
 #include "internal/mpif.h"
 
-#pragma weak MPI_DUP_FN = mpi_dup_fn_f
-#pragma weak mpi_dup_fn = mpi_dup_fn_f
-#pragma weak mpi_dup_fn_ = mpi_dup_fn_f
-#pragma weak mpi_dup_fn__ = mpi_dup_fn_f
-
 void mpi_dup_fn_f(MPI_Comm *oldcomm,
-		  MPI_Fint *keyval,
+                  MPI_Fint *keyval,
                   MPI_Fint *extra_state,
-		  MPI_Fint *attribute_val_in,
-		  MPI_Fint *attribute_val_out,
-		  MPI_Fint *flag,
+                  MPI_Fint *attribute_val_in,
+                  MPI_Fint *attribute_val_out,
+                  MPI_Fint *flag,
                   int *error)
 {
     *error = MPI_SUCCESS;
@@ -103,17 +98,12 @@ void mpi_dup_fn_f(MPI_Comm *oldcomm,
 }
 
 
-#pragma weak MPI_NULL_COPY_FN = mpi_null_copy_fn_f
-#pragma weak mpi_null_copy_fn = mpi_null_copy_fn_f
-#pragma weak mpi_null_copy_fn_ = mpi_null_copy_fn_f
-#pragma weak mpi_null_copy_fn__ = mpi_null_copy_fn_f
-
 void mpi_null_copy_fn_f(MPI_Fint *oldcomm,
-			MPI_Fint *keyval,
+                        MPI_Fint *keyval,
                         MPI_Fint *extra_state,
-			MPI_Fint *attribute_val_in,
-			MPI_Fint *attribute_val_out,
-			MPI_Fint *flag,
+                        MPI_Fint *attribute_val_in,
+                        MPI_Fint *attribute_val_out,
+                        MPI_Fint *flag,
                         MPI_Fint *error)
 {
     *error = MPI_SUCCESS;
@@ -121,16 +111,124 @@ void mpi_null_copy_fn_f(MPI_Fint *oldcomm,
 }
 
 
+void mpi_null_delete_fn_f(int *oldcomm,
+                          int *keyval,
+                          int *attribute_all,
+                          int *extra_state,
+                          int *error)
+{
+    *error = MPI_SUCCESS;
+}
+
+
+#if defined(HAVE_PRAGMA_WEAK)
+
+#pragma weak MPI_DUP_FN = mpi_dup_fn_f
+#pragma weak mpi_dup_fn = mpi_dup_fn_f
+#pragma weak mpi_dup_fn_ = mpi_dup_fn_f
+#pragma weak mpi_dup_fn__ = mpi_dup_fn_f
+
+#pragma weak MPI_NULL_COPY_FN = mpi_null_copy_fn_f
+#pragma weak mpi_null_copy_fn = mpi_null_copy_fn_f
+#pragma weak mpi_null_copy_fn_ = mpi_null_copy_fn_f
+#pragma weak mpi_null_copy_fn__ = mpi_null_copy_fn_f
+
 #pragma weak MPI_NULL_DELETE_FN = mpi_null_delete_fn_f
 #pragma weak mpi_null_delete_fn = mpi_null_delete_fn_f
 #pragma weak mpi_null_delete_fn_ = mpi_null_delete_fn_f
 #pragma weak mpi_null_delete_fn__ = mpi_null_delete_fn_f
 
-void mpi_null_delete_fn_f(int *oldcomm,
-                          int *keyval,
-                          int *attribute_all,
-			  int *extra_state,
+#else
+
+void MPI_DUP_FN(MPI_Comm *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                  MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                  MPI_Fint *flag, int *error)
+{
+    mpi_dup_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                 flag, error);
+}
+
+void mpi_dup_fn(MPI_Comm *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                  MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                  MPI_Fint *flag, int *error)
+{
+    mpi_dup_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                 flag, error);
+}
+
+void mpi_dup_fn_(MPI_Comm *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                  MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                  MPI_Fint *flag, int *error)
+{
+    mpi_dup_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                 flag, error);
+}
+
+void mpi_dup_fn__(MPI_Comm *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                  MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                  MPI_Fint *flag, int *error)
+{
+    mpi_dup_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                 flag, error);
+}
+
+
+void MPI_NULL_COPY_FN(MPI_Fint *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                        MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                        MPI_Fint *flag, MPI_Fint *error)
+{
+    mpi_null_copy_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                       flag, error);
+}
+
+void mpi_null_copy_fn(MPI_Fint *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                      MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                      MPI_Fint *flag, MPI_Fint *error)
+{
+    mpi_null_copy_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                       flag, error);
+}
+
+void mpi_null_copy_fn_(MPI_Fint *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                        MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                        MPI_Fint *flag, MPI_Fint *error)
+{
+    mpi_null_copy_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                       flag, error);
+}
+
+void mpi_null_copy_fn__(MPI_Fint *oldcomm, MPI_Fint *keyval, MPI_Fint *extra_state,
+                        MPI_Fint *attribute_val_in, MPI_Fint *attribute_val_out,
+                        MPI_Fint *flag, MPI_Fint *error)
+{
+    mpi_null_copy_fn_f(oldcomm, keyval, extra_state, attribute_val_in, attribute_val_out,
+                       flag, error);
+}
+
+
+void MPI_NULL_DELETE_FN(int *oldcomm, int *keyval, int *attribute_all, int *extra_state,
                           int *error)
 {
-    *error = MPI_SUCCESS;
+    mpi_null_delete_fn_f(oldcomm, keyval, attribute_all, extra_state, error);
 }
+
+void mpi_null_delete_fn(int *oldcomm, int *keyval, int *attribute_all, int *extra_state,
+                        int *error)
+{
+    mpi_null_delete_fn_f(oldcomm, keyval, attribute_all, extra_state, error);
+}
+
+void mpi_null_delete_fn_(int *oldcomm, int *keyval, int *attribute_all, int *extra_state,
+                         int *error)
+{
+    mpi_null_delete_fn_f(oldcomm, keyval, attribute_all, extra_state, error);
+}
+
+void mpi_null_delete_fn__(int *oldcomm, int *keyval, int *attribute_all, int *extra_state,
+                          int *error)
+{
+    mpi_null_delete_fn_f(oldcomm, keyval, attribute_all, extra_state, error);
+}
+
+
+#endif		/* HAVE_PRAGMA_WEAK */

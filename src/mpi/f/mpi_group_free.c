@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_FREE = mpi_group_free_f
 #pragma weak pmpi_group_free = mpi_group_free_f
 #pragma weak pmpi_group_free_ = mpi_group_free_f
@@ -46,3 +48,47 @@ void mpi_group_free_f(MPI_Group * group, MPI_Fint *rc)
 {
     *rc = MPI_Group_free(group);
 }
+
+#else
+
+void PMPI_GROUP_FREE(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void pmpi_group_free(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void pmpi_group_free_(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void pmpi_group_free__(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void MPI_GROUP_FREE(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void mpi_group_free(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void mpi_group_free_(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+void mpi_group_free__(MPI_Group * group, MPI_Fint *rc)
+{
+    *rc = MPI_Group_free(group);
+}
+
+#endif

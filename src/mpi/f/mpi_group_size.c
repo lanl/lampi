@@ -32,6 +32,8 @@
 
 #include "internal/mpif.h"
 
+#if defined(HAVE_PRAGMA_WEAK)
+
 #pragma weak PMPI_GROUP_SIZE = mpi_group_size_f
 #pragma weak pmpi_group_size = mpi_group_size_f
 #pragma weak pmpi_group_size_ = mpi_group_size_f
@@ -46,3 +48,47 @@ void mpi_group_size_f(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
 {
     *rc = MPI_Group_size(*group, size);
 }
+
+#else
+
+void PMPI_GROUP_SIZE(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void pmpi_group_size(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void pmpi_group_size_(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void pmpi_group_size__(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void MPI_GROUP_SIZE(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void mpi_group_size(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void mpi_group_size_(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+void mpi_group_size__(MPI_Group * group, MPI_Fint *size, MPI_Fint *rc)
+{
+    *rc = MPI_Group_size(*group, size);
+}
+
+#endif
