@@ -398,3 +398,18 @@ Version 1.5.7
 
 - Added command line option to specify connect timeout.
 
+Version 1.5.8
+
+- Heartbeat timeout increased to 30 seconds by default, and tuneable
+  using -heartbeat-period and -heartbeat-timeout command line options.
+  Turn heartbeat off with -heartbeat-period 0.
+
+- Updated command-line argument processing to handle aliases for the
+  same option and to allow for options starting with double-dashes
+  (--np etc.).
+
+- Updated "mpirun -help" output.
+
+- Updated manual page.
+
+- Updated verbose output.

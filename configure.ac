@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.5.7,lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.8,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -599,7 +599,8 @@ if test "$enable_ib" = "yes" ; then
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/ib"
    test "$IB_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$IB_PREFIX/include"
    test "$IB_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$IB_PREFIX/lib"
-   LIBS="$LIBS -Wl,--allow-multiple-definition -Wl,-Bstatic -lvapi -lmosal -lmpga -lmtl_common -Wl,-Bdynamic"
+#   LIBS="$LIBS -Wl,--allow-multiple-definition -Wl,-Bstatic -lvapi -lmosal -lmpga -lmtl_common -Wl,-Bdynamic"
+   LIBS="$LIBS -lvapi -lmosal -lmpga -lmtl_common"
 else
    AC_DEFINE(ENABLE_INFINIBAND, 0)
 fi
