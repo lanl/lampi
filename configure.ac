@@ -43,12 +43,25 @@ AC_TYPE_SIGNAL
 AC_TYPE_UID_T
 AC_CHECK_TYPES([ptrdiff_t])
 
+AC_MSG_CHECKING([for pragma weak])
+AC_LANG_CONFTEST([[
+#pragma weak fake = real
+int fake(int i);
+int real(int i) { return i; }
+]])
+$CC $CFLAGS -c conftest.c
+if nm conftest.o | grep fake > /dev/null ; then
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_PRAGMA_WEAK, 1)
+else
+    AC_MSG_RESULT([no])
+fi
+
 # Checks for library functions.
 AC_FUNC_ALLOCA
 AC_FUNC_FORK
 AC_FUNC_GETGROUPS
 AC_FUNC_GETPGRP
-AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_FUNC_STRTOD
@@ -107,7 +120,6 @@ MODULES_MPIRUN="$MODULES_MPIRUN src/client"
 MODULES_MPIRUN="$MODULES_MPIRUN src/ctnetwork"
 MODULES_MPIRUN="$MODULES_MPIRUN src/init"
 MODULES_MPIRUN="$MODULES_MPIRUN src/interface"
-MODULES_MPIRUN="$MODULES_MPIRUN src/popt"
 MODULES_MPIRUN="$MODULES_MPIRUN src/run"
 MODULES_MPIRUN="$MODULES_MPIRUN src/threads"
 MODULES_MPIRUN="$MODULES_MPIRUN src/util"
@@ -124,7 +136,7 @@ DLLEXT="so"
 romiodir=romio-1.2.5.1
 ROMIO_FS="ufs nfs"
 ROMIO_CONFIG_OPTIONS=""
-              
+
 # Default features
 
 enable_shared_memory=${enable_shared_memory:-yes}
@@ -132,6 +144,23 @@ enable_reliability=${enable_reliability:-yes}
 enable_check_api_args=${enable_check_api_args:-yes}
 enable_dynamic=${enable_dynamic:-yes}
 enable_static=${enable_static:-yes}
+
+enable_bproc=${enable_bproc:-no}
+enable_dbg=${enable_dbg:-no}
+enable_debug=${enable_debug:-no}
+enable_gm=${enable_gm:-no}
+enable_ib=${enable_ib:-no}
+enable_large_file_support=${enable_large_file_support:-no}
+enable_lsf=${enable_lsf:-no}
+enable_memprofile=${enable_memprofile:-no}
+enable_numa=${enable_numa:-no}
+enable_qsnet=${enable_qsnet:-no}
+enable_rms=${enable_rms:-no}
+enable_static=${enable_static:-no}
+enable_tcp=${enable_tcp:-no}
+enable_udp=${enable_udp:-no}
+
+with_romio=${with_romio:-no}
 
 # Host dependent features.
 
@@ -144,7 +173,6 @@ i?86-pc-linux*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
         else
@@ -154,15 +182,13 @@ i?86-pc-linux*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -march=i686 -finline-functions"
-           CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
+           CFLAGS="$CFLAGS -Wall -Wno-deprecated"
            # link flags with "make rpath=" support
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
         CXXFLAGS="$CFLAGS"
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -189,7 +215,6 @@ i?86-pc-cygwin*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
         else
@@ -199,7 +224,6 @@ i?86-pc-cygwin*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -march=i686 -finline-functions"
            CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
@@ -228,7 +252,6 @@ ia64-unknown-linux*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -restrict"
         else
@@ -238,7 +261,6 @@ ia64-unknown-linux*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -finline-functions"
            CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
@@ -246,7 +268,6 @@ ia64-unknown-linux*)
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
         CXXFLAGS="$CFLAGS"
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -273,7 +294,6 @@ x86_64-unknown-linux*)
            CFLAGS="-g"
         else
            CFLAGS="-g -O"
-           CPPFLAGS="$CPPFLAGS -DNDEBUG"
         fi
 	#CFLAGS="$CFLAGS -finline-functions -m32"
         CFLAGS="$CFLAGS -finline-functions -fPIC"
@@ -281,7 +301,6 @@ x86_64-unknown-linux*)
         # link flags with "make rpath=" support
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         CXXFLAGS="$CFLAGS"
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -309,7 +328,6 @@ alpha*-dec*)
               CFLAGS="$CFLAGS -g"
            else
               CFLAGS="$CFLAGS -O3"
-              CPPFLAGS="-DNDEBUG"
            fi
            CXXFLAGS="$CFLAGS"
 
@@ -324,7 +342,6 @@ alpha*-dec*)
            else
               # benchmarks seems to do better with -O3 than -O4 and -O5
               CFLAGS="$CFLAGS -g3 -O3"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CXXFLAGS="$CFLAGS -model ansi"
 
@@ -334,7 +351,6 @@ alpha*-dec*)
               LDLIBS_LIBMPI="$LDLIBS_LIBMPI -laio"
            fi
         fi
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -361,7 +377,6 @@ powerpc-apple-darwin*)
            CFLAGS="-g"
         else
            CFLAGS="-g -O"
-           CPPFLAGS="$CPPFLAGS -DNDEBUG"
         fi
         CFLAGS="$CFLAGS -finline-functions -fno-common -no-cpp-precomp"
         CPPFLAGS="$CPPFLAGS -Wall -Wno-long-double"
@@ -398,7 +413,6 @@ mips-sgi-irix*)
               CFLAGS="-O0 -g -LANG:restrict=ON"
            else
               CFLAGS="-O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -64 -mips4 -LANG:ansi-for-init-scope=ON"
            # link flags with "make rpath=" support
@@ -411,7 +425,6 @@ mips-sgi-irix*)
               CFLAGS="-g"
            else
               CFLAGS="-g -O"
-              CPPFLAGS="$CPPFLAGS -DNDEBUG"
            fi
            CFLAGS="$CFLAGS -finline-functions"
            CPPFLAGS="$CPPFLAGS -Wall -Wno-deprecated"
@@ -419,7 +432,6 @@ mips-sgi-irix*)
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
         CXXFLAGS="$CFLAGS -no_auto_include"
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -437,20 +449,18 @@ mips-sgi-irix*)
 
 rs6000-ibm-aix*)
         AC_MSG_ERROR([Support for ${host} not implemented])
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
         MODULES_OS="$MODULES_OS src/os"
         MODULES_OS="$MODULES_OS src/os/AIX"
 	;;
 
 sparc-sun-solaris2.*)
 	AC_MSG_ERROR([Support for ${host} not implemented])
-        CPPFLAGS="$CPPFLAGS -DHAVE_PRAGMA_WEAK"
         MODULES_OS="$MODULES_OS src/os"
         MODULES_OS="$MODULES_OS src/os/SOLARIS"
 	;;
 
 *)
-       	AC_MSG_ERROR([Unknown system type... ${host}])
+        AC_MSG_ERROR([Unknown system type... ${host}])
 	;;
 esac
 
@@ -459,6 +469,9 @@ esac
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug], [enable debugging (default is no)]))
 echo "debug build... ${enable_debug:-no}"
+if test "$enable_debug" = "no" ; then
+   AC_DEFINE(NDEBUG, 1)
+fi
 
 AC_ARG_ENABLE(static,
               AC_HELP_STRING([--enable-static], [enable installation of static library]))
@@ -472,51 +485,61 @@ AC_ARG_ENABLE(lsf,
               AC_HELP_STRING([--enable-lsf], [use LSF]))
 echo "feature LSF... ${enable_lsf:-no}"
 if test "$enable_lsf" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_LSF"
+   AC_DEFINE(ENABLE_LSF, 1)
    test "$LSF_INC" = "" || CPPFLAGS="$CPPFLAGS -I$LSF_INC"
    test "$LSF_LIB" = "" || LDFLAGS="$LDFLAGS -L$LSF_LIB"
    LIBS="$LIBS -llsf"
+else
+   AC_DEFINE(ENABLE_LSF, 0)
 fi
 
 AC_ARG_ENABLE(rms,
               AC_HELP_STRING([--enable-rms], [use RMS]))
 echo "feature RMS... ${enable_rms:-no}"
 if test "$enable_rms" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_RMS"   
+   AC_DEFINE(ENABLE_RMS, 1)
    test "$RMS_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$RMS_PREFIX/include"
    test "$RMS_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$RMS_PREFIX/lib"
    LIBS="$LIBS -lrt -lrmscall -lelan -lelan3 -lelanctrl"
+else
+   AC_DEFINE(ENABLE_RMS, 0)
 fi
 
 AC_ARG_ENABLE(bproc,
               AC_HELP_STRING([--enable-bproc], [use BPROC]))
 echo "feature BPROC... ${enable_bproc:-no}"
 if test "$enable_bproc" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_BPROC "
+   AC_DEFINE(ENABLE_BPROC, 1)
    LIBS="$LIBS -lbproc"
+else
+   AC_DEFINE(ENABLE_BPROC, 0)
 fi
 
 AC_ARG_ENABLE(udp,
               AC_HELP_STRING([--enable-udp], [enable UDP path]))
 echo "feature UDP... ${enable_udp:-no}"
 if test "$enable_udp" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_UDP"
+   AC_DEFINE(ENABLE_UDP, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/udp"
+else
+   AC_DEFINE(ENABLE_UDP, 0)
 fi
 
 AC_ARG_ENABLE(tcp,
               AC_HELP_STRING([--enable-tcp], [enable TCP path]))
 echo "feature TCP... ${enable_tcp:-no}"
 if test "$enable_tcp" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_TCP"
+   AC_DEFINE(ENABLE_TCP, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/tcp"
+else
+   AC_DEFINE(ENABLE_TCP, 0)
 fi
 
 AC_ARG_ENABLE(qsnet,
               AC_HELP_STRING([--enable-qsnet], [enable QSNET path]))
 echo "feature QSNET... ${enable_qsnet:-no}"
 if test "$enable_qsnet" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_QSNET"
+   AC_DEFINE(ENABLE_QSNET, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/quadrics"
    MODULES_LIBMPI="$MODULES_LIBMPI src/collective/quadrics"
    case $LIBS in
@@ -526,43 +549,53 @@ if test "$enable_qsnet" = "yes" ; then
       LIBS="$LIBS -lelan -lelan3"
       ;;
    esac
+else
+   AC_DEFINE(ENABLE_QSNET, 0)
 fi
 
 AC_ARG_ENABLE(gm,
               AC_HELP_STRING([--enable-gm], [enable Myrinet GM path]))
 echo "feature GM... ${enable_gm:-no}"
 if test "$enable_gm" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_GM"
+   AC_DEFINE(ENABLE_GM, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/gm"
    test "$GM_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$GM_PREFIX/include"
    test "$GM_PREFIX" = "" || LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -L$GM_PREFIX/lib"
    LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lgm"
+else
+   AC_DEFINE(ENABLE_GM, 0)
 fi
 
 AC_ARG_ENABLE(ib,
               AC_HELP_STRING([--enable-ib], [enable InfiniBand path]))
 echo "feature InfiniBand... ${enable_ib:-no}"
 if test "$enable_ib" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_INFINIBAND"
+   AC_DEFINE(ENABLE_INFINIBAND, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/ib"
    test "$IB_PREFIX" = "" || CPPFLAGS="$CPPFLAGS -I$IB_PREFIX/include"
    test "$IB_PREFIX" = "" || LDFLAGS="$LDFLAGS -L$IB_PREFIX/lib"
    LIBS="$LIBS -Wl,--allow-multiple-definition -Wl,-Bstatic -lvapi -lmosal -lmpga -lmtl_common -Wl,-Bdynamic"
+else
+   AC_DEFINE(ENABLE_INFINIBAND, 0)
 fi
 
 AC_ARG_ENABLE(shared_memory,
               AC_HELP_STRING([--enable-shared-memory], [enable shared memory path (probably required)]))
 echo "feature SHARED_MEMORY... ${enable_shared_memory:-no}"
 if test "$enable_shared_memory" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_SHARED_MEMORY"
+   AC_DEFINE(ENABLE_SHARED_MEMORY, 1)
    MODULES_LIBMPI="$MODULES_LIBMPI src/path/sharedmem"
+else
+   AC_DEFINE(ENABLE_SHARED_MEMORY, 0)
 fi
 
 AC_ARG_ENABLE(reliability,
               AC_HELP_STRING([--enable-reliability], [enable reliablity]))
 echo "feature RELIABILITY... ${enable_reliability:-no}"
 if test "$enable_reliability" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_RELIABILITY"
+   AC_DEFINE(ENABLE_RELIABILITY, 1)
+else
+   AC_DEFINE(ENABLE_RELIABILITY, 0)
 fi
 
 AC_ARG_ENABLE(large_file_support,
@@ -573,32 +606,31 @@ if test "$enable_large_file_support" = "yes" ; then
    ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -D_LARGEFILE_SOURCE=1'"
 fi
 
-AC_ARG_ENABLE(ct,
-              AC_HELP_STRING([--enable-ct], [enable control topology]))
-echo "feature CT... ${enable_ct:-no}"
-if test "$enable_ct" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_CT"
-fi
-
 AC_ARG_ENABLE(check_api_args,
               AC_HELP_STRING([--enable-check-api-args], [enable checking of API arguments]))
 echo "feature CHECK_API_ARGS... ${enable_check_api_args:-no}"
 if test "$enable_check_api_args" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_CHECK_API_ARGS"
+   AC_DEFINE(ENABLE_CHECK_API_ARGS, 1)
+else
+   AC_DEFINE(ENABLE_CHECK_API_ARGS, 0)
 fi
 
 AC_ARG_ENABLE(enable-dbg,
               AC_HELP_STRING([--enable-dbg], [enable copious debugging output]))
 echo "copious debugging output... ${enable_dbg:-no}"
 if test "$enable_dbg" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_DBG"
+   AC_DEFINE(ENABLE_DBG, 1)
+else
+   AC_DEFINE(ENABLE_DBG, 0)
 fi
 
 AC_ARG_ENABLE(memprofile,
               AC_HELP_STRING([--enable-memprofile], [enable memory profiling]))
 echo "feature MEMPROFILE... ${enable_memprofile:-no}"
 if test "$enable_memprofile" = "yes" ; then
-   CPPFLAGS="$CPPFLAGS -DENABLE_MEMPROFILE"
+   AC_DEFINE(ENABLE_MEMPROFILE, 1)
+else
+   AC_DEFINE(ENABLE_MEMPROFILE, 0)
 fi
 
 AC_ARG_WITH(romio,
@@ -606,6 +638,53 @@ AC_ARG_WITH(romio,
 echo "package ROMIO... ${with_romio:-no}"
 
 AC_MSG_CHECKING([makefile configuration include])
+
+# autoheader templates
+
+AH_TEMPLATE([HAVE_PRAGMA_WEAK],
+            [Define to 1 if the system supports "pragma weak".])
+
+AH_TEMPLATE([NDEBUG],
+            [Define to 1 to disable assertions.])
+
+AH_TEMPLATE([ENABLE_SHARED_MEMORY],
+            [Define to 1 if the shared memory path is enabled.])
+
+AH_TEMPLATE([ENABLE_LSF],
+            [Define to 1 if LSF is enabled.])
+
+AH_TEMPLATE([ENABLE_RMS],
+            [Define to 1 if RMS is enabled.])
+
+AH_TEMPLATE([ENABLE_BPROC],
+            [Define to 1 if BPROC is enabled.])
+
+AH_TEMPLATE([ENABLE_UDP],
+            [Define to 1 if the UDP/IP path is enabled.])
+
+AH_TEMPLATE([ENABLE_TCP],
+            [Define to 1 if the TCP/IP path is enabled.])
+
+AH_TEMPLATE([ENABLE_QSNET],
+            [Define to 1 if the Quadrics QsNet path is enabled.])
+
+AH_TEMPLATE([ENABLE_GM],
+            [Define to 1 if the Myrinet GM path is enabled.])
+
+AH_TEMPLATE([ENABLE_INFINIBAND],
+            [Define to 1 if the InfiniBand path is enabled.])
+
+AH_TEMPLATE([ENABLE_RELIABILITY],
+            [Define to 1 if reliability is enabled.])
+
+AH_TEMPLATE([ENABLE_CHECK_API_ARGS],
+            [Define to 1 if MPI argument checking is enabled.])
+
+AH_TEMPLATE([ENABLE_DBG],
+            [Define to 1 if copious debug output is enabled.])
+
+AH_TEMPLATE([ENABLE_MEMPROFILE],
+            [Define to 1 if memory profiling is enabled.])
 
 # output
 
@@ -623,9 +702,24 @@ AC_SUBST(EXEEXT)
 AC_SUBST(OBJEXT)
 AC_SUBST(LIBEXT)
 AC_SUBST(DLLEXT)
+AC_SUBST(enable_bproc)
+AC_SUBST(enable_check_api_args)
+AC_SUBST(enable_dbg)
 AC_SUBST(enable_debug)
 AC_SUBST(enable_dynamic)
+AC_SUBST(enable_gm)
+AC_SUBST(enable_ib)
+AC_SUBST(enable_large_file_support)
+AC_SUBST(enable_lsf)
+AC_SUBST(enable_memprofile)
+AC_SUBST(enable_numa)
+AC_SUBST(enable_qsnet)
+AC_SUBST(enable_reliability)
+AC_SUBST(enable_rms)
+AC_SUBST(enable_shared_memory)
 AC_SUBST(enable_static)
+AC_SUBST(enable_tcp)
+AC_SUBST(enable_udp)
 AC_SUBST(with_romio)
 AC_SUBST(romiodir)
 AC_SUBST(ROMIO_FS)

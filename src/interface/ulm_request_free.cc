@@ -31,12 +31,15 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #include "client/ULMClient.h"
 #include "internal/buffer.h"
 #include "internal/log.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "path/common/path.h"
@@ -57,7 +60,7 @@ extern "C" int ulm_request_free(ULMRequest_t *request)
     Communicator *commPtr = communicators[RequestDesc->ctx_m];
     bool incomplete;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
         if (*request == NULL) {
             return ULM_ERR_REQUEST;
         }

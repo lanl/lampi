@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -42,7 +44,7 @@ void mpi_allreduce_f(void *sendbuf, void *recvbuf, MPI_Fint *count,
     *rc = MPI_Allreduce(sendbuf, recvbuf, *count, c_type, c_op, *comm);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_ALLREDUCE = mpi_allreduce_f
 #pragma weak pmpi_allreduce = mpi_allreduce_f

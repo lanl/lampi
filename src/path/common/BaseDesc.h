@@ -166,7 +166,7 @@ public:
     int maxOutstandingFrags;    // maximum outstanding frags - for flow control
     Status_t posted_m;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     double earliestTimeToResend;
 #endif
 
@@ -195,7 +195,7 @@ public:
             NumSent = 0;
             NumFragDescAllocated = 0;
             numfrags = 0;
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
         }
@@ -215,7 +215,7 @@ public:
             path_m = 0;
             addr_m = 0;
             numfrags = 0;
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             earliestTimeToResend = -1;
 #endif
         }
@@ -258,7 +258,7 @@ public:
     void DeliveredToApp(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone = 0);
     void DeliveredToAppLock(unsigned long bytesCopied, unsigned long bytesDiscarded, bool* recvDone = 0);
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     // SMP copy to app buffers
     int SMPCopyToApp(unsigned long sequentialOffset, unsigned long fragLen,
                      void *fragAddr, unsigned long sendMessageLength, int *recvDone);
@@ -333,7 +333,7 @@ public:
     void setSendDidComplete(bool tf) {sendDidComplete_m = tf;}    
     
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
     
     virtual void initResendInfo(SendDesc_t *message, double timeNow)
@@ -492,7 +492,7 @@ public:
             return fragIndex_m * maxSegSize_m;
         }
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     
     virtual unsigned long long ackFragSequence() {return 0;}
     

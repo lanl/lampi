@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 #include "internal/ftoc.h"
@@ -57,7 +59,7 @@ void mpi_attr_get_f(MPI_Comm *comm, MPI_Fint *keyval,
     LOGICAL_SET((*flag), &tmpFlag);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_ATTR_GET = mpi_attr_get_f
 #pragma weak pmpi_attr_get = mpi_attr_get_f

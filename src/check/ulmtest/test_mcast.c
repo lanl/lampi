@@ -147,9 +147,6 @@ int test_mcast(state_t *state)
 	bufo = buf1 + state->misalign;
 	bufi = buf2 + state->misalign;
 
-
-
-
 	/*
 	 * Increment buffer size
 	 */

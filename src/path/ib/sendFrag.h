@@ -81,7 +81,7 @@ class ibSendFragDesc : public BaseSendFragDesc_t {
         bool done(double timeNow, int *errorCode)
         {
             *errorCode = ULM_SUCCESS;
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             // put timeout logic in here...
             return ((state_m & LOCALACKED) != 0);
 #else

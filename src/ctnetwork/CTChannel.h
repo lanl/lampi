@@ -143,9 +143,6 @@ public:
 };
 
 
-
-
-
 /*
         Defines the interface for a channel that is capable
         of accepting external connections.
@@ -168,9 +165,6 @@ public:
 
     virtual CTChannel *channel() {return channel_m;}
 };
-
-
-
 
 /*
  *

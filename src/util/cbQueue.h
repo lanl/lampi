@@ -202,9 +202,6 @@ public:
         return retVal;
     }
 
-
-
-
     // read from tail
     //  return type - true, data read from queue
     //                false, data not read from queue

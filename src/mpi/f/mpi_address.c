@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -41,7 +43,7 @@ void mpi_address_f(void *location, MPI_Fint *address, MPI_Fint *rc)
     *address = (int) cAddress & 0x7fffffff;
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_ADDRESS = mpi_address_f
 #pragma weak pmpi_address = mpi_address_f

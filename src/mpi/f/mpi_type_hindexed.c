@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/malloc.h"
 #include "internal/mpif.h"
@@ -70,7 +73,7 @@ void mpi_type_hindexed_f(MPI_Fint *count,
     ulm_free(c_disp_array);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_HINDEXED = mpi_type_hindexed_f
 #pragma weak pmpi_type_hindexed = mpi_type_hindexed_f

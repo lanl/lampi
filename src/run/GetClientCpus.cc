@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /***
  *** GetClientCpus.cc
@@ -51,7 +53,7 @@
  ***/
 
 
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
 
 #include <stdio.h>
 #include <stdlib.h>

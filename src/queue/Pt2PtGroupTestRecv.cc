@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "queue/Communicator.h"
 #include "internal/profiler.h"
 #include "internal/state.h"
@@ -59,7 +63,7 @@ int Communicator::iprobe(int sourceProc, int tag,
         // loop over all source queues   !!!!!! change this to look only at list with data
         for (int SrcIndex = 0; SrcIndex < remoteGroup->groupSize;
              SrcIndex++) {
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
             if (lampiState.map_global_rank_to_host
                 [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
                 myhost()) {
@@ -150,7 +154,7 @@ int Communicator::iprobe(int sourceProc, int tag,
                 privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
                 if (*found)
                     break;
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
             }                   // end on host/off host test
 #endif                          // SHARED_MEMORY
         }                       // end loop
@@ -165,7 +169,7 @@ int Communicator::iprobe(int sourceProc, int tag,
         for (int SrcIndex = 0; SrcIndex < remoteGroup->groupSize;
              SrcIndex++) {
             // if no frags - continue    !!!! look at better way to do this
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
             if (lampiState.map_global_rank_to_host
                 [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
                 myhost()) {
@@ -249,7 +253,7 @@ int Communicator::iprobe(int sourceProc, int tag,
 
                 if (*found)
                     break;
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
             }                   // end on-host/off-host loop
 #endif                          // SHARED_MEMORY
         }                       // end loop
@@ -270,7 +274,7 @@ int Communicator::iprobe(int sourceProc, int tag,
         //
         int SrcIndex = sourceProc;
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         if (lampiState.map_global_rank_to_host
             [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
             myhost()) {
@@ -341,7 +345,7 @@ int Communicator::iprobe(int sourceProc, int tag,
             // unlock list
             privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         }                       // end on-host/off-host
 #endif                          // SHARED_MEMORY
     }                           // end wild tag
@@ -356,7 +360,7 @@ int Communicator::iprobe(int sourceProc, int tag,
         assert((sourceProc >= 0) && (sourceProc < remoteGroup->groupSize));
 
         int SrcIndex = sourceProc;
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         if (lampiState.map_global_rank_to_host
             [remoteGroup->mapGroupProcIDToGlobalProcID[SrcIndex]] ==
             myhost()) {
@@ -433,7 +437,7 @@ int Communicator::iprobe(int sourceProc, int tag,
             // unlock list
             privateQueues.OkToMatchRecvFrags[SrcIndex]->Lock.unlock();
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         }                       // end on-host/off-host
 #endif                          // SHARED_MEMORY
     }                           // end specific tag and SourceProc

@@ -63,7 +63,7 @@ CDECL_BEGIN
 #undef MPI_NULL_DELETE_FN
 #endif
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 void MPI_WTICK(void);
 void mpi_wtick(void);

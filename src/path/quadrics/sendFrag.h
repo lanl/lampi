@@ -215,7 +215,7 @@ public:
              * calculate checksums, and get fragSeq_m as needed
              */
             if (result) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 if ((cmType == MESSAGE_DATA) && (fragSeq_m == 0))
                     parentSendDesc_m->path_m->initFragSeq(this);
 #endif
@@ -311,7 +311,7 @@ public:
         if (WhichQueue == QUADRICSFRAGSTOACK) {
             bsd->FragsToAck.RemoveLinkNoLock((Links_t *)this);
         }
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         else if (WhichQueue == QUADRICSFRAGSTOSEND) {
             bsd->FragsToSend.RemoveLinkNoLock((Links_t *)this);
             // increment NumSent since we were going to send this again...
@@ -326,7 +326,7 @@ public:
         // reset WhichQueue flag
         WhichQueue = QUADRICSFRAGFREELIST;
         
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         // set seq_m value to 0/null/invalid to detect duplicate ACKs
         fragSeq_m = 0;
 #endif
@@ -376,7 +376,7 @@ public:
         {
             *errorCode = ULM_SUCCESS;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             if (flags & QSF_DMA_ENQUEUED) {
                 if ((srcEventBlk == 0) ||
                     quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
@@ -405,7 +405,7 @@ public:
                     quadricsState.quadricsLock.unlock();
                 flags |= QSF_DMA_ENQUEUED;
                 return true;
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
             }
 #endif
         }
@@ -415,7 +415,7 @@ public:
             *errorCode = ULM_SUCCESS;
 
             if (flags & QSF_DMA_ENQUEUED) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 if ((srcEventBlk != 0) &&
                     quadricsThrottle->eventBlkReady(rail, srcEventBlk, &srcEventBlk)) {
                     return true;

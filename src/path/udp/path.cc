@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <strings.h>
 #include <errno.h>
 
@@ -324,7 +328,7 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
 	// thread-safe allocation of frag sequence number in header
 
-#ifdef ENABLE_RELIABILITY    
+#if ENABLE_RELIABILITY    
     sendFragDesc->parentSendDesc_m->path_m->initFragSeq(sendFragDesc);
 #else
     sendFragDesc->setFragSequence(0);
@@ -368,7 +372,7 @@ bool udpPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 	}
     sendFragDesc->setSendDidComplete(true);
     
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 	sendFragDesc->timeSent_m = dclock();
 	unsigned long long max_multiple =
 	    (sendFragDesc->numTransmits_m <

@@ -31,7 +31,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,7 +65,7 @@ void VerifyLsfResources(const ULMRunParams_t *RunParameters)
     int Host;
     int LSFHost;
 
-#ifdef ENABLE_RMS
+#if ENABLE_RMS
 /* LSF/RMS integration creates 1 virtual host with all of our processes, so
  * we can't compare the real hosts to the virtual host...we'll just check
  * to see if we have the same number of total processes...

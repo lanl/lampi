@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -37,7 +39,6 @@
 #include "ulm/ulm.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
-#include "internal/options.h"
 
 /*!
  * ulm_allreduce_linear -- allreduce, linear algorithm

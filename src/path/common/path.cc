@@ -31,9 +31,12 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 
-#include "internal/options.h"
 #include "path/common/InitSendDescriptors.h"
 #include "path/common/path.h"
 #include "queue/globals.h"
@@ -80,7 +83,7 @@ void BasePath_t::ReturnDesc(SendDesc_t *message, int poolIndex)
     _ulm_SendDescriptors.returnElement(message, 0);
 }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 bool BasePath_t::resend(SendDesc_t *message, int *errorCode)
 {

@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ulm/ulm.h"
 #include "queue/ReliabilityInfo.h"
 #include "queue/globals.h"
@@ -38,7 +42,7 @@
 #include "path/common/pathContainer.h"
 #include "mem/MemoryPool.h"
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
 #include "path/udp/UDPNetwork.h"
 #endif
 
@@ -77,7 +81,7 @@ void ulm_cleanup(void)
         activeCommunicators = 0;
     }
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
     if (UDPGlobals::UDPNet) {
         delete(UDPGlobals::UDPNet);
         UDPGlobals::UDPNet = 0;

@@ -36,24 +36,23 @@
 
 #include <unistd.h>
 
-#include "internal/options.h"
 #include "internal/types.h"
 #include "client/adminMessage.h"
 #include "client/SocketAdminNetwork.h"
 #include "run/ResourceSpecs.h"
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SharedMemJobParams.h"
 #endif
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
 # include "path/udp/setupInfo.h"
 #endif
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
 # include "path/tcp/tcpsetup.h"
 #endif
-#ifdef ENABLE_GM
+#if ENABLE_GM
 # include "path/gm/setupInfo.h"
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
 #include "path/ib/setupInfo.h"
 #endif
 
@@ -129,24 +128,24 @@ typedef struct ULMRunParams {
         int UseGM;
         int UseIB;
         SocketAdminNetwork_t TCPAdminstrativeNetwork;
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
         SharedMemJobParams_t SharedMemSetup;
 #endif
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
         UDPNetworkSetupInfo UDPSetup;
 #endif
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
         TCPNetworkSetupInfo TCPSetup;
 #endif
-#ifdef ENABLE_GM
+#if ENABLE_GM
         GMNetworkSetupInfo GMSetup;
 #endif
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
         IBNetworkSetupInfo IBSetup;
 #endif
     } Networks;
 
-#ifdef ENABLE_NUMA
+#if ENABLE_NUMA
     int *CpuList;
     int CpuListLen;
     // number of cpus to allocate per node (1 or 2)

@@ -28,9 +28,12 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
 #ifndef _LAMPI_INIT_H_
 #define _LAMPI_INIT_H_
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -135,7 +138,7 @@ void lampi_init_wait_for_start_message(lampiState_t *);
  */
 typedef void (*lampi_init_func_t) (lampiState_t *);
 
-#ifdef ENABLE_RMS
+#if ENABLE_RMS
 void lampi_init_prefork_rms(lampiState_t *);
 void lampi_init_postfork_rms(lampiState_t *);
 void lampi_init_allforked_rms(lampiState_t *);
@@ -145,7 +148,7 @@ extern lampi_init_func_t lampi_init_postfork_rms;
 extern lampi_init_func_t lampi_init_allforked_rms;
 #endif
 
-#ifdef ENABLE_GM
+#if ENABLE_GM
 void lampi_init_prefork_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_gm(lampiState_t *);
@@ -157,7 +160,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_gm;
 extern lampi_init_func_t lampi_init_postfork_gm;
 #endif
 
-#ifdef  ENABLE_QSNET
+#if ENABLE_QSNET
 void lampi_init_prefork_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *);
@@ -175,7 +178,7 @@ extern lampi_init_postfork_coll_setup(lampiState_t *s);
 #endif
 #endif
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 void lampi_init_prefork_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *);
@@ -187,7 +190,7 @@ extern lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory;
 extern lampi_init_func_t lampi_init_postfork_shared_memory;
 #endif
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
 void lampi_init_prefork_udp(lampiState_t *);
 void lampi_init_postfork_udp(lampiState_t *);
 #else
@@ -195,7 +198,7 @@ extern lampi_init_func_t lampi_init_prefork_udp;
 extern lampi_init_func_t lampi_init_postfork_udp;
 #endif
 
-#ifdef ENABLE_TCP
+#if ENABLE_TCP
 void lampi_init_prefork_receive_setup_params_tcp(lampiState_t *);
 void lampi_init_prefork_tcp(lampiState_t *);
 void lampi_init_postfork_tcp(lampiState_t *);
@@ -205,7 +208,7 @@ extern lampi_init_func_t lampi_init_prefork_tcp;
 extern lampi_init_func_t lampi_init_postfork_tcp;
 #endif
 
-#ifdef ENABLE_INFINIBAND
+#if ENABLE_INFINIBAND
 void lampi_init_prefork_receive_setup_msg_ib(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_ib(lampiState_t *);
 void lampi_init_postfork_ib(lampiState_t *);

@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/profiler.h"
 #include <stdio.h>
@@ -51,7 +53,7 @@
 #include "client/SocketServer.h"
 #include "internal/new.h"
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 #include "sys/bproc.h"
 #endif
 
@@ -113,7 +115,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
     int len;
 #endif                          /* LINUX */
     struct sockaddr_in Child;
-#ifndef ENABLE_BPROC
+#if ENABLE_BPROC == 0
     struct hostent *TmpHost;
 #endif
     unsigned int AuthData[3];
@@ -143,7 +145,7 @@ int AcceptSocketConnections(int SocketStart, int NClientsSpawned,
             return -1;
         }
         /* Sending host */
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
         int size = sizeof(struct sockaddr);
 #ifdef BPROC_NODE_NSTATES
         // BPROC_NODE_NSTATES only defined in obsolete version of bproc

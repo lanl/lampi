@@ -43,7 +43,7 @@
 #include "path/quadrics/header.h"
 #include <stdio.h>
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
@@ -159,7 +159,7 @@ public:
 
     bool needsPush(void);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     
     bool doAck() { return quadricsDoAck; }
     

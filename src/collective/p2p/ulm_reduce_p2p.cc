@@ -28,11 +28,14 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "internal/log.h"
-#include "internal/options.h"
 #include "internal/type_copy.h"
 #include "ulm/ulm.h"
 #include "queue/globals.h"

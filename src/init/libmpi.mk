@@ -1,5 +1,4 @@
 SRC_LIBMPI += \
-	src/init/pty.c \
 	src/init/environ.cc \
 	src/init/fork_many.cc \
 	src/init/init.cc \
@@ -8,30 +7,34 @@ SRC_LIBMPI += \
 	src/init/state.cc \
 	src/init/stub.cc
 
-ifneq (,$(findstring ENABLE_SHARED_MEMORY, $(CPPFLAGS)))
+ifeq "$(enable_shared_memory)" "yes"
 SRC_LIBMPI += src/init/init_shared_memory.cc
 endif
 
-ifneq (,$(findstring ENABLE_UDP, $(CPPFLAGS)))
+ifeq "$(enable_udp)" "yes"
 SRC_LIBMPI += src/init/init_udp.cc
 endif
 
-ifneq (,$(findstring ENABLE_TCP, $(CPPFLAGS)))
+ifeq "$(enable_tcp)" "yes"
 SRC_LIBMPI += src/init/init_tcp.cc
 endif
 
-ifneq (,$(findstring ENABLE_QSNET, $(CPPFLAGS)))
-SRC_LIBMPI += src/init/init_quadrics.cc src/init/init_rms.cc
+ifeq "$(enable_qsnet)" "yes"
+SRC_LIBMPI += src/init/init_quadrics.cc
 endif
 
-ifneq (,$(findstring ENABLE_GM, $(CPPFLAGS)))
+ifeq "$(enable_rms)" "yes"
+SRC_LIBMPI += src/init/init_rms.cc
+endif
+
+ifeq "$(enable_gm)" "yes"
 SRC_LIBMPI += src/init/init_gm.cc
 endif
 
-ifneq (,$(findstring ENABLE_LSF, $(CPPFLAGS)))
+ifeq "$(enable_lsf)" "yes"
 SRC_LIBMPI += src/init/init_lsf.cc
 endif
 
-ifneq (,$(findstring ENABLE_INFINIBAND, $(CPPFLAGS)))
+ifeq "$(enable_ib)" "yes"
 SRC_LIBMPI += src/init/init_ib.cc
 endif

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -46,7 +50,7 @@
 #include "mem/FreeLists.h"
 #include "os/numa.h"
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
 #include "path/sharedmem/SMPDev.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"

@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "internal/mpif.h"
 
 void mpi_init_f(MPI_Fint *rc)
@@ -38,7 +42,7 @@ void mpi_init_f(MPI_Fint *rc)
     *rc = MPI_Init(NULL, NULL);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_INIT = mpi_init_f
 #pragma weak pmpi_init = mpi_init_f

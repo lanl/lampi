@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <pthread.h>
 
 extern "C" {
@@ -239,7 +243,7 @@ int endIndex, int *errorCode, bool skipCheck)
             if (OKToSend) {
                 /* post send request */
                 if (sfd->post(timeNow, errorCode)) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                     sfd->timeSent_m = timeNow;
                     (sfd->numTransmits_m)++;
 #endif
@@ -476,7 +480,7 @@ bool ibPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
         if (OKToSend) {
             /* post IB request */
             if (sfd->post(timeNow, errorCode)) {
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 sfd->timeSent_m = timeNow;
                 (sfd->numTransmits_m)++;
                 unsigned long long max_multiple =
@@ -700,7 +704,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
             else {
                 // checksum BAD, then abort or return descriptor to pool if
                 // ENABLE_RELIABILITY is defined
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
                 if (ib_state.ack) {
                     if (usecrc()) {
                         ulm_warn(("ibPath::receive - bad envelope CRC %u (computed %u)\n",
@@ -746,7 +750,7 @@ bool ibPath::receive(double timeNow, int *errorCode, recvType recvTypeArg)
     return true;
 }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 bool ibPath::resend(SendDesc_t *message, int *errorCode)
 {

@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -40,7 +42,7 @@ void mpi_bcast_f(void *buffer, MPI_Fint *count, MPI_Fint *type,
     *rc = MPI_Bcast(buffer, *count, c_type, *root, *comm);
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_BCAST = mpi_bcast_f
 #pragma weak pmpi_bcast = mpi_bcast_f

@@ -39,7 +39,7 @@
 #include "path/gm/sendFrag.h"
 #include "ulm/ulm.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "internal/constants.h"
 #include "util/dclock.h"
 #endif
@@ -74,7 +74,7 @@ public:
             return true;
         }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     
     bool doAck() { return gmState.doAck; }
     

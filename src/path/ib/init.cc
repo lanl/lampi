@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #include <vapi.h>
 #include <vapi_common.h>
@@ -534,7 +538,7 @@ exchange_info:
     ulm_free(exchange_send);
     ulm_free(exchange_recv);
 
-#ifndef ENABLE_CT
+#if ENABLE_CT == 0
     // notify mpirun of the allgather results...
     int maxsize = sizeof(ib_ud_peer_info_t);
     if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) || 

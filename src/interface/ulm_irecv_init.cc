@@ -31,11 +31,14 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #include "queue/globals.h"
 #include "client/ULMClient.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "os/atomic.h"

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -57,7 +61,7 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
 
     /* check to see if control socket is still open - if not exit */
     while (again) {
-#ifndef ENABLE_CT
+#if ENABLE_CT == 0
         if (ServerFD == -1) {
             exit(5);
         }

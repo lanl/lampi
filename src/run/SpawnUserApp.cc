@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -64,12 +68,12 @@
 ( (getgid() == fs.st_gid) && (S_IXGRP & fs.st_mode) )
 
 int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket, 
-		int **ListHostsStarted, ULMRunParams_t *RunParameters, 
-		int FirstAppArgument, int argc, char **argv)
+                 int **ListHostsStarted, ULMRunParams_t *RunParameters, 
+                 int FirstAppArgument, int argc, char **argv)
 {
-    int		isLocal, isValid;
-	char    *execName = NULL;
-    struct stat    fs;
+    int isLocal, isValid;
+    char *execName = NULL;
+    struct stat fs;
     
     /*
      * Check that executable is valid.
@@ -103,12 +107,12 @@ int SpawnUserApp(unsigned int *AuthData, int ReceivingSocket,
                                  ListHostsStarted, RunParameters,
                                  FirstAppArgument, argc, argv);
     }
-#ifdef ENABLE_RMS
+#if ENABLE_RMS
     return mpirun_spawn_prun(AuthData, ReceivingSocket,
                              RunParameters, FirstAppArgument, argc, argv);
 #endif
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     return mpirun_spawn_bproc(AuthData, ReceivingSocket, ListHostsStarted,
                               RunParameters, FirstAppArgument, argc, argv);
 #endif

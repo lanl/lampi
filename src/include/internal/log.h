@@ -38,11 +38,10 @@
 #include <stdarg.h>
 
 #include "internal/linkage.h"
-#include "internal/options.h"
 
 #define ulm_dbg(x) \
 do { \
-    if (OPT_DBG) { \
+    if (ENABLE_DBG) { \
         _ulm_set_file_line( __FILE__, __LINE__) ; \
         _ulm_dbg x ; \
     } \
@@ -50,7 +49,7 @@ do { \
 
 #define ulm_fdbg(x) \
 do { \
-    if (OPT_DBG) { \
+    if (ENABLE_DBG) { \
         _ulm_set_file_line( __FILE__, __LINE__) ; \
         _ulm_fdbg x ; \
     } \
@@ -58,7 +57,7 @@ do { \
 
 #define ulm_dbg_fp(fp, x) \
 do { \
-    if (OPT_DBG) { \
+    if (ENABLE_DBG) { \
         fprintf(fp, "%s:%d: (pid = %d): ", __FILE__, __LINE__, getpid()); \
         fprintf(fp, x); \
     } \
@@ -90,7 +89,7 @@ do { \
 
 #define ulm_info(x) \
 do { \
-    if (OPT_VERBOSE) { \
+    if (ENABLE_VERBOSE) { \
         _ulm_info x ; \
     } \
 } while (0)

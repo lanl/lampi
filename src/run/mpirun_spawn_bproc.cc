@@ -31,6 +31,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <pthread.h>
 #include <stdio.h>
@@ -57,7 +60,7 @@
 
 #include "init/environ.h"
 
-#ifndef ENABLE_BPROC
+#if ENABLE_BPROC == 0
 
 int mpirun_spawn_bproc(unsigned int *AuthData, int ReceivingSocket,
                        int **ListHostsStarted,

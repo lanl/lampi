@@ -31,10 +31,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #include "internal/log.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "ulm/ulm.h"
 #include "mpi/constants.h"
@@ -50,7 +53,7 @@ extern "C" int ulm_comm_create(int comm, int group, int *newComm)
     bool isSubSet;
     Group *grpPtr;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 
         if ((comm > communicatorsArrayLen) || (comm < 0)) {
             ulm_err(("Error: ulm_comm_create: bad communicator %d\n",
@@ -76,7 +79,7 @@ extern "C" int ulm_comm_create(int comm, int group, int *newComm)
             goto BarrierTag;
         }
 
-    }                           // end OPT_CHECK_API_ARGS
+    }                           // end ENABLE_CHECK_API_ARGS
 
     grpPtr = grpPool.groups[group];
 

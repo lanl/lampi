@@ -28,10 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "queue/globals.h"
 #include "queue/globals.h"
 #include "internal/log.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "internal/state.h"
 #include "ulm/ulm.h"
@@ -148,7 +151,7 @@ extern "C" int ulm_communicator_alloc(int comm, int useThreads, int group1Index,
     // global group
     //
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
         if (group1Index >= grpPool.poolSize || group1Index < 0) {
             ulm_err(("Error: group index out of range\n"));
             return ULM_ERR_BAD_PARAM;

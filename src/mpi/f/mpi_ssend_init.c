@@ -28,6 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -45,7 +48,7 @@ void mpi_ssend_init_f(void *buf, MPI_Fint *count, MPI_Fint *type,
     }
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_SSEND_INIT = mpi_ssend_init_f
 #pragma weak pmpi_ssend_init = mpi_ssend_init_f

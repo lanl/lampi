@@ -45,7 +45,7 @@
 #include "mem/FreeLists.h"
 #include "mem/MemoryPool.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "queue/ReliabilityInfo.h"
 #endif
 

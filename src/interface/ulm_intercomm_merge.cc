@@ -28,12 +28,14 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 
 #include "internal/log.h"
 #include "internal/malloc.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "ulm/ulm.h"
 #include "mpi/mpi.h"
@@ -51,7 +53,7 @@ extern "C" int ulm_intercomm_merge(int interComm, int high,
     int tag, localGroupSize, compareValue, sizeOfNewGroup;
     bool allSame;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
 
         if ((interComm > communicatorsArrayLen) || (interComm < 0)) {
             ulm_err(("Error: ulm_comm_create: bad communicator %d\n",

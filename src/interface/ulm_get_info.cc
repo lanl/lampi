@@ -28,14 +28,15 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <string.h>
 #include <stdlib.h>
 
 #include "queue/globals.h"
 #include "internal/log.h"
-#include "internal/options.h"
 #include "ulm/ulm.h"
 
 /*!
@@ -56,7 +57,7 @@ extern "C" int ulm_get_info(int comm, ULMInfo_t key,
     int rc = ULM_ERROR;
     int nhosts, host_id, num_procs;
 
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
         if (comm >= 0 && communicators[comm] == 0L) {
             ulm_err(("Error: ulm_get_info: bad communicator %d\n", comm));
             return ULM_ERR_COMM;

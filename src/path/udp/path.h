@@ -46,7 +46,7 @@
 #include "path/udp/UDPEarlySend.h"
 #include "path/udp/UDPNetwork.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "internal/constants.h"
 #include "util/dclock.h"
 #endif
@@ -110,7 +110,7 @@ public:
 
     virtual bool send(SendDesc_t *message, bool *incomplete, int *errorCode);
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     
     bool doAck() { return true; }
     

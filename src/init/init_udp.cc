@@ -28,9 +28,12 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "init/init.h"
 #include "internal/new.h"
-#include "internal/options.h"
 #include "path/common/pathContainer.h"
 #include "path/udp/path.h"
 #include "ctnetwork/CTNetwork.h"

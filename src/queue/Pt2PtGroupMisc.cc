@@ -31,12 +31,16 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <new>
 
-#ifdef  ENABLE_QSNET
+#if ENABLE_QSNET
 #include <elan3/elan3.h>
 #include <elan/version.h>
 #include "path/quadrics/state.h"
@@ -47,13 +51,12 @@
 #include "queue/globals.h"
 #include "util/Lock.h"
 #include "util/dclock.h"
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 # include "path/sharedmem/SMPSharedMemGlobals.h"
 #endif // SHARED_MEMORY
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/new.h"
-#include "internal/options.h"
 #include "internal/profiler.h"
 #include "internal/system.h"
 #include "internal/collective.h"
@@ -436,7 +439,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
         // !!!!! threaded-lock
         privateQueues.OkToMatchRecvFrags[proc]->Lock.init();
     }
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     //
     // List of SMP message frags recieved in sequence, but with no ireceive posted -
     //   list resides in process private memory - only 0th frag of a message
@@ -519,7 +522,7 @@ int Communicator::init(int ctxID, bool threadUsage, int group1Index,
 // of the method.  In case of error, zero is returned.
 void* Communicator::getMcastBuf(int rail, size_t *sz)
 {
-#ifndef  ENABLE_QSNET
+#if ENABLE_QSNET == 0
     *sz = 0;
     return 0;
 #else
@@ -575,7 +578,7 @@ void* Communicator::getMcastBuf(int rail, size_t *sz)
 // and, if no such vpid is available, then *vp = -1.
 int Communicator::getMcastVpid(int rail, int *vp)
 {
-#ifndef  ENABLE_QSNET
+#if ENABLE_QSNET == 0
     *vp = -1;
     return ULM_SUCCESS;
 #else
@@ -719,7 +722,7 @@ int Communicator::freeCommunicator()
     }
     ulm_delete(privateQueues.OkToMatchRecvFrags);
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
     for (i = 0; i < nprocs(); i++) {
         ulm_delete(privateQueues.OkToMatchSMPFrags[i]);
     }
@@ -822,7 +825,7 @@ void CheckForAckedMessages(double timeNow)
 }
 
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 
 /*
  * Check to see if frag needs to be retransmitted.

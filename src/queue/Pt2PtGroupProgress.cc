@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "queue/Communicator.h"
 #include "queue/globals.h"
 #include "client/ULMClient.h"
@@ -41,7 +45,7 @@
 #include "os/atomic.h"
 #include "ulm/ulm.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "internal/constants.h"
 #endif
 
@@ -49,7 +53,7 @@ int push_frags_into_network(double timeNow)
 {
     int returnValue = ULM_SUCCESS;
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     // check for retransmits
     if ((timeNow >= (lastCheckForRetransmits + MIN_RETRANS_TIME))
         || (lastCheckForRetransmits < 0.0)) {

@@ -28,6 +28,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <elan3/elan3.h>
 
 #include "internal/log.h"
@@ -167,7 +171,7 @@ void quadricsRecvFragDesc::msgData(double timeNow)
     fragIndex_m = seqOffset_m / quadricsBufSizes[PRIVATE_LARGE_BUFFERS];
     poolIndex_m = getMemPoolIndex();
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     isDuplicate_m = UNIQUE_FRAG;
 #endif
 
@@ -222,7 +226,7 @@ void quadricsRecvFragDesc::msgDataAck(double timeNow)
             return;
         }
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
         if (checkForDuplicateAndNonSpecificAck(sfd)) {
             ((SendDesc_t *)bsd)->Lock.unlock();
             ReturnDescToPool(getMemPoolIndex());

@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/mpif.h"
 
@@ -43,7 +45,7 @@ void mpi_type_ub_f(MPI_Fint *f_type, MPI_Fint *f_ub, MPI_Fint *rc)
     *f_ub = (MPI_Fint) c_ub & 0xffffffff;
 }
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak PMPI_TYPE_UB = mpi_type_ub_f
 #pragma weak pmpi_type_ub = mpi_type_ub_f

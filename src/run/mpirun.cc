@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * LA-MPI: mpirun - main program
  * - parse command line/input file to determine run parameters.
@@ -61,7 +65,6 @@
 #include <errno.h>
 
 #define ULM_GLOBAL_DEFINE
-#include "config.h"
 #include "init/environ.h"
 
 #include "internal/constants.h"
@@ -103,7 +106,7 @@ static adminMessage *server = NULL;
 /* bproc_vexecmove_* does not work properly with debuggers if more
  * than one thread is created before the bproc_vexecmove_* call.
  */
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 static int use_connect_thread = 0;
 #else
 static int use_connect_thread = 1;
@@ -151,7 +154,7 @@ bool getClientPids(pid_t ** hostarray, int *errorCode)
     int rank, tag, contacted = 0;
     int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     return getClientPidsMsg(hostarray, errorCode);
 #endif
 
@@ -188,7 +191,7 @@ bool releaseClients(int *errorCode)
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     ulm_dbg(("\nmpirun: synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
 	server->synchronize(RunParameters.NHosts + 1);
     ulm_dbg(("\nmpirun: done synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
@@ -289,7 +292,7 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     return returnValue;
 #endif
 
@@ -325,7 +328,7 @@ bool exchangeTCPPorts(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     return returnValue;
 #endif
 
@@ -361,7 +364,7 @@ bool exchangeIBInfo(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     return returnValue;
 #endif
 
@@ -443,7 +446,7 @@ bool exchangeGMInfo(int *errorCode, adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     return returnValue;
 #endif
 
@@ -566,7 +569,7 @@ int main(int argc, char **argv)
      * initialize admin network
      */
 
-#ifdef ENABLE_CT
+#if ENABLE_CT
     CTNetworkInit();
 #endif
 
@@ -689,7 +692,7 @@ int main(int argc, char **argv)
         ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
         Abort();
     }
-#ifdef ENABLE_CT
+#if ENABLE_CT
 	// send msg to link the admin network
     ulm_dbg(("\nmpirun: linking network...\n"));
     if ( !server->linkNetwork() )
@@ -715,7 +718,7 @@ int main(int argc, char **argv)
     /* temporary fix */
     int *ClientSocketFDList =
         (int *) ulm_malloc(sizeof(int) * RunParameters.NHosts);
-#ifdef ENABLE_CT
+#if ENABLE_CT
     for (i = 0; i < RunParameters.NHosts; i++) {
         ClientSocketFDList[i] = 0;
     }

@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mpi/constants.h"
 
 /* 
@@ -131,7 +135,7 @@ void mpi_null_delete_fn_f(int *oldcomm,
 }
 
 
-#if defined(HAVE_PRAGMA_WEAK)
+#ifdef HAVE_PRAGMA_WEAK
 
 #pragma weak MPI_DUP_FN = mpi_dup_fn_f
 #pragma weak mpi_dup_fn = mpi_dup_fn_f

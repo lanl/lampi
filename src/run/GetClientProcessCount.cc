@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,12 +53,12 @@
 
 static bool gotClientProcessCount = false;
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 #include <sys/bproc.h>
 #include "init/environ.h"
 #endif
 
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
 int nodestatus(int node, char *status, int len)
 {
 // return 1 if a BPROC node is up, 0 otherwise.
@@ -75,12 +79,9 @@ int nodestatus(int node, char *status, int len)
 }
 #endif
 
-
-
-
 void getBJSNodes(void)
 {
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     int *nodes = 0;
     int nNodes = 0;
     char *node_str = 0, *p;
@@ -177,7 +178,7 @@ void getBJSNodes(void)
 
 void pickNodesFromList(int cnt)
 {
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     int i, j = 0, tmp_node;
     char node_status[NODE_STATUS_LEN + 1];      // add 1 for terminating 0
 
@@ -227,7 +228,7 @@ void pickNodesFromList(int cnt)
 
 void pickCurrentNode(void)
 {
-#ifdef ENABLE_BPROC
+#if ENABLE_BPROC
     /* use the current node only */
     RunParameters.HostList = ulm_new(HostName_t, 1);
     RunParameters.HostListSize = 1;
@@ -349,7 +350,7 @@ void GetClientProcessCount(const char *InfoStream)
     } else {
         if (RunParameters.HostListSize == 0) {
 
-            if (OPT_RMS) {
+            if (ENABLE_RMS) {
                 if (!RunParameters.NHostsSet) {
                     RunParameters.NHosts = 1;
                 }
@@ -382,7 +383,7 @@ void GetClientProcessCount(const char *InfoStream)
             Abort();
         }
 
-        if (OPT_RMS) {
+        if (ENABLE_RMS) {
             /* distribute totalProcs across the hosts */
             for (int host = 0; host < RunParameters.NHosts; host++) {
                 RunParameters.ProcessCount[host] = 0;
@@ -448,7 +449,7 @@ void GetClientProcessCount(const char *InfoStream)
                     RunParameters.ProcessCount, ULMInputOptions,
                     OptionIndex, 1);
 
-        if (OPT_RMS) {
+        if (ENABLE_RMS) {
             /*
              * RMS determines the distribution of processes, so
              * reshuffle ProcessCount

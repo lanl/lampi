@@ -28,12 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "internal/ftoc.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
-#include "internal/options.h"
 #include "mpi/constants.h"
 #include "ulm/ulm.h"
 #include "queue/globals.h"
@@ -59,7 +60,7 @@ extern "C" int ulm_comm_dup(int inputContextID, int *outputContextID)
     Communicator *in_comm;
     ULMTopology_t *topology;
     Communicator *out_comm;
-    if (OPT_CHECK_API_ARGS) {
+    if (ENABLE_CHECK_API_ARGS) {
         if (communicators[inputContextID] == 0L) {
             ulm_err(("Error: ulm_comm_dup: bad communicator %d\n",
                      inputContextID));

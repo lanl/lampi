@@ -35,6 +35,10 @@
  *  Created by Rob Aulwes on Thu Jan 02 2003.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ctnetwork/CTClient.h"
 #include "ctnetwork/CTServer.h"
 #include "ctnetwork/CTNetwork.h"
@@ -148,9 +152,6 @@ CTChannelStatus CTClient::allgather(unsigned int numParticipants, unsigned int d
     return status;
 }
 
-
-
-
 CTChannelStatus CTClient::allgatherv(unsigned int numParticipants, char *recvBuf)
 {
 /*
@@ -196,9 +197,6 @@ CTChannelStatus CTClient::allgatherv(unsigned int numParticipants, char *recvBuf
         
     return status;
 }
-
-
-
 
 CTChannelStatus CTClient::scatterv(int msgType, unsigned int *datalen, const char **data)
 {

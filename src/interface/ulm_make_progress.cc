@@ -31,6 +31,10 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 
 #define ENABLE_TIMESTAMP 0
@@ -42,17 +46,17 @@
 #include "queue/globals.h"
 #include "ulm/ulm.h"
 
-#ifdef ENABLE_UDP
+#if ENABLE_UDP
 # include "path/udp/UDPNetwork.h"
 #endif // UDP
 
-#ifdef ENABLE_SHARED_MEMORY
+#if ENABLE_SHARED_MEMORY
 #include "path/sharedmem/SMPfns.h"
 #include "path/sharedmem/SMPSharedMemGlobals.h"
 
 #endif // SHARED_MEMORY
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "util/DblLinkList.h"
 #endif
 
@@ -75,7 +79,7 @@ extern "C" int ulm_make_progress(void)
     TIMESTAMP(0);
 
     // check for completed sends
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     now = dclock();
 #else
     now = 0;

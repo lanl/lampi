@@ -28,7 +28,9 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <sys/time.h>		// for timeval
@@ -48,7 +50,7 @@
 #include "util/MemFunctions.h"
 #include "path/udp/path.h"
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
 #include "queue/ReliabilityInfo.h"
 #endif
 
@@ -359,7 +361,7 @@ void udpRecvFragDesc::processMessage(udp_message_header & msg)
     seq_m               = msg.frag_seq;
     seqOffset_m         = dataOffset();
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     isDuplicate_m = UNIQUE_FRAG;
 #endif
 
@@ -416,7 +418,7 @@ void udpRecvFragDesc::processAck(udp_ack_header & ack)
 	    return;
 	}
 
-#ifdef ENABLE_RELIABILITY
+#if ENABLE_RELIABILITY
     if (checkForDuplicateAndNonSpecificAck(Frag)) {
 	    ((SendDesc_t *)sendDesc)->Lock.unlock();
 	    ReturnDescToPool(getMemPoolIndex());
@@ -540,13 +542,7 @@ unsigned long udpRecvFragDesc::nonContigCopyFunction(void *appAddr, void *fragAd
 						 unsigned int *partialLength, bool firstCall, bool lastCall)
 {
     char *src;
-
-// for 32-bit processors a void * is only an integer
-#if defined(__i386)
-    int fragOffset = (int)fragAddr;
-#else
-    long long fragOffset = (long long)fragAddr;
-#endif
+    ssize_t fragOffset = (ssize_t) fragAddr;
 
     if (shortMsg || addr_m) {
 	if (length == 0)

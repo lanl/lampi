@@ -34,7 +34,7 @@
 #ifndef _VECTOR_
 #define _VECTOR_
 
-#include <new.h>
+#include <new>
 #include <strings.h>
 #include "internal/system.h"
 #include "internal/new.h"
