@@ -139,16 +139,9 @@ int push_frags_into_network(double timeNow)
                 //
                 // We've finished sending
                 //
-                int nAcked=SendDesc->NumAcked;
-                if( SendDesc->path_m->pathType_m == SHAREDMEM ) {
-                    /* the shared memory send descriptor stores NumAcked in
-                    *   the shared memory variable
-                    *   SendDesc->pathInfo.sharedmem.sharedData->NumAcked
-                    */
-                    nAcked=SendDesc->pathInfo.sharedmem.sharedData->NumAcked;
-                }
-                if ( ( nAcked >= SendDesc->numfrags) &&
-                	 (SendDesc->NumSent >= SendDesc->numfrags) ) {
+                if( SendDesc->path_m &&
+                    SendDesc->path_m->sendDone(SendDesc, timeNow, &returnValue) ) {
+
                     // message has been acked
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         IncompletePostedSends.RemoveLinkNoLock(SendDesc);
