@@ -45,11 +45,8 @@
 #include "internal/new.h"
 #include "internal/system.h"
 #include "internal/types.h"
-#include "os/acquire.h"
-
-#ifdef __mips
+#include "os/IRIX/acquire.h"
 #include "os/IRIX/MD_acquireGlobals.h"
-#endif
 
 // variable indicating if memory placement succeeded.
 bool placementSucceeded = false;

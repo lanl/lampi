@@ -28,17 +28,13 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
-#include "queue/Communicator.h"
-#include "queue/globals.h"
-#include "queue/barrier.h"
-#include "queue/globals.h"
 #include "client/ULMClient.h"
 #include "collective/barrier.h"
 #include "internal/constants.h"
 #include "internal/types.h"
-#include "os/acquire.h"
+#include "queue/Communicator.h"
+#include "queue/barrier.h"
+#include "queue/globals.h"
 
 /*
  *  barrier initialization routines.  These include a call to set up
@@ -91,7 +87,8 @@ SWBarrierTag:
  * code for setting up resources for a shared memory implementation of
  * the barrier
  */
-int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMPResources)
+int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext,
+                                         int *gotSMPResources)
 {
     int returnCode = ULM_ERROR;
     bool foundFreeElement = false;
@@ -106,7 +103,8 @@ int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMP
             for (int ele = 0; ele < swBarrier.nElementsInPool[pl]; ele++) {
                 if (swBarrier.pool[pl][ele].inUse &&
                     (swBarrier.pool[pl][ele].contextID == contextID) &&
-                    (swBarrier.pool[pl][ele].commRoot == localGroup->mapGroupProcIDToGlobalProcID[0])) {
+                    (swBarrier.pool[pl][ele].commRoot ==
+                     localGroup->mapGroupProcIDToGlobalProcID[0])) {
                     firstInstanceOfContext = 0;
                     break;
                 }
@@ -131,29 +129,39 @@ int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMP
                 poolIndex = 0;
 
             // check pool for free elements
-            for (int ele = 0; ele < swBarrier.nElementsInPool[poolIndex]; ele++) {
+            for (int ele = 0; ele < swBarrier.nElementsInPool[poolIndex];
+                 ele++) {
 
                 // if element available - grab it
                 if (!swBarrier.pool[poolIndex][ele].inUse) {
                     foundFreeElement = true;
                     // set element as in use and list group infomation
-                    swBarrier.pool[poolIndex][ele].commRoot = localGroup->mapGroupProcIDToGlobalProcID[0];
+                    swBarrier.pool[poolIndex][ele].commRoot =
+                        localGroup->mapGroupProcIDToGlobalProcID[0];
                     swBarrier.pool[poolIndex][ele].contextID = contextID;
                     swBarrier.pool[poolIndex][ele].nAllocated = 1;
                     swBarrier.pool[poolIndex][ele].nFreed = 0;
                     swBarrier.pool[poolIndex][ele].inUse = true;
                     // initialize barrier data
-                    *(swBarrier.pool[poolIndex][ele].barrierData->Counter) = 0;
+                    *(swBarrier.pool[poolIndex][ele].barrierData->
+                      Counter) = 0;
                     swBarrier.pool[poolIndex][ele].barrierData->commSize =
-                        localGroup->groupHostData[localGroup->hostIndexInGroup].nGroupProcIDOnHost;
-                    swBarrier.pool[poolIndex][ele].barrierData->releaseCnt = 0;
-                    swBarrier.pool[poolIndex][ele].barrierData->lock->init();
+                        localGroup->groupHostData[localGroup->
+                                                  hostIndexInGroup].
+                        nGroupProcIDOnHost;
+                    swBarrier.pool[poolIndex][ele].barrierData->
+                        releaseCnt = 0;
+                    swBarrier.pool[poolIndex][ele].barrierData->lock->
+                        init();
                     // set barrier type
                     SMPBarrierType = SMPSWBARRIER;
                     // set pointer to barrier data structure
-                    barrierData = (void *) swBarrier.pool[poolIndex][ele].barrierData;
+                    barrierData =
+                        (void *) swBarrier.pool[poolIndex][ele].
+                        barrierData;
                     // set pointer to barrier control structure
-                    barrierControl = (void *) (&(swBarrier.pool[poolIndex][ele]));
+                    barrierControl =
+                        (void *) (&(swBarrier.pool[poolIndex][ele]));
                     // set pointer to barrier function
                     smpBarrier = SMPSWBarrier;
                     // set the pool index this is taken out of
@@ -172,8 +180,8 @@ int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMP
         /* if could not find a free element - return error */
         if (!foundFreeElement) {
             *gotSMPResources = 0;
-	    /* unlock pool */
-	    swBarrier.Lock->unlock();
+            /* unlock pool */
+            swBarrier.Lock->unlock();
             return ULM_ERR_OUT_OF_RESOURCE;
         }
 
@@ -192,27 +200,36 @@ int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMP
         for (int poolIndex = 0; poolIndex < swBarrier.nPools; poolIndex++) {
 
             // check pool for free elements
-            for (int ele = 0; ele < swBarrier.nElementsInPool[poolIndex]; ele++) {
+            for (int ele = 0; ele < swBarrier.nElementsInPool[poolIndex];
+                 ele++) {
 
                 // if element available - grab it
                 if (swBarrier.pool[poolIndex][ele].inUse &&
                     (swBarrier.pool[poolIndex][ele].contextID == contextID)
-                    && (swBarrier.pool[poolIndex][ele].commRoot == localGroup->mapGroupProcIDToGlobalProcID[0])
+                    && (swBarrier.pool[poolIndex][ele].commRoot ==
+                        localGroup->mapGroupProcIDToGlobalProcID[0])
                     ) {
                     foundElement = true;
                     // set element as in use and list group infomation
                     swBarrier.pool[poolIndex][ele].nAllocated++;
                     // initialize barrier data
                     swBarrier.pool[poolIndex][ele].barrierData->commSize =
-                        localGroup->groupHostData[localGroup->hostIndexInGroup].nGroupProcIDOnHost;
-                    swBarrier.pool[poolIndex][ele].barrierData->releaseCnt = 0;
-                    swBarrier.pool[poolIndex][ele].barrierData->lock->init();
+                        localGroup->groupHostData[localGroup->
+                                                  hostIndexInGroup].
+                        nGroupProcIDOnHost;
+                    swBarrier.pool[poolIndex][ele].barrierData->
+                        releaseCnt = 0;
+                    swBarrier.pool[poolIndex][ele].barrierData->lock->
+                        init();
                     // set barrier type
                     SMPBarrierType = SMPSWBARRIER;
                     // set pointer to barrier data structure
-                    barrierData = (void *) swBarrier.pool[poolIndex][ele].barrierData;
+                    barrierData =
+                        (void *) swBarrier.pool[poolIndex][ele].
+                        barrierData;
                     // set pointer to barrier control structure
-                    barrierControl = (void *) (&(swBarrier.pool[poolIndex][ele]));
+                    barrierControl =
+                        (void *) (&(swBarrier.pool[poolIndex][ele]));
                     // set pointer to barrier function
                     smpBarrier = SMPSWBarrier;
                     // set return code
@@ -230,8 +247,8 @@ int Communicator::genericSMPBarrierSetup(int firstInstanceOfContext, int *gotSMP
         /* could not find allocated element */
         if (!foundElement) {
             *gotSMPResources = 0;
-	    /* unlock pool */
-	    swBarrier.Lock->unlock();
+            /* unlock pool */
+            swBarrier.Lock->unlock();
             return ULM_ERR_BAD_PARAM;
         }
 
@@ -275,13 +292,15 @@ int Communicator::barrierFree()
         barrierControl = NULL;
         barrierData = NULL;
         smpBarrier = NULL;
-	/* unlock pool - also ensures I/O ordering */
-	swBarrier.Lock->unlock();
+        /* unlock pool - also ensures I/O ordering */
+        swBarrier.Lock->unlock();
 
         break;
 
     default:
-        fprintf(stderr, " barrierFree:: unrecoginzed SMP barrier type %d\n", barrierType);
+        fprintf(stderr,
+                " barrierFree:: unrecoginzed SMP barrier type %d\n",
+                barrierType);
         return ULM_ERR_BAD_PARAM;
         break;
     }

@@ -67,11 +67,8 @@
 //    allocated resources by the other MD routines and by the
 //    calling routine
 //
-#ifdef __mips
+
 #include "os/IRIX/MD_request.h"
-#else
-#include "os/common/MD_request.h"
-#endif
 
 //
 // class: request
@@ -242,11 +239,7 @@ private:
     //         fill in resources[]
     //
 
-#ifdef __mips
 #include "os/IRIX/MD_request_private.h"
-#else
-#include "os/common/MD_request_private.h"
-#endif
 };
 
 #endif /*** __REQUEST_H__ ***/

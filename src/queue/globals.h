@@ -268,7 +268,7 @@ extern ssize_t largePoolBytesPerProcess;
 ////////////////////////////////////////////////////////////////////////
 // SGI specific resources
 #ifdef __mips
-#include "os/acquire.h"
+#include "os/IRIX/acquire.h"
 extern acquire *ULMai;
 extern request *ULMreq;
 extern int nCpPNode;

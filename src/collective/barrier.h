@@ -28,15 +28,15 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #ifndef _ULMBARRIER
 #define _ULMBARRIER
+
+class Communicator;
 
 int platformBarrierSetup(int firstInstanceOfContext,
                          int *callGenericSMPSetup,
                          int *callGenericNetworkSetup,
-                         int *gotSMPresouces,
+                         int *gotSMPresources,
                          int *gotNetworkResources);
 
 void freePlatformSpecificBarrier(Communicator *commPtr);

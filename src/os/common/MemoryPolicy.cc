@@ -28,14 +28,7 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
-#include "os/acquire.h"
-#include "os/MemoryPolicy.h"
-#include "internal/constants.h"
 #include "internal/types.h"
-#include "client/ULMClient.h"
-#include "queue/globals.h"
 
 int setMemoryPolicy(void *basePtr, ulm_uint64_t lenAdded, int poolIndex)
 {

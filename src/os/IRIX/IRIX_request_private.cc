@@ -36,7 +36,7 @@
 #include "internal/types.h"
 #include "client/ULMClient.h"
 
-#include "os/request.h"
+#include "os/IRIX/request.h"
 
 void request::MD_map_resources()
 {

@@ -20,7 +20,7 @@ else
 CFLAGS		+= -O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON
 CPPFLAGS	+= -DNDEBUG
 endif
-CXXFLAGS	:= $(CFLAGS) -J64 -no_auto_include
+CXXFLAGS	:= $(CFLAGS) -no_auto_include
 ASFLAGS		:= $(CFLAGS)
 LDFLAGS		:=
 LDLIBS		:=

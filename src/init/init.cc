@@ -78,7 +78,7 @@
 bool useRsrcAffinity = true;
 bool useDfltAffinity = true;
 bool affinMandatory = true;
-#include "os/acquire.h"
+#include "os/IRIX/acquire.h"
 int nCpPNode = 2;
 #endif
 
