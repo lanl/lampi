@@ -67,8 +67,6 @@
 #include "internal/malloc.h"
 #include "queue/globals.h"
 
-extern int errno;
-
 /*
  * Structure describing a child process
  */

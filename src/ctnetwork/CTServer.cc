@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -143,23 +146,23 @@ void CTServer::CTServerInit()
 
 
 /*
-*		Channel mgmt
+*               Channel mgmt
 */
-bool CTServer::checkClientStatus(CTChannelStatus status, link_t	*client)
-{	
-	if ( kCTChannelOK ==  status )
-		return true;
+bool CTServer::checkClientStatus(CTChannelStatus status, link_t *client)
+{
+        if ( kCTChannelOK ==  status )
+                return true;
 
-	if ( (kCTChannelError == status) ||
-			(kCTChannelClosed == status) ||
-			(kCTChannelConnLost == status) )
-	{
-		// remove client from list
-		spinlock(&lock_m);
-		clients_m = delete_link(clients_m, client, _del_chnl);
-		spinunlock(&lock_m);
-	}
-	return false;
+        if ( (kCTChannelError == status) ||
+                        (kCTChannelClosed == status) ||
+                        (kCTChannelConnLost == status) )
+        {
+                // remove client from list
+                spinlock(&lock_m);
+                clients_m = delete_link(clients_m, client, _del_chnl);
+                spinunlock(&lock_m);
+        }
+        return false;
 }
 
 /*
@@ -203,38 +206,38 @@ void CTServer::connectToNeighbor(unsigned int neighborLabel, const char *connect
 
 void CTServer::getServerInfo(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl)
 {
-	CTMessage	*rmsg;
-	char		buf[40];
-	
-	if ( node_m )
-		sprintf(buf, "Label=%u;Network=%u;NumNodes=%u", node_m->label(), node_m->type(), node_m->numberOfNodes());
-	else
-		sprintf(buf, "Label=0;Network=0;NumNodes=0");
-	if ( (rmsg = new CTMessage(CTMessage::kUser, buf, strlen(buf)+1)) )
-	{
-		chnl->sendMessage(rmsg);
-		rmsg->release();
-	}
-	else
-	{
-		//return an error
+        CTMessage       *rmsg;
+        char            buf[40];
+
+        if ( node_m )
+                sprintf(buf, "Label=%u;Network=%u;NumNodes=%u", node_m->label(), node_m->type(), node_m->numberOfNodes());
+        else
+                sprintf(buf, "Label=0;Network=0;NumNodes=0");
+        if ( (rmsg = new CTMessage(CTMessage::kUser, buf, strlen(buf)+1)) )
+        {
+                chnl->sendMessage(rmsg);
+                rmsg->release();
+        }
+        else
+        {
+                //return an error
         ulm_err(("Node %d: Unable to create msg. Sending error 1.\n", node_m->label()));
-		chnl->sendError(1);
-	}
+                chnl->sendError(1);
+        }
 }
 
 
 
 bool CTServer::linkNetwork(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl)
 {
-    bool                        success = true;
-    char                        ntype;
+    bool                success = true;
+    char                ntype;
     unsigned int        nNodes, sz;
     unsigned int        label, myLabel, hsize, idx, lnk;
     const char          *ptr, *connptr;
-    CTNode                      *node;
+    CTNode              *node;
     unsigned int        cnt, *links, i, nlabel, csz;
-    char                        *newctrl;
+    char                *newctrl;
     CTChannel           *chnl;
     CTChannelStatus     status;
 
@@ -332,6 +335,9 @@ bool CTServer::linkNetwork(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSi
                 if ( chnl )
                 {
                     status = CTController::sendMessage(chnl, msg, csz, newctrl);
+                    if (status != kCTChannelOK) {
+                        ct_svr_err(("Error in sending msg. status = %d.\n", status));
+                    }
                 }
                 else
                 {
@@ -388,13 +394,13 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
     {
         data = msg->data();
         datalen = msg->dataLength();
-        
-		if ( 0 == msg->sourceNode() )
-		{
-			// We have received the aggregate data.  
-			// Copy data to buffer.
-			// Since node 0 also receives this msg, do not bother with the copy.
-			spinlock(&coll_lock_m);
+
+                if ( 0 == msg->sourceNode() )
+                {
+                        // We have received the aggregate data.
+                        // Copy data to buffer.
+                        // Since node 0 also receives this msg, do not bother with the copy.
+                        spinlock(&coll_lock_m);
             if ( NULL == buffer_m[COLL_IDX(cmd)] )
             {
                 buffer_m[COLL_IDX(cmd)] = (char *)malloc(datalen);
@@ -410,18 +416,18 @@ bool CTServer::allgather(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSize
             // Now set flag to continue.
             collOK_m[COLL_IDX(cmd)] = true;
 
-			// distribute msg to CTClients
-			apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
-			freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
-			collClients_m[COLL_IDX(cmd)] = NULL;
+                        // distribute msg to CTClients
+                        apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
+                        freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
+                        collClients_m[COLL_IDX(cmd)] = NULL;
 
-			spinunlock(&coll_lock_m);
-		}
-		else
-		{
-			// ASSERT: This node is 0.
-			// aggregate node data in buffer.
-			spinlock(&coll_lock_m);
+                        spinunlock(&coll_lock_m);
+                }
+                else
+                {
+                        // ASSERT: This node is 0.
+                        // aggregate node data in buffer.
+                        spinlock(&coll_lock_m);
             if ( CTServer::kAllgatherv == cmd )
             {
                 // allgatherv data layout: <total size (int)><node's offset (int)><node's data>
@@ -547,37 +553,37 @@ bool CTServer::synchronize(CTChannel *schnl, CTMessage *msg, unsigned int ctrlSi
 
 void CTServer::broadcastPackedMessage(char *pmsg, long int msglen, unsigned int ctrlSize, char *ctrl)
 {
-	unsigned int	cnt, *links, i, nlabel, myLabel, csz;
-	char			*newctrl;
-	CTChannel		*chnl;
-	char			flg = 1;
-	CTChannelStatus	status;
-	long int		rlen;
-    int				cmd = CTMessage::getNetworkCommand(pmsg);
+        unsigned int    cnt, *links, i, nlabel, myLabel, csz;
+        char                    *newctrl;
+        CTChannel               *chnl;
+        char                    flg = 1;
+        CTChannelStatus status;
+        long int                rlen;
+    int                         cmd = CTMessage::getNetworkCommand(pmsg);
 
     // get list of nodes to broadcast to
-	links = node_m->broadcastList(ctrl, &cnt);
-	if ( cnt )
-	{
-		myLabel = node_m->label();
-		CTMessage::setSendingNode(pmsg, myLabel);
-		for ( i = 0; i < cnt; i++ )
-		{
-			newctrl = node_m->controlDataForSending(ctrl, links[i], &csz);
-			// forward msg along link links[i]; get the channel for the neighbor on link links[i].
-			nlabel = node_m->labelForLink(links[i]);
-			chnl = (CTChannel *)node_m->neighbor(nlabel);
-			if ( chnl )
-			{
-				// send control info first.
-				//send ctrl flag
-				status = chnl->sendData(&flg, sizeof(flg), &rlen);
-				
-				// send ctrl len
+        links = node_m->broadcastList(ctrl, &cnt);
+        if ( cnt )
+        {
+                myLabel = node_m->label();
+                CTMessage::setSendingNode(pmsg, myLabel);
+                for ( i = 0; i < cnt; i++ )
+                {
+                        newctrl = node_m->controlDataForSending(ctrl, links[i], &csz);
+                        // forward msg along link links[i]; get the channel for the neighbor on link links[i].
+                        nlabel = node_m->labelForLink(links[i]);
+                        chnl = (CTChannel *)node_m->neighbor(nlabel);
+                        if ( chnl )
+                        {
+                                // send control info first.
+                                //send ctrl flag
+                                status = chnl->sendData(&flg, sizeof(flg), &rlen);
+
+                                // send ctrl len
                 if ( kCTChannelOK == status )
                     status = chnl->sendData((char *)&ctrlSize, sizeof(ctrlSize), &rlen);
-				
-				// send ctrl info
+
+                                // send ctrl info
                 if ( kCTChannelOK == status )
                     status = chnl->sendData(newctrl, ctrlSize, &rlen);
 
@@ -587,15 +593,15 @@ void CTServer::broadcastPackedMessage(char *pmsg, long int msglen, unsigned int 
                 if ( kCTChannelOK != status )
                     ulm_err(("Node %d: Error in bcasting msg (cmd = %d) to neighbor %d."
                              "status = %d.\n", myLabel, cmd, nlabel));
-			}
-			else
-			{
-				ulm_err(("Node %d: Error: neighbor %d does not exist.\n", myLabel, nlabel));
-			}
-			
-			free(newctrl);
-		}
-	}
+                        }
+                        else
+                        {
+                                ulm_err(("Node %d: Error: neighbor %d does not exist.\n", myLabel, nlabel));
+                        }
+
+                        free(newctrl);
+                }
+        }
 }
 
 
@@ -644,9 +650,9 @@ void CTServer::handleMessage(CTChannel *chnl, char *pmsg, long int msglen, unsig
 
 void CTServer::handleNetMsg(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSize, char *ctrl)
 {
-    char                ncmd;
+    char        ncmd;
+    admin_fn_t  fn;
     const char  *data;
-    admin_fn_t                  fn;
 
     /*
       ASSERT: msg data layout should follow:
@@ -654,6 +660,9 @@ void CTServer::handleNetMsg(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSi
       msg->networkCommand() is one of enum values for  CTServer, e.g. kLinkNetwork
     */
     data = msg->data();
+    if (!data) {
+        /* error ? */
+    }
     ncmd = msg->networkCommand();
 
     // get handler method from vtable.
@@ -670,85 +679,89 @@ void CTServer::handleNetMsg(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSi
 
 void CTServer::routeMessage(CTChannel *chnl, char *pmsg, long int msglen, unsigned int ctrlSize, char *ctrl)
 {
-	int				rtype;
-	unsigned int	dst, nextNeighbor;
-	bool			msgDropped = false;
-	CTChannel		*nchnl;
-	CTMessage		*msg;
-    CTChannelStatus	status;
-    int				cmd;
-    
-	/* check if we should handle the msg. */
-	rtype = CTMessage::getRoutingType(pmsg);
+    int             rtype;
+    unsigned int    dst, nextNeighbor;
+    bool            msgDropped = false;
+    CTChannel       *nchnl;
+    CTMessage       *msg;
+    CTChannelStatus status;
+#ifdef FIX_ME_ROB
+    int             cmd;
+#endif
 
+    /* check if we should handle the msg. */
+    rtype = CTMessage::getRoutingType(pmsg);
+
+#ifdef FIX_ME_ROB
     cmd = CTMessage::getNetworkCommand(pmsg);
-    
-	/* check type of route to see if we need to forward
-		msg. */
-	switch ( rtype )
-	{
-		case CTMessage::kLocal:
-			handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
-			break;
-		case CTMessage::kPointToPoint:
-			if ( ( true == CTMessage::getDestination(pmsg, &dst)) && node_m )
-			{
-				if ( node_m->label() == dst )
-				{
-					handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
-				}
-				else
-				{
-					/* forward msg to next svr in path. */
-                    
-					nextNeighbor = node_m->nextNeighborLabelToNode(dst);
-					if ( (nchnl = (CTChannel *)node_m->neighbor(nextNeighbor)) )
-					{
-						CTController::sendControlField(nchnl, 0, NULL);
-                        CTMessage::setSendingNode(pmsg, node_m->label());
-                        status = nchnl->sendPackedMessage(pmsg, msglen);
-						if ( kCTChannelOK != status )
-                            ulm_err(("Node %d: Unable to forward msg from %d to next neighbor %d. status = %d.\n",
-                                     node_m->label(), CTMessage::getSourceNode(pmsg), nextNeighbor, status));
-                            
-					}
-                    else
-                    {
-                        ulm_err(("Node %d: Unable to forward msg. No channel for neighbor %d.\n",
-                                node_m->label(), nextNeighbor));
-                    }
-				}
-			}
-			else
-				msgDropped = true;
-			break;
-		case CTMessage::kScatterv:
-			scattervPackedMessage(pmsg, msglen, ctrlSize, ctrl);
-			break;
-		case CTMessage::kLinkup:
-			msg = CTMessage::unpack(pmsg);
-			if ( msg )
-			{
-				if ( true == linkNetwork(chnl, msg, ctrlSize, ctrl) )
-					hasLinkedNet_m = true;
-				msg->release();
-			}
-			else
-			{
-				ulm_err(("Node %d: Invalid message during linkup.  Unable to proceed.", node_m->label()));
-			}
-			break;
-		case CTMessage::kBroadcast:
-			broadcastPackedMessage(pmsg, msglen, ctrlSize, ctrl);
-			handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
-			break;
-		default:
-			break;
-	}
-	
-	if ( true == msgDropped )
-	{
-		// report an error
+#endif
+
+    /* check type of route to see if we need to forward
+       msg. */
+    switch ( rtype )
+    {
+    case CTMessage::kLocal:
+        handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
+        break;
+    case CTMessage::kPointToPoint:
+        if ( ( true == CTMessage::getDestination(pmsg, &dst)) && node_m )
+        {
+            if ( node_m->label() == dst )
+            {
+                handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
+            }
+            else
+            {
+                /* forward msg to next svr in path. */
+
+                nextNeighbor = node_m->nextNeighborLabelToNode(dst);
+                if ( (nchnl = (CTChannel *)node_m->neighbor(nextNeighbor)) )
+                {
+                    CTController::sendControlField(nchnl, 0, NULL);
+                    CTMessage::setSendingNode(pmsg, node_m->label());
+                    status = nchnl->sendPackedMessage(pmsg, msglen);
+                    if ( kCTChannelOK != status )
+                        ulm_err(("Node %d: Unable to forward msg from %d to next neighbor %d. status = %d.\n",
+                                 node_m->label(), CTMessage::getSourceNode(pmsg), nextNeighbor, status));
+
+                }
+                else
+                {
+                    ulm_err(("Node %d: Unable to forward msg. No channel for neighbor %d.\n",
+                             node_m->label(), nextNeighbor));
+                }
+            }
+        }
+        else
+            msgDropped = true;
+        break;
+    case CTMessage::kScatterv:
+        scattervPackedMessage(pmsg, msglen, ctrlSize, ctrl);
+        break;
+    case CTMessage::kLinkup:
+        msg = CTMessage::unpack(pmsg);
+        if ( msg )
+        {
+            if ( true == linkNetwork(chnl, msg, ctrlSize, ctrl) )
+                hasLinkedNet_m = true;
+            msg->release();
+        }
+        else
+        {
+            ulm_err(("Node %d: Invalid message during linkup.  Unable to proceed.", node_m->label()));
+        }
+        break;
+    case CTMessage::kBroadcast:
+        broadcastPackedMessage(pmsg, msglen, ctrlSize, ctrl);
+        handleMessage(chnl, pmsg, msglen, ctrlSize, ctrl);
+        break;
+    default:
+        break;
+    }
+
+    if ( true == msgDropped )
+    {
+        // report an error
         CTMessage::getDestination(pmsg, &dst);
         ulm_err(("Node %d: Error: Dropping msg destined for node %d\n", node_m->label(), dst));
     }
@@ -812,16 +825,13 @@ void CTServer::scattervPackedMessage(char *pmsg, long int msglen, unsigned int c
 }
 
 
-
-
-
 bool CTServer::scatterv(unsigned int sourceLabel, int msgType, unsigned int labelCnt, unsigned int *labels,
                         unsigned int *datalen, const char **data, char *ctrl, unsigned int ctrlsz)
 {
-    char                        *offset, *buffer, *ptr, *newctrl;
+    char                *offset, *buffer, *ptr, *newctrl;
     unsigned int        *links, *counts, arrayCnt, **scatterList;
     CTChannel           *chnl;
-    bool                        err;
+    bool                err;
     CTChannelStatus     status;
     unsigned int        bufsz, idx, j;
     unsigned int        label, sz, i;
@@ -950,6 +960,9 @@ bool CTServer::scatterv(unsigned int sourceLabel, int msgType, unsigned int labe
                 if ( (newctrl = node_m->controlDataForSending(ctrl, links[i], &ctrlsz)) )
                 {
                     status = CTController::sendMessage(chnl, msg, ctrlsz, newctrl);
+                    if (status != kCTChannelOK) {
+                        ct_svr_err(("Error in sending msg. status = %d.\n", status));
+                    }
                 }
                 else
                 {
@@ -1189,7 +1202,7 @@ CTChannelStatus CTServer::allgather(unsigned int numParticipants, unsigned int d
     // from node 0.
     unsigned int        sz, cnt;
     CTMessage           *msg;
-    bool                        isOK;
+    bool                isOK;
     CTChannelStatus     status = kCTChannelOK;
 
     if ( 0 != node_m->label() )
@@ -1271,21 +1284,21 @@ CTChannelStatus CTServer::allgather(unsigned int numParticipants, unsigned int d
 
 
 
-CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int sendlen, 
-										char *sendBuf, int *recvLens, char *recvBuf)
-{                                        
-	/*
-		POST:	Gathers individual node data to node 0 then broadcasts aggregate data to all nodes
-				and participating CTClients.
-	*/
-	char			*buf;
-	unsigned int	sz, cnt, cmd;
-    int				totalsz;
-    unsigned int	i;
-	CTMessage		*msg;
-	bool			isOK;
-    int 			offset;
-	CTChannelStatus	status;
+CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int sendlen,
+                                                                                char *sendBuf, int *recvLens, char *recvBuf)
+{
+    /*
+      POST: Gathers individual node data to node 0 then broadcasts
+      aggregate data to all nodes and participating CTClients.
+    */
+    char            *buf;
+    unsigned int    sz, cnt, cmd;
+    int             totalsz;
+    unsigned int    i;
+    CTMessage       *msg;
+    bool            isOK;
+    int             offset;
+    CTChannelStatus status;
 
     status = kCTChannelOK;
     cmd = CTServer::kAllgatherv;
@@ -1314,23 +1327,23 @@ CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int 
             ulm_err(("Node %d: Unable to alloc mem.\n", node_m->label()));
             return kCTChannelMalloc;
         }
-        
+
         memcpy(buf, &totalsz, sizeof(totalsz));
         memcpy(buf + sizeof(totalsz), &offset, sizeof(int));
         memcpy(buf + sizeof(totalsz)+ sizeof(int), sendBuf, sendlen);
-		msg = new CTMessage(CTMessage::kNetwork, buf, sz, false);
-		msg->setDestination(0);
-		msg->setNetworkCommand(cmd);
-		
-		status = sendMessage(msg);
-		if ( kCTChannelOK != status )
+        msg = new CTMessage(CTMessage::kNetwork, buf, sz, false);
+        msg->setDestination(0);
+        msg->setNetworkCommand(cmd);
+
+        status = sendMessage(msg);
+        if ( kCTChannelOK != status )
         {
             ulm_err( ("Node %d: Error in sending allgatherv msg to node 0. status = %d.\n",
                       node_m->label(), status) );
             return status;
         }
-		
-		msg->release();
+
+        msg->release();
         free(buf);
     }
     else
@@ -1351,37 +1364,37 @@ CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int 
         if ( NULL == buffer_m[COLL_IDX(cmd)] )
             buffer_m[COLL_IDX(cmd)] = (char *)malloc(totalsz);
         memcpy(buffer_m[COLL_IDX(cmd)], sendBuf, sendlen);
-        
-		childCnt_m[COLL_IDX(cmd)] = clientCnt_m[COLL_IDX(cmd)] = 0;
-		
-		// bcast aggregate data buffer
-		msg = new CTMessage(CTMessage::kNetwork, buffer_m[COLL_IDX(cmd)], totalsz, false);
-		msg->setNetworkCommand(cmd);
-		
-		
-		// send to node 0's CTClients
-		apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
-		freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
-		collClients_m[COLL_IDX(cmd)] = NULL;
 
-		collOK_m[COLL_IDX(cmd)] = true;
-		spinunlock(&coll_lock_m);
+        childCnt_m[COLL_IDX(cmd)] = clientCnt_m[COLL_IDX(cmd)] = 0;
 
-		status = broadcast(msg);
-		
-		msg->release();
-	}
+        // bcast aggregate data buffer
+        msg = new CTMessage(CTMessage::kNetwork, buffer_m[COLL_IDX(cmd)], totalsz, false);
+        msg->setNetworkCommand(cmd);
 
-	isOK = false;
-	while ( !isOK )
-	{
-		spinlock(&coll_lock_m);
-		isOK = collOK_m[COLL_IDX(cmd)];
-		spinunlock(&coll_lock_m);
-		usleep(10);
-	}
-	
-	//parse aggregate data.  recvBuf must have been  preallocated.
+
+        // send to node 0's CTClients
+        apply(collClients_m[COLL_IDX(cmd)], _dist_client, msg);
+        freeall_with(collClients_m[COLL_IDX(cmd)], NULL);
+        collClients_m[COLL_IDX(cmd)] = NULL;
+
+        collOK_m[COLL_IDX(cmd)] = true;
+        spinunlock(&coll_lock_m);
+
+        status = broadcast(msg);
+
+        msg->release();
+    }
+
+    isOK = false;
+    while ( !isOK )
+    {
+        spinlock(&coll_lock_m);
+        isOK = collOK_m[COLL_IDX(cmd)];
+        spinunlock(&coll_lock_m);
+        usleep(10);
+    }
+
+    //parse aggregate data.  recvBuf must have been  preallocated.
     spinlock(&coll_lock_m);
     collOK_m[COLL_IDX(cmd)] = false;
 
@@ -1394,16 +1407,15 @@ CTChannelStatus CTServer::allgatherv(unsigned int numParticipants, unsigned int 
     buffer_m[COLL_IDX(cmd)] = NULL;
     spinunlock(&coll_lock_m);
 
-    
-	return status;
-}
 
+    return status;
+}
 
 
 CTChannelStatus CTServer::scatterv(int msgType, unsigned int *datalen, const char **data)
 {
     unsigned int                *labels, ctrlsz, nnodes, i;
-    char                                *ctrl;
+    char                        *ctrl;
 
     nnodes = node_m->numberOfNodes();
     if ( (labels = (unsigned int *)malloc(sizeof(unsigned int)*nnodes)) )
@@ -1420,64 +1432,61 @@ CTChannelStatus CTServer::scatterv(int msgType, unsigned int *datalen, const cha
     return kCTChannelOK;
 }
 
+
 CTChannelStatus CTServer::synchronize(unsigned int numParticipants)
 {
-	/*
-		synchronize uses fan in/fan out algorithm.  Sends kSynchronize cmd to parent and
-		then waits for response from node 0.
-	*/
-	bool			isOK;
-	unsigned int	clients, cnt;
-	CTMessage		*msg;
-	CTChannelStatus	status;
-	unsigned int	totalCnt = 0;
-	
-	spinlock(&coll_lock_m);
-	isOK = collOK_m[COLL_IDX(kSynchronize)] = false;
-	spinunlock(&coll_lock_m);
-	
-	clients = 0;
-	if ( numParticipants > node_m->numberOfNodes() )
-		clients = numParticipants - node_m->numberOfNodes();
+    /*
+      synchronize uses fan in/fan out algorithm.  Sends kSynchronize cmd to parent and
+      then waits for response from node 0.
+    */
+    bool                isOK;
+    unsigned int        cnt;
+    CTMessage           *msg;
+    CTChannelStatus     status;
+    unsigned int        totalCnt = 0;
+
+    spinlock(&coll_lock_m);
+    isOK = collOK_m[COLL_IDX(kSynchronize)] = false;
+    spinunlock(&coll_lock_m);
 
     if ( 0 == node_m->label() )
-	{
-		totalCnt = numParticipants - 1;
-	}
-		
-	/*
-	If we are a leaf, then initiate sync by sending sync message to parent.
-	Otherwise, wait for GO msg.
-	*/
-	if ( 0 != node_m->label() )
-	{
-		// just send to node 0
-		msg = new CTMessage(CTMessage::kNetwork, NULL, 0);
-		msg->setDestination(0);
-		msg->setNetworkCommand(CTServer::kSynchronize);
-		status = sendMessage(msg);
-		if ( kCTChannelOK != status )
+    {
+        totalCnt = numParticipants - 1;
+    }
+
+    /*
+      If we are a leaf, then initiate sync by sending sync message to parent.
+      Otherwise, wait for GO msg.
+    */
+    if ( 0 != node_m->label() )
+    {
+        // just send to node 0
+        msg = new CTMessage(CTMessage::kNetwork, NULL, 0);
+        msg->setDestination(0);
+        msg->setNetworkCommand(CTServer::kSynchronize);
+        status = sendMessage(msg);
+        if ( kCTChannelOK != status )
         {
             ulm_err( ("Node %d: Error in sending sync msg to node 0. status = %d.\n",
                       node_m->label(), status) );
             return status;
         }
-			
-		msg->release();
-	}
-	else
-	{
-		// main loop for interior node in spanning tree.  Wait until we recvd from
-		// all child nodes.
-		cnt = 0;
-		while ( cnt != totalCnt )
-		{
-			spinlock(&coll_lock_m);
-			cnt = childCnt_m[COLL_IDX(kSynchronize)] + clientCnt_m[COLL_IDX(kSynchronize)];
-			spinunlock(&coll_lock_m);
-			usleep(10);
-		}
-		
+
+        msg->release();
+    }
+    else
+    {
+        // main loop for interior node in spanning tree.  Wait until we recvd from
+        // all child nodes.
+        cnt = 0;
+        while ( cnt != totalCnt )
+        {
+            spinlock(&coll_lock_m);
+            cnt = childCnt_m[COLL_IDX(kSynchronize)] + clientCnt_m[COLL_IDX(kSynchronize)];
+            spinunlock(&coll_lock_m);
+            usleep(10);
+        }
+
         spinlock(&coll_lock_m);
 
         collOK_m[COLL_IDX(kSynchronize)] = true;
@@ -1499,18 +1508,18 @@ CTChannelStatus CTServer::synchronize(unsigned int numParticipants)
         spinunlock(&coll_lock_m);
 
         msg->release();
-	}
-	
-	// wait for GO
-	while ( false == isOK )
-	{
-		usleep(10);	// poll every .01 second
-		spinlock(&coll_lock_m);
-		isOK = collOK_m[COLL_IDX(kSynchronize)];
-		spinunlock(&coll_lock_m);
-	}
-	
-	return kCTChannelOK;
+    }
+
+    // wait for GO
+    while ( false == isOK )
+    {
+        usleep(10);     // poll every .01 second
+        spinlock(&coll_lock_m);
+        isOK = collOK_m[COLL_IDX(kSynchronize)];
+        spinunlock(&coll_lock_m);
+    }
+
+    return kCTChannelOK;
 }
 
 
@@ -1531,97 +1540,97 @@ CTChannelStatus CTServer::synchronize(unsigned int numParticipants)
 
 void CTServer::performChecks(void *arg)
 {
-	link_t		*ptr;
-	CTChannel	*chnl;
-	char		*msg, flg, *ctrl;
-	int			clen;
-	long int	mlen;
-	long int	sz;
-	CTChannelStatus	status;
-	bool		hasN;
-	
-	while ( (true == isStarted_m) && (true == performingChecks_m) )
-	{
-		/* scan client connections for data. 
-		IMPORTANT:  since we always add at the beginning, then
-		we should not conflict with adding new client connections.
-		*/
-		spinlock(&lock_m);
-		ptr = clients_m;
-		spinunlock(&lock_m);
-		while ( ptr && (true == isStarted_m) )
-		{
-			ctrl = NULL;
-			chnl = (CTChannel *) ptr->data;
-			if ( true == chnl->isReadable() )
-			{
-				/* msg layout should be:
-					<ctrl present flag (byte)>[<ctrl len (int)><ctrl info>]<packed msg>
-				*/
-				//fprintf(stderr, "node [pid=%d]: receiving msg from client...\n", getpid());
+    link_t              *ptr;
+    CTChannel   *chnl;
+    char                *msg, flg, *ctrl;
+    int                 clen;
+    long int    mlen;
+    long int    sz;
+    CTChannelStatus     status;
+    bool                hasN;
+
+    while ( (true == isStarted_m) && (true == performingChecks_m) )
+    {
+        /* scan client connections for data.
+           IMPORTANT:  since we always add at the beginning, then
+           we should not conflict with adding new client connections.
+        */
+        spinlock(&lock_m);
+        ptr = clients_m;
+        spinunlock(&lock_m);
+        while ( ptr && (true == isStarted_m) )
+        {
+            ctrl = NULL;
+            chnl = (CTChannel *) ptr->data;
+            if ( true == chnl->isReadable() )
+            {
+                /* msg layout should be:
+                   <ctrl present flag (byte)>[<ctrl len (int)><ctrl info>]<packed msg>
+                */
+                //fprintf(stderr, "node [pid=%d]: receiving msg from client...\n", getpid());
                 msg = NULL;
                 flg = 0;
-				status = chnl->receive(&flg, sizeof(flg), &sz);
+                status = chnl->receive(&flg, sizeof(flg), &sz);
                 CHK_CLIENT_STATUS(status, ptr, _NO_OP);
-				
-				clen = 0;
-				if ( flg && (kCTChannelOK == status) )
-				{
+
+                clen = 0;
+                if ( flg && (kCTChannelOK == status) )
+                {
                     status = chnl->receive((char *)&clen, sizeof(clen), &sz);
                     CHK_CLIENT_STATUS(status, ptr, _NO_OP);
-					if ( clen && (ctrl = (char *)malloc(sizeof(char)*clen))
-                        && (kCTChannelOK == status) )
-					{
-						status = chnl->receive(ctrl, clen, &sz);
+                    if ( clen && (ctrl = (char *)malloc(sizeof(char)*clen))
+                         && (kCTChannelOK == status) )
+                    {
+                        status = chnl->receive(ctrl, clen, &sz);
                         CHK_CLIENT_STATUS(status, ptr, free(ctrl));
-					}
+                    }
                     else
                         ulm_err( ("Node %d: error in receiving ctrl field length. status = %d.\n",
                                   node_m->label(), status) );
-				}
-				
+                }
+
                 if ( kCTChannelOK == status )
                     status = chnl->getPackedMessage(&msg, &mlen);
-				if ( msg && (kCTChannelOK == status) )
-				{
-					routeMessage(chnl, msg, mlen, clen, ctrl);
-					free(msg);
-				}
-				else
-				{
+                if ( msg && (kCTChannelOK == status) )
+                {
+                    routeMessage(chnl, msg, mlen, clen, ctrl);
+                    free(msg);
+                }
+                else
+                {
                     if ( kCTChannelClosed != status )
                         ulm_err( ("Node %d: error in receiving msg. status = %d.\n",
                                   node_m->label(), status) );
-				}
-				
-				free(ctrl);
-			}
-			ptr = ptr->next;
-		}
-		
-		/* check heartbeats. */
-		hasN = true;
-		if ( (NULL  == node_m) || (false == node_m->hasNeighbors()) )
-			hasN = false;
-		
-		/* verify that we need to continue checking. */
-			
-		if ( (NULL == clients_m) &&  (false == hasN) )
-		{
-			spinlock(&lock_m);
-			performingChecks_m = false;
-			spinunlock(&lock_m);
-		}
-		else
-		{
-			// sleep for awhile
-			usleep(100);
-		}
-	}
+                }
 
-	spinlock(&lock_m);
-	performingChecks_m = false;
-	spinunlock(&lock_m);
+                free(ctrl);
+            }
+            ptr = ptr->next;
+        }
+
+        /* check heartbeats. */
+        hasN = true;
+        if ( (NULL  == node_m) || (false == node_m->hasNeighbors()) )
+            hasN = false;
+
+        /* verify that we need to continue checking. */
+
+        if ( (NULL == clients_m) &&  (false == hasN) )
+        {
+            spinlock(&lock_m);
+            performingChecks_m = false;
+            spinunlock(&lock_m);
+        }
+        else
+        {
+            // sleep for awhile
+            usleep(100);
+        }
+    }
+
+    spinlock(&lock_m);
+    performingChecks_m = false;
+    spinunlock(&lock_m);
 
 }
 

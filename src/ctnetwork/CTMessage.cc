@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,9 +38,11 @@
  *  Created by Rob Aulwes on Mon Jan 13 2003.
  */
 
+#include <strings.h>
+
 #include "CTMessage.h"
 
-typedef struct 
+typedef struct
 {
     unsigned int    _destination;   /* label of destination node for pt-to-pt. */
     unsigned int    _destinationID; /* client ID of destination CTClient. */
@@ -53,17 +58,17 @@ static char *_pack_ctrl(msg_control_t *ctrl, long int *len)
       packed layout is:
       _destination : _destinationID : _sourceNode : _sendingNode : _clientID
     */
-    int             sz, tmp;
+    int     sz, tmp;
     char    *buf;
-        
+
     if ( NULL == ctrl ) return NULL;
-        
-    sz  = sizeof(ctrl->_destination) + 
+
+    sz  = sizeof(ctrl->_destination) +
         sizeof(ctrl->_destinationID) +
         sizeof(ctrl->_sourceNode) +
         sizeof(ctrl->_sendingNode) +
         sizeof(ctrl->_clientID);
-        
+
     if ( NULL != (buf = (char *)malloc(sz)) )
     {
         *len = 0;
@@ -90,11 +95,11 @@ static msg_control_t *_unpack_ctrl(const char *buf, int *clen)
     msg_control_t   *ctrl;
     int                             sz;
     const char              *ptr;
-        
+
     *clen = 0;
     if ( NULL == (ctrl = (msg_control_t *)malloc(sizeof(msg_control_t)))  )
         return NULL;
-                
+
     ptr = buf;
     memcpy(&(ctrl->_destination), ptr, sz = sizeof(ctrl->_destination));
     ptr += sz;
@@ -106,10 +111,10 @@ static msg_control_t *_unpack_ctrl(const char *buf, int *clen)
     ptr += sz;
     memcpy(&(ctrl->_clientID), ptr, sz = sizeof(ctrl->_clientID));
     ptr += sz;
-        
+
     if ( ctrl )
         *clen = ptr - buf;
-        
+
     return ctrl;
 }
 
@@ -119,9 +124,9 @@ static const char *_skip_control(const char *ptrToControl)
     /*
       packed layout is:
       _destination : _destinationID : _sourceNode : _sendingNode : _clientID
-    */      
+    */
     ptrToControl += 5*sizeof(unsigned int);         // skip _destination : _destinationID : _sourceNode : _sendingNode : _clientID
-        
+
     return ptrToControl;
 }
 
@@ -132,13 +137,13 @@ static const char *_skip_control(const char *ptrToControl)
  */
 
 
-CTMessage::CTMessage(int type, const char *data, long int datalen, bool copyData) 
+CTMessage::CTMessage(int type, const char *data, long int datalen, bool copyData)
     : type_m(type), rtype_m(kPointToPoint), netcmd_m(0),
       control_m(NULL), data_m(NULL), datalen_m(datalen), copy_m(copyData)
 {
     control_m = (msg_control_t *)malloc(sizeof(msg_control_t));
     bzero(control_m, sizeof(msg_control_t));
-        
+
     if ( copy_m )
     {
         data_m = (char *)malloc(sizeof(char)*datalen);
@@ -165,14 +170,14 @@ const char *CTMessage::getData(const char *buffer)
       destination : sending node : path length : path
     */
     const char              *ptr;
-        
+
     if ( !buffer ) return NULL;
-        
+
     // skip to packed control struct
     ptr = buffer + 3*sizeof(char);
     ptr = _skip_control(ptr);
     ptr += sizeof(long int);                // datalen field
-        
+
     return ptr;
 }
 
@@ -181,7 +186,7 @@ const char *CTMessage::getData(const char *buffer)
 int CTMessage::getMessageType(const char *buffer)
 {
     char            tp;
-        
+
     memcpy(&tp, buffer, sizeof(tp));
     return (int)tp;
 }
@@ -190,7 +195,7 @@ int CTMessage::getMessageType(const char *buffer)
 int CTMessage::getRoutingType(const char *buffer)
 {
     char            tp;
-        
+
     memcpy(&tp, buffer+sizeof(char), sizeof(tp));
     return (int)tp;
 }
@@ -198,7 +203,7 @@ int CTMessage::getRoutingType(const char *buffer)
 int CTMessage::getNetworkCommand(const char *buffer)
 {
     char            tp;
-        
+
     memcpy(&tp, buffer+2*sizeof(char), sizeof(tp));
     return (int)tp;
 }
@@ -208,7 +213,7 @@ bool CTMessage::getDestination(char *packedMsg, unsigned int *dst)
 {
     char            tp;
     bool            found = false;
-        
+
     memcpy(&tp, packedMsg+sizeof(char), sizeof(tp));
     if ( kPointToPoint == tp )
     {
@@ -245,7 +250,7 @@ void CTMessage::setSendingNode(char *packedMsg, unsigned int label)
       destination : _destinationID : source node : sending node : path length : path
     */
     char    *ctrl;
-        
+
     if ( NULL == packedMsg ) return;
     ctrl = packedMsg + 3*sizeof(char);
     ctrl += 3*sizeof(unsigned int);
@@ -262,13 +267,13 @@ unsigned int CTMessage::getSourceNode(char *packedMsg)
       destination : _destinationID : source node : sending node : path length : path
     */
     char    *ctrl;
-        
+
     if ( NULL == packedMsg ) return 0;
     ctrl = packedMsg + 3*sizeof(char);
     ctrl += 2*sizeof(unsigned int);
     return *(unsigned int *)ctrl;
 }
-        
+
 
 
 CTMessage *CTMessage::unpack(const char *buffer)
@@ -284,7 +289,7 @@ CTMessage *CTMessage::unpack(const char *buffer)
     msg_control_t   *ctrl;
     const char *ptr;
     char    *data;
-        
+
     ctrl = NULL;
     ptr = buffer;
     memcpy(&mtp, ptr, sz = sizeof(mtp));
@@ -299,24 +304,24 @@ CTMessage *CTMessage::unpack(const char *buffer)
 
     memcpy(&datalen, ptr, sz = sizeof(datalen));
     ptr += sz;
-        
+
     if ( (data = (char *)malloc(sizeof(char)*datalen)) )
     {
         memcpy(data, ptr, datalen);
     }
-        
+
     /*
       len = (ptr-buffer)+datalen;
       for ( int i = 0; i < len; i++ )
       fprintf(stderr, "%x", *(buffer+i));
       fprintf(stderr, "\n");
     */
-        
+
     msg = new CTMessage(mtp, data, datalen);
     msg->netcmd_m = cmd;
     msg->rtype_m = rtp;
     msg->control_m = ctrl;
-        
+
     return msg;
 }
 
@@ -333,7 +338,7 @@ bool CTMessage::pack(char **buffer, long int *len)
     char            *ctrl, *ptr;
     long int                        clen;
     bool                            success = true;
-        
+
     *buffer = NULL;
     *len = 0;
     clen = 0;
@@ -346,7 +351,7 @@ bool CTMessage::pack(char **buffer, long int *len)
         free(ctrl);
         return false;
     }
-        
+
     ptr = *buffer;
     memcpy(ptr, &type_m, sizeof(type_m));           /* msg type. */
     ptr += sizeof(type_m);
@@ -363,15 +368,15 @@ bool CTMessage::pack(char **buffer, long int *len)
     ptr += sizeof(datalen_m);
     memcpy(ptr, data_m, datalen_m);                         /* user data. */
     ptr += datalen_m;
-        
+
     /*
       for ( int i = 0; i < *len; i++ )
       fprintf(stderr, "%x", *((*buffer)+i));
       fprintf(stderr, "\n");
     */
-        
+
     free(ctrl);
-        
+
     return success;
 }
 
@@ -427,7 +432,7 @@ void CTMessage::setSendingNode(unsigned int label)
 {
     ((msg_control_t *)control_m)->_sendingNode = label;
 }
-        
+
 unsigned int CTMessage::sourceNode()
 {
     return ((msg_control_t *)control_m)->_sourceNode;

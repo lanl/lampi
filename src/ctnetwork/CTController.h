@@ -69,6 +69,9 @@ public:
     virtual CTChannelStatus sendControlField(CTChannel *chnl, unsigned int ctrlSize, char *control);
         
     virtual CTChannelStatus sendMessage(CTChannel *chnl, CTMessage *msg, unsigned int ctrlSize, char *control);
+    virtual CTChannelStatus sendMessage(CTMessage *, unsigned int, char *) = 0;
+    virtual CTChannelStatus sendMessage(CTMessage *) = 0;
+
         
     virtual CTChannelStatus broadcast(CTMessage *msg, unsigned int ctrlSize, char *control);
         

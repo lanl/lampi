@@ -40,13 +40,11 @@
 
 #include "parsing.h"
 #include "linked_list.h"
+#include "internal/linkage.h"
 #include "internal/malloc.h"
 
-#ifndef __mips
-inline
-#endif
-static void _ulm_parse_add(char **substr, int cnt, const char *cptr,
-                           int len)
+CDECL_STATIC_INLINE
+void _ulm_parse_add(char **substr, int cnt, const char *cptr, int len)
 {
     substr[cnt] = (char *) ulm_malloc(sizeof(char) * (len + 1));
     if (NULL == substr[cnt]) {
