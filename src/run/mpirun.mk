@@ -16,6 +16,7 @@ SRC_MPIRUN += \
 	src/run/Input.cc \
 	src/run/Signal.cc \
 	src/run/KillAppProcs.cc \
+	src/run/Log.cc \
 	src/run/ProcessInput.cc \
 	src/run/RearrangeHostList.cc \
 	src/run/RunParams.cc \

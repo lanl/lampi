@@ -98,5 +98,8 @@ void AbortFunction(const char *file, int line)
         KillAppProcs(-1);
     }
 
+
+    LogJobAbort();
+
     exit(EXIT_FAILURE);
 }
