@@ -182,93 +182,6 @@ void lampi_init_postfork_quadrics(lampiState_t *s)
 }
 
 
-void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *s)
-{
-    int errorCode; 
-    int rank;
-    int recvd;
-    int tag;
-
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_receive_setup_params_quadrics");
-    }
-
-    if ((s->nhosts == 1) || (!s->quadrics)) {
-        return;
-    }
-
-    /*  
-     *  number of bytes per process for the shared memory descriptor
-     *  pool RUNPARAMS exchange read the start of input parameters tag
-     */
-
-    rank = 0;
-    tag = dev_type_params::START_QUADRICS_INPUT;
-    if ( false == s->client->receiveMessage(&rank, &tag, &errorCode) )
-    {
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
-        return;
-    }
-
-    /* read quadricsHW - if quadricsHW use hardware collectives
-     */
-    if (false ==
-        s->client->unpackMessage(&quadricsHW,
-                                 (adminMessage::packType) sizeof(int),
-                                 1)) {
-        ulm_err(("Failed unpacking quadricsHW...\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
-        return;
-    }
-
-
-    /* read quadricsDoAck - if quadricsDoAck use reliable acking protocol, else use local
-     * send completion semantics */
-    if (false ==
-        s->client->unpackMessage(&quadricsDoAck,
-                                 (adminMessage::packType) sizeof(int),
-                                 1)) {
-        ulm_err(("Failed unpacking quadricsDoAck...\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
-        return;
-    }
-
-    /* read quadricsDoChecksum - indicates what sort of data checks are done on the
-     *   receive side */
-    if (false ==
-        s->client->unpackMessage(&quadricsDoChecksum,
-                                 (adminMessage::packType) sizeof(int),
-                                 1)) {
-        ulm_err(("Failed unpacking quadrics checksum...\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
-        return;
-    }
-
-    int done = 0;
-    while (!done) {
-        /* read next tag */
-        recvd = s->client->nextTag(&tag);
-        if (recvd != adminMessage::OK) {
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-            return;
-        }
-        switch (tag) {
-        case dev_type_params::END_QUADRICS_INPUT:
-            /* done reading input params */
-            done = 1;
-            break;
-        default:
-            ulm_err(("Unknown Quadrics setup tag %d...\n", tag));
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_QUADRICS;
-            return;
-        }
-    }
-}
-
-
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
 {
     int errorCode; 
@@ -290,12 +203,6 @@ void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *s)
      *  number of bytes per process for the shared memory descriptor
      *  pool RUNPARAMS exchange read the start of input parameters tag
      */
-
-
-#if ENABLE_CT
-    lampi_init_prefork_receive_setup_msg_quadrics(s);
-    return;
-#endif
 
     recvd = s->client->receive(-1, &tag, &errorCode);
     if ((recvd == adminMessage::OK) &&

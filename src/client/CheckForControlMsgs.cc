@@ -49,170 +49,6 @@
 #include "client/SocketGeneric.h"
 #include "queue/globals.h"
 
-void doRollingShutdown(int tag, int *numberDaemonChildren, lampiState_t *state)
-{
-    int				cid, errorCode;
-    unsigned int	parent;
-    adminMessage 	*client;
-    
-    if ( 0 == *numberDaemonChildren )
-    {
-        client = state->client;
-        if ( 0 == client->nodeLabel() )
-        {
-            parent = 0;
-            cid = state->channelID;
-        }
-        else
-        {
-            cid = 0;
-            parent = client->parentHostRank();
-        }
-        ulm_fdbg(("Node %d: Leaf sending tag %d to host rank %d.\n",
-                  client->nodeLabel(), tag, parent));
-        client->reset(adminMessage::SEND);
-        if (false ==
-            client->sendMessage(parent, tag, cid, &errorCode)) {
-            ulm_exit((-1,
-                      "Error: sending tag %d.  "
-                      "RetVal: %ld\n", tag, errorCode));
-        }
-        // ok, the client daemon can now exit...
-        ulm_fdbg(("Node %d: exiting...\n", client->nodeLabel()));
-        exit(0);
-    }    
-}
-
-int checkForRunControlMsgs(double *HeartBeatTime, int *ProcessCount, int *numberDaemonChildren,
-                              int hostIndex, pid_t *ChildPIDs,
-                              int *STDOUTfdsFromChildren,
-                              int *STDERRfdsFromChildren, size_t *StderrBytesWritten,
-                              size_t *StdoutBytesWritten,
-                              int *NewLineLast, PrefixName_t *IOPreFix,
-                              int *LenIOPreFix, lampiState_t *state)
-{
-    int 			rank, Tag, i, errorCode;
-    adminMessage 	*client;
-    int 			NotifyServer, NFDs, MaxDesc;
-    double 			Message;
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
-    struct timeval Time;
-#else
-    struct timespec Time;
-#endif                          /* LINUX */
-
-    client = state->client;
-    rank = -1;
-    Tag = -1;
-    if (true == client->receiveMessage(&rank, &Tag, &errorCode, 0)) {
-        switch (Tag) {          /* process according to message type */
-        case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
-            gettimeofday(&Time, NULL);
-            *HeartBeatTime =
-                (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
-#else
-            clock_gettime(CLOCK_REALTIME, &Time);
-            *HeartBeatTime =
-                (double) (Time.tv_sec) + ((double) Time.tv_nsec) * 1e-9;
-#endif                          /* LINUX */
-            break;
-        case ACKNORMALTERM:
-            Tag = ACKACKNORMALTERM;
-            ulm_fdbg(("(pid=%d): recvd ACKNORMALTERM. sending ACKACKNORMALTERM to mpirun (channelID=%d).\n", getpid(), state->channelID));
-            client->reset(adminMessage::SEND);
-            if (false ==
-                client->sendMessage(0, Tag, state->channelID,
-                                    &errorCode)) {
-                ulm_exit((-1,
-                          "Error: sending ACKACKNORMALTERM.  "
-                          "RetVal: %ld\n", errorCode));
-            }
-            break;
-        case TERMINATENOW:
-            /* recieve request to teminate immediately */
-            Message = ACKTERMINATENOW;
-            NotifyServer = 0;
-            AbortAndDrainLocalHost(-1, ProcessCount, hostIndex,
-                           ChildPIDs, (unsigned int) Message,
-                           NotifyServer, STDOUTfdsFromChildren, STDERRfdsFromChildren, 
-                           IOPreFix, LenIOPreFix, StderrBytesWritten, 
-                           StdoutBytesWritten, NewLineLast, state);
-            doRollingShutdown(ACKTERMINATENOW, numberDaemonChildren, state);
-            break;
-        case ACKABNORMALTERM:
-            Tag = ACKACKABNORMALTERM;
-            client->reset(adminMessage::SEND);
-            if (false ==
-                client->sendMessage(0, Tag, state->channelID,
-                                    &errorCode)) {
-                ulm_exit((-1,
-                          "Error: sending ACKACKABNORMALTERM.  "
-                          "RetVal: %ld\n", errorCode));
-            }
-            /* drain stdio */
-            MaxDesc = 0;
-            NFDs = ProcessCount[hostIndex] + 1;
-            for (i = 0; i < NFDs; i++) {
-                if (STDOUTfdsFromChildren[i] > MaxDesc)
-                    MaxDesc = STDOUTfdsFromChildren[i];
-                if (STDERRfdsFromChildren[i] > MaxDesc)
-                    MaxDesc = STDERRfdsFromChildren[i];
-            }
-            MaxDesc++;
-            ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, -1,
-                             NFDs, MaxDesc, IOPreFix, LenIOPreFix,
-                             StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, state);
-            ulm_exit((-1, "Abnormal termination \n"));
-            break;
-        case ALLHOSTSDONE:
-            // set flag indicating "app" process can terminate
-            ulm_fdbg(("client ALLHOSTSDONE arrived on host %d\n",
-                     hostIndex));
-            /* drain stdio */
-            MaxDesc = 0;
-            NFDs = ProcessCount[hostIndex] + 1;
-            for (i = 0; i < NFDs; i++) {
-                if (STDOUTfdsFromChildren[i] > MaxDesc)
-                    MaxDesc = STDOUTfdsFromChildren[i];
-                if (STDERRfdsFromChildren[i] > MaxDesc)
-                    MaxDesc = STDERRfdsFromChildren[i];
-            }
-            MaxDesc++;
-            ClientDrainSTDIO(STDOUTfdsFromChildren, STDERRfdsFromChildren, -1,
-                             NFDs, MaxDesc, IOPreFix, LenIOPreFix,
-                             StderrBytesWritten, StdoutBytesWritten,
-                             NewLineLast, state);
-
-            /* To help ensure that all stdio has been sent to host 0, we
-            do a rolling daemon shutdown process.  Each daemon waits for a
-            ACKALLHOSTSDONE from its children in a spanning tree.  When all children have sent
-            an ACKALLHOSTSDONE, then forward to this daemon's parent and
-            exit.
-            */
-            doRollingShutdown(ACKALLHOSTSDONE, numberDaemonChildren, state);
-            
-            *lampiState.sync.AllHostsDone = 1;
-            break;
-
-        case ACKTERMINATENOW:
-        case ACKALLHOSTSDONE:
-            ulm_fdbg(("Node %d: Recvd tag %d from host rank %d.\n",
-                      client->nodeLabel(), Tag, rank));
-            (*numberDaemonChildren)--;
-            doRollingShutdown(Tag, numberDaemonChildren, state);
-            break;
-            
-        default:
-            ulm_exit((-1, "Client: Unrecognized control "
-                      "Message : %u\n", Tag));
-        }                       /* end switch */
-
-    }
-    return 0;
-}
-
 /*
  * this routine receives and process control messages from the server
  */
@@ -234,7 +70,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
     unsigned int Tag;
     ssize_t IOReturn;
     ulm_iovec_t IOVec;
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
@@ -270,7 +106,7 @@ int ClientCheckForControlMsgs(int MaxDescriptor, int *ServerSocketFD,
             }
             switch (Tag) {      /* process according to message type */
             case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
                 gettimeofday(&Time, NULL);
                 *HeartBeatTime =
                     (double) (Time.tv_sec) +

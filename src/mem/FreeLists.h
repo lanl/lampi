@@ -45,7 +45,7 @@
 #include "mem/MemorySegments.h"
 #include "ulm/ulm.h"
 
-#if defined(ENABLE_NUMA) && defined(__mips)
+#if ENABLE_NUMA && defined(__mips)
 #include "os/IRIX/SN0/acquire.h"
 #endif
 

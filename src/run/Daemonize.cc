@@ -32,18 +32,15 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <termios.h>
-
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
-#else
 #include <time.h>
-#endif                          /* LINUX */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include "internal/constants.h"
 #include "internal/log.h"
@@ -54,27 +51,6 @@
 #include "run/Run.h"
 #include "internal/new.h"
 #include "run/globals.h"
-
-/*
- * Daemon processing
- */
-void runSendHeartbeat(ULMRunParams_t *RunParameters)
-{
-    unsigned int 	tag;
-    int 			errorCode;
-	adminMessage	*server;
-	
-	server = RunParameters->server;
-    tag = HEARTBEAT;
-	server->reset(adminMessage::SEND);
-	
-	if ( false == server->broadcastMessage(tag, &errorCode) )
-	{
-		ulm_err( ("Error: sending HEARTBEAT.  RetVal: %ld\n",
-				(long) errorCode) );
-	}
-}
-
 
 /*
  * Read from stdin and create an admin message to host rank 0.
@@ -124,12 +100,9 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         TimeFirstCheckin;
     int *ClientSocketFDList, NHosts, *ProcessCnt;
     HostName_t *HostList;
-	adminMessage	*server;
-#if ENABLE_CT
-    int		terminateMsgSent = 0;
-#endif
+    adminMessage	*server;
     
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
@@ -141,13 +114,13 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
 
     /* Initialization */
     mpirunSetTerminateInitiated(0);
-	server = RunParameters->server;
+    server = RunParameters->server;
     NHosts = RunParameters->NHosts;
     ProcessCnt = RunParameters->ProcessCount;
     HostList = RunParameters->HostList;
     ActiveClients = RunParameters->NHosts;
     ClientSocketFDList = 
-	    RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients;
+        RunParameters->Networks.TCPAdminstrativeNetwork.SocketsToClients;
 
     /* setup list of active hosts */
     ActiveHosts = ulm_new(int, NHosts);
@@ -161,7 +134,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     }
     /* setup initial control data */
     HeartBeatTime = ulm_new(double, NHosts);
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     gettimeofday(&Time, NULL);
     TimeInSeconds =
         (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -185,10 +158,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     HostsNormalTerminated = 0;
     HostsAbNormalTerminated = 0;
 
-#if ENABLE_CT
-    RunParameters->handleSTDio = false;
-#endif
-
     /* setup stdin file descriptor to be non-blocking */
     if(RunParameters->STDINfd >= 0) {
         /* input from terminal */
@@ -208,7 +177,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                          RunParameters->STDINfd,errno));
                 RunParameters->STDINfd = -1;
             }
-        /* input from pipe or file */
+            /* input from pipe or file */
         } else {
             struct stat sbuf;
             if(fstat(RunParameters->STDINfd, &sbuf) != 0) {
@@ -217,13 +186,13 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                 int flags;
                 if(fcntl(RunParameters->STDINfd, F_GETFL, &flags) != 0) {
                     ulm_err(("fcntl(%d,F_GETFL) failed with errno=%d\n", 
-                        RunParameters->STDINfd,errno));
+                             RunParameters->STDINfd,errno));
                     RunParameters->STDINfd = -1;
                 }
                 flags |= O_NONBLOCK;
                 if (fcntl(RunParameters->STDINfd, F_SETFL, flags) != 0) {
                     ulm_err(("fcntl(%d,F_SETFL,O_NONBLOCK) failed with errno=%d\n", 
-                        RunParameters->STDINfd,errno));
+                             RunParameters->STDINfd,errno));
                     RunParameters->STDINfd = -1;
                 }
             }
@@ -234,7 +203,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
     for (;;) {
 
         /* check to see if there is any stdin/stdout/stderr data to read and then write */
-	if( RunParameters->handleSTDio && RunParameters->STDINfd > 0) {
+	if( RunParameters->handleSTDio && RunParameters->STDINfd >= 0) {
             if(mpirunScanStdIn(RunParameters->STDINfd) != ULM_SUCCESS) {
                 close(RunParameters->STDINfd);
                 RunParameters->STDINfd = -1;
@@ -242,7 +211,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         }
 
         /* send heartbeat */
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
         gettimeofday(&Time, NULL);
         TimeInSeconds =
             (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -255,26 +224,12 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         if (DeltaTime >= HEARTBEATINTERVAL) {
             LastTime = TimeInSeconds;
 			
-#if ENABLE_CT
-            if ( HostsNormalTerminated + HostsAbNormalTerminated < NHosts )
-                runSendHeartbeat(RunParameters);
-#else
             RetVal =
                 _ulm_SendHeartBeat(ClientSocketFDList, NHosts,
                                    MaxDescriptorCtl);
-#endif
-
         }
 
         /* check if any messages have arrived and process */
-#if ENABLE_CT
-		RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
-                                      &HostsNormalTerminated,
-                                      &HostsAbNormalTerminated,
-                                      ActiveHosts, ProcessCnt,
-                                      PIDsOfAppProcs,
-                                      &ActiveClients, &terminateMsgSent, server);
-#else
         RetVal =
             mpirunCheckForControlMsgs(MaxDescriptorCtl, ClientSocketFDList,
                                       NHosts, HeartBeatTime,
@@ -284,7 +239,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                       ActiveHosts, ProcessCnt,
                                       PIDsOfAppProcs, &TimeFirstCheckin,
                                       &ActiveClients);
-#endif
 
         /* exit if all hosts have terminated normally */
         if (!ActiveClients) {
@@ -296,14 +250,6 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
         if (((HostsNormalTerminated + HostsAbNormalTerminated) == NHosts)
             && (HostsAbNormalTerminated > 0)) {
             /* last check if any messages have arrived and process */
-#if ENABLE_CT
-			RetVal = mpirunCheckForDaemonMsgs(NHosts, HeartBeatTime,
-                                      &HostsNormalTerminated,
-                                      &HostsAbNormalTerminated,
-                                      ActiveHosts, ProcessCnt,
-                                      PIDsOfAppProcs,
-                                      &ActiveClients, &terminateMsgSent, server);
-#else
             RetVal =
                 mpirunCheckForControlMsgs(MaxDescriptorCtl,
                                           ClientSocketFDList, NHosts,
@@ -315,7 +261,7 @@ void MPIrunDaemonize(ssize_t *StderrBytesRead, ssize_t *StdoutBytesRead,
                                           PIDsOfAppProcs,
                                           &TimeFirstCheckin,
                                           &ActiveClients);
-#endif
+
             // Terminate all hosts
             ulm_err(("Abnormal termination. HostsAbNormalTerminated = %d\n", HostsAbNormalTerminated));
             Abort();

@@ -364,7 +364,6 @@ void gmSetup(lampiState_t *s)
             maxDevs = nDevsPerProc[i];
     }
 
-#if ENABLE_CT == 0
     if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) ||
                             (!s->useDaemon && (local_myproc() == 0)))) {
         /* send maxDevs to mpirun */
@@ -372,7 +371,6 @@ void gmSetup(lampiState_t *s)
         s->client->pack(&maxDevs, adminMessage::INTEGER, 1);
         s->client->send(-1, adminMessage::GMMAXDEVS, &rc);
     }
-#endif
 
     if (maxDevs == 0) {
         ulm_err(("Error: No GM devices configured\n"));

@@ -88,86 +88,6 @@ void lampi_init_postfork_gm(lampiState_t * s)
 }
 
 
-void lampi_init_prefork_receive_setup_msg_gm(lampiState_t * s)
-{
-    int errorCode;
-    int rank;
-    int recvd;
-    int tag;
-
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_receive_setup_params_gm");
-    }
-
-    if ((s->nhosts == 1) || (!s->gm)) {
-        return;
-    }
-
-    /*  
-     *  number of bytes per process for the shared memory descriptor
-     *  pool RUNPARAMS exchange read the start of input parameters tag
-     */
-    rank = 0;
-    tag = dev_type_params::START_GM_INPUT;
-    if (false == s->client->receiveMessage(&rank, &tag, &errorCode)) {
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-        return;
-    }
-
-    if (false ==
-        s->client->unpackMessage(&gmState.fragSize,
-                                 (adminMessage::packType) sizeof(size_t),
-                                 1)) {
-        ulm_err(("Failed unpacking gmState.fragSize\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-        return;
-    }
-
-    if (false ==
-        s->client->unpackMessage(&gmState.doAck,
-                                 (adminMessage::packType) sizeof(bool),
-                                 1)) {
-        ulm_err(("Failed unpacking gmState.doAck\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-        return;
-    }
-
-    if (false ==
-        s->client->unpackMessage(&gmState.doChecksum,
-                                 (adminMessage::packType) sizeof(bool),
-                                 1)) {
-        ulm_err(("Failed unpacking gmState.doChecksum\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-        return;
-    }
-
-    int done = 0;
-    while (!done) {
-        /* read next tag */
-        recvd = s->client->nextTag(&tag);
-        if (recvd != adminMessage::OK) {
-            ulm_err(("Did not receive OK when reading next tag for GM setup. "
-                     "recvd = %d, errorcode = %d.\n", recvd, errorCode));
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-            return;
-        }
-        switch (tag) {
-        case dev_type_params::END_GM_INPUT:
-            /* done reading input params */
-            done = 1;
-            break;
-        default:
-            ulm_err(("Unknown GM setup tag %d...\n", tag));
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
-            return;
-        }
-    }                           /* end while loop */
-}
-
-
 void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
 {
     int errorCode;
@@ -189,11 +109,6 @@ void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
      *  number of bytes per process for the shared memory descriptor
      *  pool RUNPARAMS exchange read the start of input parameters tag
      */
-
-#if ENABLE_CT
-    lampi_init_prefork_receive_setup_msg_gm(s);
-    return;
-#endif
 
     recvd = s->client->receive(-1, &tag, &errorCode);
     if ((recvd == adminMessage::OK) &&

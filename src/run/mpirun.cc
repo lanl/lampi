@@ -51,11 +51,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#ifdef __APPLE__
 #include <sys/time.h>
-#else
 #include <time.h>
-#endif
 
 #include <sys/resource.h>
 #include <sys/wait.h>
@@ -81,12 +78,8 @@
 #include "run/globals.h"
 #include "internal/new.h"
 #include "path/udp/UDPNetwork.h"  /* for UDPGlobals::NPortsPerProc */
-
-
-#include "ctnetwork/CTNetwork.h"
 #include "path/gm/base_state.h"
 
-#include "internal/Private.h"
 /*
  * Global variables instantiated in this file
  */
@@ -112,51 +105,12 @@ static int use_connect_thread = 0;
 static int use_connect_thread = 1;
 #endif  /* ENABLE_BPROC */
 
-bool getClientPidsMsg(pid_t ** hostarray, int *errorCode)
-{
-    bool returnValue = true;
-    int rank, tag, contacted = 0;
-    int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME;
-
-    //ASSERT: the CTClient's channel ID has been sent to the daemons.
-    while (contacted < RunParameters.NHosts)
-	{
-        rank = -1;
-        tag = adminMessage::CLIENTPIDS;
-        if ( true == server->receiveMessage(&rank, &tag, errorCode,
-                                           (alarm_time ==
-                                            -1) ? 0 : alarm_time * 1000) )
-		{
-            if ((tag == adminMessage::CLIENTPIDS) &&
-                (server->
-                 unpackMessage(hostarray[rank],
-                               (adminMessage::packType) sizeof(pid_t),
-                               RunParameters.ProcessCount[rank], alarm_time))) {
-                contacted++;
-                break;
-            }
-		}
-		else
-            returnValue = false;
-
-        if (!returnValue) {
-            break;
-        }
-    }
-
-    return returnValue;
-}
-
 
 bool getClientPids(pid_t ** hostarray, int *errorCode)
 {
     bool returnValue = true;
     int rank, tag, contacted = 0;
     int alarm_time = (RunParameters.TVDebug) ? -1 : ALARMTIME;
-
-#if ENABLE_CT
-    return getClientPidsMsg(hostarray, errorCode);
-#endif
 
     while (contacted < RunParameters.NHosts) {
         int recvd = server->receiveFromAny(&rank, &tag, errorCode,
@@ -190,13 +144,6 @@ bool releaseClients(int *errorCode)
 {
     bool returnValue = true;
     int rank, tag, contacted = 0, goahead;
-
-#if ENABLE_CT
-    ulm_dbg(("\nmpirun: synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
-	server->synchronize(RunParameters.NHosts + 1);
-    ulm_dbg(("\nmpirun: done synching %d members before releasing daemons...\n", RunParameters.NHosts + 1));
-	return returnValue;
-#endif
 
     while (contacted < RunParameters.NHosts) {
         int recvd = server->receiveFromAny(&rank, &tag, errorCode,
@@ -292,10 +239,6 @@ bool exchangeUDPPorts(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#if ENABLE_CT
-    return returnValue;
-#endif
-
     for (int i = 0; i < RunParameters.NHosts; i++) {
         for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
             if (RunParameters.ListPathTypes[i][j] == PATH_UDP) {
@@ -328,10 +271,6 @@ bool exchangeTCPPorts(int *errorCode,adminMessage *s)
     if (RunParameters.NHosts == 1)
         return returnValue;
 
-#if ENABLE_CT
-    return returnValue;
-#endif
-
     for (int i = 0; i < RunParameters.NHosts; i++) {
         for (int j = 0; j < RunParameters.NPathTypes[i]; j++) {
             if (RunParameters.ListPathTypes[i][j] == PATH_TCP) {
@@ -363,10 +302,6 @@ bool exchangeIBInfo(int *errorCode,adminMessage *s)
     // we don't do any of this if there is only one host...
     if (RunParameters.NHosts == 1)
         return returnValue;
-
-#if ENABLE_CT
-    return returnValue;
-#endif
 
     for (i = 0; i < RunParameters.NHosts; i++) {
         for (j = 0; j < RunParameters.NPathTypes[i]; j++) {
@@ -445,10 +380,6 @@ bool exchangeGMInfo(int *errorCode, adminMessage *s)
     // we don't do any of this if there is only one host...
     if (RunParameters.NHosts == 1)
         return returnValue;
-
-#if ENABLE_CT
-    return returnValue;
-#endif
 
     for (i = 0; i < RunParameters.NHosts; i++) {
         for (j = 0; j < RunParameters.NPathTypes[i]; j++) {
@@ -543,7 +474,7 @@ void *server_connect(void *arg)
     return NULL;
 }
 
-int main(int argc, char **argv)
+int mpirun(int argc, char **argv)
 {
     int i, rc, NULMArgs, ErrorReturn, FirstAppArgument;
     int *IndexULMArgs;
@@ -557,21 +488,13 @@ int main(int argc, char **argv)
     /* setup process characteristics */
     lampirun_init_proc();
     
-    /* print out nice debug information for endusers */
-    ulm_notice (("*** LA-MPI: mpirun version " PACKAGE_VERSION "\n"));
+    /* print out banner message */
+    fprintf(stderr, "*** LA-MPI: mpirun (" PACKAGE_VERSION ")\n");
 
     /*
      * Read in environment
      */
     lampi_environ_init();
-
-    /*
-     * initialize admin network
-     */
-
-#if ENABLE_CT
-    CTNetworkInit();
-#endif
 
     /*
      * Read in mpirun arguments
@@ -692,16 +615,6 @@ int main(int argc, char **argv)
         ulm_err(("Error: nhosts (%d) less than one!\n", NHostsStarted));
         Abort();
     }
-#if ENABLE_CT
-	// send msg to link the admin network
-    ulm_dbg(("\nmpirun: linking network...\n"));
-    if ( !server->linkNetwork() )
-	{
-		ulm_err(("mpirun_main: error in linking admin network!\n"));
-	    Abort();
-    }
-#endif
-
 
     /*
      * mark the remote process as started
@@ -718,15 +631,10 @@ int main(int argc, char **argv)
     /* temporary fix */
     int *ClientSocketFDList =
         (int *) ulm_malloc(sizeof(int) * RunParameters.NHosts);
-#if ENABLE_CT
-    for (i = 0; i < RunParameters.NHosts; i++) {
-        ClientSocketFDList[i] = 0;
-    }
-#else
     for (i = 0; i < RunParameters.NHosts; i++) {
         ClientSocketFDList[i] = server->clientRank2FD(i);
     }
-#endif
+
     RunParameters.Networks.TCPAdminstrativeNetwork.SocketsToClients =
         ClientSocketFDList;
     /* end temporary fix */

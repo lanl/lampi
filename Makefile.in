@@ -69,10 +69,27 @@ DLLEXT		:= @DLLEXT@
 
 # Optional feature/package autoconf substitutions
 
-enable_debug	:= @enable_debug@
-enable_dynamic	:= @enable_dynamic@
-enable_static	:= @enable_static@
-with_romio	:= @with_romio@
+enable_bproc			:= @enable_bproc@
+enable_check_api_args		:= @enable_check_api_args@
+enable_dbg			:= @enable_dbg@
+enable_debug			:= @enable_debug@
+enable_dynamic			:= @enable_dynamic@
+enable_gm			:= @enable_gm@
+enable_ib			:= @enable_ib@
+enable_large_file_support	:= @enable_large_file_support@
+enable_lsf			:= @enable_lsf@
+enable_memprofile		:= @enable_memprofile@
+enable_numa			:= @enable_numa@
+enable_pty_stdio		:= @enable_pty_stdio@
+enable_qsnet			:= @enable_qsnet@
+enable_reliability		:= @enable_reliability@
+enable_rms			:= @enable_rms@
+enable_shared_memory		:= @enable_shared_memory@
+enable_static			:= @enable_static@
+enable_tcp			:= @enable_tcp@
+enable_udp			:= @enable_udp@
+
+with_romio			:= @with_romio@
 
 ifeq "$(with_romio)" "yes"
 ROMIODIR	:= @romiodir@
@@ -176,7 +193,6 @@ install: all
 	$(INSTALL) -m 664 $(srcdir)/man/mpirun.man1 $(prefix)/share/man/man1/mpirun.1 ; \
 	$(INSTALL) -m 664 $(srcdir)/RELEASE_NOTES $(prefix)/share/lampi ; \
 	$(INSTALL) -m 664 config.log $(prefix)/share/lampi ; \
-	$(INSTALL) -m 664 $(srcdir)/man/lampi_man.html $(prefix)/share/lampi ; \
 	$(INSTALL) -m 664 $(srcdir)/etc/lampi.conf $(sysconfdir)/lampi.conf ; \
 	(cd $(prefix) ; test -d man || $(LN_S) share/man .) ; \
 	(for f in $(srcdir)/src/include/*.h; do $(INSTALL) -m 664 $$f $(includedir); done) ; \

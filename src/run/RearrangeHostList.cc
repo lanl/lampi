@@ -53,7 +53,7 @@
  * This routine is used to rerange the host list and all the data that
  *   assumes host order.
  */
-void _ulm_RearrangeHostList(const char *InfoStream)
+void RearrangeHostList(const char *InfoStream)
 {
     int i, j, k, TmpStore, Indx, TmpNDevs, *ListDevTmp;
     size_t len;

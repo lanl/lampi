@@ -53,27 +53,13 @@ int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *serve
     int NFailed = 0;
 #if ENABLE_RMS == 0
     int Tag;
-#if ENABLE_CT
-    int errorCode;
-#else
     int i;
     ulm_iovec_t IOVec;
     ssize_t IOReturn;
-#endif
 
     /* send abort message to each host */
     NFailed = 0;
     Tag = TERMINATENOW;
-#if ENABLE_CT
-    server->reset(adminMessage::SEND);
-    if ( false == server->broadcastMessage(Tag, &errorCode) )
-    {
-        ulm_err( ("Error: bcasting TERMINATENOW.\n") );
-        Abort();
-    }
-
-#else
-
     IOVec.iov_base = (char *) &Tag;
     IOVec.iov_len = (ssize_t) (sizeof(unsigned int));
     if (ClientSocketFDList) {
@@ -91,8 +77,6 @@ int mpirunAbortAllHosts(int *ClientSocketFDList, int NHosts, adminMessage *serve
             }
         }
     }
-#endif
-
 #endif
     return NFailed;
 }

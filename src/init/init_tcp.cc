@@ -37,8 +37,6 @@
 #include "path/common/pathContainer.h"
 #include "path/tcp/tcppath.h"
 #include "path/udp/UDPNetwork.h"
-#include "ctnetwork/CTNetwork.h"
-#include "internal/Private.h"
 
 
 void lampi_init_prefork_receive_setup_params_tcp(lampiState_t * s)

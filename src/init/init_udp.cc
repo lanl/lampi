@@ -36,8 +36,6 @@
 #include "internal/new.h"
 #include "path/common/pathContainer.h"
 #include "path/udp/path.h"
-#include "ctnetwork/CTNetwork.h"
-#include "internal/Private.h"
 
 void lampi_init_prefork_udp(lampiState_t *s)
 {

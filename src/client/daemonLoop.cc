@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material 
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos 
- * National Laboratory, which is operated by the University of California for 
- * the U.S. Department of Energy. The Government is granted for itself and 
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide 
- * license in this material to reproduce, prepare derivative works, and 
- * perform publicly and display publicly. Beginning five (5) years after 
- * October 10,2002 subject to additional five-year worldwide renewals, the 
- * Government is granted for itself and others acting on its behalf a paid-up, 
- * nonexclusive, irrevocable worldwide license in this material to reproduce, 
- * prepare derivative works, distribute copies to the public, perform publicly 
- * and display publicly, and to permit others to do so. NEITHER THE UNITED 
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF 
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR 
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY 
- * OWNED RIGHTS.
+ * Copyright 2002-2004. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or 
- * modify it under the terms of the GNU Lesser General Public License as 
- * published by the Free Software Foundation; either version 2 of the License, 
- * or any later version.  Accordingly, this program is distributed in the hope 
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,11 +38,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/uio.h>
-#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
 #include <sys/time.h>
-#else
 #include <time.h>
-#endif                          /* LINUX */
 
 #include "init/fork_many.h"
 #include "internal/constants.h"
@@ -55,14 +55,6 @@ static double HeartBeatTimeOut = (double) HEARTBEATTIMEOUT;
 /*
  * this is code executed by the parent that becomes the Client daemon
  */
- 
- 
- /*
-  *             Prototypes
-  */
-
-void daemonSendHeartbeat(lampiState_t *s);
-
 
 void lampi_daemon_loop(lampiState_t *s)
 {
@@ -84,7 +76,7 @@ void lampi_daemon_loop(lampiState_t *s)
     double LastTime, HeartBeatTime, DeltaTime, TimeInSeconds;
     unsigned int Message = TERMINATENOW, NotifyServer;
     bool shuttingDown = false;
-#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
@@ -93,7 +85,7 @@ void lampi_daemon_loop(lampiState_t *s)
 
     /* initialize data */
     NChildren = ProcessCount[hostIndex];
-#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     gettimeofday(&Time, NULL);
     HeartBeatTime =
         (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -119,7 +111,7 @@ void lampi_daemon_loop(lampiState_t *s)
     numDaemonChildren = 0;
     for (;;) {
 
-#if defined(__linux__) || defined(__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
         gettimeofday(&Time, NULL);
         TimeInSeconds =
             (double) (Time.tv_sec) + ((double) Time.tv_usec) * 1e-6;
@@ -131,15 +123,9 @@ void lampi_daemon_loop(lampiState_t *s)
         DeltaTime = TimeInSeconds - LastTime;
         /* check to see if any children have exited abnormally */
         if (s->AbnormalExit->flag == 1) {
-#if ENABLE_CT
-            daemonAbnormalChildTermination(s->AbnormalExit->pid,
-                                           NChildren, ChildPIDs, IAmAlive,
-                                           s);
-#else
             ClientAbnormalChildTermination(s->AbnormalExit->pid,
                                            NChildren, ChildPIDs, IAmAlive,
                                            ServerSocketFD);
-#endif
             /*
              * set abnormal termination flag to 2, so that termination
              * sequence does not start up again.
@@ -149,24 +135,17 @@ void lampi_daemon_loop(lampiState_t *s)
         }
         /* handle stdio */
         ClientScanStdoutStderr(STDOUTfdsFromChildren,
-                               STDERRfdsFromChildren, 
-                               &ServerSocketFD, 
+                               STDERRfdsFromChildren,
+                               &ServerSocketFD,
                                NChildren + 1, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,
                                StdoutBytesWritten, NewLineLast, s);
 
         /* send heartbeat to Server */
-#if ENABLE_CT
-        if ( (DeltaTime > HEARTBEATINTERVAL) && (!shuttingDown) ){
-            daemonSendHeartbeat(s);
-            LastTime = TimeInSeconds;
-        }
-#else
         if (DeltaTime > HEARTBEATINTERVAL) {
             _ulm_SendHeartBeat(&ServerSocketFD, 1, ServerSocketFD + 1);
             LastTime = TimeInSeconds;
         }
-#endif
 
         /* check to see if children alive */
         NumAlive = CheckIfChildrenAlive(ProcessCount, hostIndex, IAmAlive);
@@ -178,91 +157,27 @@ void lampi_daemon_loop(lampiState_t *s)
             if (s->AbnormalExit->flag == 0) {
                 shuttingDown = true;
                 ClientOrderlyShutdown(StderrBytesWritten, StdoutBytesWritten,
-                                  ServerSocketFD, s);
+                                      ServerSocketFD, s);
             }
         }
-#if ENABLE_CT
-        checkForRunControlMsgs(&HeartBeatTime, ProcessCount, &numDaemonChildren,
-                               hostIndex, ChildPIDs,
-                               STDOUTfdsFromChildren,
-                               STDERRfdsFromChildren, StderrBytesWritten,
-                               StdoutBytesWritten, NewLineLast,
-                               IOPreFix, LenIOPreFix, s);
-#else
         /* check to see if any control messages have arrived from the server */
         ClientCheckForControlMsgs(ServerSocketFD + 1, &ServerSocketFD,
                                   &HeartBeatTime, ProcessCount,
                                   hostIndex, ChildPIDs,
                                   STDINfdToChild,
                                   STDOUTfdsFromChildren,
-                                  STDERRfdsFromChildren, 
+                                  STDERRfdsFromChildren,
                                   StderrBytesWritten,
                                   StdoutBytesWritten, NewLineLast,
                                   IOPreFix, LenIOPreFix, s);
 
-#endif
         /* check to see if Server has timed out */
         if ((HeartBeatTimeOut > 0) &&
             ((TimeInSeconds - HeartBeatTime) > (double) HeartBeatTimeOut) && (!shuttingDown) )
         {
             NotifyServer = 0;
-#if ENABLE_CT
-            daemonAbortLocalHost(ProcessCount, hostIndex,
-                           ChildPIDs, Message, NotifyServer, s);
-#else						   
             AbortLocalHost(ServerSocketFD, ProcessCount, hostIndex,
                            ChildPIDs, Message, NotifyServer);
-#endif
         }
     }                           /* end for(;;) */
-}
-
-
-void daemonSendHeartbeat(lampiState_t *s)
-{
-    unsigned int tag;
-    int errorCode;
-
-    tag = HEARTBEAT;
-    s->client->reset(adminMessage::SEND);
-
-    if (false == s->client->sendMessage(0, tag, s->channelID, &errorCode)) {
-        ulm_err(("Error: sending HEARTBEAT.  RetVal: %ld\n",
-                 (long) errorCode));
-    }
-}
-
-
-void daemonAbortLocalHost(int *ProcessCount, int hostIndex,
-                          pid_t * ChildPIDs, unsigned int MessageType,
-                          int Notify, lampiState_t *s)
-{
-    int errorCode, i, NumChildren;
-
-    /*
-     * kill all children  - this signal will not be processed by mpirun's
-     * daemon loop
-     */
-    NumChildren = ProcessCount[hostIndex];
-    for (i = 0; i < NumChildren; i++) {
-        if (ChildPIDs[i] != -1) {
-            kill(ChildPIDs[i], SIGKILL);
-            ChildPIDs[i] = -1;
-        }
-    }
-
-    /* notify server of termination */
-    if (Notify) {
-        s->client->reset(adminMessage::SEND);
-        if (false ==
-            s->client->sendMessage(0, MessageType, s->channelID,
-                                   &errorCode)) {
-            ulm_exit((-1,
-                      "Error: reading Tag in AbortLocalHost.  "
-                      "RetVal: %ld\n", errorCode));
-        }
-    }
-
-    /*  !!!!!!!!!  may want to do some cleanup here first */
-    exit(2);
 }

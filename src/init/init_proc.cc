@@ -44,8 +44,6 @@
 #include "util/dclock.h"
 #include "util/misc.h"
 
-#include "ctnetwork/CTNetwork.h"
-
 
 /*
  * This routine is used to set up initial process parameters
@@ -87,12 +85,5 @@ void lampi_init_prefork_process_resources(lampiState_t *s)
      * initialize lampi clock
      */
     init_dclock();
-
-    /* 
-     * initialize admin network
-     */
-#if ENABLE_CT	 
-	CTNetworkInit();
-#endif
 }
 

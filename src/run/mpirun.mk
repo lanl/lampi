@@ -1,7 +1,6 @@
 SRC_MPIRUN += \
 	src/init/environ.cc \
 	src/run/Abort.cc \
-	src/run/FindStartedClients.cc \
 	src/run/GetAppDir.cc \
 	src/run/GetAppHostData.cc \
 	src/run/GetClientApp.cc \
@@ -36,6 +35,7 @@ SRC_MPIRUN += \
 	src/run/coprocess.cc \
 	src/run/fix_RunParameters.cc \
 	src/run/lampirun_init_proc.cc \
+	src/run/main.cc \
 	src/run/mpirun.cc \
 	src/run/mpirun_spawn_bproc.cc \
 	src/run/mpirun_spawn_exec.cc \

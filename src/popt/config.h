@@ -1,3 +1,0 @@
-#define HAVE_FLOAT_H 1
-#define HAVE_STRERROR 1
-#define HAVE_UNISTD_H 1

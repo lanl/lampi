@@ -46,6 +46,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(HAVE_PTY_H)
+#  include <pty.h>      /* Normal location of openpty() */
+#elif defined(HAVE_UTIL_H)
+#  include <util.h>     /* BSD location of openpty() */
+#else
+#  undef ENABLE_PTY_STDIO
+#  define ENABLE_PTY_STDIO 0
+#  define openpty(A,B,C,D,E) -1
+#endif
+
 #include "queue/Communicator.h"
 #include "queue/contextID.h"
 #include "queue/globals.h"
@@ -56,7 +66,6 @@
 #include "util/Utility.h"
 #include "util/dclock.h"
 #include "util/if.h"
-#include "ctnetwork/CTNetwork.h"
 #include "init/environ.h"
 #include "init/fork_many.h"
 #include "init/init.h"
@@ -79,7 +88,7 @@
 #include "path/sharedmem/SMPfns.h"
 #endif /* SHARED_MEMORY */
 
-#if defined(ENABLE_NUMA) && defined(__mips)
+#if ENABLE_NUMA && defined(__mips)
 #include "os/IRIX/SN0/acquire.h"
 bool useRsrcAffinity = true;
 bool useDfltAffinity = true;
@@ -96,13 +105,12 @@ int nCpPNode = 2;
  */
 
 static int initialized = 0;
-static int dupSTDERRfd;
-static int dupSTDOUTfd;
-static int  StdinPipe[2];
-static int *StderrPipes;
-static int *StdoutPipes;
-
-#include "internal/Private.h"
+static int stdin_parent;
+static int stdin_child;
+static int *stdout_parent;
+static int *stdout_child;
+static int *stderr_parent;
+static int *stderr_child;
 
 extern "C" void ClientTVSetup();
 
@@ -151,13 +159,12 @@ void lampi_init(void)
     /*
      * connect back to mpirun
      */
-    ulm_dbg( ("host %s: daemon %d: connecting to mpirun...\n", _ulm_host(), getpid()) );
+    ulm_dbg(("host %d: daemon %d: connecting to mpirun...\n", myhost(), getpid()));
     lampi_init_prefork_connect_to_mpirun(&_ulm);
 
     /*
      * receive initial input parameters
      */
-    ulm_dbg( ("host %s: node %u: recving setup params...\n", _ulm_host(), lampiState.client->nodeLabel()) );
     lampi_init_prefork_receive_setup_params(&_ulm);
     lampi_init_prefork_ip_addresses(&_ulm);
 
@@ -204,7 +211,7 @@ void lampi_init(void)
     /* Enable the hw/bcast support for ULM_COMM_WORLD */
     lampi_init_postfork_coll_setup(&_ulm);
 #endif
-    
+
     /* barrier until all procs - local and remote - have started up */
     lampi_init_wait_for_start_message(&_ulm);
 
@@ -213,10 +220,16 @@ void lampi_init(void)
     /* daemon process goes into loop */
     if ( lampiState.iAmDaemon )
     {
+        if (0) {
+            fprintf(stderr, "*** LA-MPI: Daemon initialized (stderr)\n");
+            fprintf(stdout, "*** LA-MPI: Daemon initialized (stdout)\n");
+            fflush(stdout);
+        }
         lampi_daemon_loop(&_ulm);
-    } 
-    else if (lampiState.global_rank == 0) 
+    }
+    else if (lampiState.global_rank == 0)
     {
+        fprintf(stderr, "*** LA-MPI: libmpi (" PACKAGE_VERSION ")\n");
         fprintf(stderr, "*** LA-MPI: Copyright 2001-2004, ACL, Los Alamos National Laboratory\n");
     }
 }
@@ -262,6 +275,10 @@ void lampi_init_check_for_error(lampiState_t *s)
           "Initialization failed receiving run-time parameters for Quadrics path" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM,
           "Initialization failed receiving run-time parameters for Myrinet GM path" },
+        { ERROR_LAMPI_INIT_PREFORK_STDIO,
+          "Initialization failed setting up stdio before fork" },
+        { ERROR_LAMPI_INIT_POSTFORK_STDIO,
+          "Initialization failed setting up stdio after fork" },
         { ERROR_LAMPI_INIT_PREFORK_PATHS,
           "Initialization failed setting up paths before fork" },
         { ERROR_LAMPI_INIT_POSTFORK_PATHS,
@@ -785,7 +802,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
 
     if ( s->iAmDaemon )
         return;
-    
+
     //! initialize array to hold active group objects
     communicators = ulm_new(Communicator *, communicatorsArrayLen);
     if (!communicators) {
@@ -880,7 +897,7 @@ void lampi_init_postfork_communicators(lampiState_t *s)
     (s->contextIDCtl->nextID + CTXIDBLOCKSIZE);
     s->contextIDCtl->cycleSize = CTXIDBLOCKSIZE * nprocs();
     s->contextIDCtl->idLock.init();
-    
+
     errorCode = ulm_communicator_alloc(ULM_COMM_WORLD, threadUsage,
                                     groupIndex, groupIndex, 1,
                                     Communicator::MAX_COMM_CACHE_SIZE,
@@ -953,7 +970,7 @@ void lampi_init_fork(lampiState_t *s)
         if (s->local_rank == -1)
             s->iAmDaemon = 1;
         else
-			s->IAmAlive[s->local_rank] = 1;            
+                        s->IAmAlive[s->local_rank] = 1;
     }
     /*
      * Set global to local process rank offset
@@ -1041,25 +1058,10 @@ void lampi_init_prefork_connect_to_mpirun(lampiState_t *s)
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
-#if ENABLE_CT
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
-#endif
     if (!s->client->clientConnect(s->local_size, s->hostid)) {
         s->error = ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN;
         return;
     }
-
-#if ENABLE_CT
-    timing_stmp = second();
-    sprintf(timing_out[timing_scnt++], "Done connecting to mpirun (t = %lf)\n", timing_stmp - timing_cur);
-    timing_cur = timing_stmp;
-
-	// Now wait until network has been linked
-	while ( false == s->client->clientNetworkHasLinked() )
-		usleep(10);
-#endif
 }
 
 
@@ -1107,17 +1109,11 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
                                      s->nhosts);
 
             break;
-        case adminMessage::CHANNELID:
-            /* number of hosts, and number of procs per host */
-            s->client->unpackMessage(&(s->channelID),
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
         case adminMessage::HOSTID:
             s->client->unpackMessage(&(s->hostid),
                                      (adminMessage::packType) sizeof(int),
                                      1);
-			s->client->setHostRank(s->hostid);
+                        s->client->setHostRank(s->hostid);
             break;
         case adminMessage::TVDEBUG:
             s->client->unpackMessage(&(s->debug),
@@ -1318,120 +1314,10 @@ void lampi_init_prefork_parse_setup_data(lampiState_t *s)
 }
 
 
-void lampi_init_prefork_receive_setup_msg(lampiState_t *s)
-{
-    int 	errorCode, h,i,p;
-	int		tag, rank;
-	
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_receive_setup_msg");
-    }
-
-	// Get broadcasted setup data.
-    ulm_fdbg(("Node %d: recving bcast setup data...\n", s->client->nodeLabel()));
-	rank = 0;
-	tag = adminMessage::RUNPARAMS;
-    if ( false == s->client->receiveMessage(&rank, &tag, &errorCode) )
-	{
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-        return;
-    }
-
-    lampi_init_prefork_parse_setup_data(s);
-    if (s->error) {
-        return;
-    }
-	
-	// Get scattered setup data.
-    ulm_fdbg(("Node %d: recving scatterv setup data...\n", s->client->nodeLabel()));
-    if ( false == s->client->scatterv(-1, adminMessage::RUNPARAMS, &errorCode) )
-	{
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-        return;
-    }
-    ulm_fdbg(("Node %d: parsing scatterv setup data...\n", s->client->nodeLabel()));
-    lampi_init_prefork_parse_setup_data(s);
-    if (s->error) {
-        return;
-    }
-
-    /* set local size */
-    s->local_size = s->map_host_to_local_size[s->hostid];
-
-    /* compute global_size */
-    s->global_size = 0;
-    for (h = 0; h < lampiState.nhosts; ++h) {
-        s->global_size += s->map_host_to_local_size[h];
-    }
-    s->client->setTotalNumberOfProcesses(s->global_size);
-
-    if (s->useDaemon) {
-        s->IAmAlive = (int *)
-            SharedMemoryPools.getMemorySegment((s->local_size + 1) *
-                                               sizeof(int), PAGESIZE);
-        s->AbnormalExit = (abnormalExitInfo *)
-            SharedMemoryPools.getMemorySegment(sizeof(abnormalExitInfo), PAGESIZE);
-        memset(s->AbnormalExit, 0, sizeof(abnormalExitInfo));
-        ATOMIC_LOCK_INIT(s->AbnormalExit->lock);
-    }
-    // allocate cpus - need to have this setup for memory locality
-    //   initialization.
-    errorCode = getCPUSet();
-    if (errorCode != ULM_SUCCESS) {
-        ulm_err(("getCPUSet failed\n"));
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
-        return;
-    }
-
-
-    /*
-     * Allocate and initialize AllHostsDone flag
-     */
-    lampiState.sync.AllHostsDone = 
-        (int *) SharedMemoryPools.getMemorySegment(sizeof(int),
-                                                   CACHE_ALIGNMENT);
-    assert(lampiState.sync.AllHostsDone != (volatile int *) 0);
-    *lampiState.sync.AllHostsDone = 0;
-
-    /*
-     * Build an array that maps from global process
-     * number to the box number.
-     */
-    s->map_global_rank_to_host = ulm_new(int, nprocs());
-    p = 0;
-    for (h = 0; h < s->nhosts; ++h)
-        for (i = 0; i < s->map_host_to_local_size[h]; ++i)
-            s->map_global_rank_to_host[p++] = h;
-
-    //ulm_fdbg(("Node %d: syncing %d members...\n", s->client->nodeLabel(), s->nhosts+1));
-    //s->client->synchronize(s->nhosts + 1);
-
-    /*
-     * receive path specific information
-     */
-    ulm_fdbg(("Node %d: recving shared mem setup data...\n", s->client->nodeLabel()));
-    lampi_init_prefork_receive_setup_params_shared_memory(s);
-    ulm_fdbg(("Node %d: recving quadrics setup data...\n", s->client->nodeLabel()));
-    lampi_init_prefork_receive_setup_params_quadrics(s);
-    ulm_fdbg(("Node %d: recving GM setup data...\n", s->client->nodeLabel()));
-    lampi_init_prefork_receive_setup_params_gm(s);
-
-    return;
-}
-
-
 void lampi_init_prefork_receive_setup_params(lampiState_t *s)
 {
     int tag, errorCode, recvd, h, i, p;
     int pathcnt, *paths;
-
-#if ENABLE_CT
-    lampi_init_prefork_receive_setup_msg(s);
-    return;
-#endif
 
     if (s->error) {
         return;
@@ -1470,11 +1356,11 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
             break;
         case adminMessage::NHOSTS:
             /* number of hosts, and number of procs per host */
-            s->client->unpack(&(s->nhosts), 
+            s->client->unpack(&(s->nhosts),
                               (adminMessage::packType) sizeof(int), 1);
             s->client->setNumberOfHosts(s->nhosts);
             s->map_host_to_local_size = ulm_new(int, s->nhosts);
-            s->client->unpack(s->map_host_to_local_size, 
+            s->client->unpack(s->map_host_to_local_size,
                               (adminMessage::packType) sizeof(int),
                               s->nhosts);
 
@@ -1482,7 +1368,7 @@ void lampi_init_prefork_receive_setup_params(lampiState_t *s)
         case adminMessage::HOSTID:
             s->client->unpack(&(s->hostid),
                               (adminMessage::packType) sizeof(int), 1);
-			s->client->setHostRank(s->hostid);
+                        s->client->setHostRank(s->hostid);
             break;
         case adminMessage::TVDEBUG:
             s->client->unpack(&(s->debug),
@@ -1788,7 +1674,7 @@ void lampi_init_postfork_paths(lampiState_t *s)
      * setup global array of available paths
      */
     pathList=(availablePaths_t *) ulm_malloc(sizeof(availablePaths_t) *
-		    s->global_size);
+                    s->global_size);
     if( !pathList ) {
         s->error = ERROR_LAMPI_INIT_POSTFORK_PATHS;
         return;
@@ -1797,60 +1683,58 @@ void lampi_init_postfork_paths(lampiState_t *s)
     pathCount = pathContainer()->allPaths(pathArray, MAX_PATHS);
 
     for( int proc=0 ; proc < s->global_size ; proc++ ) {
-	    pathList[proc].useSharedMemory_m=-1;
-	    pathList[proc].useTCP_m=-1;
-	    pathList[proc].useUDP_m=-1;
-	    pathList[proc].useQuadrics_m=-1;
-	    pathList[proc].useGM_m=-1;
+            pathList[proc].useSharedMemory_m=-1;
+            pathList[proc].useTCP_m=-1;
+            pathList[proc].useUDP_m=-1;
+            pathList[proc].useQuadrics_m=-1;
+            pathList[proc].useGM_m=-1;
         pathList[proc].useIB_m=-1;
 
-	    for (int i = 0; i < pathCount; i++) {
-		    if( ! (lampiState.pathContainer->canUsePath(proc,i))  )
-				    continue;
-		    if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype, 
-					    sizeof(pathType), &(s->error))) {
-			    if ((ptype == SHAREDMEM)
-					    && (pathList[proc].useSharedMemory_m < 0))
-			    {
-				    pathList[proc].useSharedMemory_m = i;
-			    }
-			    else if ((ptype == TCPPATH)
-					    && (pathList[proc].useTCP_m < 0))
-			    {
-				    pathList[proc].useTCP_m = i;
-			    }
-			    else if ((ptype == UDPPATH)
-					    && (pathList[proc].useUDP_m < 0))
-			    {
-				    pathList[proc].useUDP_m = i;
-			    }
-			    else if ((ptype == QUADRICSPATH)
-					    && (pathList[proc].useQuadrics_m < 0))
-			    {
-				    pathList[proc].useQuadrics_m = i;
-			    }
-			    else if ((ptype == GMPATH) 
-					    && (pathList[proc].useGM_m < 0))
-			    {
-				    pathList[proc].useGM_m = i;
-			    }
-			    else if ((ptype == IBPATH) 
-					    && (pathList[proc].useIB_m < 0))
-			    {
-				    pathList[proc].useIB_m = i;
-			    }
-		    }
-	    }
+            for (int i = 0; i < pathCount; i++) {
+                    if( ! (lampiState.pathContainer->canUsePath(proc,i))  )
+                                    continue;
+                    if (pathArray[i]->getInfo(PATH_TYPE, 0, &ptype,
+                                            sizeof(pathType), &(s->error))) {
+                            if ((ptype == SHAREDMEM)
+                                            && (pathList[proc].useSharedMemory_m < 0))
+                            {
+                                    pathList[proc].useSharedMemory_m = i;
+                            }
+                            else if ((ptype == TCPPATH)
+                                            && (pathList[proc].useTCP_m < 0))
+                            {
+                                    pathList[proc].useTCP_m = i;
+                            }
+                            else if ((ptype == UDPPATH)
+                                            && (pathList[proc].useUDP_m < 0))
+                            {
+                                    pathList[proc].useUDP_m = i;
+                            }
+                            else if ((ptype == QUADRICSPATH)
+                                            && (pathList[proc].useQuadrics_m < 0))
+                            {
+                                    pathList[proc].useQuadrics_m = i;
+                            }
+                            else if ((ptype == GMPATH)
+                                            && (pathList[proc].useGM_m < 0))
+                            {
+                                    pathList[proc].useGM_m = i;
+                            }
+                            else if ((ptype == IBPATH)
+                                            && (pathList[proc].useIB_m < 0))
+                            {
+                                    pathList[proc].useIB_m = i;
+                            }
+                    }
+            }
     } /* end proc loop */
 }
 
 
 void lampi_init_wait_for_start_message(lampiState_t *s)
 {
-#if ENABLE_CT == 0
     int tag, errorCode, goahead;
     bool r;
-#endif
 
     if (s->error) {
         return;
@@ -1867,12 +1751,6 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
      */
     if ((s->useDaemon && s->iAmDaemon) ||
         (!s->useDaemon && (local_myproc() == 0))) {
-#if ENABLE_CT
-
-        ulm_fdbg(("node %u: syncing %d members...\n", s->client->nodeLabel(), s->nhosts+1));
-        s->client->synchronize(s->nhosts + 1);
-
-#else
         r = s->client->reset(adminMessage::SEND);
         r = r && s->client->send(-1, adminMessage::BARRIER, &errorCode);
         r = r
@@ -1884,7 +1762,6 @@ void lampi_init_wait_for_start_message(lampiState_t *s)
         if (!r || !goahead) {
             s->error = ERROR_LAMPI_INIT_WAIT_FOR_START_MESSAGE;
         }
-#endif
     }
 
     s->client->localBarrier();
@@ -1933,12 +1810,7 @@ void lampi_init_postfork_debugger(lampiState_t *s)
             s->client->pack((void *) s->local_pids,
                             (adminMessage::packType) sizeof(pid_t),
                             s->local_size);
-#if ENABLE_CT
-            s->client->sendMessage(0, adminMessage::CLIENTPIDS,
-                                   s->channelID, &errorCode);
-#else
             s->client->send(-1, adminMessage::CLIENTPIDS, &errorCode);
-#endif
         }
 
         if (!s->iAmDaemon)
@@ -1949,8 +1821,7 @@ void lampi_init_postfork_debugger(lampiState_t *s)
 
 void lampi_init_prefork_stdio(lampiState_t *s)
 {
-    int NChildren, TmpFDERR[2], TmpFDOUT[2];
-    int i, RetVal;
+    int fd[2];
 
     if (s->error) {
         return;
@@ -1960,82 +1831,100 @@ void lampi_init_prefork_stdio(lampiState_t *s)
     }
 
     /* do nothing if stdio is not being managed */
-    if (!s->interceptSTDio)
+    if (!s->interceptSTDio) {
         return;
-
-    /* set up pipes to redirect stderr/stdout so that even the daemon's
-     * output is directed through the admin network.
-     */
-    if ((pipe(s->daemonSTDERR) < 0) || (pipe(s->daemonSTDOUT) < 0)) {
-        ulm_err(("Host %s (pid = %d): Unable to create pipes for daemon.\n", _ulm_host(), getpid()));
-    } else {
-        if ( (dup2(s->daemonSTDERR[1], STDERR_FILENO) < 0) ||
-             (dup2(s->daemonSTDOUT[1], STDOUT_FILENO) < 0) ) {
-             ulm_err(("Host %s (pid = %d): Unable to redirect stdio for daemon.\n", _ulm_host(), getpid()));
-        }
     }
 
     /*
-     * dup current stderr and stdout so that Client's stderr and
-     * stdout can be restored to those before exiting this routines.
+     * allocate space for pipes
      */
-
-    dupSTDERRfd = dup(STDERR_FILENO);
-    dupSTDOUTfd = dup(STDOUT_FILENO);
+    s->STDOUTfdsFromChildren = ulm_new(int, s->local_size + 1);
+    s->STDERRfdsFromChildren = ulm_new(int, s->local_size + 1);
+    if (!s->STDOUTfdsFromChildren ||
+        !s->STDERRfdsFromChildren) {
+        ulm_err(("Error: Out of memory\n"));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
 
     /*
-     * get count for number of pipes needed between the daemon process
-     * and the children.
+     * setup stdin/stdout/stderr redirection
      */
-    NChildren = s->local_size;
-
-    /* setup stdin/stdout/stderr redirection */
-    if(pipe(StdinPipe) < 0) {
-        ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
+    stdout_parent = ulm_new(int, s->local_size);
+    stdout_child = ulm_new(int, s->local_size);
+    stderr_parent = ulm_new(int, s->local_size);
+    stderr_child = ulm_new(int, s->local_size);
+    if (!stdout_parent || !stdout_child || !stderr_parent || !stderr_child) {
+        ulm_err(("Error: Out of memory\n"));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
     }
 
-    StderrPipes = ulm_new(int, 2 * NChildren);
-    for (i = 0; i < NChildren; i++) {
-        if (pipe(StderrPipes + (2 * i)) < 0) {
-            ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
+    if(pipe(fd) < 0) {
+        ulm_err(("Error: pipe(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
+    stdin_parent = fd[1];
+    stdin_child = fd[0];
+
+    for (int i = 0; i < s->local_size; i++) {
+        if (ENABLE_PTY_STDIO) {
+            /* use a pty for stdout to avoid application buffering */
+            if (openpty(&fd[0], &fd[1], NULL, NULL, NULL) < 0) {
+                ulm_err(("Error: openpty(): errno = %d\n", errno));
+                s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+                return;
+            }
+        } else {
+            if (pipe(fd) < 0) {
+                ulm_err(("Error: pipe(): errno = %d\n", errno));
+                s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+                return;
+            }
         }
+        stdout_parent[i] = fd[0];
+        stdout_child[i] = fd[1];
     }
 
-    StdoutPipes = ulm_new(int, 2 * NChildren);
-    for (i = 0; i < NChildren; i++) {
-        if (pipe(StdoutPipes + (2 * i)) < 0) {
-            ulm_exit((-1, "Error: opeing pipe.  Errno %d", errno));
+    for (int i = 0; i < s->local_size; i++) {
+        if (pipe(fd) < 0) {
+            ulm_err(("Error: pipe(): errno = %d\n", errno));
+            s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+            return;
         }
-    }
-    /* create a pipe for stderr from the master to mpirun */
-    RetVal = pipe(TmpFDERR);
-    if (RetVal < 0) {
-        ulm_exit((-1, "Unable to open pipe.  Errno : %d\n", errno));
+        stderr_parent[i] = fd[0];
+        stderr_child[i] = fd[1];
     }
 
-    s->STDERRfdsFromChildren = ulm_new(int, NChildren + 1);
-    fflush(stderr);
-    s->STDERRfdsFromChildren[NChildren] = TmpFDERR[0];
-    RetVal = dup2(TmpFDERR[1], STDERR_FILENO);
-    if (RetVal < 0) {
-        ulm_exit((-1,
-                  "Unable to dup STDERRfdsFromChildren[NChildren] : %d",
-                  s->STDERRfdsFromChildren[NChildren]));
-    }
+    /*
+     * create pipes for stdout/stderr from the daemon to mpirun
+     */
 
-    /* create a pipe for stdout from the master to mpirun */
-    RetVal = pipe(TmpFDOUT);
-    if (RetVal < 0) {
-        ulm_exit((-1, "Unable to open pipe.  Errno : %d\n", errno));
+    if (pipe(fd) < 0) {
+        ulm_err(("Error: pipe(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
     }
-    s->STDOUTfdsFromChildren = ulm_new(int, NChildren + 1);
     fflush(stdout);
-    s->STDOUTfdsFromChildren[NChildren] = TmpFDOUT[0];
-    RetVal = dup2(TmpFDOUT[1], STDOUT_FILENO);
-    if (RetVal < 0) {
-        ulm_exit((-1,
-                  "Unable to dup STDOUTfdsFromChildren[NChildren] : %d",
-                  s->STDOUTfdsFromChildren[NChildren]));
+    s->STDOUTfdsFromChildren[s->local_size] = fd[0];
+    if (dup2(fd[1], STDOUT_FILENO) < 0) {
+        ulm_err(("Error: dup2(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
+
+    if (pipe(fd) < 0) {
+        ulm_err(("Error: pipe(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
+    }
+    fflush(stderr);
+    s->STDERRfdsFromChildren[s->local_size] = fd[0];
+    if (dup2(fd[1], STDERR_FILENO) < 0) {
+        ulm_err(("Error: dup2(): errno = %d\n", errno));
+        s->error = ERROR_LAMPI_INIT_PREFORK_STDIO;
+        return;
     }
 
     /*
@@ -2043,16 +1932,16 @@ void lampi_init_prefork_stdio(lampiState_t *s)
      * "worker" processes
      */
 
-    s->IOPreFix = ulm_new(PrefixName_t, NChildren + 1);
-    s->LenIOPreFix = ulm_new(int, NChildren + 1);
-    s->NewLineLast = ulm_new(int, NChildren + 1);
-    for (i = 0; i <= NChildren; i++) {
+    s->IOPreFix = ulm_new(PrefixName_t, s->local_size + 1);
+    s->LenIOPreFix = ulm_new(int, s->local_size + 1);
+    s->NewLineLast = ulm_new(int, s->local_size + 1);
+    for (int i = 0; i <= s->local_size; i++) {
         /* null prefix */
         s->IOPreFix[i][0] = '\0';
         s->LenIOPreFix[i] = 0;
         s->NewLineLast[i] = 1;
     }
-    
+
     s->StderrBytesWritten = 0;
     s->StdoutBytesWritten = 0;
 }
@@ -2060,8 +1949,6 @@ void lampi_init_prefork_stdio(lampiState_t *s)
 
 void lampi_init_postfork_stdio(lampiState_t *s)
 {
-    int NChildren, i;
-
     if (s->error) {
         return;
     }
@@ -2070,85 +1957,84 @@ void lampi_init_postfork_stdio(lampiState_t *s)
     }
 
     /* do nothing if stdio is not being managed */
-    if (!s->interceptSTDio)
+    if (!s->interceptSTDio) {
         return;
+    }
 
-    NChildren = s->local_size;
-
-    /* Client clean up */
     if (s->iAmDaemon) {
 
         if (s->output_prefix) {
             /* activate prefix */
-            for (i = 0; i < NChildren; i++) {
+            for (int i = 0; i < s->local_size; i++) {
                 sprintf(s->IOPreFix[i], "%d[%d.%d] ",
                         i + s->global_to_local_offset, s->hostid, i);
                 s->LenIOPreFix[i] = (int) strlen(s->IOPreFix[i]);
             }
-            sprintf(s->IOPreFix[NChildren], "daemon[%d] ", s->hostid);
-            s->LenIOPreFix[NChildren] = (int) strlen(s->IOPreFix[NChildren]);
+            sprintf(s->IOPreFix[s->local_size], "daemon[%d] ", s->hostid);
+            s->LenIOPreFix[s->local_size] = (int) strlen(s->IOPreFix[s->local_size]);
         }
-        
+
         /* setup stdin */
         if(s->hostid != 0) {
             s->STDINfdToChild = -1;
-            close(StdinPipe[0]);
-            close(StdinPipe[1]);
+            close(stdin_parent);
+            close(stdin_child);
         } else {
-            s->STDINfdToChild = StdinPipe[1];
-            close(StdinPipe[0]);
+            s->STDINfdToChild = stdin_parent;
+            close(stdin_child);
         }
 
         /* close all write stderr/stdout pipe fd's ) */
-        for (i = 0; i < NChildren; i++) {
-            close(StderrPipes[2 * i + 1]);
-            close(StdoutPipes[2 * i + 1]);
-            s->STDERRfdsFromChildren[i] = StderrPipes[2 * i];
-            s->STDOUTfdsFromChildren[i] = StdoutPipes[2 * i];
+        for (int i = 0; i < s->local_size; i++) {
+            close(stdout_child[i]);
+            close(stderr_child[i]);
+            s->STDOUTfdsFromChildren[i] = stdout_parent[i];
+            s->STDERRfdsFromChildren[i] = stderr_parent[i];
         }
-        /* restore STDERR_FILENO and STDOUT_FILENO to state when
-         * this routine was entered */
-        fflush(stderr);
-        if(dupSTDERRfd > 0)
-            dup2(dupSTDERRfd, STDERR_FILENO);
-        fflush(stdout);
-        if(dupSTDOUTfd > 0)
-            dup2(dupSTDOUTfd, STDOUT_FILENO);
-        /* end of daemon code */
+
     } else {
 
-        /* setup stdin handling */
+        /* setup stdin */
         if(s->global_rank == 0) {
-            dup2(StdinPipe[0], STDIN_FILENO);
-            close(StdinPipe[1]);
+            if (dup2(stdin_child, STDIN_FILENO) < 0) {
+                ulm_err(("Error: dup2(): errno = %d\n", errno));
+                s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
+                return;
+            }
+            close(stdin_parent);
         } else {
             close(STDIN_FILENO);
-            close(StdinPipe[0]);
-            close(StdinPipe[1]);
+            close(stdin_parent);
+            close(stdin_child);
         }
 
         /* setup "application process" handling of stdout/stderr */
-        dup2(StderrPipes[2 * lampiState.local_rank + 1],
-             STDERR_FILENO);
-        dup2(StdoutPipes[2 * lampiState.local_rank + 1],
-             STDOUT_FILENO);
-        for (i = 0; i < NChildren; i++) {
+        if (dup2(stdout_child[s->local_rank], STDOUT_FILENO) < 0) {
+            ulm_err(("Error: dup2(): errno = %d\n", errno));
+            s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
+            return;
+        }
+        if (dup2(stderr_child[s->local_rank], STDERR_FILENO) < 0) {
+            ulm_err(("Error: dup2(): errno = %d\n", errno));
+            s->error = ERROR_LAMPI_INIT_POSTFORK_STDIO;
+            return;
+        }
+        for (int i = 0; i < s->local_size; i++) {
             /* close read side of pipe on child */
-            if (i == s->local_rank) {
-                close(StderrPipes[2 * s->local_rank]);
-                close(StdoutPipes[2 * s->local_rank]);
+            if (i != s->local_rank) {
+                close(stdout_child[i]);
+                close(stderr_child[i]);
             } else {
-                /* close pipes set up for other processes */
-                close(StderrPipes[2 * i]);
-                close(StderrPipes[2 * i + 1]);
-                close(StdoutPipes[2 * i]);
-                close(StdoutPipes[2 * i + 1]);
+                close(stdout_parent[i]);
+                close(stderr_parent[i]);
             }
-        }                       /* end i loop */
+        }
     }
 
-    ulm_delete(StderrPipes);
-    ulm_delete(StdoutPipes);
+    ulm_delete(stdout_parent);
+    ulm_delete(stdout_child);
+    ulm_delete(stderr_parent);
+    ulm_delete(stderr_child);
 }
 
 
@@ -2173,18 +2059,6 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
     s->udp = 0;
     s->tcp = 0;
     s->ib = 0;
-
-#if ENABLE_CT
-    /* decide if a daemon will be used */
-#if ENABLE_RMS
-    s->useDaemon = 0;
-#else
-    s->useDaemon = 1;
-#endif
-#endif
-
-    s->daemonSTDERR[0] = s->daemonSTDERR[1] = -1;
-    s->daemonSTDOUT[0] = s->daemonSTDOUT[1] = -1;
 
     /* MPI buffered send data */
     s->bsendData = (bsendData_t *) ulm_malloc((sizeof(bsendData_t)));
@@ -2222,7 +2096,7 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
     }
 
     /* retrieve number of interfaces */
-    if(s->client->unpack(&s->if_count, 
+    if(s->client->unpack(&s->if_count,
         (adminMessage::packType)sizeof(s->if_count), 1) != true) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
@@ -2291,7 +2165,7 @@ void lampi_init_prefork_ip_addresses(lampiState_t *s)
             //s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
             //return;
         }
-      
+
         struct hostent* host = gethostbyname(hostName);
         if(host == 0) {
             s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
@@ -2307,7 +2181,7 @@ void lampi_init_postfork_ip_addresses(lampiState_t* s)
 {
     if(s->verbose)
         lampi_init_print("lampi_init_postfork_ip_addresses");
-                                                                                       
+
     if((s->nhosts == 1) || (!s->tcp && !s->udp))
         return;
 
@@ -2318,11 +2192,10 @@ void lampi_init_postfork_ip_addresses(lampiState_t* s)
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
-                                                                                       
+
     int rc = s->client->allgather(s->if_addrs, s->h_addrs, (s->if_count * sizeof(struct sockaddr_in)));
     if(rc != ULM_SUCCESS) {
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS;
         return;
     }
 }
-

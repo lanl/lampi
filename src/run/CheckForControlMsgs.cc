@@ -58,202 +58,6 @@
  */
 static int NumHostPIDsRecved = 0;
 
-int mpirunCheckForDaemonMsgs(int NHosts, double *HeartBeatTime,
-                              int *HostsNormalTerminated,
-                              int *HostsAbNormalTerminated,
-                              int *ActiveHosts, int *ProcessCnt,
-                              pid_t ** PIDsOfAppProcs,
-                              int *ActiveClients,
-                              int *terminateMsgSent,
-							  adminMessage *server)
-{
-	/*
-		Control msg data layout:
-		<tag (int)><msg control data>
-	*/
-	int					rank, tag, errorCode;
-    unsigned int 		*Inp;
-    char 				ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
-    int					iofd, len, toWrite;
-    FILE				*fd;
-
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
-    struct timeval Time;
-#else
-    struct timespec Time;
-#endif
-
-    rank = -1;
-    tag = -1;
-	if ( true == server->receiveMessage(&rank, &tag, &errorCode, -1) )
-	{
-		switch (tag) 
-		{  /* process according to message type */
-		case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
-			gettimeofday(&Time, NULL);
-			HeartBeatTime[rank] =
-				(double) (Time.tv_sec) +
-				((double) Time.tv_usec) * 1e-6;
-#else
-			clock_gettime(CLOCK_REALTIME, &Time);
-			HeartBeatTime[rank] =
-				(double) (Time.tv_sec) +
-				((double) Time.tv_nsec) * 1e-9;
-#endif                          /* LINUX */
-			break;
-        case STDIOMSG:
-            // unpack int value identifying whether IO is stderr or stdout
-            server->unpackMessage(&iofd, adminMessage::INTEGER, 1);
-            fd = ( STDERR_FILENO == iofd ) ? stderr : stdout;
-
-            // grab the string. msg layout:
-            // <IO identifier (int)><IO content>
-            len = server->receivedMessageSize() - sizeof(fd);
-            while ( len )
-            {
-                toWrite = ( len > (ULM_MAX_CONF_FILELINE_LEN - 1) ) ?
-                (ULM_MAX_CONF_FILELINE_LEN - 1) : len;
-                server->unpackMessage(ReadBuffer, adminMessage::BYTE, toWrite);
-                ReadBuffer[toWrite] = '\0';
-                fprintf(fd, ReadBuffer);
-                fflush(fd);
-
-                len -=  toWrite;
-            }
-                break;
-        case NORMALTERM:
-			ulm_dbg((" Recvd NormalTerm from rank %d\n", rank));
-			/* send ack msg */
-			tag = ACKNORMALTERM;
-			server->reset(adminMessage::SEND);
-			ulm_fdbg(("mpirun: Sending ACKNORMALTERM to rank %d.\n", rank));
-			if ( false == server->sendMessage(rank, tag, server->channelID(), &errorCode) )
-			{
-				ulm_err( ("Error: sending ACKNORMALTERM.  RetVal: %ld\n",
-						(long) errorCode) );
-				Abort();
-			}
-			break;
-		case ACKACKNORMALTERM:
-			ulm_fdbg(("recvd ACKACKNORMALTERM from host %d\n", rank));
-			(*HostsNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			// if all hosts have terminated normally
-			//  notify all hosts, so that they can stop network processing
-			//  and shut down.
-			if ((*HostsNormalTerminated) == NHosts)
-			{
-				tag = ALLHOSTSDONE;
-				// broadcast ALLHOSTSDONE
-                ulm_fdbg(("mpirun: bcasting ALLHOSTSDONE.\n"));
-				server->reset(adminMessage::SEND);
-				if ( false == server->broadcastMessage(tag, &errorCode) )
-				{
-					ulm_err( ("Error: sending ALLHOSTSDONE.\n") );
-					Abort();
-				}
-			}           // end sending ALLHOSTSDONE
-			break;
-            /*
-                Network performs a rolling shutdown so that only the network root node should send the
-                acknowledgement.
-             */
-        case ACKTERMINATENOW:
-		case ACKALLHOSTSDONE:
-            if ( ACKALLHOSTSDONE == tag )
-                ulm_dbg((" ACKALLHOSTSDONE host %d\n", rank));
-            else
-                ulm_dbg((" ACKTERMINATENOW host %d\n", rank));
-            *ActiveClients = 0;
-			break;
-		case CONFIRMABORTCHILDPROC:
-			break;
-			/* worker process died abnormally */
-		case ABNORMALTERM:
-#ifdef PURIFY
-			bzero(ReadBuffer, 5 * sizeof(unsigned int));
-			error = 0;
-#endif
-			if ( false == server->unpackMessage(ReadBuffer, 
-							(adminMessage::packType) sizeof(unsigned int), 5) )
-			{
-				Inp = (unsigned int *) ReadBuffer;
-				ulm_err(("Abnormal termination: "
-                        "Global Rank %u Host Rank %u PID %u "
-                        "HostID %d Signal %d ExitStatus %d\n",
-						*(Inp + 2), *(Inp + 1), *Inp, rank, *(Inp + 3),
-						*(Inp + 4)));
-			}
-			/* send ack to Client */
-            /*
-			tag = ACKABNORMALTERM;
-            ulm_fdbg(("Sending ACKABNORMALTERM to rank %d.\n", rank));
-			server->reset(adminMessage::SEND);
-			if ( false == server->sendMessage(rank, tag, server->channelID(), &errorCode) )
-			{
-				// assume connection no longer available
-				ulm_dbg((" ACKABNORMALTERM IOReturn <= 0 host %d\n", rank));
-				(*HostsAbNormalTerminated)++;
-				ActiveHosts[rank] = 0;
-			}
-             */
-                
-			/* notify all other clients to terminate immediately */
-            if ( 0 == *terminateMsgSent )
-            {
-                tag = TERMINATENOW;
-                server->reset(adminMessage::SEND);
-                if ( false == server->broadcastMessage(tag, &errorCode) )
-                {
-                    ulm_err( ("Error: bcasting TERMINATENOW.\n") );
-                    Abort();
-                }
-                *terminateMsgSent = 1;
-            }
-			break;
-            /*
-		case ACKTERMINATENOW:
-            if (ActiveHosts[rank])
-                (*HostsAbNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			break;
-            */
-		case ACKACKABNORMALTERM:
-            if (ActiveHosts[rank])
-                (*HostsAbNormalTerminated)++;
-			ActiveHosts[rank] = 0;
-			break;
-		case APPPIDS:
-			/* read in app process pid's */
-#ifdef PURIFY
-			bzero(PIDsOfAppProcs[rank], ProcessCnt[rank] * sizeof(pid_t));
-			error = 0;
-#endif
-			if ( false == server->unpackMessage(PIDsOfAppProcs[rank], 
-							(adminMessage::packType) sizeof(pid_t), ProcessCnt[rank]) )
-			{
-				ulm_err( ("Error receiving PIDs.\n") );
-				Abort();
-			}
-			NumHostPIDsRecved++;
-			/* debug setup - if need be */
-			if (NumHostPIDsRecved == NHosts)
-				MPIrunTVSetUpApp(PIDsOfAppProcs);
-			break;
-		default:
-			ulm_err(("Unrecognized control Message : %d \n", tag));
-		}               /* end switch */
-	}
-	else if ( adminMessage::NOERROR != errorCode )
-	{
-		// we have an error
-        ulm_err( ("Error with connection to daemon 0. aborting...\n") );
-		Abort();
-	}
-	return 0;
-}
-							  
 							  
 int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                               int NHosts, double *HeartBeatTime,
@@ -272,7 +76,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
     struct timeval WaitTime;
     char ReadBuffer[ULM_MAX_CONF_FILELINE_LEN];
     ulm_iovec_t IOVec;
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
     struct timeval Time;
 #else
     struct timespec Time;
@@ -323,7 +127,7 @@ int mpirunCheckForControlMsgs(int MaxDescriptor, int *ClientSocketFDList,
                 }
                 switch (Tag) {  /* process according to message type */
                 case HEARTBEAT:
-#if defined (__linux__) || defined (__APPLE__) || defined (__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
                     gettimeofday(&Time, NULL);
                     HeartBeatTime[i] =
                         (double) (Time.tv_sec) +

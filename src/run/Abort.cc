@@ -67,12 +67,6 @@ void AbortFunction(const char *file, int line)
 }
 
 
-int mpirunGetTerminateInitiated(void)
-{
-    return TerminateInitiated;
-}
-
-
 void mpirunSetTerminateInitiated(int val)
 {
     TerminateInitiated = val;

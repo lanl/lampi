@@ -241,7 +241,7 @@ extern ssize_t largePoolBytesPerProcess;
 ////////////////////////////////////////////////////////////////////////
 // SGI NUMA specific resources
 
-#if defined(ENABLE_NUMA) && defined(__mips)
+#if ENABLE_NUMA && defined(__mips)
 #include "os/IRIX/acquire.h"
 extern acquire *ULMai;
 extern request *ULMreq;

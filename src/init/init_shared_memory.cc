@@ -90,120 +90,12 @@ void lampi_init_postfork_shared_memory(lampiState_t *s)
 }
 
 
-void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *s)
-{
-    int done;
-    int errorCode; 
-    int recvd;
-    int tag;
-
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_receive_setup_params_shared_memory");
-    }
-
-    /*
-     * number of bytes per process for the shared memory descriptor
-     * pool RUNPARAMS exchange read the start of input parameters tag
-     */
-    if (false ==
-        s->client->scatterv(-1, dev_type_params::START_SHARED_MEM_INPUT,
-                            &errorCode)) {
-        s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY;
-        return;
-    }
-
-    done = 0;
-    while (!done) {
-        /* read next tag */
-        recvd = s->client->nextTag(&tag);
-        if (recvd != adminMessage::OK) {
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY;
-            return;
-        }
-        switch (tag) {
-        case dev_type_params::END_SHARED_MEM_INPUT:
-            /* done reading input params */
-            done = 1;
-            break;
-        case shared_mem_intput_params::SMDESCPOOLBYTESPERPROC:
-            s->client->unpackMessage(&bytesPerProcess,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-            // number of pages of sharem memory per process for SMP messaging
-        case shared_mem_intput_params::SMPSMPAGESPERPROC:
-            s->client->unpackMessage(&NSMPSharedMemPagesPerProc,
-                                     (adminMessage::packType) sizeof(int),
-                                     1);
-            break;
-        case shared_mem_intput_params::SMPFRAGOUTOFRESRCABORT:
-            SMPRecvDescAbortWhenNoResource = false;
-            break;
-        case shared_mem_intput_params::SMPFRAGRESOURCERETRY:
-            s->client->unpackMessage(&maxSMPRecvDescRetries,
-                                     (adminMessage::packType) sizeof(long),
-                                     1);
-            break;
-        case shared_mem_intput_params::SMPFRAGMINPAGESPERCTX:
-            s->client->unpackMessage(&minPgsIn1SMPRecvDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPFRAGMAXPAGESPERCTX:
-            s->client->unpackMessage(&maxPgsIn1SMPRecvDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPFRAGMAXTOTPAGES:
-            s->client->unpackMessage(&nSMPRecvDescPages,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPISENDOUTOFRESRCABORT:
-            SMPISendDescAbortWhenNoResource = false;
-            break;
-        case shared_mem_intput_params::SMPISENDRESOURCERETRY:
-            s->client->unpackMessage(&maxSMPISendDescRetries,
-                                     (adminMessage::packType) sizeof(long),
-                                     1);
-            break;
-        case shared_mem_intput_params::SMPISENDMINPAGESPERCTX:
-            s->client->unpackMessage(&minPgsIn1SMPISendDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPISENDMAXPAGESPERCTX:
-            s->client->unpackMessage(&maxPgsIn1SMPISendDescList,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        case shared_mem_intput_params::SMPISENDMAXTOTPAGES:
-            s->client->unpackMessage(&nSMPISendDescPages,
-                                     (adminMessage::
-                                      packType) sizeof(ssize_t), 1);
-            break;
-        default:
-            s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_SHARED_MEMORY;
-            return;
-        }
-    }                           /* end while loop */
-}
-
-
 void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *s)
 {
     int done;
     int errorCode; 
     int recvd;
     int tag;
-
-#if ENABLE_CT
-    lampi_init_prefork_receive_setup_msg_shared_memory(s);
-    return;
-#endif
 
     if (s->error) {
         return;

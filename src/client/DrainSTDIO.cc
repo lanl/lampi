@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/time.h>           // needed for timespec
+#include <sys/time.h>
 #include <sys/types.h>
 
 #include "internal/constants.h"
@@ -61,12 +61,6 @@ void ClientDrainSTDIO(int *ClientStdoutFDs, int *ClientStderrFDs,
 
     /* check to see if control socket is still open - if not exit */
     while (again) {
-#if ENABLE_CT == 0
-        if (ServerFD == -1) {
-            exit(5);
-        }
-#endif
-
         ClientScanStdoutStderr(ClientStdoutFDs, ClientStderrFDs, &ServerFD,
                                NFDs, MaxDescriptor, IOPreFix,
                                LenIOPreFix, StderrBytesWritten,

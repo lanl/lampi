@@ -28,8 +28,6 @@
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-
-
 #ifndef _INPUT2
 #define _INPUT2
 
@@ -183,7 +181,7 @@ InputParameters_t ULMInputOptions[] =
      "MasterHost",
      STRING_ARGS,
      NoOpFunction,
-     _ulm_RearrangeHostList,
+     RearrangeHostList,
      "Startup host", 0, "\0"
     },
     {"-env", "EnvVars",
@@ -349,7 +347,8 @@ InputParameters_t ULMInputOptions[] =
      parseIBFlags,
      "Special InfiniBand flags -- noack, ack, nochecksum, checksum", 0, "\0"
     }
-#if defined(ENABLE_TCP)
+
+#if ENABLE_TCP
     ,
     {"-tcpmaxfrag",
      "TCPMaxFragment",

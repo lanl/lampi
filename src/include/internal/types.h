@@ -36,9 +36,7 @@
 
 #include <stdlib.h>
 
-#if defined (__APPLE__) || defined (__CYGWIN__)
 #include <sys/types.h>		/* for NFDBITS */
-#endif
 
 #include "internal/constants.h"
 
@@ -82,7 +80,7 @@ typedef char InterfaceName_t[ULM_MAX_IFNAME_LEN];
  * Platform dependent time operations.
  */
 
-#if defined (__linux__) || defined (__APPLE__) || defined(__CYGWIN__)
+#ifndef HAVE_CLOCK_GETTIME
 
 typedef struct timeval ulm_timeval_t;
 #define ulm_timeofday(t)	gettimeofday(&(t), NULL)

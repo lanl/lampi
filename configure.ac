@@ -29,9 +29,12 @@ AC_CHECK_HEADERS([limits.h])
 AC_CHECK_HEADERS([malloc.h])
 AC_CHECK_HEADERS([netdb.h])
 AC_CHECK_HEADERS([netinet/in.h])
+AC_CHECK_HEADERS([pty.h])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([sys/uio.h])
+AC_CHECK_HEADERS([util.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -101,7 +104,6 @@ AC_CHECK_FUNCS([strtoul])
 MODULES_LIBMPI="$MODULES_LIBMPI src/client"
 MODULES_LIBMPI="$MODULES_LIBMPI src/collective"
 MODULES_LIBMPI="$MODULES_LIBMPI src/collective/p2p"
-MODULES_LIBMPI="$MODULES_LIBMPI src/ctnetwork"
 MODULES_LIBMPI="$MODULES_LIBMPI src/init"
 MODULES_LIBMPI="$MODULES_LIBMPI src/interface"
 MODULES_LIBMPI="$MODULES_LIBMPI src/mem"
@@ -111,17 +113,14 @@ MODULES_LIBMPI="$MODULES_LIBMPI src/mpi/f"
 MODULES_LIBMPI="$MODULES_LIBMPI src/mpi/internal"
 MODULES_LIBMPI="$MODULES_LIBMPI src/path/common"
 MODULES_LIBMPI="$MODULES_LIBMPI src/queue"
-MODULES_LIBMPI="$MODULES_LIBMPI src/threads"
 MODULES_LIBMPI="$MODULES_LIBMPI src/util"
 
 # Default modules (subdirectories) to compile for mpirun.
 
 MODULES_MPIRUN="$MODULES_MPIRUN src/client"
-MODULES_MPIRUN="$MODULES_MPIRUN src/ctnetwork"
 MODULES_MPIRUN="$MODULES_MPIRUN src/init"
 MODULES_MPIRUN="$MODULES_MPIRUN src/interface"
 MODULES_MPIRUN="$MODULES_MPIRUN src/run"
-MODULES_MPIRUN="$MODULES_MPIRUN src/threads"
 MODULES_MPIRUN="$MODULES_MPIRUN src/util"
 
 # Defaults compilation/link options for all hosts.
@@ -139,10 +138,11 @@ ROMIO_CONFIG_OPTIONS=""
 
 # Default features
 
-enable_shared_memory=${enable_shared_memory:-yes}
-enable_reliability=${enable_reliability:-yes}
 enable_check_api_args=${enable_check_api_args:-yes}
 enable_dynamic=${enable_dynamic:-yes}
+enable_pty_stdio=${enable_pty_stdio:-yes}
+enable_reliability=${enable_reliability:-yes}
+enable_shared_memory=${enable_shared_memory:-yes}
 enable_static=${enable_static:-yes}
 
 enable_bproc=${enable_bproc:-no}
@@ -189,6 +189,10 @@ i?86-pc-linux*)
            LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
         CXXFLAGS="$CFLAGS"
+
+        if test "$enable_pty_stdio" = "yes" ; then
+           LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
+        fi
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -269,6 +273,10 @@ ia64-unknown-linux*)
         fi
         CXXFLAGS="$CFLAGS"
 
+        if test "$enable_pty_stdio" = "yes" ; then
+           LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
+        fi
+
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
         MODULES_OS="$MODULES_OS src/os/LINUX"
@@ -301,6 +309,10 @@ x86_64-unknown-linux*)
         # link flags with "make rpath=" support
         LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         CXXFLAGS="$CFLAGS"
+
+        if test "$enable_pty_stdio" = "yes" ; then
+           LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
+        fi
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -606,6 +618,15 @@ if test "$enable_large_file_support" = "yes" ; then
    ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -D_LARGEFILE_SOURCE=1'"
 fi
 
+AC_ARG_ENABLE(pty_stdio,
+              AC_HELP_STRING([--enable-pty-stdio], [enable use of pty's for stdio redirection]))
+echo "feature PTY_STDIO... ${enable_pty_stdio:-no}"
+if test "$enable_pty_stdio" = "yes" ; then
+   AC_DEFINE(ENABLE_PTY_STDIO, 1)
+else
+   AC_DEFINE(ENABLE_PTY_STDIO, 0)
+fi
+
 AC_ARG_ENABLE(check_api_args,
               AC_HELP_STRING([--enable-check-api-args], [enable checking of API arguments]))
 echo "feature CHECK_API_ARGS... ${enable_check_api_args:-no}"
@@ -677,6 +698,9 @@ AH_TEMPLATE([ENABLE_INFINIBAND],
 AH_TEMPLATE([ENABLE_RELIABILITY],
             [Define to 1 if reliability is enabled.])
 
+AH_TEMPLATE([ENABLE_PTY_STDIO],
+            [Define to 1 if use of pty's for stdio redirection is enabled.])
+
 AH_TEMPLATE([ENABLE_CHECK_API_ARGS],
             [Define to 1 if MPI argument checking is enabled.])
 
@@ -713,6 +737,7 @@ AC_SUBST(enable_large_file_support)
 AC_SUBST(enable_lsf)
 AC_SUBST(enable_memprofile)
 AC_SUBST(enable_numa)
+AC_SUBST(enable_pty_stdio)
 AC_SUBST(enable_qsnet)
 AC_SUBST(enable_reliability)
 AC_SUBST(enable_rms)

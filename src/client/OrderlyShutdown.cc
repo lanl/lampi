@@ -58,12 +58,8 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
 {
     size_t STDIOSent[2];
     unsigned int Tag;
-#if ENABLE_CT
-    int			errorCode;
-#else
     ssize_t IOReturn;
     ulm_iovec_t IOVec[2];
-#endif
     static int Finished = 0;
 
     /* check to see if mpirun already notified.  If so, return */
@@ -78,16 +74,6 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
     STDIOSent[0] = *StderrBytesWritten;
     STDIOSent[1] = *StdoutBytesWritten;
     Tag = NORMALTERM;
-#if ENABLE_CT
-    // create admin msg to send to mpirun
-    ulm_fdbg(("Node %d: sending NORMALTERM to mpirun.\n", state->client->nodeLabel()));
-    state->client->reset(adminMessage::SEND);
-    if ( false == state->client->sendMessage(0, Tag, state->channelID, &errorCode) )
-    {
-        ulm_exit((-1, "Error: sending NORMALTERM.  RetVal: %ld\n",
-                  errorCode));
-    }
-#else
     IOVec[0].iov_base = (char *) &Tag;
     IOVec[0].iov_len = (ssize_t) (sizeof(unsigned int));
     IOVec[1].iov_base = (char *) STDIOSent;
@@ -102,7 +88,6 @@ void ClientOrderlyShutdown(size_t *StderrBytesWritten,
         ulm_exit((-1, "Error: sending NORMALTERM.  RetVal: %ld\n",
                   IOReturn));
     }
-#endif
 
     /* set flag indicating mpirun has been notified of normal termination */
     Finished = 1;

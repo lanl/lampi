@@ -51,14 +51,12 @@ lampi_init_func_t lampi_init_allforked_rms = noop;
 
 #if ENABLE_GM == 0
 lampi_init_func_t lampi_init_prefork_gm = noop;
-lampi_init_func_t lampi_init_prefork_receive_setup_msg_gm = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_gm = noop;
 lampi_init_func_t lampi_init_postfork_gm = noop;
 #endif
 
 #if ENABLE_QSNET == 0
 lampi_init_func_t lampi_init_prefork_quadrics = noop;
-lampi_init_func_t lampi_init_prefork_receive_setup_msg_quadrics = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics = noop;
 lampi_init_func_t lampi_init_postfork_quadrics = noop;
 lampi_init_func_t lampi_init_allforked_quadrics = noop;
@@ -68,7 +66,6 @@ lampi_init_func_t lampi_init_postfork_coll_setup = noop;
 #endif
 
 #if ENABLE_SHARED_MEMORY == 0
-lampi_init_func_t lampi_init_prefork_receive_setup_msg_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_shared_memory = noop;
 lampi_init_func_t lampi_init_prefork_shared_memory = noop;
 lampi_init_func_t lampi_init_postfork_shared_memory = noop;
@@ -89,7 +86,6 @@ lampi_init_func_t lampi_init_prefork_receive_setup_params_tcp = noop;
 #endif
 
 #if ENABLE_INFINIBAND == 0
-lampi_init_func_t lampi_init_prefork_receive_setup_msg_ib = noop;
 lampi_init_func_t lampi_init_prefork_receive_setup_params_ib = noop;
 lampi_init_func_t lampi_init_postfork_ib = noop;
 #endif

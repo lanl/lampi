@@ -54,9 +54,6 @@ static int lastClientStderrFD = -1;
 static int lastClientStdoutFD = -1;
 static int lastNewLineLastToServerStderr = 0;
 static int lastNewLineLastToServerStdout = 0;
-static int lastServerStdoutFD = 0;
-static int lastServerStderrFD = 0;
-
 
 static int readFromDescriptor(int ClientFD, int* ServerFD, int StdioFD,
                               int *NewLineLast, int lastInputFD,
@@ -83,15 +80,6 @@ static int readFromDescriptor(int ClientFD, int* ServerFD, int StdioFD,
             else
                 *NewLineLast = 1;
         }
-#ifdef CTNETWORK
-        *lenWritten =
-            ClientWriteIOToServer(ReadBuffer,
-                                  (char *) IOPreFix,
-                                  LenIOPreFix,
-                                  NewLineLast,
-                                  StdioFD, lenR,
-                                  startWithNewLine, state);
-#else
         *lenWritten =
             ClientWriteToServer(ServerFD,
                                 ReadBuffer,
@@ -100,7 +88,6 @@ static int readFromDescriptor(int ClientFD, int* ServerFD, int StdioFD,
                                 NewLineLast,
                                 StdioFD, lenR,
                                 startWithNewLine);
-#endif
     }
 
     return lenR;
@@ -127,7 +114,6 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 10000;
     NumberReads = 0;
-    int	*daemonNewLineLast = state->daemonNewLineLast;
 
     /* check to see if there is any data to read */
     nfds = 0;
@@ -145,81 +131,12 @@ int ClientScanStdoutStderr(int *ClientStdoutFDs, int *ClientStderrFDs,
         }
     }
 
-    if (state->daemonSTDERR[0] >= 0)
-    {
-        FD_SET(state->daemonSTDERR[0], &ReadSet);
-        nfds++;
-        if ( state->daemonSTDERR[0] > MaxDescriptor )
-            MaxDescriptor = state->daemonSTDERR[0] + 1;
-    }
-
-    if (state->daemonSTDOUT[0] >= 0)
-    {
-        FD_SET(state->daemonSTDOUT[0], &ReadSet);
-        nfds++;
-        if ( state->daemonSTDOUT[0] > MaxDescriptor )
-            MaxDescriptor = state->daemonSTDOUT[0] + 1;
-    }
-
     if (nfds == 0)
         return 0;
 
     RetVal = select(MaxDescriptor, &ReadSet, NULL, NULL, &WaitTime);
     if (RetVal <= 0)
         return RetVal;
-
-    /* process daemon output. */
-    if ((state->daemonSTDERR[0] > 0)
-        && (FD_ISSET(state->daemonSTDERR[0], &ReadSet)))
-    {
-        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
-        FD_CLR(state->daemonSTDERR[0], &ReadSet);
-        lenR = readFromDescriptor(state->daemonSTDERR[0], ServerFD, STDERR_FILENO,
-                                  &daemonNewLineLast[0], lastServerStderrFD,
-                                  lastNewLineLastToServerStderr, NULL,
-                                  0, &lenW, state);
-        if (lenR > 0)
-        {
-            NumberReads++;
-            if (lenW > 0)
-            {
-                (*StderrBytesWritten) += lenW;
-                lastServerStderrFD = state->daemonSTDERR[0];
-                lastNewLineLastToServerStderr = daemonNewLineLast[0];
-            }
-        }
-        else
-        {
-            close(state->daemonSTDERR[0]);
-            state->daemonSTDERR[0] = -1;
-        }
-    }
-
-    if ((state->daemonSTDOUT[0] > 0)
-        && (FD_ISSET(state->daemonSTDOUT[0], &ReadSet)))
-    {
-        /* clear ClientStderrFDs[i] from ReadSet in case it is also standard output */
-        FD_CLR(state->daemonSTDOUT[0], &ReadSet);
-        lenR = readFromDescriptor(state->daemonSTDOUT[0], ServerFD, STDOUT_FILENO,
-                                  &daemonNewLineLast[1], lastServerStdoutFD,
-                                  lastNewLineLastToServerStdout, NULL,
-                                  0, &lenW, state);
-        if (lenR > 0)
-        {
-            NumberReads++;
-            if (lenW > 0)
-            {
-                (*StdoutBytesWritten) += lenW;
-                lastServerStdoutFD = state->daemonSTDOUT[0];
-                lastNewLineLastToServerStdout = daemonNewLineLast[1];
-            }
-        }
-        else
-        {
-            close(state->daemonSTDOUT[0]);
-            state->daemonSTDOUT[0] = -1;
-        }
-    }
 
     /* read data from standard error */
     for (i = 0; i < NFDs; i++)

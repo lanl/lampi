@@ -599,7 +599,6 @@ exchange_info:
     ulm_free(exchange_send);
     ulm_free(exchange_recv);
 
-#if ENABLE_CT == 0
     // notify mpirun of the allgather results...
     int maxsize = sizeof(ib_ud_peer_info_t);
     if ((myhost() == 0) && ((s->useDaemon && s->iAmDaemon) || 
@@ -611,7 +610,6 @@ exchange_info:
         s->client->pack(&maxsize, adminMessage::INTEGER, 1);
         s->client->send(-1, adminMessage::IBMAXACTIVE, &rc);
     }
-#endif
 
     // don't use IB if there are no active HCAs or ports
     if ((maxhcas == 0) || (maxports == 0)) {

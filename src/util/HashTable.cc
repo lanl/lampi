@@ -45,7 +45,6 @@
 #include <strings.h>
 
 #include "HashTable.h"
-#include "internal/Private.h"
 #include "internal/malloc.h"
 
 

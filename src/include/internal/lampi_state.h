@@ -148,13 +148,6 @@ typedef struct {
     PrefixName_t *IOPreFix;         /* string to prepend to output */
 
     /*
-     * daemon stdio
-     */
-    int daemonSTDERR[2];
-    int daemonSTDOUT[2];
-    int daemonNewLineLast[2];
-
-    /*
      * abnormal exit handling
      */
 

@@ -73,6 +73,8 @@ enum {
     ERROR_LAMPI_INIT_PREFORK_PATHS,
     ERROR_LAMPI_INIT_POSTFORK_PATHS,
     ERROR_LAMPI_INIT_ALLFORKED_PATHS,
+    ERROR_LAMPI_INIT_PREFORK_STDIO,
+    ERROR_LAMPI_INIT_POSTFORK_STDIO,
     ERROR_LAMPI_INIT_PREFORK_UDP,
     ERROR_LAMPI_INIT_POSTFORK_UDP,
     ERROR_LAMPI_INIT_PREFORK_TCP,
@@ -106,12 +108,13 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *);
 void lampi_init_prefork_parse_setup_data(lampiState_t *);
 void lampi_init_prefork_paths(lampiState_t *);
 void lampi_init_prefork_process_resources(lampiState_t *);
-void lampi_init_prefork_receive_setup_msg(lampiState_t *);
 void lampi_init_prefork_receive_setup_params(lampiState_t *);
 void lampi_init_prefork_ip_addresses(lampiState_t *);
 void lampi_init_prefork_resource_management(lampiState_t *);
 void lampi_init_prefork_resources(lampiState_t *);
 void lampi_init_prefork_stdio(lampiState_t *);
+void lampi_init_prefork_stdio_pipe(lampiState_t *);
+void lampi_init_prefork_stdio_pty(lampiState_t *);
 
 void lampi_init_postfork_communicators(lampiState_t *s);
 void lampi_init_postfork_debugger(lampiState_t *);
@@ -121,6 +124,8 @@ void lampi_init_postfork_paths(lampiState_t *);
 void lampi_init_postfork_resource_management(lampiState_t *);
 void lampi_init_postfork_resources(lampiState_t *);
 void lampi_init_postfork_stdio(lampiState_t *);
+void lampi_init_postfork_stdio_pipe(lampiState_t *);
+void lampi_init_postfork_stdio_pty(lampiState_t *);
 
 void lampi_init_allforked_resource_management(lampiState_t *);
 void lampi_init_allforked_resources(lampiState_t *);
@@ -150,19 +155,16 @@ extern lampi_init_func_t lampi_init_allforked_rms;
 
 #if ENABLE_GM
 void lampi_init_prefork_gm(lampiState_t *);
-void lampi_init_prefork_receive_setup_msg_gm(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_gm(lampiState_t *);
 void lampi_init_postfork_gm(lampiState_t *);
 #else
 extern lampi_init_func_t lampi_init_prefork_gm;
-extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_gm;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_gm;
 extern lampi_init_func_t lampi_init_postfork_gm;
 #endif
 
 #if ENABLE_QSNET
 void lampi_init_prefork_quadrics(lampiState_t *);
-void lampi_init_prefork_receive_setup_msg_quadrics(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_quadrics(lampiState_t *);
 void lampi_init_postfork_quadrics(lampiState_t *);
 #ifdef USE_ELAN_COLL
@@ -170,7 +172,6 @@ void lampi_init_postfork_coll_setup(lampiState_t *s);
 #endif
 #else
 extern lampi_init_func_t lampi_init_prefork_quadrics;
-extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_quadrics;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_quadrics;
 extern lampi_init_func_t lampi_init_postfork_quadrics;
 #ifdef USE_ELAN_COLL
@@ -180,7 +181,6 @@ extern lampi_init_postfork_coll_setup(lampiState_t *s);
 
 #if ENABLE_SHARED_MEMORY
 void lampi_init_prefork_shared_memory(lampiState_t *);
-void lampi_init_prefork_receive_setup_msg_shared_memory(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_shared_memory(lampiState_t *);
 void lampi_init_postfork_shared_memory(lampiState_t *);
 #else
@@ -209,11 +209,9 @@ extern lampi_init_func_t lampi_init_postfork_tcp;
 #endif
 
 #if ENABLE_INFINIBAND
-void lampi_init_prefork_receive_setup_msg_ib(lampiState_t *);
 void lampi_init_prefork_receive_setup_params_ib(lampiState_t *);
 void lampi_init_postfork_ib(lampiState_t *);
 #else
-extern lampi_init_func_t lampi_init_prefork_receive_setup_msg_ib;
 extern lampi_init_func_t lampi_init_prefork_receive_setup_params_ib;
 extern lampi_init_func_t lampi_init_postfork_ib;
 #endif
