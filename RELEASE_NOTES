@@ -249,8 +249,11 @@ Version 1.4.9
 
 - More Panasas file system support.
 
+- AMD Opteron in 64-bit mode port verified.
+
+- Fixes for Quadrics hardware broadcast optimizations.
+
 Version 1.4.10
 
 - Added generic --enable-large-file-support option, rather than
   coupling this to the type of system or file system detected.
-
