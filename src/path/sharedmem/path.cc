@@ -539,9 +539,9 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
                     Comm->privateQueues.OkToMatchSMPFrags[sourceRank]->
                         Append(incomingFrag);
                     // unlock triplet
-                    if (usethreads())
-                        Comm->recvLock[sourceRank].unlock();
                 }
+                if (usethreads())
+                    Comm->recvLock[sourceRank].unlock();
             }                   /* end processing frag */
         }                       /* end foundData */
     }                           /* end remoteProc loop */
