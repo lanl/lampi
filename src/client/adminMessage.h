@@ -48,6 +48,7 @@
 #include <arpa/inet.h>
 
 #include "ulm/errors.h"
+#include "internal/constants.h"
 #include "internal/log.h"
 #include "internal/malloc.h"
 #include "internal/system.h"
@@ -263,7 +264,7 @@ class adminMessage {
 
     enum {
         MAXHOSTNAMESIZE = 512,
-        DEFAULTBUFFERSIZE = (64<<10),
+        DEFAULTBUFFERSIZE = ULM_MAX_IO_BUFFER + 512,
         MAXSOCKETS = 8192
     };
 
