@@ -45,13 +45,16 @@ int PMPI_Init(int *argc, char ***argv)
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
     }
+    /* set MPI thread usage flag - MPI defines more parameters than
+     *      *   ulm uses internally */
+    _mpi.thread_usage=MPI_THREAD_SINGLE;
 
     rc = ulm_init();
     if (rc != ULM_SUCCESS) {
 	return MPI_ERR_INTERN;
     }
-    ulm_barrier(ULM_COMM_WORLD);
 
+    ulm_barrier(ULM_COMM_WORLD);
     rc = _mpi_init();
     if (rc) {
 	return MPI_ERR_INTERN;

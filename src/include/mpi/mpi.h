@@ -246,6 +246,7 @@ int MPI_Pack(void *, int, MPI_Datatype, void *, int, int *, MPI_Comm);
 int MPI_Pack_size(int, MPI_Datatype, MPI_Comm, int *);
 int MPI_Pcontrol(const int,...);
 int MPI_Probe(int, int, MPI_Comm, MPI_Status *);
+int MPI_Query_thread( int *provided);
 int MPI_Recv(void *, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
 int MPI_Recv_init(void *, int, MPI_Datatype, int, int, MPI_Comm,
 		  MPI_Request *);

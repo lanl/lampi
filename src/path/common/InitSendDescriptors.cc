@@ -45,7 +45,7 @@
 #include "path/common/InitSendDescriptors.h"
 
 // instantiate globals in net/common/InitSendDescriptors.h
-FreeListShared_t<BaseSendDesc_t> _ulm_SendDescriptors;
+FreeListPrivate_t<BaseSendDesc_t> _ulm_SendDescriptors;
 ssize_t _ulm_nSendDescPages = -1;
 ssize_t _ulm_maxPgsIn1SendDescList = -1;
 ssize_t _ulm_minPgsIn1SendDescList = -1;
@@ -73,6 +73,7 @@ void InitSendDescriptors(int NumLocalProcs)
     for (int i = 0; i < nFreeLists; i++) {
         memAffinityPool[i] = i;
     }
+    MemoryPoolPrivate_t *inputPool = NULL;
 
     int retVal =
         _ulm_SendDescriptors.Init(nFreeLists, nPagesPerList, poolChunkSize,
@@ -81,7 +82,7 @@ void InitSendDescriptors(int NumLocalProcs)
                                   _ulm_maxSendDescRetries,
                                   " Send Descriptors ",
                                   retryForMoreResources, memAffinityPool,
-                                  enforceAffinity(), ShareMemDescPool,
+                                  enforceAffinity(), inputPool,
                                   _ulm_sendDescAbortWhenNoResource);
 
     // clean up

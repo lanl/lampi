@@ -166,7 +166,7 @@ public:
 
     // needed so that ack can be put directly to his header
     union {
-        BaseSendDesc_t *SMP;
+        sharedMemData_t *SMP;
     } SendingHeader_m;
 
     // matched recieve

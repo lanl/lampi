@@ -99,6 +99,7 @@ struct mpi_state_t {
     int initialized;
     int finalized;
     int check_args;
+    int thread_usage;
 };
 
 extern mpi_state_t _mpi;

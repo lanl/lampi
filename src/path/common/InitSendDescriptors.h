@@ -36,7 +36,7 @@
 #include "mem/FreeLists.h"
 #include "path/common/BaseDesc.h"
 
-extern FreeListShared_t <BaseSendDesc_t> _ulm_SendDescriptors;
+extern FreeListPrivate_t <BaseSendDesc_t> _ulm_SendDescriptors;
 
 extern ssize_t _ulm_nSendDescPages;
 extern ssize_t _ulm_maxPgsIn1SendDescList;

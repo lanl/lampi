@@ -220,7 +220,14 @@ enum {
     MPI_ERR_UNSUPPORTED_OPERATION = 53,
     MPI_ERR_WIN = 54,
 
-    MPI_ERR_LASTCODE = 55
+    MPI_ERR_LASTCODE = 55,
+
+    /* mpi-2 thread constants */
+    MPI_THREAD_SINGLE=1,
+    MPI_THREAD_FUNNELED,
+    MPI_THREAD_SERIALIZED,
+    MPI_THREAD_MULTIPLE
+
 };
 /* attribute function macros */
 

@@ -71,6 +71,7 @@ SRC_LIBMPI += \
 	src/mpi/c/mpi_group_union.c \
 	src/mpi/c/mpi_ibsend.c \
 	src/mpi/c/mpi_init.c \
+	src/mpi/c/mpi_init_thread.c \
 	src/mpi/c/mpi_initialized.c \
 	src/mpi/c/mpi_intercomm_create.c \
 	src/mpi/c/mpi_intercomm_merge.c \
@@ -87,6 +88,7 @@ SRC_LIBMPI += \
 	src/mpi/c/mpi_pack_size.c \
 	src/mpi/c/mpi_pcontrol.c \
 	src/mpi/c/mpi_probe.c \
+	src/mpi/c/mpi_query_thread.c \
 	src/mpi/c/mpi_recv.c \
 	src/mpi/c/mpi_recv_init.c \
 	src/mpi/c/mpi_reduce.c \

@@ -352,7 +352,7 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
 #endif                          /* _DEBUGQUEUES */
 
             // fill in pointer to send descriptor
-            FragDesc->SendingHeader_m.SMP = message;
+            FragDesc->SendingHeader_m.SMP=message->pathInfo.sharedmem.sharedData;
 
             // set message length
             FragDesc->msgLength_m = message->posted_m.length_m;
@@ -409,8 +409,8 @@ bool sharedmemPath::send(BaseSendDesc_t *message, bool *incomplete,
             (message->NumFragDescAllocated)++;
 
             // set flag indicating memory is allocated
-            FragDesc->SendingHeader_m.SMP->pathInfo.sharedmem.
-		    CopyToULMBuffers(FragDesc,message);
+	    message->pathInfo.sharedmem.CopyToULMBuffers(FragDesc,message);
+
             // lock fragsReadyToSend
 	    message->pathInfo.sharedmem.sharedData->fragsReadyToSend.Lock.lock();
 
@@ -560,8 +560,7 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
         //  receive directly
         RecvDesc_t *receiver =
             (RecvDesc_t *) incomingFrag->matchedRecv_m;
-        BaseSendDesc_t *matchedSender =
-            incomingFrag->SendingHeader_m.SMP;
+	sharedMemData_t *matchedSender = incomingFrag->SendingHeader_m.SMP;
         if (usethreads())
             receiver->Lock.lock();
 
@@ -600,12 +599,10 @@ bool sharedmemPath::receive(double timeNow, int *errorCode,
 	incomingFrag->WhichQueue = SMPFREELIST;
 	mb();
 #endif
-        matchedSender->pathInfo.sharedmem.sharedData->
-		freeFrags.Append(incomingFrag);
+        matchedSender->freeFrags.Append(incomingFrag);
 
         // ack fragement
-        fetchNadd((int *) &(matchedSender->pathInfo.sharedmem.sharedData->
-				NumAcked), 1);
+        fetchNadd((int *) &(matchedSender->NumAcked), 1);
 
     }                           // end while( SMPMatchedFrags )
 

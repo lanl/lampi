@@ -89,9 +89,19 @@ inline long global_proc_to_host(long x)
     return lampiState.map_global_rank_to_host[x];
 }
 
-inline int usethreads()
+	inline int usethreads()
 {
     return lampiState.usethreads;
+}
+
+inline int setthreadusage(int use)
+{
+	if( use )
+		lampiState.usethreads=1;
+	else
+		lampiState.usethreads=0;
+
+	return ULM_SUCCESS;
 }
 
 inline int usecrc()
