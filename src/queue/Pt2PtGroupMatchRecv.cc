@@ -150,7 +150,7 @@ void Communicator::checkFragListsForSpecificMatch(RecvDesc_t * IRDesc)
 bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
                                                    int ProcWithData)
 {
-    bool FragFound = false;
+    bool FragFound = false, recvDone;
     unsigned long SendingSequenceNumber = 0;
     unsigned long SendingProc = 0;
     int tag = IRDesc->tag_m;
@@ -251,7 +251,10 @@ bool Communicator::checkSpecifiedFragListsForMatch(RecvDesc_t * IRDesc,
             // copy out data
             // CopyToAppLock will return >= 0 if data is okay, and -1 if it is corrupt;
             // we don't care either way since we call AckData in either case
-            IRDesc->CopyToAppLock(RecDesc);
+            recvDone = false;
+            IRDesc->CopyToAppLock(RecDesc, &recvDone);
+            if (recvDone)
+                requestDesc->messageDone = true;
 
             //  ReturnDescToPool sets the WhichQueue correctly - this is just to
             //    make sure that the frag is not processed as privateQueues.OkToMatchRecvFrags.
