@@ -127,6 +127,7 @@ checkSMPWildRecvListForMatch(SMPFragDesc_t * incomingFrag)
             }
             // remove link - no need to lock, no one else can be changing
             //   this list
+            WildRecvDesc->WhichQueue = ONNOLIST;
             privateQueues.PostedWildRecv.RemoveLinkNoLock(WildRecvDesc);
 
             return WildRecvDesc;
@@ -216,6 +217,7 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
                 if (!(WildIRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {
 
                     // remove link from list
+                    WildRecvDesc->WhichQueue = ONNOLIST;
                     privateQueues.PostedWildRecv.
                         RemoveLinkNoLock(WildRecvDesc);
                     *queueMatched = Communicator::WILD_RECV_QUEUE;
@@ -257,6 +259,7 @@ RecvDesc_t *Communicator::checkSMPSpecificAndWildRecvListForMatch
                 || (SpecificRecvTag == ULM_ANY_TAG)) {
                 if (!(SpecificRecvTag == ULM_ANY_TAG && SendUserTag < 0)) {
                     // remove descriptor from list - upper layer handle locking
+                    SpecificDesc->WhichQueue = ONNOLIST;
                     privateQueues.PostedSpecificRecv[SrcProc]->
                         RemoveLinkNoLock(SpecificDesc);
                     *queueMatched = Communicator::SPECIFIC_RECV_QUEUE;
