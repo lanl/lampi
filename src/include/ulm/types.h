@@ -367,7 +367,6 @@ typedef int (ulm_scatterv_t) (void *, int *, int *, ULMType_t *, void *,
 #define ulm_type_retain(type)             \
 do {                                      \
     if (type && type->isbasic == 0) {     \
-    
         fetchNadd(&(type->ref_count), 1); \
     }                                     \
 } while (0)
