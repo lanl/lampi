@@ -116,7 +116,7 @@ void lampi_init_prefork_receive_setup_msg_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpackMessage(&gmState.fragSize,
-                                 (adminMessage::packType) sizeof(int),
+                                 (adminMessage::packType) sizeof(size_t),
                                  1)) {
         ulm_err(("Failed unpacking gmState.fragSize\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
@@ -125,7 +125,7 @@ void lampi_init_prefork_receive_setup_msg_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpackMessage(&gmState.doAck,
-                                 (adminMessage::packType) sizeof(int),
+                                 (adminMessage::packType) sizeof(bool),
                                  1)) {
         ulm_err(("Failed unpacking gmState.doAck\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
@@ -134,7 +134,7 @@ void lampi_init_prefork_receive_setup_msg_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpackMessage(&gmState.doChecksum,
-                                 (adminMessage::packType) sizeof(int),
+                                 (adminMessage::packType) sizeof(bool),
                                  1)) {
         ulm_err(("Failed unpacking gmState.doChecksum\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
@@ -202,7 +202,7 @@ void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpack(&gmState.fragSize,
-                          (adminMessage::packType) sizeof(int), 1)) {
+                          (adminMessage::packType) sizeof(size_t), 1)) {
         ulm_err(("Failed unpacking gmState.fragSize\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
         return;
@@ -210,7 +210,7 @@ void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpack(&gmState.doAck,
-                          (adminMessage::packType) sizeof(int), 1)) {
+                          (adminMessage::packType) sizeof(bool), 1)) {
         ulm_err(("Failed unpacking gmState.doAck\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
         return;
@@ -218,7 +218,7 @@ void lampi_init_prefork_receive_setup_params_gm(lampiState_t * s)
 
     if (false ==
         s->client->unpack(&gmState.doChecksum,
-                          (adminMessage::packType) sizeof(int), 1)) {
+                          (adminMessage::packType) sizeof(bool), 1)) {
         ulm_err(("Failed unpacking gmState.doChecksum\n"));
         s->error = ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS_GM;
         return;

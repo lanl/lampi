@@ -1004,11 +1004,11 @@ int SendGMInputToClients(ULMRunParams_t *RunParameters,
     ulm_dbg( ("mpirun: Bcasting GM input...\n") );
     server->reset(adminMessage::SEND);
     server->pack(&(RunParameters->Networks.GMSetup.fragSize), 
-		    (adminMessage::packType)sizeof(int), 1);
+		    (adminMessage::packType)sizeof(size_t), 1);
     server->pack(&(RunParameters->Networks.GMSetup.doAck), 
-		    (adminMessage::packType)sizeof(int), 1);
+		    (adminMessage::packType)sizeof(bool), 1);
     server->pack(&(RunParameters->Networks.GMSetup.doChecksum), 
-		    (adminMessage::packType)sizeof(int), 1);
+		    (adminMessage::packType)sizeof(bool), 1);
     tag = dev_type_params::END_GM_INPUT;
     server->pack(&tag, adminMessage::INTEGER, 1);
     if ( !server->broadcast(dev_type_params::START_GM_INPUT,
