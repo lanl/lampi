@@ -1,3 +1,115 @@
+2004-09-30 16:57  ddd
+
+	* src/path/gm/recvFrag.cc: adding thread safety check and general
+	  cleanup
+
+2004-09-30 16:49  ddd
+
+	* src/mpi/f/: mpi_wait.c, mpi_waitall.c, mpi_waitany.c,
+	  mpi_waitsome.c: MPI_REQUEST_NULL fixes
+
+2004-09-29 08:36  twoodall
+
+	* src/path/: common/BaseDesc.h, gm/header.h, gm/init.cc,
+	  gm/path.cc, gm/recvFrag.cc: - change BaseAck to pass along send
+	  sequence number - so that we can verify   the send fragment is
+	  pointing to the correct send descriptor. In the case	 of
+	  duplicate transmissions/acks - the ack could be pointing to a
+	  send fragment   that has been reused.  - change gm init code to
+	  force the number of recv tokens to not exceed the   number of
+	  send tokens. Otherwise, w/ reliability enabled, or when using
+	  sync sends, we can easily overrun the ability to generate
+	  ackowledgments,   as each recv token requires a send token for
+	  the ack.
+
+2004-09-10 14:01  dgdimick
+
+	* configure, configure.ac, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Release 1.5.5
+
+2004-08-19 18:43  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_hints.c,
+	  romio-1.2.5.1/adio/ad_panfs/ad_panfs_open.c,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Updates for PAN FS
+
+2004-08-19 18:08  ddd
+
+	* romio-1.2.5.1/adio/ad_panfs/: pan_fs_client_cw_mode.h,
+	  pan_fs_client_statfs.h: More pan fs changes
+
+2004-08-19 17:17  ddd
+
+	* configure: Updating configure for linux
+
+2004-08-19 17:12  ddd
+
+	* romio-1.2.5.1/adio/ad_panfs/: ad_panfs_hints.c, ad_panfs_open.c:
+	  Adding updated pan fs support
+
+2004-08-12 14:41  dgdimick
+
+	* configure.ac: added -lnsl for Lambda RHEL3
+
+2004-07-14 15:05  ddd
+
+	* src/init/fork_many.cc: Preserving sigaction flags for SIGCHLD
+	  across fork()
+
+2004-07-14 13:03  twoodall
+
+	* src/init/init.cc: for some reason - on bproc system the restart
+	  flag does not appear to be inherited in the child process -
+	  though we haven't tested this extensively
+
+2004-07-14 12:08  ddd
+
+	* romio-1.2.5.1/: configure, adio/common/status_setb.c: Adding a
+	  LA-MPI version of MPIR_Status_set_bytes
+
+2004-07-07 14:10  ddd
+
+	* src/interface/ulm_log.cc: Adding a timestamp to lampi.log error
+	  messages
+
+2004-07-07 11:05  ddd
+
+	* src/: client/ClientSendStdin.cc, include/internal/types.h,
+	  init/init.cc, run/CheckForControlMsgs.cc, run/Daemonize.cc,
+	  run/Input.cc, run/Signal.cc, run/mpirun.cc: Adding more "mpirun
+	  -v" output for debugging mpirun-daemon interactions, in
+	  particular I/O forwarding.  Catching sighup and sigterm as well
+	  as sigint.
+
+2004-07-07 11:02  ddd
+
+	* configure, configure.ac, config.h.in: Adding autoheader template
+	  for BPROC_MAJOR_VERSION.  Adding ENABLE_DEBUG cpp parameter.
+	  Version to 1.5.5-rc1.
+
+2004-07-06 17:42  twoodall
+
+	* src/client/ClientSendStdin.cc: stupidity on my part - check for
+	  EAGAIN errno on non-blocking pipe
+
+2004-07-01 09:03  ddd
+
+	* src/: include/ulm/constants.h, interface/ulm_check.cc,
+	  interface/ulm_testall.cc, mpi/c/mpi_request_free.c: Now that
+	  MPI_REQUEST_NULL is a real location, so must ULM_REQUEST_NULL.
+	  Was causing testall tests to fail.
+
+2004-06-30 08:16  ddd
+
+	* ChangeLog, RELEASE_NOTES: Updating release notes and change log
+
+2004-06-30 08:15  ddd
+
+	* src/client/adminMessage.h: coordinating the stdin buffer size
+	  withe adminMessage buffer size
+
 2004-06-29 23:27  ddd
 
 	* src/: include/mpi/constants.h, mpi/internal/mpi_state.c: Previous

@@ -379,3 +379,9 @@ Version 1.5.5
 
 - Ensure that SA_RESTART flag is set so that ROMIO operations do not
   get interrupted by unexpected signals.
+
+Version 1.5.6
+
+- More fixes related to MPI_NULL_REQUEST in fortran.
+
+- Retransmission and exhaustion issues in Myrinet GM path fixed.
