@@ -59,6 +59,7 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
     fflush(stdin);
     fflush(stdout);
     fflush(stderr);
+    sleep(1);
  
     /* report the abort */
     _ulm_set_file_line(file, line);
