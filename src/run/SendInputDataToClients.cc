@@ -1097,6 +1097,7 @@ int SendTCPInputToClients(ULMRunParams_t *RunParameters, adminMessage *server)
     if (RunParameters->NHosts == 1)
         return ULM_SUCCESS;
 
+    // skip this if TCP is not configured
     for (int i = 0; i < RunParameters->NHosts; i++) {
         for (int j = 0; j < RunParameters->NPathTypes[i]; j++) {
             if (RunParameters->ListPathTypes[i][j] == PATH_TCP) {
@@ -1105,7 +1106,6 @@ int SendTCPInputToClients(ULMRunParams_t *RunParameters, adminMessage *server)
             }
         }
     }
-
     if(tcphosts == 0)
         return ULM_SUCCESS;
 
@@ -1142,11 +1142,7 @@ int SendInterfaceListToClients(ULMRunParams_t *RunParameters, adminMessage *serv
     if (RunParameters->NHosts == 1)
         return ULM_SUCCESS;
 
-
-    // we don't do any of this if there is only one host...
-    if (RunParameters->NHosts == 1)
-        return ULM_SUCCESS;
-
+    // skip this if both TCP and UDP are disabled
     for (int i = 0; i < RunParameters->NHosts; i++) {
         for (int j = 0; j < RunParameters->NPathTypes[i]; j++) {
             if (RunParameters->ListPathTypes[i][j] == PATH_TCP) {
@@ -1159,7 +1155,6 @@ int SendInterfaceListToClients(ULMRunParams_t *RunParameters, adminMessage *serv
             }
         }
     }
-
     if(tcphosts == 0 && udphosts == 0)
         return ULM_SUCCESS;
 
