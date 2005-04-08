@@ -1,0 +1,19 @@
+The preferred way for Fortran 90/95 applications to declare MPI
+functions is through an MPI module, mpi.mod, accessed through a 
+"USE MPI" statement rather than "include 'mpif.h'".
+
+The LA-MPI distribution does not provide a pre-compiled Fortran 90/95
+module since it ties us to a specific Fortran compiler, but
+application developers can generate a basic one by compiling the file
+mpi.f90 in this directory.
+
+This also provides a portable way to "USE MPI" for all MPI
+implementations.
+
+Actions:
+
+1) f77 -c -I$MPI_ROOT/include mpi.f90
+
+2) Edit .f90 files:
+
+   include 'mpif.h' --> use mpi
