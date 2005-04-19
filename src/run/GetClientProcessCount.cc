@@ -101,11 +101,11 @@ void getBJSNodes(void)
         while (p && *p != '\0') {
             tmp_node = atoi(strsep(&p, ","));
             if (!nodestatus(tmp_node, node_status, NODE_STATUS_LEN)) {
-                ulm_err(("Error: A BJS reserved node (%i) is not up, but in state \"%s\"\n", tmp_node, node_status));
+                ulm_err(("Error: An allocated node (%i) is in state \"%s\"\n", tmp_node, node_status));
                 Abort();
             }
             if (bproc_access(tmp_node, BPROC_X_OK) != 0) {
-                ulm_err(("Error: can not execute on a BJS reserved node (%i) stat=%i\n", tmp_node, bproc_access(tmp_node, BPROC_X_OK)));
+                ulm_err(("Error: can not execute on allocated node (%i) stat=%i\n", tmp_node, bproc_access(tmp_node, BPROC_X_OK)));
                 Abort();
             }
             nodes[nNodes++] = tmp_node;
@@ -124,7 +124,10 @@ void getBJSNodes(void)
                         found = true;
                 }
                 if (!found) {
-                    ulm_err(("Error: requested node (%s) is not a BJS reserved node.\n" "Try running without the -H option when using BJS.\n", RunParams.HostList[i]));
+                    ulm_err(("Error: requested node (%s) is not allocated.\n"
+                             "Try running without the -H option when using "
+                             "a scheduler (LSF or BJS).\n",
+                             RunParams.HostList[i]));
                     // we do not have to abort here - then app will run on
                     // subset of requested nodes.  But this seems not what
                     // the user would expect
@@ -151,7 +154,8 @@ void getBJSNodes(void)
             }
             RunParams.HostListSize = j;
             if (j == 0) {
-                ulm_err(("Error: no valid BJS hosts specified.  Try running without the -H option\n", j));
+                ulm_err(("Error: No valid allocated nodes specified. "
+                         "Try running without the -H option\n", j));
                 Abort();
             }
         } else {
