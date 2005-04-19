@@ -48,14 +48,13 @@ int ulm_dbg_enabled = ENABLE_DBG;
 
 static const int buf_size = 4096;
 static char buf[buf_size];
-static const int log_filename_size = 256; // log file
-static char log_filename[log_filename_size] = "lampi.log";
+static char *log_filename = "lampi.log";
 static int initialized = 0;
 
 extern "C" void _ulm_log(const char *fmt, ...)
 {
     /* write to stderr and a log file */
-    
+
     FILE *stream;
     va_list ap;
 
@@ -81,6 +80,7 @@ extern "C" void _ulm_log(const char *fmt, ...)
         fflush(stream);
         fclose(stream);
     }
+    buf[0] = '\0';
 }
 
 extern "C" void _ulm_set_file_line(const char *name, int line)

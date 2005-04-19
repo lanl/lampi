@@ -58,9 +58,9 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
 {
     void *addr = NULL;
 
-    _ulm_set_file_line(file, line);
     if (debug_level > 1) {
         if (size <= 0 && ulm_warn_enabled) {
+            _ulm_set_file_line(file, line);
             _ulm_log("Warning: ulm_malloc: Request for %ld bytes\n",
                      (long) size);
         }
@@ -68,6 +68,7 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
     addr = malloc((size_t) size);
     if (debug_level > 0) {
         if (addr == NULL) {
+            _ulm_set_file_line(file, line);
             _ulm_log("Error: ulm_malloc: Request for %ld bytes failed\n",
                      (long) size);
         }
@@ -79,8 +80,8 @@ void *_ulm_malloc(ssize_t size, int debug_level, char *file, int line)
 CDECL_STATIC_INLINE
 void _ulm_free(void *addr, int debug_level, char *file, int line)
 {
-    _ulm_set_file_line(file, line);
     if (debug_level > 1 && addr == NULL && ulm_warn_enabled) {
+        _ulm_set_file_line(file, line);
         _ulm_log("Warning: ulm_free: Invalid pointer %p\n", addr);
         return;
     }

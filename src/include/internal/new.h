@@ -61,9 +61,9 @@ template <class T> inline T* _ulm_new(ssize_t nitems,
 {
     T *addr = NULL;
 
-    _ulm_set_file_line(file, line);
     if (debug_level > 1) {
         if (ulm_warn_enabled && nitems <= 0) {
+            _ulm_set_file_line(file, line);
             _ulm_log("Warning: ulm_new: Request for %ld items of size %ld\n",
                      (long) nitems, (long) sizeof(T));
         }
