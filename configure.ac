@@ -26,7 +26,6 @@ AC_CHECK_HEADERS([fcntl.h])
 AC_CHECK_HEADERS([float.h])
 AC_CHECK_HEADERS([libintl.h])
 AC_CHECK_HEADERS([limits.h])
-AC_CHECK_HEADERS([malloc.h])
 AC_CHECK_HEADERS([netdb.h])
 AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([pty.h])
@@ -407,7 +406,7 @@ powerpc-apple-darwin*)
            AC_MSG_RESULT([no])
         fi
         DLLEXT="dylib"
-        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace"
+        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace -current_version $PACKAGE_VERSION -compatibility_version 1.0.0"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='$CFLAGS $CPPFLAGS'"
 
