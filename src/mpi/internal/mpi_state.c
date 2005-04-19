@@ -70,9 +70,7 @@ static void atexit_handler(void)
     if (_mpi.finalized == 0) {
         ulm_warn(("Warning: Process exiting without MPI finalization\n"));
     }
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
+    fflush(NULL);
     sleep(1);
 }
 
