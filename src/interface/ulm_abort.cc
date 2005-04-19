@@ -55,21 +55,30 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
 {
     struct sigaction action, oldaction;
 
-    /* flush any outstanding I/O */
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
-    sleep(1);
- 
-    /* report the abort */
-    _ulm_set_file_line(file, line);
-    _ulm_log("MPI_Abort(comm=%d, error=%d) was called\n", comm, error);
+    /* first close stdin and stdin as the most fail-safe way of flushing outstanding I/O */
 
-    /* gratuitously flush I/O again, and sleep for a second */
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
-    sleep(1);
+    if (fclose(stdout) < 0) {
+        ulm_err(("fclose(stdout): %s\n", strerror(errno)));
+    }
+    if (fclose(stdin) < 0) {
+        ulm_err(("fclose(stdin): %s\n", strerror(errno)));
+    }
+    sleep(1); /* to give stdout forwarding a chance to come out before the abort message */
+
+    /* report the abort */
+    if (file) {
+        _ulm_set_file_line(file, line);
+        _ulm_log("MPI_Abort(comm=%d, error=%d) called by rank %d\n",
+                 comm, error, myproc());
+    } else {
+        _ulm_log("LA-MPI: MPI_Abort(comm=%d, error=%d) called by rank %d\n",
+                 comm, error, myproc());
+    }
+
+    /* now close stderr */
+    if (fclose(stderr) < 0) {
+        ulm_err(("fclose(stderr): %s\n", strerror(errno)));
+    }
 
     /* report abnormal exit via shared memory block */
     if (lampiState.AbnormalExit) {
@@ -96,6 +105,6 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
     exit(error);
 #endif
 
-    // never reached but shuts up nosy compilers...
+    // never reached
     return error;
 }
