@@ -51,49 +51,49 @@
 
 void mpi_abort_f(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 #else
 
 void PMPI_ABORT(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void pmpi_abort(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void pmpi_abort_(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void pmpi_abort__(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void MPI_ABORT(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void mpi_abort(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void mpi_abort_(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 void mpi_abort__(MPI_Comm *comm, MPI_Fint *errorcode, MPI_Fint *rc)
 {
-    *rc = ulm_abort(*comm, *errorcode);
+    *rc = _ulm_abort(*comm, *errorcode, 0, 0);
 }
 
 

@@ -46,7 +46,7 @@
 
 int PMPI_Abort(MPI_Comm comm, int errorcode)
 {
-    ulm_abort(comm, errorcode);
+    _ulm_abort(comm, errorcode, 0, 0);
 
     return errorcode;
 }
@@ -59,7 +59,7 @@ int PMPI_Abort(MPI_Comm comm, int errorcode)
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
-    ulm_abort(comm, errorcode);
+    _ulm_abort(comm, errorcode, 0, 0);
 
     return errorcode;
 }
