@@ -449,7 +449,7 @@ Version 1.5.10
 Version 1.5.11
 
 - The daemon now reaps exited children even if someone else hijacks
-  SIGCHLD.
+  SIGCHLD (thanks to Chip Kent).
 
 - Added MPI_Get_address and MPI_Type_create_* for mimimal MPI-2
   compatibility.
@@ -463,3 +463,11 @@ Version 1.5.11
   a no-op.
 
 - ROMIO zero-length I/O fixes from Steve Hodson included.
+
+- Fix for MPI_Get_elements with recursively defined types as pointed
+  out by David Gunter.
+
+- Niceties for Mac OS X shared libraries (thanks to Pascal Thibaudeau).
+
+- Added roll-your-own fortran90 module (mpi.f90) for "use mpi".
+  
