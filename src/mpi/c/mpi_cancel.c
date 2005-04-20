@@ -53,7 +53,7 @@ int PMPI_Cancel(MPI_Request *request)
     if (first_time) {
         first_time = 0;
         ulm_err(("Warning: MPI_Cancel() implemented as a no-op: "
-                 "resource exhaustion is possible.\n"));
+                 "resource exhaustion and/or deadlock is possible.\n"));
     }
 
     return MPI_SUCCESS;
