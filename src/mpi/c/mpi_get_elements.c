@@ -69,13 +69,13 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
             break;
         case MPI_COMBINER_CONTIGUOUS:
             keep_going = ulm_type_get_elements(dtype->envelope.darray[0], 
-                dtype->envelope.iarray[0], offset, dtype->lower_bound, 
+                ntype * dtype->envelope.iarray[0], offset, dtype->lower_bound, 
                 (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
             break;
         case MPI_COMBINER_VECTOR:
             for (i = 0; i < dtype->envelope.iarray[0]; i++) {
                 keep_going = ulm_type_get_elements(dtype->envelope.darray[0],
-                    dtype->envelope.iarray[1], (ssize_t)((i * dtype->envelope.iarray[2] * dtype->extent) + offset),
+                    ntype * dtype->envelope.iarray[1], (ssize_t)((i * dtype->envelope.iarray[2] * dtype->extent) + offset),
                     dtype->lower_bound, (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
                 if (!keep_going) {
                     break;
@@ -86,7 +86,7 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
         case MPI_COMBINER_HVECTOR:
             for (i = 0; i < dtype->envelope.iarray[0]; i++) {
                 keep_going = ulm_type_get_elements(dtype->envelope.darray[0],
-                    dtype->envelope.iarray[1], (ssize_t)((i * dtype->envelope.aarray[0]) + offset),
+                    ntype * dtype->envelope.iarray[1], (ssize_t)((i * dtype->envelope.aarray[0]) + offset),
                     dtype->lower_bound, (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
                 if (!keep_going) {
                     break;
@@ -96,7 +96,7 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
         case MPI_COMBINER_INDEXED:
             for (i = 0; i < dtype->envelope.iarray[0]; i++) {
                 keep_going = ulm_type_get_elements(dtype->envelope.darray[0],
-                    dtype->envelope.iarray[i+1], (ssize_t)((dtype->envelope.iarray[i + dtype->envelope.iarray[0] + 1] * 
+                    ntype * dtype->envelope.iarray[i+1], (ssize_t)((dtype->envelope.iarray[i + dtype->envelope.iarray[0] + 1] * 
                     ((ULMType_t *)(dtype->envelope.darray[0]))->extent) + offset), 
                     dtype->lower_bound, (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
                 if (!keep_going) {
@@ -108,7 +108,7 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
         case MPI_COMBINER_HINDEXED:
             for (i = 0; i < dtype->envelope.iarray[0]; i++) {
                 keep_going = ulm_type_get_elements(dtype->envelope.darray[0],
-                    dtype->envelope.iarray[i+1], (ssize_t)(dtype->envelope.aarray[i] + offset),
+                    ntype * dtype->envelope.iarray[i+1], (ssize_t)(dtype->envelope.aarray[i] + offset),
                     dtype->lower_bound, (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
                 if (!keep_going) {
                     break;
@@ -118,9 +118,9 @@ int ulm_type_get_elements(ULMType_t *dtype, int ntype, ssize_t offset, ssize_t l
         case MPI_COMBINER_STRUCT_INTEGER:
         case MPI_COMBINER_STRUCT:
             for (i = 0; i < dtype->envelope.iarray[0]; i++) {
-	            if (((ULMType_t *)(dtype->envelope.darray[i]))->extent > 0) {
+                if (((ULMType_t *)(dtype->envelope.darray[i]))->extent > 0) {
                     keep_going = ulm_type_get_elements(dtype->envelope.darray[i], 
-                        dtype->envelope.iarray[i+1], (ssize_t)(dtype->envelope.aarray[i] + offset), dtype->lower_bound, 
+                        ntype * dtype->envelope.iarray[i+1], (ssize_t)(dtype->envelope.aarray[i] + offset), dtype->lower_bound, 
                             (ssize_t)(dtype->lower_bound + dtype->extent), packed_bytes, count);
                     if (!keep_going) {
                         break;
