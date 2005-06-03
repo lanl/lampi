@@ -35,6 +35,7 @@ Input Parameters:
 int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 {
     int error_code;
+    int my_rank;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SET_SIZE";
 #endif
@@ -80,7 +81,8 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 #endif
     }
 
-    ADIO_Resize(fh, size, &error_code);
+    MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+    if (my_rank == 0) ADIO_Resize(fh, size, &error_code);
     
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);

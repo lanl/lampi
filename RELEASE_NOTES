@@ -471,3 +471,7 @@ Version 1.5.11
 
 - Added roll-your-own fortran90 module (mpi.f90) for "use mpi".
   
+Version 1.5.12
+
+- Work around for ADIO_Resize which can cause poor MPI-IO performance if
+  if a file is truncated.
