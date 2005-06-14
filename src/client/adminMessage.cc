@@ -49,10 +49,6 @@
 #include "util/MemFunctions.h"
 #include "util/misc.h"
 
-#ifndef __linux__
-typedef int socklen_t;
-#endif
-
 #define MAX_RETRY		100
 
 #define TIMEOUT_HELP_STRING \

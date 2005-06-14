@@ -41,7 +41,7 @@
 
 void lampi_init_prefork_receive_setup_params_tcp(lampiState_t * s)
 {
-    int errorCode;
+    int errorCode = 0;
     int recvd;
     int tag;
     

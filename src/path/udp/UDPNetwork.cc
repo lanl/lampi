@@ -113,15 +113,8 @@ int UDPNetwork::initialize(int ProcID)
     struct sockaddr_in dynaddr;
     int receive_buffer = 0, send_buffer = 0;
 
-#if defined(__linux__)
     socklen_t addrlen = sizeof(struct sockaddr_in);
     socklen_t optlen;
-#define CAST socklen_t*
-#else
-    int addrlen = sizeof(struct sockaddr_in);
-    int optlen;
-#define CAST int*
-#endif
     int j, fflags;
 
     for (j = 0; j < UDPGlobals::NPortsPerProc; j++) {
@@ -145,7 +138,7 @@ int UDPNetwork::initialize(int ProcID)
         }
         if (getsockname
             (sockfd[j], (struct sockaddr *) &dynaddr,
-             (CAST) & addrlen) < 0) {
+             (socklen_t *) &addrlen) < 0) {
             ulm_err(("UDPNetwork::initialize: " "can't getsockname!\n"));
             return ULM_ERROR;
         }
@@ -156,7 +149,7 @@ int UDPNetwork::initialize(int ProcID)
         // or somewhere >= UDP_MIN_RECVBUF
         if (getsockopt
             (sockfd[j], SOL_SOCKET, SO_RCVBUF, &receive_buffer,
-             (CAST) & optlen) == 0) {
+             (socklen_t *) &optlen) == 0) {
             /* if no buffer is currently allocated, allocate a small amount */
             if (receive_buffer == 0)
                 receive_buffer = 1024;
@@ -172,7 +165,7 @@ int UDPNetwork::initialize(int ProcID)
         // or somewhere >= UDP_MIN_SENDBUF
         if (getsockopt
             (sockfd[j], SOL_SOCKET, SO_SNDBUF, &send_buffer,
-             (CAST) & optlen) == 0) {
+             (socklen_t *) &optlen) == 0) {
             /* if no buffer is currently allocated, allocate a small amount */
             if (send_buffer == 0)
                 send_buffer = 1024;

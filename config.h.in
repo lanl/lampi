@@ -145,9 +145,6 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
-/* Define to 1 if you have the <malloc.h> header file. */
-#undef HAVE_MALLOC_H
-
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 
@@ -338,6 +335,10 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
+
+/* Define to unsigned int if <sys/types.h> or <sys/socket.h> does not define
+   */
+#undef socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t

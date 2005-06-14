@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.5.12,lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.13-rc1,lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -46,6 +46,18 @@ AC_TYPE_PID_T
 AC_TYPE_SIGNAL
 AC_TYPE_UID_T
 AC_CHECK_TYPES([ptrdiff_t])
+
+AC_MSG_CHECKING([for socklen_t])
+AC_TRY_COMPILE([
+ #include <sys/types.h>
+ #include <sys/socket.h>
+],
+  [socklen_t x;],
+  AC_MSG_RESULT([yes]),
+  [AC_MSG_RESULT([no])
+  AC_DEFINE(socklen_t, unsigned int,
+	[Define to unsigned int if <sys/types.h> or <sys/socket.h> does not define])]
+)
 
 AC_MSG_CHECKING([for pragma weak])
 AC_LANG_CONFTEST([[

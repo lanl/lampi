@@ -164,11 +164,7 @@ void TCPPeer::finalize()
 bool TCPPeer::acceptConnection(int sd)
 {
     struct sockaddr_in addr;
-#if defined(__linux__)
     socklen_t addrlen = sizeof(struct sockaddr_in);
-#else
-    int addrlen = sizeof(struct sockaddr_in);
-#endif
     getpeername(sd, (struct sockaddr*)&addr, &addrlen);
 
     for(size_t i=0; i<tcpSockets.size(); i++) {
@@ -401,11 +397,7 @@ bool TCPPeer::startConnect(int *errorCode)
 void TCPPeer::completeConnect(TCPSocket& tcpSocket)
 {
     int so_error = 0;
-#if defined(__linux__)
     socklen_t length = sizeof(so_error);
-#else
-    int length = sizeof(so_error);
-#endif
 
     // check connect completion status
     if(getsockopt(tcpSocket.sd, SOL_SOCKET, SO_ERROR, &so_error, &length) < 0) {
@@ -805,13 +797,8 @@ void TCPPeer::sendFailed(TCPRecvFrag* recvFrag)
 
 void TCPPeer::setSocketOptions(int sd)
 {
-#if defined(__linux__)
     int optval = 1;
     socklen_t optlen = sizeof(optval);
-#else
-    int optval = 1;
-    int optlen = sizeof(optval);
-#endif
 
 #if defined(TCP_NODELAY)
    optval = 1;

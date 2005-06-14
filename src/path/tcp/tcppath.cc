@@ -193,11 +193,7 @@ int TCPPath::initClient(int ifCount, struct sockaddr_in *peerAddrs)
     }
 
     // resolve system assignend port
-#if defined(__linux__)
     socklen_t addrlen = sizeof(struct sockaddr_in);
-#else
-    int addrlen = sizeof(struct sockaddr_in);
-#endif
     if(getsockname(tcpListenSocket, (struct sockaddr*)&inaddr, &addrlen) < 0) {
         ulm_err(("TCPPath::init: getsockname() failed with errno=%d", errno));
         return ULM_ERROR;
@@ -411,11 +407,7 @@ void TCPPath::recvEventHandler(int sd)
 
 void TCPPath::acceptConnections()
 {
-#if defined(__linux__)
     socklen_t addrlen = sizeof(struct sockaddr_in);
-#else
-    int addrlen = sizeof(struct sockaddr_in);
-#endif
     while(true) {
         struct sockaddr_in addr;
         int sd = ::accept(tcpListenSocket, (struct sockaddr*)&addr, &addrlen);
