@@ -110,6 +110,7 @@ AC_CHECK_FUNCS([strcspn])
 AC_CHECK_FUNCS([strdup])
 AC_CHECK_FUNCS([strerror])
 AC_CHECK_FUNCS([strrchr])
+AC_CHECK_FUNCS([strsignal])
 AC_CHECK_FUNCS([strtol])
 AC_CHECK_FUNCS([strtoul])
 AC_CHECK_FUNCS([waitpid])
@@ -418,7 +419,8 @@ powerpc-apple-darwin*)
            AC_MSG_RESULT([no])
         fi
         DLLEXT="dylib"
-        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace -current_version $PACKAGE_VERSION -compatibility_version 1.0.0"
+        CURRENT_VERSION=`echo $PACKAGE_VERSION | sed -e 's/-.*$//'`
+        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace -current_version $CURRENT_VERSION -compatibility_version 1.0.0"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='$CFLAGS $CPPFLAGS'"
 

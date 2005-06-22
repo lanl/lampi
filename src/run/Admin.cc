@@ -62,6 +62,10 @@
 #include "run/RunParams.h"
 #include "ulm/errors.h"
 
+#ifndef HAVE_STRSIGNAL
+#define strsignal(signal) "See /usr/include/signal.h"
+#endif
+
 
 static abnormal_term_msg_t abnormal_term_msg;
 
@@ -285,15 +289,31 @@ int CheckForControlMsgs(void)
                                   sizeof(abnormal_term_msg), &error);
                 if (size > 0 || error != ULM_SUCCESS) {
                     char s[256];
-                    snprintf(s, sizeof(s),
-                             "Error: Process %d exited abnormally "
-                             "(host=%d proc=%d pid=%d sig=%d stat=%d)\n",
-                             abnormal_term_msg.grank,
-                             host,
-                             abnormal_term_msg.lrank,
-                             abnormal_term_msg.pid,
-                             abnormal_term_msg.signal,
-                             abnormal_term_msg.status);
+                    if (abnormal_term_msg.signal != 0 &&
+                        abnormal_term_msg.signal > 0 &&
+                        abnormal_term_msg.signal < 32) {
+                        snprintf(s, sizeof(s),
+                                 "Error: An MPI process exited with signal %d "
+                                 "(%s) "
+                                 "[rank=%d host=%d proc=%d pid=%d stat=%d]\n",
+                                 abnormal_term_msg.signal,
+                                 strsignal(abnormal_term_msg.signal),
+                                 abnormal_term_msg.grank,
+                                 host,
+                                 abnormal_term_msg.lrank,
+                                 abnormal_term_msg.pid,
+                                 abnormal_term_msg.status);
+                    } else {
+                        snprintf(s, sizeof(s),
+                                 "Error: An MPI process exited abnormally "
+                                 "with status %d "
+                                 "[rank=%d host=%d proc=%d pid=%d]\n",
+                                 abnormal_term_msg.status,
+                                 abnormal_term_msg.grank,
+                                 host,
+                                 abnormal_term_msg.lrank,
+                                 abnormal_term_msg.pid);
+                    }
                     LogJobMsg(s);
                     ulm_err((s));
                 }
