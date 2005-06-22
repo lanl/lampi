@@ -60,7 +60,7 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
     if (fclose(stdout) < 0) {
         ulm_err(("fclose(stdout): %s\n", strerror(errno)));
     }
-    if (fclose(stdin) < 0) {
+    if (lampiState.global_rank == 0 && fclose(stdin) < 0) {
         ulm_err(("fclose(stdin): %s\n", strerror(errno)));
     }
     sleep(1); /* to give stdout forwarding a chance to come out before the abort message */
