@@ -106,7 +106,8 @@ int ClientScanStdoutStderr(lampiState_t *s)
     int i, RetVal, NumberReads, nfds;
     int maxfd;
     ulm_fd_set_t ReadSet;
-    ssize_t lenR, lenW;
+    ssize_t lenR = 0;
+    ssize_t lenW = 0;
     struct timeval WaitTime;
     WaitTime.tv_sec = 0;
     WaitTime.tv_usec = 10000;
