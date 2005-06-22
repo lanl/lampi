@@ -56,6 +56,7 @@ public:
      * puts a pointer to the vtable at the beginning of the derived object
      */
     virtual bool dummy(void) { return true; }
+    virtual ~Links_t() {};
 };
 
 #endif /* !_LINKS */
