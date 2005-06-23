@@ -55,8 +55,8 @@ AC_TRY_COMPILE([
   [socklen_t x;],
   AC_MSG_RESULT([yes]),
   [AC_MSG_RESULT([no])
-  AC_DEFINE(socklen_t, unsigned int,
-	[Define to unsigned int if <sys/types.h> or <sys/socket.h> does not define])]
+  AC_DEFINE(socklen_t, int,
+	[Define to int if <sys/types.h> or <sys/socket.h> does not define])]
 )
 
 AC_MSG_CHECKING([for pragma weak])

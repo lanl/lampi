@@ -6757,7 +6757,7 @@ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define socklen_t unsigned int
+#define socklen_t int
 _ACEOF
 
 
