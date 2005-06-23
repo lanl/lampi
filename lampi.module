@@ -1,8 +1,48 @@
-/usr/local/opt/modulefiles/lampi_1.3.1
+#%Module1.0###################################################################
+##
 
-setenv MODULE_lampi_1.3.1 1;
-setenv LAMPI_ROOT /usr/local/packages/lampi/lampi_1.3.1/;
-setenv MPI_ROOT ${LAMPI_ROOT}
-setenv PATH ${LAMPI_ROOT}/bin:${PATH};
-setenv MANPATH ${LAMPI_ROOT}/man:${MANPATH};
-setenv LD_LIBRARY_PATH ${LAMPI_ROOT}/lib:${LD_LIBRARY_PATH};
+proc ModulesHelp { } {
+    global name version prefix man_path
+
+    puts stderr "\t[module-info name] - loads the $name environment"
+    puts stderr "\tThe following env variables are modified:"
+    puts stderr "\t$prefix/bin to \$PATH"
+    puts stderr "\t$man_path to \$MANPATH"
+    puts stderr "\tThe following env variables are added:"
+    puts stderr "\t$prefix to \$MPIDIR"
+    puts stderr "\n\tVersion $version\n"
+}
+
+conflict mpi
+conflict lampi
+
+# for Tcl script use only
+set     name            lampi
+set     version         1.5.X
+switch -glob [exec hostname] {
+    f* { set prefix /usr/projects/lampi/flash/$name-$version }
+    l* { set prefix /home/lampi/lambda/$name-$version }
+    q* { set prefix /usr/projects/lampi/qsc/$name-$version }
+    default { puts "Error: unknown host"; exit 1 }
+}
+set     man_path        $prefix/share/man
+
+if {![file exists $prefix]} {
+    puts stderr "\t[module-info name] Load Error: $prefix does not exist"
+    break
+    exit 1
+}
+
+module-whatis   "loads the $name environment"
+
+setenv          MPIHOME         $prefix
+setenv          MPI_ROOT        $prefix
+prepend-path    PATH            $prefix/bin
+prepend-path    LD_LIBRARY_PATH $prefix/lib
+prepend-path    CPATH           $prefix/include
+# there may be a bug in modules where it sets MANPATH to /usr/man?
+# iff MANPATH isn't already defined.. weird
+catch {set cur_manpath $env(MANPATH)}
+if {![info exists cur_manpath] || ($cur_manpath == "")} { setenv MANPATH : }
+prepend-path     MANPATH                $man_path
+
