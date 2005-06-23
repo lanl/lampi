@@ -1,0 +1,8 @@
+all: Makefile
+	$(MAKE)
+
+Makefile: configure
+	./configure --disable-static --enable-tcp --prefix=/opt/lampi/1.5
+
+configure: configure.ac
+	autoconf
