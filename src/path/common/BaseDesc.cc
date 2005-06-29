@@ -613,9 +613,8 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
         if ( (bsd->FragsToAck.size() + (unsigned) bsd->NumSent) >= bsd->numfrags) {
             // sanity check, is frag really in UnackedPostedSends queue
             if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
-                ulm_exit(("Error: :: Send descriptor not "
-                          "in UnackedPostedSends"
-                          " list, where it was expected.\n"));
+                ulm_exit(("Error: Send descriptor not in UnackedPostedSends list, "
+                          "where it was expected.\n"));
             }
             bsd->WhichQueue = INCOMPLETEISENDQUEUE;
             UnackedPostedSends.RemoveLink(bsd);

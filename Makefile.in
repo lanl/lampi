@@ -190,6 +190,11 @@ install: all
 	$(INSTALL) -m 775 -d $(prefix)/share/man/man1 ; \
 	$(INSTALL) -m 775 -d $(prefix)/share/lampi ; \
 	$(INSTALL) -m 775 mpirun$(EXEEXT) $(bindir) ; \
+	$(INSTALL) -m 775 $(srcdir)/mpicc $(bindir)/mpicc ; \
+	$(INSTALL) -m 775 $(srcdir)/mpicc $(bindir)/mpicxx ; \
+	$(INSTALL) -m 775 $(srcdir)/mpicc $(bindir)/mpic++ ; \
+	$(INSTALL) -m 775 $(srcdir)/mpicc $(bindir)/mpif77 ; \
+	$(INSTALL) -m 775 $(srcdir)/mpicc $(bindir)/mpif90 ; \
 	$(INSTALL) -m 664 $(srcdir)/man/lampi.man1 $(prefix)/share/man/man1/lampi.1 ; \
 	$(INSTALL) -m 664 $(srcdir)/man/mpirun.man1 $(prefix)/share/man/man1/mpirun.1 ; \
 	$(INSTALL) -m 664 $(srcdir)/RELEASE_NOTES $(prefix)/share/lampi ; \

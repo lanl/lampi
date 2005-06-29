@@ -194,7 +194,7 @@ void lampi_init(void)
             } else {
                 fprintf(stderr, "LA-MPI: *** libmpi (" PACKAGE_VERSION ")\n");
             }
-            fprintf(stderr, "LA-MPI: *** Copyright 2001-2004, ACL, "
+            fprintf(stderr, "LA-MPI: *** Copyright 2001-2005, ACL, "
                     "Los Alamos National Laboratory\n");
         }
     }

@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# A very primitive compiler wrapper
+
+USAGE="
+mpicc, mpicxx, mpif77, mpif90 - Primitive MPI compiler wrappers
+
+Takes a compilation command and modifies it to find the correct MPI
+include and library files.
+
+Usage:
+  mpicc [CC=...] [COMPILER OPTIONS] [FILES]
+  mpicxx [CXX=...] [COMPILER OPTIONS] [FILES]
+  mpif77 [F77=...] [COMPILER OPTIONS] [FILES]
+  mpif90 [F90=...] [COMPILER OPTIONS] [FILES]
+
+Bugs:
+  Only works with compilers following standard (GNU) conventions.
+"
+
+# Get full pathname of this script
+
+case $0 in
+    /*) SCRIPTNAME=$0 ;;
+    *) $CWD/$0 ;;
+esac
+
+# Defaults: can be overriden by the environment
+[ -z "$MPI_ROOT" ] && MPI_ROOT=`/bin/echo $SCRIPTNAME | sed 's#/bin.*$##'`
+[ -z "$CC" ] && CC=gcc
+[ -z "$CXX" ] && CXX=g++
+[ -z "$F77" ] && F77=f77
+[ -z "$F90" ] && F90=f90
+
+# Process arguments
+for ARG in "$@"; do
+    case $ARG in
+        -h) echo "$USAGE"; exit 0 ;;
+        -c) COMPILING=1 ; ARGV="$ARGV $ARG" ;;
+        CC=*|CXX=*|F77=*|F90=*) eval $ARG ;;
+        *) ARGV="$ARGV $ARG" ;;
+    esac
+done
+
+# Select compiler based on script name
+case $0 in
+    *mpicc) COMPILER=$CC ;;
+    *mpiCC|*mpicxx|*mpic++) COMPILER=$CXX ;;
+    *mpif77) COMPILER=$F77 ;;
+    *mpif90) COMPILER=$F90 ;;
+    *) echo "Error: Unknown compiler" ; exit 1;;
+esac
+
+CPPFLAGS=-I$MPI_ROOT/include
+LDFLAGS=-L$MPI_ROOT/lib
+LDLIBS=-lmpi
+
+if [ -z "$COMPILING" ] ; then
+    echo $COMPILER $CPPFLAGS $LDFLAGS $ARGV $LDLIBS
+    $COMPILER $CPPFLAGS $LDFLAGS $ARGV $LDLIBS
+else
+    echo $COMPILER $CPPFLAGS $ARGV
+    $COMPILER $CPPFLAGS $ARGV
+fi
