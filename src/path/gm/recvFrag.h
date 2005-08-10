@@ -41,6 +41,13 @@
 #include "path/gm/state.h"
 #include "path/gm/path.h"
 
+// Debugging control
+enum {
+    DEBUG_INSERT_ARTIFICIAL_HEADER_CORRUPTION = 0,
+    DEBUG_INSERT_ARTIFICIAL_DATA_CORRUPTION = 0
+};
+
+
 class gmRecvFragDesc : public BaseRecvFragDesc_t {
 public:
     int dev_m;
@@ -203,24 +210,28 @@ gmRecvFragDesc::nonContigCopyFunction(void *appAddr,
 }
 
 // check data
-inline bool gmRecvFragDesc::CheckData(unsigned int checkSum, ssize_t length)
+inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
 {
+    if (DEBUG_INSERT_ARTIFICIAL_DATA_CORRUPTION) {
+        if ((rand() % 1021) == 0) {
+            ulm_err(("Inserting artificial data corruption\n"));
+            gmHeader_m->data.dataChecksum |= 0xA4A4;
+        }
+    }
+
     if (!length || !gmState.doChecksum) {
         DataOK = true;
-    } else if (checkSum == gmHeader_m->data.dataChecksum) {
+    } else if (checksum == gmHeader_m->data.dataChecksum) {
         DataOK = true;
     } else {
         DataOK = false;
-        ulm_err(("Error: Corrupt data received by rank %d from rank %d: "
-                 "(%s 0x%x calculated 0x%x)\n", 
-                 myproc(), gmHeader_m->data.senderID,
+        ulm_err(("Warning: Corrupt fragment data received, rank %d --> rank %d: "
+                 "(%s received=0x%x, calculated=0x%x)\n", 
+                 gmHeader_m->data.senderID, myproc(),
                  (usecrc()) ? "CRC" : "checksum",
-                 gmHeader_m->data.dataChecksum, checkSum));
-
-        if (gmState.doAck) {
-            ulm_err(("Trying to recover (sending NACK)\n"));
-        } else {
-            ulm_exit(("Error: Cannot recover\n"));
+                 gmHeader_m->data.dataChecksum, checksum));
+        if (!gmState.doAck) {
+            ulm_exit(("Error: Reliability protocol not active. Cannot recover.\n"));
         }
     }
     return DataOK;

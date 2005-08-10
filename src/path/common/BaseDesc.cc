@@ -614,24 +614,23 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow,
         // process that sent the original message; otherwise, just
         // rely on sender side retransmission
 
-        ulm_err(("Warning: *** DATA CORRUPTION ***\n"
-                 "\tReceive fragment descriptor:\n"
-                 "\t\tsource rank      = %d\n"
-                 "\t\tdestination rank = %d\n"
-                 "\t\ttag              = %d\n"
-                 "\t\tcommunicator     = %d\n",
-                 srcProcID_m, dstProcID_m, tag_m, ctx_m));
-
+        ulm_err(("Warning: Received \"DATA CORRUPT\" ack, rank %d <-- rank %d\n",
+                 srcProcID_m, dstProcID_m));
+                 
         // retransmit...
 
         // move message to incomplete queue if we think we are done
-        if ((unsigned) bsd->NumSent >= bsd->numfrags) {
-            if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
-                UnackedPostedSends.RemoveLink(bsd);
-                bsd->WhichQueue = INCOMPLETEISENDQUEUE;
-                IncompletePostedSends.Append(bsd);
-                ulm_err(("Warning: *** RETRANSMITTING FRAGMENT ***\n"));
-            }
+        if (((unsigned) bsd->NumSent >= bsd->numfrags) &&
+            (bsd->WhichQueue == UNACKEDISENDQUEUE)) {
+
+            UnackedPostedSends.RemoveLink(bsd);
+            bsd->WhichQueue = INCOMPLETEISENDQUEUE;
+            IncompletePostedSends.Append(bsd);
+            ulm_err(("Warning: Retransmitting fragment rank %d --> rank %d\n",
+                     srcProcID_m, dstProcID_m));
+        } else {
+            ulm_err(("Warning: Retransmitting fragment (on timeout) rank %d --> rank %d\n",
+                     srcProcID_m, dstProcID_m));
         }
 
         // reset WhichQueue flag

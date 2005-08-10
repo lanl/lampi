@@ -174,16 +174,17 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 
 
     // send fragments if they are ready; otherwise, try to finish their initialization
-    /*
-        We use a local numSent to mean how many fragments in
-        FragsToSend were able to start sending from
-        gm_send_with_callback().  We can't use message->NumSent
-        because its value means the number of frags whose send
-        completed.  However, GM does not complete a send until it
-        calls the callback function.
-     */
-    if ((timeNow < 0) && message->FragsToSend.size())
+
+    // We use a local numSent to mean how many fragments in
+    // FragsToSend were able to start sending from
+    // gm_send_with_callback().  We can't use message->NumSent
+    // because its value means the number of frags whose send
+    // completed.  However, GM does not complete a send until it
+    // calls the callback function.
+
+    if ((timeNow < 0) && message->FragsToSend.size()) {
         timeNow = dclock();
+    }
 
     numSent = 0;
     for (sfd = (gmSendFragDesc *) message->FragsToSend.begin();
@@ -205,15 +206,16 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             
             if (gmState.localDevList[sfd->dev_m].sendTokens) {
                 gmState.localDevList[sfd->dev_m].sendTokens--;
-            }
-            else {
-                if (usethreads())
+            } else {
+                if (usethreads()) {
                     gmState.localDevList[sfd->dev_m].Lock.unlock();
+                }
                 continue;
             }
             
-            if (usethreads())
+            if (usethreads()) {
                 gmState.localDevList[sfd->dev_m].Lock.unlock();
+            }
 
             void *addr = &(((gmFragBuffer *) sfd->currentSrcAddr_m)->header);
 
@@ -221,8 +223,9 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 sfd->initResendInfo(message, timeNow);
             }
 
-            if (usethreads())
+            if (usethreads()) {
                 gmState.gmLock.lock();
+            }
 
             gm_send_with_callback(sfd->gmPort(),
                                   addr,
@@ -233,8 +236,9 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                                   sfd->gmDestPortID(),
                                   callback,
                                   (void *) sfd);
-            if (usethreads())
+            if (usethreads()) {
                 gmState.gmLock.unlock();
+            }
 
             // switch frag to ack list and remove from send list
             afd = sfd;
@@ -242,15 +246,12 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
             sfd = (gmSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
             message->FragsToAck.AppendNoLock(afd);
             numSent++;
-
         }
     }
 
     if (message->messageDone == REQUEST_INCOMPLETE) {
-
-        if ( (numSent + message->NumSent) == message->numfrags &&
+        if ((numSent + message->NumSent) == message->numfrags &&
             message->sendType != ULM_SEND_SYNCHRONOUS) {
-
             message->messageDone = REQUEST_COMPLETE;
         }
     }
@@ -266,6 +267,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 {
     int i, rc;
+    bool HeaderOK;
     unsigned int checksum;
 
     *errorCode = ULM_SUCCESS;
@@ -294,11 +296,13 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 rf->Init();
             }
 
-            if (usethreads())
+            if (usethreads()) {
                 gmState.gmLock.lock();
+            }
             event = gm_receive(devInfo->gmPort);
-            if (usethreads())
+            if (usethreads()) {
                 gmState.gmLock.unlock();
+            }
 
             switch (GM_RECV_EVENT_TYPE(event)) {
             case GM_NO_RECV_EVENT:
@@ -322,30 +326,27 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 break;
             case GM_RECV_EVENT:
                 // increment implicit # of receive tokens
-                if (usethreads())
+                if (usethreads()) {
                     fetchNadd((volatile int *) &(devInfo->recvTokens), 1);
-                else
+                } else {
                     (devInfo->recvTokens)++;
+                }
 
-                rf->gmFragBuffer_m = *(gmFragBuffer **) ((unsigned char *)
-                                                         gm_ntohp(event->
-                                                                  recv.
-                                                                  buffer) -
-                                                         sizeof
-                                                         (gmFragBuffer *));
+                rf->gmFragBuffer_m =
+                    *(gmFragBuffer **) ((unsigned char *)
+                                        gm_ntohp(event->recv.buffer) -
+                                        sizeof(gmFragBuffer *));
 
                 // copy and calculate checksum...if wanted...
                 checksum = 0;
                 rf->gmHeader_m = (gmHeader *) gm_ntohp(event->recv.buffer);
 
-                // +++ DEBUG +++
-                if (1) { // insert corruption for testing
-                    if ((rand() % 1000) == 0) {
-//                        rf->gmHeader_m->data.dataChecksum |= 0xA4A4;
+                if (DEBUG_INSERT_ARTIFICIAL_HEADER_CORRUPTION) {
+                    if ((rand() % 1021) == 0) {
+                        ulm_err(("Inserting artificial header corruption\n"));
                         rf->gmHeader_m->data.checksum |= 0xA4A4;
                     }
                 }
-                // --- DEBUG ---
 
                 if (ENABLE_RELIABILITY && gmState.doChecksum) {
                     checksum = BasePath_t::headerChecksum(rf->gmHeader_m,
@@ -360,12 +361,27 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 rf->length_m =
                     gm_ntoh_u32(event->recv.length) - sizeof(gmHeader);
 
-                if (!gmState.doChecksum ||
-                    (!usecrc() &&
-                     (checksum ==
-                      (unsigned int) (rf->gmHeader_m->data.checksum +
-                                      rf->gmHeader_m->data.checksum)))
-                    || (usecrc() && (checksum == 0))) {
+
+                if (!gmState.doChecksum) {
+                    HeaderOK = true;
+                } else if (usecrc()) {
+                    if (checksum == 0) {
+                        HeaderOK = true;
+                    } else {
+                        HeaderOK = false;
+                    }
+                } else {
+                    if (checksum ==                       
+                        (rf->gmHeader_m->data.checksum +
+                         rf->gmHeader_m->data.checksum)) {
+                        HeaderOK = true;
+                    } else {
+                        HeaderOK = false;
+                    }
+                }                        
+
+                if (HeaderOK) {
+
                     switch (rf->gmHeader_m->common.type) {
                     case MESSAGE_DATA:
                         rf->msgData(timeNow);
@@ -380,59 +396,45 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     }
                     rf = 0;
                     break;
+
                 } else {
-                    // checksum BAD, then abort or return descriptor to pool if
-                    // ENABLE_RELIABILITY is defined
-                    if (ENABLE_RELIABILITY) {
-                        if (gmState.doAck) {
-                            if (usecrc()) {
-                                ulm_err(("gmPath::receive - bad envelope CRC %u "
-                                           "(envelope + CRC = %u)\n",
-                                           rf->gmHeader_m->data.checksum, checksum));
-                            } else {
-                                ulm_err(("gmPath::receive - bad envelope checksum %u, "
-                                         "calculated %u != 2*received %u\n",
-                                         rf->gmHeader_m->data.checksum, checksum,
-                                         (rf->gmHeader_m->data.checksum +
-                                          rf->gmHeader_m->data.checksum)));
-                            }
-                            rf->ReturnDescToPool(0);
-                            rf = 0;
-                            continue;
-                        } else {
-                            if (usecrc()) {
-                                ulm_exit(("gmPath::receive - bad envelope CRC %u "
-                                          "(envelope + CRC = %u)\n",
-                                          rf->gmHeader_m->data.checksum, checksum));
-                            } else {
-                                ulm_exit(("gmPath::receive - bad envelope checksum %u, "
-                                          "calculated %u != 2*received %u\n",
-                                          rf->gmHeader_m->data.checksum, checksum,
-                                          (rf->gmHeader_m->data.checksum +
-                                           rf->gmHeader_m->data.checksum)));
-                            }
-                        }
+
+                    unsigned int received_checksum;
+
+                    if (usecrc()) {
+                        received_checksum = rf->gmHeader_m->data.checksum;
                     } else {
-                        if (usecrc()) {
-                            ulm_exit(("gmPath::receive - bad envelope CRC %u "
-                                      "(envelope + CRC = %u)\n",
-                                      rf->gmHeader_m->data.checksum, checksum));
-                        } else {
-                            ulm_exit(("gmPath::receive - bad envelope checksum %u, "
-                                      "calculated %u != 2*received %u\n",
-                                      rf->gmHeader_m->data.checksum, checksum,
-                                      (rf->gmHeader_m->data.checksum +
-                                       rf->gmHeader_m->data.checksum)));
-                        }
+                        received_checksum = 2 * rf->gmHeader_m->data.checksum;
+                    }
+
+                    ulm_err(("Warning: Corrupt fragment header received, rank %d --> rank %d: "
+                             "(%s received=0x%x, calculated=0x%x)\n", 
+                             rf->gmHeader_m->data.senderID, myproc(),
+                             myproc(), rf->gmHeader_m->data.senderID,
+                             usecrc() ? "CRC" : "checksum",
+                             received_checksum, checksum));
+
+                    if (ENABLE_RELIABILITY && gmState.doAck) {
+                        // Return descriptor to the pool and
+                        // proceed. We don't send a NACK but the data
+                        // will be sent again after timeout :)
+                        ulm_err(("Warning: Waiting for fragment to be retransmitted.\n"));
+                        rf->ReturnDescToPool(0);
+                        rf = 0;
+                        continue;
+                    } else {
+                        ulm_exit(("Error: Cannot recover\n"));
                     }
                 }
 
             default:
-                if (usethreads())
+                if (usethreads()) {
                     gmState.gmLock.lock();
+                }
                 gm_unknown(devInfo->gmPort, event);
-                if (usethreads())
+                if (usethreads()) {
                     gmState.gmLock.unlock();
+                }
                 break;
             }
 
