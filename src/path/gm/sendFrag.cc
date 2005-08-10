@@ -1,30 +1,33 @@
 /*
- * Copyright 2002-2003. The Regents of the University of California. This material
- * was produced under U.S. Government contract W-7405-ENG-36 for Los Alamos
- * National Laboratory, which is operated by the University of California for
- * the U.S. Department of Energy. The Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in this material to reproduce, prepare derivative works, and
- * perform publicly and display publicly. Beginning five (5) years after
- * October 10,2002 subject to additional five-year worldwide renewals, the
- * Government is granted for itself and others acting on its behalf a paid-up,
- * nonexclusive, irrevocable worldwide license in this material to reproduce,
- * prepare derivative works, distribute copies to the public, perform publicly
- * and display publicly, and to permit others to do so. NEITHER THE UNITED
- * STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF
- * CALIFORNIA, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
- * IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
- * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
- * PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
- * OWNED RIGHTS.
+ * Copyright 2002-2003. The Regents of the University of
+ * California. This material was produced under U.S. Government
+ * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
+ * operated by the University of California for the U.S. Department of
+ * Energy. The Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, and
+ * perform publicly and display publicly. Beginning five (5) years
+ * after October 10,2002 subject to additional five-year worldwide
+ * renewals, the Government is granted for itself and others acting on
+ * its behalf a paid-up, nonexclusive, irrevocable worldwide license
+ * in this material to reproduce, prepare derivative works, distribute
+ * copies to the public, perform publicly and display publicly, and to
+ * permit others to do so. NEITHER THE UNITED STATES NOR THE UNITED
+ * STATES DEPARTMENT OF ENERGY, NOR THE UNIVERSITY OF CALIFORNIA, NOR
+ * ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ * ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY,
+ * COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT,
+ * OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE
+ * PRIVATELY OWNED RIGHTS.
 
- * Additionally, this program is free software; you can distribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the License,
- * or any later version.  Accordingly, this program is distributed in the hope
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Additionally, this program is free software; you can distribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or any later version.  Accordingly, this
+ * program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  */
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,13 +41,13 @@
 #include "os/atomic.h"
 
 bool gmSendFragDesc::init(int globalDestProc,
-                             int tmapIndex,
-                             SendDesc_t *parentSendDesc,
-                             size_t seqOffset,
-                             size_t length,
-                             BasePath_t *failedPath,
-                             BaseSendFragDesc_t::packType packed,
-                             int numTransmits)
+                          int tmapIndex,
+                          SendDesc_t *parentSendDesc,
+                          size_t seqOffset,
+                          size_t length,
+                          BasePath_t *failedPath,
+                          BaseSendFragDesc_t::packType packed,
+                          int numTransmits)
 {
     gmFragBuffer *buf = 0;
     gmHeaderData *headerp;
@@ -105,10 +108,10 @@ bool gmSendFragDesc::init(int globalDestProc,
 
         if (parentSendDesc_m->sendType == ULM_SEND_SYNCHRONOUS) {
             headerp->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
-		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT_SYNC);
+                (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT_SYNC);
         } else {
             headerp->ctxAndMsgType = GENERATE_CTX_AND_MSGTYPE
-		    (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT);
+                (parentSendDesc_m->ctx_m,MSGTYPE_PT2PT);
         }
 
         headerp->common.type = MESSAGE_DATA;
@@ -211,13 +214,14 @@ bool gmSendFragDesc::init(int globalDestProc,
         headerp->dataChecksum = csum;
     }
     
-#if ENABLE_RELIABILITY
-    if ( gmState.doChecksum )
-    {
-        headerp->checksum = BasePath_t::headerChecksum(headerp, sizeof(gmHeader) - sizeof(ulm_uint32_t),
-                                                                 GM_HDR_WORDS);        
+    if (ENABLE_RELIABILITY) {
+        if (gmState.doChecksum)  {
+            headerp->checksum
+                = BasePath_t::headerChecksum(headerp,
+                                             sizeof(gmHeader) - sizeof(ulm_uint32_t),
+                                             GM_HDR_WORDS);        
+        }
     }
-#endif
     
     return true;
 }
@@ -272,7 +276,5 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
     } else {
         gmState.sendFragList.returnElementNoLock(this, 0);
     }
-
-    
 }
 

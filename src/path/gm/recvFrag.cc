@@ -117,14 +117,12 @@ bool gmRecvFragDesc::AckData(double timeNow)
     p->checksum = 0;
     p->isendSeq_m = isendSeq_m;
 
-#if ENABLE_RELIABILITY
-    if (gmState.doChecksum) {
+    if (ENABLE_RELIABILITY && gmState.doChecksum) {
         p->checksum =
             BasePath_t::headerChecksum((gmHeader *) p,
                                        sizeof(gmHeader) -
                                        sizeof(ulm_uint32_t), GM_HDR_WORDS);
     }
-#endif
 
     // only send if we have an implicit send token
     if (usethreads()) {
@@ -149,9 +147,9 @@ bool gmRecvFragDesc::AckData(double timeNow)
                           sizeof(gmHeader),
                           GM_LOW_PRIORITY,
                           gmState.localDevList[dev_m].
-                              remoteDevList[p->dest_proc].node_id,
+                          remoteDevList[p->dest_proc].node_id,
                           gmState.localDevList[dev_m].
-                              remoteDevList[p->dest_proc].port_id,
+                          remoteDevList[p->dest_proc].port_id,
                           ackCallback,
                           (void *) buf);
 
@@ -223,15 +221,15 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
             return;
         }
     }
-#if ENABLE_RELIABILITY
-    if (checkForDuplicateAndNonSpecificAck(sfd)) {
-        if (usethreads()) {
-            bsd->Lock.unlock();
+    if (ENABLE_RELIABILITY) {
+        if (checkForDuplicateAndNonSpecificAck(sfd)) {
+            if (usethreads()) {
+                bsd->Lock.unlock();
+            }
+            ReturnDescToPool(0);
+            return;
         }
-        ReturnDescToPool(0);
-        return;
     }
-#endif
 
     if (ACKSTATUS_DATAGOOD == p->ackStatus) {
         sfd->setDidReceiveAck(true);

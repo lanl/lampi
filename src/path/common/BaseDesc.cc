@@ -594,44 +594,70 @@ bool BaseRecvFragDesc_t::checkForDuplicateAndNonSpecificAck(BaseSendFragDesc_t *
 
 #endif      /* ENABLE_RELIABILITY */
 
-void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow, SendDesc_t *bsd,
-                                   BaseSendFragDesc_t *sfd)
+
+void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow,
+                                               SendDesc_t *bsd,
+                                               BaseSendFragDesc_t *sfd)
 {
     short whichQueue = sfd->WhichQueue;
-    
+
     if (ackStatus() == ACKSTATUS_DATAGOOD) {
+
         (bsd->NumAcked)++;
-        if ( sfd->sendDidComplete() )
+        if (sfd->sendDidComplete()) {
             sfd->freeResources(timeNow, bsd);
-    } else {
-        /*
-         * only process negative acknowledgements if we are
-         * the process that sent the original message; otherwise,
-         * just rely on sender side retransmission
-         */
-        // move message to incomplete queue
-        if ( (bsd->FragsToAck.size() + (unsigned) bsd->NumSent) >= bsd->numfrags) {
-            // sanity check, is frag really in UnackedPostedSends queue
-            if (bsd->WhichQueue != UNACKEDISENDQUEUE) {
-                ulm_exit(("Error: Send descriptor not in UnackedPostedSends list, "
-                          "where it was expected.\n"));
+        }
+
+    } else if (ackStatus() == ACKSTATUS_DATACORRUPT) {
+
+        // only process negative acknowledgements if we are the
+        // process that sent the original message; otherwise, just
+        // rely on sender side retransmission
+
+        ulm_err(("Warning: *** DATA CORRUPTION ***\n"
+                 "\tReceive fragment descriptor:\n"
+                 "\t\tsource rank      = %d\n"
+                 "\t\tdestination rank = %d\n"
+                 "\t\ttag              = %d\n"
+                 "\t\tcommunicator     = %d\n",
+                 srcProcID_m, dstProcID_m, tag_m, ctx_m));
+
+        // retransmit...
+
+        // move message to incomplete queue if we think we are done
+        if ((unsigned) bsd->NumSent >= bsd->numfrags) {
+            if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
+                UnackedPostedSends.RemoveLink(bsd);
+                bsd->WhichQueue = INCOMPLETEISENDQUEUE;
+                IncompletePostedSends.Append(bsd);
+                ulm_err(("Warning: *** RETRANSMITTING FRAGMENT ***\n"));
             }
-            bsd->WhichQueue = INCOMPLETEISENDQUEUE;
-            UnackedPostedSends.RemoveLink(bsd);
-            IncompletePostedSends.Append(bsd);
         }
 
         // reset WhichQueue flag
         sfd->WhichQueue = sfd->parentSendDesc_m->path_m->fragSendQueue();
+
         // move Frag from FragsToAck list to FragsToSend list
-        if ( whichQueue == sfd->parentSendDesc_m->path_m->toAckQueue() ) {
-            bsd->FragsToAck.RemoveLink((Links_t *)sfd);
-            bsd->FragsToSend.Append((Links_t *)sfd);
+        if (whichQueue == sfd->parentSendDesc_m->path_m->toAckQueue()) {
+            bsd->FragsToAck.RemoveLink((Links_t *) sfd);
+            bsd->FragsToSend.Append((Links_t *) sfd);
         }
-        
-        // reset send desc. NumSent as though this frag has not been sent
+
+        // reset send descriptor and NumSent as though this frag has not been sent
         sfd->setSendDidComplete(false);
         (bsd->NumSent)--;
-    } // end NACK/ACK processing
+
+    } else {
+
+        // should not get here
+
+        ulm_err(("Error: Message acknowledgment of unknown status (%d).\n"
+                 "\tReceive fragment descriptor:\n"
+                 "\t\tsource rank      = %d\n"
+                 "\t\tdestination rank = %d\n"
+                 "\t\ttag              = %d\n"
+                 "\t\tcommunicator     = %d\n",
+                 ackStatus(), srcProcID_m, dstProcID_m, tag_m, ctx_m));
+    }
 }
 
