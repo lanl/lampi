@@ -35,6 +35,7 @@ AC_CHECK_HEADERS([sys/resource.h])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([sys/uio.h])
+AC_CHECK_HEADERS([sys/utsname.h])
 AC_CHECK_HEADERS([util.h])
 
 # Checks for typedefs, structures, and compiler characteristics.

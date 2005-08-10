@@ -77,6 +77,15 @@ inline int myproc()
     return lampiState.global_rank;
 }
 
+inline char *mynodename()
+{
+#ifdef HAVE_SYS_UTSNAME_H
+    return lampiState.utsname.nodename;
+#else
+    return "unknown";
+#endif
+}
+
 inline int nprocs()
 {
     return lampiState.global_size;

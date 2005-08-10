@@ -213,7 +213,16 @@ gmRecvFragDesc::nonContigCopyFunction(void *appAddr,
 inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
 {
     if (DEBUG_INSERT_ARTIFICIAL_DATA_CORRUPTION) {
-        if ((rand() % 1021) == 0) {
+        static int first = 1;
+        int frequency = 10000;
+        int test;
+
+        if (first) {
+            srand((unsigned int) myproc() * 1021 + 79);
+            first = 0;
+        }
+        test = 1 + (int) ((double) frequency * rand() / (RAND_MAX + 1.0));
+        if ((test % frequency) == 0) {
             ulm_err(("Inserting artificial data corruption\n"));
             gmHeader_m->data.dataChecksum |= 0xA4A4;
         }
@@ -225,9 +234,9 @@ inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
         DataOK = true;
     } else {
         DataOK = false;
-        ulm_err(("Warning: Corrupt fragment data received, rank %d --> rank %d: "
-                 "(%s received=0x%x, calculated=0x%x)\n", 
-                 gmHeader_m->data.senderID, myproc(),
+        ulm_err(("Warning: Corrupt fragment data received [rank %d --> rank %d (%s)]: "
+                 "%s received=0x%x, calculated=0x%x\n", 
+                 gmHeader_m->data.senderID, myproc(), mynodename(),
                  (usecrc()) ? "CRC" : "checksum",
                  gmHeader_m->data.dataChecksum, checksum));
         if (!gmState.doAck) {

@@ -43,6 +43,9 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -97,6 +100,9 @@ typedef struct {
     int nhosts;                     /* number of hosts in run */
     int useDaemon;
     unsigned int channelID;
+#ifdef HAVE_SYS_UTSNAME_H
+    struct utsname utsname;         /* for nodename */
+#endif
 
     /*
      * list of interfaces to be used for TCP/UDP and their 

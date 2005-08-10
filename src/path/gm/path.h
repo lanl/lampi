@@ -48,7 +48,7 @@
 class gmPath : public BasePath_t {
 
     // data members
- protected:
+protected:
 
     // methods
 public:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2004. The Regents of the University of
+ * Copyright 2002-2005. The Regents of the University of
  * California. This material was produced under U.S. Government
  * contract W-7405-ENG-36 for Los Alamos National Laboratory, which is
  * operated by the University of California for the U.S. Department of
@@ -309,20 +309,20 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 keepChecking = false;
                 break;
             case GM_RECV_TOKEN_VIOLATION_EVENT:
-                ulm_err(("Proc %d: GM error: GM_RECV_TOKEN_VIOLATION_EVENT.\n",
-                         myproc()));
+                ulm_err(("Process rank  %d (%s): GM error: GM_RECV_TOKEN_VIOLATION_EVENT.\n",
+                         myproc(), mynodename()));
                 break;
             case GM_BAD_RECV_TOKEN_EVENT:
-                ulm_err(("Proc %d: GM error: GM_BAD_RECV_TOKEN_EVENT.\n",
-                         myproc()));
+                ulm_err(("Process rank  %d (%s): GM error: GM_BAD_RECV_TOKEN_EVENT.\n",
+                         myproc(), mynodename()));
                 break;
             case GM_BAD_SEND_DETECTED_EVENT:
-                ulm_err(("Proc %d: GM error: GM_BAD_SEND_DETECTED_EVENT.\n",
-                         myproc()));
+                ulm_err(("Process rank  %d (%s): GM error: GM_BAD_SEND_DETECTED_EVENT.\n",
+                         myproc(), mynodename()));
                 break;
             case GM_SEND_TOKEN_VIOLATION_EVENT:
-                ulm_err(("Proc %d: GM error: GM_SEND_TOKEN_VIOLATION_EVENT.\n",
-                         myproc()));
+                ulm_err(("Process rank  %d (%s): GM error: GM_SEND_TOKEN_VIOLATION_EVENT.\n",
+                         myproc(), mynodename()));
                 break;
             case GM_RECV_EVENT:
                 // increment implicit # of receive tokens
@@ -342,7 +342,16 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 rf->gmHeader_m = (gmHeader *) gm_ntohp(event->recv.buffer);
 
                 if (DEBUG_INSERT_ARTIFICIAL_HEADER_CORRUPTION) {
-                    if ((rand() % 1021) == 0) {
+                    static int first = 1;
+                    int frequency = 10000;
+                    int test;
+
+                    if (first) {
+                        srand((unsigned int) myproc() * 1021 + 79);
+                        first = 0;
+                    }
+                    test = 1 + (int) ((double) frequency * rand() / (RAND_MAX + 1.0));
+                    if ((test % frequency) == 0) {
                         ulm_err(("Inserting artificial header corruption\n"));
                         rf->gmHeader_m->data.checksum |= 0xA4A4;
                     }
@@ -360,7 +369,6 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 rf->dev_m = i;
                 rf->length_m =
                     gm_ntoh_u32(event->recv.length) - sizeof(gmHeader);
-
 
                 if (!gmState.doChecksum) {
                     HeaderOK = true;
@@ -407,10 +415,10 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         received_checksum = 2 * rf->gmHeader_m->data.checksum;
                     }
 
-                    ulm_err(("Warning: Corrupt fragment header received, rank %d --> rank %d: "
-                             "(%s received=0x%x, calculated=0x%x)\n", 
-                             rf->gmHeader_m->data.senderID, myproc(),
-                             myproc(), rf->gmHeader_m->data.senderID,
+                    ulm_err(("Warning: Corrupt fragment header received "
+                             "[rank %d --> rank %d (%s)]: "
+                             "%s received=0x%x, calculated=0x%x\n", 
+                             rf->gmHeader_m->data.senderID, myproc(), mynodename(),
                              usecrc() ? "CRC" : "checksum",
                              received_checksum, checksum));
 
@@ -461,8 +469,9 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 // give it to GM...
                 buf->me = buf;
                 void *addr = &(buf->header);
-                if (usethreads())
+                if (usethreads()) {
                     gmState.gmLock.lock();
+                }
 
                 gm_provide_receive_buffer_with_tag(devInfo->gmPort,
                                                    addr,
@@ -475,8 +484,9 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                 (devInfo->recvTokens)--;
 
             }
-            if (usethreads())
+            if (usethreads()) {
                 devInfo->Lock.unlock();
+            }
         }
     }                           // end for loop
 
@@ -506,8 +516,8 @@ void gmPath::callback(struct gm_port *port,
     case GM_BUSY:
     case GM_SEND_TIMED_OUT:
         // try again if the receiver is busy 
-        ulm_err(("Warning: Myrinet/GM: Retrying send: %d -> %d (status = %d)\n",
-                 myproc(), sfd->globalDestProc_m, status));
+        ulm_err(("Warning: Myrinet/GM: Retrying send: %d (%s) -> %d (status = %d)\n",
+                 myproc(), mynodename(), sfd->globalDestProc_m, status));
         bsd->FragsToSend.Append(sfd);
         return;
     case GM_SUCCESS:
@@ -516,13 +526,13 @@ void gmPath::callback(struct gm_port *port,
         // otherwise fail if there was a failure 
         if (sfd) {
             ulm_exit(("Error: Myrinet/GM: %s (%d). "
-                      "Trying to send from rank %d to rank %d.\n",
+                      "Trying to send from rank %d (%s) to rank %d.\n",
                       gm_strerror(status),
-                      (int) status, myproc(), sfd->globalDestProc_m));
+                      (int) status, myproc(), mynodename(), sfd->globalDestProc_m));
         } else {
             ulm_exit(("Error: Myrinet/GM: %s (%d). "
-                      "Trying to send from rank %d.\n",
-                      gm_strerror(status), (int) status, myproc()));
+                      "Trying to send from rank %d (%s).\n",
+                      gm_strerror(status), (int) status, myproc(), mynodename()));
         }
     }
 

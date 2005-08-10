@@ -475,3 +475,9 @@ Version 1.5.12
 
 - Work around for ADIO_Resize which can cause poor MPI-IO performance if
   if a file is truncated.
+
+Version 1.5.13
+
+- CRC bug fix for Myrinet/GM
+
+- Reworked retransmission logic for Myrinet/GM and improved error messages.

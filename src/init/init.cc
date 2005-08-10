@@ -1801,15 +1801,11 @@ void lampi_init_postfork_stdio(lampiState_t *s)
         if (s->output_prefix) {
             /* activate prefix */
 
-            struct utsname utsname;
-
-            uname(&utsname);
- 
             for (int i = 0; i < s->local_size; i++) {
                 sprintf(s->IOPreFix[i], "%d[%d.%d.%s] ",
                         i + s->global_to_local_offset,
                         s->hostid, i,
-                        utsname.nodename);
+                        mynodename());
                 s->LenIOPreFix[i] = (int) strlen(s->IOPreFix[i]);
             }
             sprintf(s->IOPreFix[s->local_size], "daemon[%d] ", s->hostid);
@@ -1936,6 +1932,10 @@ void lampi_init_prefork_initialize_state_information(lampiState_t *s)
         return;
     }
     memset(s->contextIDCtl, 0, sizeof(contextIDCtl_t));
+
+#ifdef HAVE_SYS_UTSNAME_H
+    uname(&(s->utsname));
+#endif
 }
 
 
