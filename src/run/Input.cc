@@ -497,7 +497,7 @@ void Usage(FILE *stream)
             "Run a job under the LA-MPI message-passing system\n"
             "\n"
             "Command-line options may start with one or more dashes. Options\n"
-            "may also be specied in a configuration file (~.lampi.conf)\n"
+            "may also be specied in a configuration file (~./lampi.conf)\n"
             "using the associated variable (see \"Advanced options\" below)\n"
             "\n"
             "Common options:\n\n"
