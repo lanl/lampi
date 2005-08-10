@@ -1,16 +1,16 @@
-CFLAGS          += $(MPI_COMPILE_FLAGS)
-LDFLAGS         += $(MPI_LD_FLAGS)
-LDLIBS          += -lmpi
-TARGET          := mpi-ping mpi-ping-thread
-MPIRUN          := $(MPI_ROOT)/bin/mpirun
+CC		:= mpicc
+CFLAGS		+= -g
+CPPFLAGS	+=
+LDFLAGS		+=
+LDLIBS		+=
 
-all: $(TARGET)
+all: mpi-ping
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) mpi-ping mpi-ping-thread *.o
 
 check: $(TARGET)
-	$(MPIRUN) -np 2 -exe mpi-ping -r 100 0 4M 
+	mpirun -np 2 mpi-ping -r 100 0 4M 
 
 mpi-ping-thread: mpi-ping-thread.c
 	$(CC) -pthread $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS) -lpthread

@@ -14,17 +14,33 @@
 
 #include "mpi.h"
 
-static int str2size(char *str)
-{
-    int size;
-    char mod[32];
+/* #define HAVE_MPI_ALLOC_MEM 1 */
+/* #define SIZEOF_VOID_P 8 */
 
-    switch (sscanf(str, "%d%1[mMkK]", &size, mod)) {
+
+static ssize_t str2size(char *str)
+{
+    ssize_t size;
+    char mod[32];
+#if defined(SIZEOF_VOID_P) && (SIZEOF_VOID_P == 8)
+    char *format = "%ld%1[gGmMkK]";
+#else
+    char *format = "%ld%1[mMkK]";
+#endif
+
+    switch (sscanf(str, format, (long) &size, mod)) {
     case 1:
         return (size);
 
     case 2:
         switch (*mod) {
+
+#if defined(SIZEOF_VOID_P) && (SIZEOF_VOID_P == 8)
+        case 'g':
+        case 'G':
+            return (size << 30);
+#endif
+
         case 'm':
         case 'M':
             return (size << 20);
@@ -56,12 +72,16 @@ static void help(void)
 {
     printf
         ("Usage: mpi-ping [flags] <min bytes> [<max bytes>] [<inc bytes>]\n"
-         "\n" "   Flags may be any of\n"
+         "\n"
+         "   Flags may be any of\n"
          "      -B                use blocking send/recv\n"
          "      -C                check data\n"
          "      -O                overlapping pings\n"
          "      -W                perform warm-up phase\n"
          "      -r number         repetitions to time\n"
+#ifdef HAVE_MPI_ALLOC_MEM
+         "      -A                use MPI_Alloc_mem to register memory\n" 
+#endif
          "      -h                print this info\n" "\n"
          "   Numbers may be postfixed with 'k' or 'm'\n\n");
 
@@ -74,34 +94,35 @@ int main(int argc, char *argv[])
     MPI_Status status;
     MPI_Request recv_request;
     MPI_Request send_request;
-    char *rbuf;
-    char *tbuf;
+    unsigned char *rbuf;
+    unsigned char *tbuf;
     int c;
-    int i;
-    int bytes;
     int nproc;
     int peer;
     int proc;
-    int r;
     int tag = 0x666;
+    ssize_t bytes;
+    ssize_t i;
+    ssize_t r;
 
     /*
      * default options / arguments
      */
-    int reps = 10000;
     int blocking = 0;
     int check = 0;
     int overlap = 0;
     int warmup = 0;
-    int inc_bytes = 0;
-    int max_bytes = 0;
-    int min_bytes = 0;
-
+    int alloc_mem = 0; 
+    ssize_t reps = 10000;
+    size_t inc_bytes = 0;
+    size_t max_bytes = 0;
+    size_t min_bytes = 0;
+    
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &proc);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-    while ((c = getopt(argc, argv, "BCOWr:h")) != -1) {
+    while ((c = getopt(argc, argv, "BCOWAr:h")) != -1) {
         switch (c) {
 
         case 'B':
@@ -119,6 +140,12 @@ int main(int argc, char *argv[])
         case 'W':
             warmup = 1;
             break;
+
+        case 'A': 
+#ifdef HAVE_MPI_ALLOC_MEM
+            alloc_mem = 1; 
+#endif
+            break; 
 
         case 'r':
             if ((reps = str2size(optarg)) <= 0) {
@@ -156,15 +183,21 @@ int main(int argc, char *argv[])
         exit(EXIT_SUCCESS);
     }
 
-    if ((rbuf = (char *) malloc(max_bytes ? max_bytes : 8)) == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    if ((tbuf = (char *) malloc(max_bytes ? max_bytes : 8)) == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
+    if (alloc_mem) { 
+#ifdef HAVE_MPI_ALLOC_MEM
+        MPI_Alloc_mem(max_bytes ? max_bytes: 8, MPI_INFO_NULL, &rbuf);
+        MPI_Alloc_mem(max_bytes ? max_bytes: 8, MPI_INFO_NULL, &tbuf);
+#endif
+    } else { 
+        if ((rbuf = (unsigned char *) malloc(max_bytes ? max_bytes : 8)) == NULL) { 
+            perror("malloc"); 
+            exit(EXIT_FAILURE); 
+        } 
+        if ((tbuf = (unsigned char *) malloc(max_bytes ? max_bytes : 8)) == NULL) { 
+            perror("malloc"); 
+            exit(EXIT_FAILURE); 
+        } 
+    } 
 
     if (check) {
         for (i = 0; i < max_bytes; i++) {
@@ -262,8 +295,9 @@ int main(int argc, char *argv[])
 
                     if (check) {
                         for (i = 0; i < bytes; i++) {
-                            if (rbuf[i] != (i & 255)) {
-                                puts("mpi-ping: Error: Invalid data received");
+                            if (rbuf[i] != (unsigned char)(i & 255)) {
+                                fprintf(stderr, "Error: index=%d sent %d received %d\n", 
+                                        i, ((unsigned char)i)&255, (unsigned char)rbuf[i]);
                             }
                             rbuf[i] = 0;
                         }
@@ -288,8 +322,9 @@ int main(int argc, char *argv[])
 
                         if (check) {
                             for (i = 0; i < bytes; i++) {
-                                if (rbuf[i] != (i & 255)) {
-                                    puts("mpi-ping: Error: Invalid data received");
+                                if (rbuf[i] != (unsigned char)(i & 255)) {
+                                    fprintf(stderr, "Error: index=%d sent %d received %d\n", 
+                                            i, ((unsigned char)i)&255, (unsigned char)rbuf[i]);
                                 }
                                 rbuf[i] = 0;
                             }
@@ -305,8 +340,9 @@ int main(int argc, char *argv[])
 
                         if (check) {
                             for (i = 0; i < bytes; i++) {
-                                if (rbuf[i] != (i & 255)) {
-                                    puts("mpi-ping: Error: Invalid data received");
+                                if (rbuf[i] != (unsigned char)(i & 255)) {
+                                    fprintf(stderr, "Error: index=%d sent %d received %d\n", 
+                                            i, ((unsigned char)i)&255, (unsigned char)rbuf[i]);
                                 }
                                 rbuf[i] = 0;
                             }
@@ -338,8 +374,9 @@ int main(int argc, char *argv[])
 
                         if (check) {
                             for (i = 0; i < bytes; i++) {
-                                if (rbuf[i] != (i & 255)) {
-                                    puts("mpi-ping: Error: Invalid data received");
+                                if (rbuf[i] != (unsigned char)(i & 255)) {
+                                    fprintf(stderr, "Error: index=%d sent %d received %d\n", 
+                                            i, ((unsigned char)i)&255, (unsigned char)rbuf[i]);
                                 }
                                 rbuf[i] = 0;
                             }
@@ -357,8 +394,9 @@ int main(int argc, char *argv[])
 
                         if (check) {
                             for (i = 0; i < bytes; i++) {
-                                if (rbuf[i] != (i & 255)) {
-                                    puts("mpi-ping: Error: Invalid data received");
+                                if (rbuf[i] != (unsigned char)(i & 255)) {
+                                    fprintf(stderr, "Error: index=%d sent %d received %d\n", 
+                                            i, ((unsigned char)i)&255, (unsigned char)rbuf[i]);
                                 }
                                 rbuf[i] = 0;
                             }
