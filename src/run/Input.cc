@@ -623,16 +623,15 @@ void NoOpFunction(const char *msg)
 static void ScanSystemConfigFile(void)
 {
     int NBytes, OptionIndex;
-    char ConfigFileName[ULM_MAX_PATH_LEN],
-        InputBuffer[ULM_MAX_CONF_FILELINE_LEN];
+    char ConfigFileName[ULM_MAX_PATH_LEN];
+    char InputBuffer[ULM_MAX_CONF_FILELINE_LEN];
     FILE *ConfigFileStream;
 
     if (getenv("MPI_ROOT") == NULL) {
         return;
     }
 
-    NBytes =
-        sprintf(ConfigFileName, "%s/etc/lampi.conf", getenv("MPI_ROOT"));
+    NBytes = sprintf(ConfigFileName, "%s/etc/lampi.conf", getenv("MPI_ROOT"));
     if ((NBytes > (ULM_MAX_PATH_LEN - 1)) || (NBytes < 0)) {
         ulm_err(("Error: writing to ConfigFileName (%d)\n",
                  NBytes));
@@ -700,18 +699,11 @@ static void ScanSystemConfigFile(void)
 static void ScanConfigFile(void)
 {
     int NBytes, OptionIndex;
-    char ConfigFileName[ULM_MAX_PATH_LEN],
-        InputBuffer[ULM_MAX_CONF_FILELINE_LEN];
-    struct passwd *LoginStruct;
+    char ConfigFileName[ULM_MAX_PATH_LEN];
+    char InputBuffer[ULM_MAX_CONF_FILELINE_LEN];
     FILE *ConfigFileStream;
 
-    LoginStruct = getpwuid(getuid());
-    if (LoginStruct == NULL) {
-        ulm_err(("Error: finding account information from uid %d\n", getuid()));
-        Abort();
-    }
-    NBytes =
-        sprintf(ConfigFileName, "%s/.lampi.conf", LoginStruct->pw_dir);
+    NBytes = sprintf(ConfigFileName, "%s/.lampi.conf", getenv("HOME"));
     if ((NBytes > (ULM_MAX_PATH_LEN - 1)) || (NBytes < 0)) {
         ulm_err(("Error: writing to ConfigFileName (%d)\n",
                  NBytes));
