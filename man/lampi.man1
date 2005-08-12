@@ -1,5 +1,5 @@
 '\" t
-.\" Manual page created with latex2man on Thu Oct 28 18:24:50 MDT 2004
+.\" Manual page created with latex2man on Fri Aug 12 14:48:53 MDT 2005
 .\" NOTE: This file is generated, DO NOT EDIT.
 .de Vb
 .ft CW
@@ -10,7 +10,7 @@
 
 .fi
 ..
-.TH "MPIRUN" "1" "28 October 2004" "LA\-MPI \-\- Los Alamos MPI " "LA\-MPI \-\- Los Alamos MPI "
+.TH "MPIRUN" "1" "12 August 2005" "LA\-MPI \-\- Los Alamos MPI " "LA\-MPI \-\- Los Alamos MPI "
 .SH NAME
 
 .PP
@@ -168,7 +168,7 @@ mpi.h
 mpif.h
  LA\-MPI main Fortran header file. 
 .TP
-$MPI_ROOT/lampi.conf
+$MPI_ROOT/etc/lampi.conf
  System LA\-MPI configuration file. 
 .TP
 $HOME/.lampi.conf
@@ -228,7 +228,7 @@ matured for production use on terascale platforms.
 .PP
 .SH VERSION
 
-Version: 1.5.8 of 28 October 2004\&.
+Version: 1.5.13 of 12 August 2005\&.
 .PP
 .SH BUGS
 
