@@ -1,28 +1,13 @@
+CC		:= mpicc
+CFLAGS		+= -g
+CPPFLAGS	+=
+LDFLAGS		+=
+LDLIBS		+=
 
-.PHONY: all clean check check-ulmtest check-ulmprobe
-
-all: check
+all: hello mpi-ping mpi-coll-bench
 
 clean:
-	cd ulmtest; $(MAKE) clean
-	cd ulmprobe; $(MAKE) clean
+	$(RM) hello mpi-coll-bench mpi-ping mpi-ping-thread *.o
 
-check: check-ulmtest
-
-check-ulmtest:
-	@echo '============================================================'
-	@echo '                    Begin test: ulmtest                     '
-	@echo '============================================================'
-	@cd ulmtest; $(MAKE) check
-	@echo '============================================================'
-	@echo '                     End test: ulmtest                      '
-	@echo '============================================================'
-
-check-ulmprobe:
-	@echo '============================================================'
-	@echo '                    Begin test: ulmprobe
-	@echo '============================================================'
-	@cd ulmprobe; $(MAKE) check
-	@echo '============================================================'
-	@echo '                     End test: ulmprobe                     '
-	@echo '============================================================'
+mpi-ping-thread: mpi-ping-thread.c
+	$(CC) -pthread $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS) -lpthread
