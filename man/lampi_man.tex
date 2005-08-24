@@ -27,7 +27,7 @@
 
 \begin{document}
 
-\begin{Name}{1}{mpirun}{Resilient Technologies Team, CCS-1, LANL}{LA-MPI -- Los Alamos MPI}{Los Alamos Message-Passing Interface}
+\begin{Name}{1}{LA-MPI}{Resilient Technologies Team, CCS-1, LANL}{LA-MPI -- Los Alamos MPI}{Los Alamos Message-Passing Interface}
 
   \Prog{mpirun} - run MPI programs using the Los Alamos Message-Passing Interface, LA-MPI.
 \end{Name}
@@ -35,8 +35,8 @@
 \section{Synopsis}
 %%%%%%%%%%%%%%%%%%
 
-\Prog{mpirun} [\Opt{-n}\Bar\Opt{-np} \Arg{#,...}] \oOptArg{-N}{ #}
-\oOptArg{-H}{ hostlist} [...] \Arg{prog} [\Arg{args ...}]
+\Prog{mpirun} [\Opt{-n}\Bar\Opt{-np} \Arg{#,...}] \OptArg{-N}{ #}
+\OptArg{-H}{ hostlist} [...] \Arg{prog} [\Arg{args ...}]
 
 \Prog{mpirun} -h\Bar-help
 
@@ -50,9 +50,22 @@ LA-MPI implementation of MPI.
 LA-MPI is a network-fault-tolerant message-passing system designed for
 the challenges of the terascale cluster environment.
 
-\section{Options}
+Command-line options may start with one or more dashes. Options
+may also be specied in a configuration file (\File{\$HOME/.lampi.conf})
+using the associated variable (see "Advanced options" below).
+
+\section{Arguments}
+%%%%%%%%%%%%%%%%%%%
+\Arg{prog} must be either a single executable or a
+comma-delimited list of executables for each host or machine (which is
+not supported for all environments). Executable arguments apply to all
+specified executables.
+
+\section{Common options}
 %%%%%%%%%%%%%%%%%
 \begin{Description}\setlength{\itemsep}{0cm}
+\item[\Opt{-h, -help}]
+    Print help and exit.
 \item[\Opt{-n}\Bar\Opt{-np} \Arg{ number of processes}] A single value
   specifies the total number of processes, while a comma-delimited
   list of numbers specifies the number of processes on each host or
@@ -60,15 +73,15 @@ the challenges of the terascale cluster environment.
 \item[\OptArg{-N}{ number of hosts}] The number of hosts to use.
 \item[\OptArg{-H}{ hostlist}] A comma-delimited list of name(s) of
   hosts to use.
-\item[\Opt{-threads}] Turn on thread safe code.
-\item[\Opt{-t}] Turn on tagging of standard output and error lines
+\item[\Opt{-t,-p}] Turn on tagging of standard output and error lines
   with either GR[HR.LR.HN] (GR = global rank, HR = host rank, LR =
   local rank, HN = host name), or simply HR (on RMS/prun systems).
-\item[\OptArg{-dev}{ netpaths}] A colon-delimited list of one or more
-  network paths to use for this MPI job. Currently the choices are
-  some combination of \Arg{tcp} (TCP/IP), \Arg{udp} (UDP/IP), \Arg{gm}
-  (Myrinet/GM), \Arg{quadrics} (QsNet/Elan3) and \Arg{ib} (InfiniBand),
-  depending on your installation.
+\item[\Opt{-v}] Turn on verbose debugging information.
+\item[\Opt{-V, -version}]
+    Print version and exit.
+\item[\Opt{-local}]
+    Run on the local host using fork/exec to spawn the processes.
+\item[\Opt{-threads}] Turn on thread safe code.
 \item[\Opt{-crc}] Use 32-bit CRCs instead of 32-bit additive checksums
   (the LA-MPI default) for application to application data integrity
   where applicable.
@@ -84,15 +97,104 @@ the challenges of the terascale cluster environment.
   built with reliability mode enabled.
 \end{Description}
 
-For a complete list of options available with your installation, type
-\Prog{mpirun -help}.
 
-\section{Arguments}
-%%%%%%%%%%%%%%%%%%%
-The \Arg{executable} must be either a single executable or a
-comma-delimited list of executables for each host or machine (which is
-not supported for all environments). Executable arguments apply to all
-specified executables.
+\section{Other options}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{Description}\setlength{\itemsep}{0cm}
+\item[\OptArg{-N,-nhosts}{ ARG,...}]
+    Number of hosts (machines) \\
+    Configuration file variable: \Opt{HostCount}
+\item[\OptArg{-H, -hostlist}{ ARG,...}]
+    List of hosts (machines) \\
+    Configuration file variable: \Opt{HostList}
+\item[\OptArg{-machinefile}{ ARG,...}]
+    File containing list of hosts (machines) \\
+    Configuration file variable: \Opt{MachineFile}
+\item[\OptArg{-n, -np, -nprocs}{ ARG,...}]
+    Number of processes total or on each host (machine) \\
+    Configuration file variable: \Opt{Procs}
+\item[\Opt{-f, -no-arg-check}]
+    No checking of MPI arguments \\
+    Configuration file variable: \Opt{NoArgCheck}
+\item[\Opt{-t, -p, -output-prefix}]
+    Prefix standard output and error with helpful information \\
+    Configuration file variable: \Opt{OutputPrefix}
+\item[\Opt{-q, -quiet}]
+    Suppress start-up messages \\
+    Configuration file variable: \Opt{Quiet}
+\item[\Opt{-v, -verbose}]
+    Extremely verbose progress information \\
+    Configuration file variable: \Opt{Verbose}
+\item[\Opt{-w, -warn}]
+    Enable warning messages \\
+    Configuration file variable: \Opt{Warn}
+\item[\OptArg{-i, -interface}{ ARG,...}]
+    List of interface names to be used by TCP/UDP paths \\
+    Configuration file variable: \Opt{InterfaceList}
+\item[\OptArg{-ni, -interfaces}{ ARG,...}]
+    Maximum number of interfaces to be used by TCP/UDP paths \\
+    Configuration file variable: \Opt{Interfaces}
+\item[\OptArg{-s, -mpirun-hostname}{ ARG,...}]
+    A comma-delimited list of preferred IP interface name
+    fragments (whole, suffix, or prefix) or addresses for TCP/IP
+    administrative and UDP/IP data traffic. \\
+    Configuration file variable: \Opt{MpirunHostname}
+\item[\Opt{-nolsf}]
+    No LSF control will be used in job \\
+    Configuration file variable: \Opt{NoLSF}
+\item[\OptArg{-cpulist}{ ARG,...}]
+    Which CPUs to use (when available)\\
+    Configuration file variable: \Opt{CpuList}
+\item[\OptArg{-d, -working-dir}{ ARG,...}]
+    Current directory \\
+    Configuration file variable: \Opt{WorkingDir}
+\item[\Opt{-rusage}]
+    Print resource usage (when available) \\
+    Configuration file variable: \Opt{PrintRusage}
+\item[\OptArg{-dapp}{ ARG,...}]
+    Absolute path to binary \\
+    Configuration file variable: \Opt{DirectoryOfBinary}
+\item[\OptArg{-e, -exe}{ ARG,...}]
+    Binary name \\
+    Configuration file variable: \Opt{Executable}
+\item[\OptArg{-dev}{ ARG,...}]
+    Type of network.  A colon-delimited list of one or more network
+    paths to use for this MPI job. Currently the choices are some
+    combination of \Arg{tcp} (TCP/IP), \Arg{udp} (UDP/IP), \Arg{gm}
+    (Myrinet/GM), \Arg{quadrics} (QsNet/Elan3) and \Arg{ib}
+    (InfiniBand), depending on your installation.  \\
+    Configuration file variable: \Opt{NetworkDevices}
+\item[\Opt{-debug-daemon}]
+    Wait in LA-MPI daemon for debugger to attach (when applicable) \\
+    Configuration file variable: \Opt{DebugDaemon}
+\item[\OptArg{-env}{ ARG,...}]
+    List environment variables and settings \\
+    Configuration file variable: \Opt{EnvVars}
+\item[\OptArg{-retry}{ ARG,...}]
+    Number of times to retry for resources \\
+    Configuration file variable: \Opt{MaxRetryWhenNoResource}
+\item[\Opt{-local}]
+    Run on the local host using fork/exec to spawn the processes \\
+    Configuration file variable: \Opt{Local}
+\item[\Opt{-ssh}]
+    use SSH instead of RSH to create remote processes \\
+    Configuration file variable: \Opt{UseSSH}
+\item[\Opt{-threads}]
+    Threads used in job \\
+    Configuration file variable: \Opt{NoThreads}
+\item[\OptArg{-timeout}{ ARG,...}]
+    Time in seconds to wait for client applications to connect back \\
+    Configuration file variable: \Opt{ConnectTimeout}
+\item[\OptArg{-heartbeat-period}{ ARG,...}]
+    Period in seconds of heartbeats between mpirun and daemon processes \\
+    Configuration file variable: \Opt{HeartbeatPeriod}
+\item[\Opt{-crc}]
+    Use CRCs instead of checksums \\
+    Configuration file variable: \Opt{UseCRC}
+\item[\Opt{-list-options}]
+    Print detailed list of all options and exit \\
+    Configuration file variable: \Opt{ListOptions}
+\end{Description}
 
 \section{Examples}
 %%%%%%%%%%%%%%%%%%
@@ -183,7 +285,7 @@ variables.
 \section{Future development}
 %%%%%%%%%%%%%%%%%%%%%%%%
 The LA-MPI project has now merged with Open MPI
-(\Email{http://www.open-mpi.org}).  The first release of Open MPI is
+(\URL{http://www.open-mpi.org}).  The first release of Open MPI is
 scheduled for mid 2005.
 
 LA-MPI will continue to be maintained until Open MPI has sufficiently
@@ -200,7 +302,7 @@ Please report bugs to \Email{lampi-support@lanl.gov}.
 \section{License}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Copyright 2002-2004.  The Regents of the University of
+Copyright 2002-2005.  The Regents of the University of
 California. This material was produced under U.S. Government contract
 W-7405-ENG-36 for Los Alamos National Laboratory, which is operated by
 the University of California for the U.S. Department of Energy. The

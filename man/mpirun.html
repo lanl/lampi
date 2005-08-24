@@ -1,15 +1,15 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<!-- Manual page created with latex2man on Fri Aug 12 14:48:53 MDT 2005 --
+<!-- Manual page created with latex2man on Wed Aug 24 14:50:37 MDT 2005 --
 -- Author of latex2man: Juergen.Vollmer@acm.org --
 -- NOTE: This file is generated, DO NOT EDIT. -->
 <html>
-<head><title>MPIRUN</title></head>
+<head><title>LA-MPI</title></head>
 <body bgcolor="white">
 <h1 align=center>
 Los Alamos Message-Passing Interface 
 </h1>
 <h4 align=center>Resilient Technologies Team, CCS-1, LANL </h4>
-<h4 align=center>12 August 2005</h4>
+<h4 align=center>24 August 2005</h4>
 <h4 align=center>Version 1.5.13</h4>
 <p>
 <tt>mpirun</tt>
@@ -18,16 +18,17 @@ Los Alamos Message-Passing Interface
 <ul>
 <li><a href="#section_1">Synopsis </a></li>
 <li><a href="#section_2">Description </a></li>
-<li><a href="#section_3">Options </a></li>
-<li><a href="#section_4">Arguments </a></li>
-<li><a href="#section_5">Examples </a></li>
-<li><a href="#section_6">Files </a></li>
-<li><a href="#section_7">Diagnostics </a></li>
-<li><a href="#section_8">Future development </a></li>
-<li><a href="#section_9">Version </a></li>
-<li><a href="#section_10">Bugs </a></li>
-<li><a href="#section_11">License </a></li>
-<li><a href="#section_12">Authors </a>
+<li><a href="#section_3">Arguments </a></li>
+<li><a href="#section_4">Common options </a></li>
+<li><a href="#section_5">Other options </a></li>
+<li><a href="#section_6">Examples </a></li>
+<li><a href="#section_7">Files </a></li>
+<li><a href="#section_8">Diagnostics </a></li>
+<li><a href="#section_9">Future development </a></li>
+<li><a href="#section_10">Version </a></li>
+<li><a href="#section_11">Bugs </a></li>
+<li><a href="#section_12">License </a></li>
+<li><a href="#section_13">Authors </a>
 </li></ul>
 <p>
 <h2><a name="section_1">Synopsis</a></h2>
@@ -36,8 +37,8 @@ Los Alamos Message-Passing Interface
 <tt>mpirun</tt>
 [<b>-n</b>|<b>-np</b>
 <i>#,...</i>]
-[<b>-N</b><i> #</i>]
-[<b>-H</b><i> hostlist</i>]
+<b>-N</b><i> #</i>
+<b>-H</b><i> hostlist</i>
 [...] <i>prog</i>
 [<i>args ...</i>]
 <p>
@@ -56,9 +57,25 @@ LA-MPI implementation of MPI.
 LA-MPI is a network-fault-tolerant message-passing system designed for 
 the challenges of the terascale cluster environment. 
 <p>
-<h2><a name="section_3">Options</a></h2>
+Command-line options may start with one or more dashes. Options 
+may also be specied in a configuration file (<tt>$HOME/.lampi.conf</tt>)
+using the associated variable (see "Advanced options" below). 
+<p>
+<h2><a name="section_3">Arguments</a></h2>
+
+<i>prog</i>
+must be either a single executable or a 
+comma-delimited list of executables for each host or machine (which is 
+not supported for all environments). Executable arguments apply to all 
+specified executables. 
+<p>
+<h2><a name="section_4">Common options</a></h2>
 
 <dl compact>
+<dt><b>-h, -help</b>
+<dd> 
+Print help and exit. 
+</dd>
 <dt><b>-n</b>|<b>-np</b> <i> number of processes</i>
 <dd> A single value 
 specifies the total number of processes, while a comma-delimited 
@@ -72,24 +89,24 @@ machine.
 <dd> A comma-delimited list of name(s) of 
 hosts to use. 
 </dd>
-<dt><b>-threads</b>
-<dd> Turn on thread safe code. 
-</dd>
-<dt><b>-t</b>
+<dt><b>-t,-p</b>
 <dd> Turn on tagging of standard output and error lines 
 with either GR[HR.LR.HN] (GR = global rank, HR = host rank, LR = 
 local rank, HN = host name), or simply HR (on RMS/prun systems). 
 </dd>
-<dt><b>-dev</b><i> netpaths</i>
-<dd> A colon-delimited list of one or more 
-network paths to use for this MPI job. Currently the choices are 
-some combination of <i>tcp</i>
-(TCP/IP), <i>udp</i>
-(UDP/IP), <i>gm</i>
-(Myrinet/GM), <i>quadrics</i>
-(QsNet/Elan3) and <i>ib</i>
-(InfiniBand), 
-depending on your installation. 
+<dt><b>-v</b>
+<dd> Turn on verbose debugging information. 
+</dd>
+<dt><b>-V, -version</b>
+<dd> 
+Print version and exit. 
+</dd>
+<dt><b>-local</b>
+<dd> 
+Run on the local host using fork/exec to spawn the processes. 
+</dd>
+<dt><b>-threads</b>
+<dd> Turn on thread safe code. 
 </dd>
 <dt><b>-crc</b>
 <dd> Use 32-bit CRCs instead of 32-bit additive checksums 
@@ -110,18 +127,195 @@ built with reliability mode enabled.
 </dd>
 </dl>
 <p>
-For a complete list of options available with your installation, type 
-<tt>mpirun -help</tt>.
-<p>
-<h2><a name="section_4">Arguments</a></h2>
+<h2><a name="section_5">Other options</a></h2>
 
-The <i>executable</i>
-must be either a single executable or a 
-comma-delimited list of executables for each host or machine (which is 
-not supported for all environments). Executable arguments apply to all 
-specified executables. 
+<dl compact>
+<dt><b>-N,-nhosts</b><i> ARG,...</i>
+<dd> 
+Number of hosts (machines) <br>
+ 
+Configuration file variable: <b>HostCount</b>
+</dd>
+<dt><b>-H, -hostlist</b><i> ARG,...</i>
+<dd> 
+List of hosts (machines) <br>
+ 
+Configuration file variable: <b>HostList</b>
+</dd>
+<dt><b>-machinefile</b><i> ARG,...</i>
+<dd> 
+File containing list of hosts (machines) <br>
+ 
+Configuration file variable: <b>MachineFile</b>
+</dd>
+<dt><b>-n, -np, -nprocs</b><i> ARG,...</i>
+<dd> 
+Number of processes total or on each host (machine) <br>
+ 
+Configuration file variable: <b>Procs</b>
+</dd>
+<dt><b>-f, -no-arg-check</b>
+<dd> 
+No checking of MPI arguments <br>
+ 
+Configuration file variable: <b>NoArgCheck</b>
+</dd>
+<dt><b>-t, -p, -output-prefix</b>
+<dd> 
+Prefix standard output and error with helpful information <br>
+ 
+Configuration file variable: <b>OutputPrefix</b>
+</dd>
+<dt><b>-q, -quiet</b>
+<dd> 
+Suppress start-up messages <br>
+ 
+Configuration file variable: <b>Quiet</b>
+</dd>
+<dt><b>-v, -verbose</b>
+<dd> 
+Extremely verbose progress information <br>
+ 
+Configuration file variable: <b>Verbose</b>
+</dd>
+<dt><b>-w, -warn</b>
+<dd> 
+Enable warning messages <br>
+ 
+Configuration file variable: <b>Warn</b>
+</dd>
+<dt><b>-i, -interface</b><i> ARG,...</i>
+<dd> 
+List of interface names to be used by TCP/UDP paths <br>
+ 
+Configuration file variable: <b>InterfaceList</b>
+</dd>
+<dt><b>-ni, -interfaces</b><i> ARG,...</i>
+<dd> 
+Maximum number of interfaces to be used by TCP/UDP paths <br>
+ 
+Configuration file variable: <b>Interfaces</b>
+</dd>
+<dt><b>-s, -mpirun-hostname</b><i> ARG,...</i>
+<dd> 
+A comma-delimited list of preferred IP interface name 
+fragments (whole, suffix, or prefix) or addresses for TCP/IP 
+administrative and UDP/IP data traffic. <br>
+ 
+Configuration file variable: <b>MpirunHostname</b>
+</dd>
+<dt><b>-nolsf</b>
+<dd> 
+No LSF control will be used in job <br>
+ 
+Configuration file variable: <b>NoLSF</b>
+</dd>
+<dt><b>-cpulist</b><i> ARG,...</i>
+<dd> 
+Which CPUs to use (when available)<br>
+ 
+Configuration file variable: <b>CpuList</b>
+</dd>
+<dt><b>-d, -working-dir</b><i> ARG,...</i>
+<dd> 
+Current directory <br>
+ 
+Configuration file variable: <b>WorkingDir</b>
+</dd>
+<dt><b>-rusage</b>
+<dd> 
+Print resource usage (when available) <br>
+ 
+Configuration file variable: <b>PrintRusage</b>
+</dd>
+<dt><b>-dapp</b><i> ARG,...</i>
+<dd> 
+Absolute path to binary <br>
+ 
+Configuration file variable: <b>DirectoryOfBinary</b>
+</dd>
+<dt><b>-e, -exe</b><i> ARG,...</i>
+<dd> 
+Binary name <br>
+ 
+Configuration file variable: <b>Executable</b>
+</dd>
+<dt><b>-dev</b><i> ARG,...</i>
+<dd> 
+Type of network. A colon-delimited list of one or more network 
+paths to use for this MPI job. Currently the choices are some 
+combination of <i>tcp</i>
+(TCP/IP), <i>udp</i>
+(UDP/IP), <i>gm</i>
+(Myrinet/GM), <i>quadrics</i>
+(QsNet/Elan3) and <i>ib</i>
+(InfiniBand), depending on your installation. <br>
+ 
+Configuration file variable: <b>NetworkDevices</b>
+</dd>
+<dt><b>-debug-daemon</b>
+<dd> 
+Wait in LA-MPI daemon for debugger to attach (when applicable) <br>
+ 
+Configuration file variable: <b>DebugDaemon</b>
+</dd>
+<dt><b>-env</b><i> ARG,...</i>
+<dd> 
+List environment variables and settings <br>
+ 
+Configuration file variable: <b>EnvVars</b>
+</dd>
+<dt><b>-retry</b><i> ARG,...</i>
+<dd> 
+Number of times to retry for resources <br>
+ 
+Configuration file variable: <b>MaxRetryWhenNoResource</b>
+</dd>
+<dt><b>-local</b>
+<dd> 
+Run on the local host using fork/exec to spawn the processes <br>
+ 
+Configuration file variable: <b>Local</b>
+</dd>
+<dt><b>-ssh</b>
+<dd> 
+use SSH instead of RSH to create remote processes <br>
+ 
+Configuration file variable: <b>UseSSH</b>
+</dd>
+<dt><b>-threads</b>
+<dd> 
+Threads used in job <br>
+ 
+Configuration file variable: <b>NoThreads</b>
+</dd>
+<dt><b>-timeout</b><i> ARG,...</i>
+<dd> 
+Time in seconds to wait for client applications to connect back <br>
+ 
+Configuration file variable: <b>ConnectTimeout</b>
+</dd>
+<dt><b>-heartbeat-period</b><i> ARG,...</i>
+<dd> 
+Period in seconds of heartbeats between mpirun and daemon processes <br>
+ 
+Configuration file variable: <b>HeartbeatPeriod</b>
+</dd>
+<dt><b>-crc</b>
+<dd> 
+Use CRCs instead of checksums <br>
+ 
+Configuration file variable: <b>UseCRC</b>
+</dd>
+<dt><b>-list-options</b>
+<dd> 
+Print detailed list of all options and exit <br>
+ 
+Configuration file variable: <b>ListOptions</b>
+</dd>
+</dl>
 <p>
-<h2><a name="section_5">Examples</a></h2>
+<h2><a name="section_6">Examples</a></h2>
 
 <ol compact>
 <dt>1. <tt>mpirun prog args</tt>
@@ -171,7 +365,7 @@ available).
 </li>
 </ol>
 <p>
-<h2><a name="section_6">Files</a></h2>
+<h2><a name="section_7">Files</a></h2>
 
 <dl compact>
 <dt><tt>mpirun</tt>
@@ -216,7 +410,7 @@ obtained from <tt>mpirun -help</tt>.
 </dd>
 </dl>
 <p>
-<h2><a name="section_7">Diagnostics</a></h2>
+<h2><a name="section_8">Diagnostics</a></h2>
 
 <p>
 On error, LA-MPI attempts to provide detailed diagnostic messages 
@@ -237,28 +431,28 @@ make sure that your shell startup environment (e.g., .cshrc, .bashrc
 etc.) correctly set the PATH and LD_LIBRARY_PATH environment 
 variables. 
 <p>
-<h2><a name="section_8">Future development</a></h2>
+<h2><a name="section_9">Future development</a></h2>
 
 The LA-MPI project has now merged with Open MPI 
-(<a href ="mailto:http://www.open-mpi.org"><tt>http://www.open-mpi.org</tt></a>).
+(<a href ="http://www.open-mpi.org"><tt>http://www.open-mpi.org</tt></a>).
 The first release of Open MPI is 
 scheduled for mid 2005. 
 <p>
 LA-MPI will continue to be maintained until Open MPI has sufficiently 
 matured for production use on terascale platforms. 
 <p>
-<h2><a name="section_9">Version</a></h2>
+<h2><a name="section_10">Version</a></h2>
 
-Version: 1.5.13 of 12 August 2005.
+Version: 1.5.13 of 24 August 2005.
 <p>
-<h2><a name="section_10">Bugs</a></h2>
+<h2><a name="section_11">Bugs</a></h2>
 
 Please report bugs to <a href ="mailto:lampi-support@lanl.gov"><tt>lampi-support@lanl.gov</tt></a>.
 <p>
-<h2><a name="section_11">License</a></h2>
+<h2><a name="section_12">License</a></h2>
 
 <p>
-Copyright 2002-2004. The Regents of the University of 
+Copyright 2002-2005. The Regents of the University of 
 California. This material was produced under U.S. Government contract 
 W-7405-ENG-36 for Los Alamos National Laboratory, which is operated by 
 the University of California for the U.S. Department of Energy. The 
@@ -290,7 +484,7 @@ License for more details.
 LA-MPI has been approved for release with associated LA-CC Number 
 LA-CC-02-41. 
 <p>
-<h2><a name="section_12">Authors</a></h2>
+<h2><a name="section_13">Authors</a></h2>
 
 Rob T. Aulwes, <br>
  

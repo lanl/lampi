@@ -1,5 +1,5 @@
 '\" t
-.\" Manual page created with latex2man on Fri Aug 12 14:48:53 MDT 2005
+.\" Manual page created with latex2man on Wed Aug 24 14:50:38 MDT 2005
 .\" NOTE: This file is generated, DO NOT EDIT.
 .de Vb
 .ft CW
@@ -10,7 +10,7 @@
 
 .fi
 ..
-.TH "MPIRUN" "1" "12 August 2005" "LA\-MPI \-\- Los Alamos MPI " "LA\-MPI \-\- Los Alamos MPI "
+.TH "LA\-MPI" "1" "24 August 2005" "LA\-MPI \-\- Los Alamos MPI " "LA\-MPI \-\- Los Alamos MPI "
 .SH NAME
 
 .PP
@@ -23,8 +23,8 @@ mpirun
 mpirun
 [\fB\-n\fP|\fB\-np\fP
 \fI#,...\fP]
-[\fB\-N\fP\fI #\fP]
-[\fB\-H\fP\fI hostlist\fP]
+\fB\-N\fP\fI #\fP
+\fB\-H\fP\fI hostlist\fP
 [...] \fIprog\fP
 [\fIargs ...\fP]
 .PP
@@ -43,8 +43,23 @@ LA\-MPI implementation of MPI.
 LA\-MPI is a network\-fault\-tolerant message\-passing system designed for 
 the challenges of the terascale cluster environment. 
 .PP
-.SH OPTIONS
+Command\-line options may start with one or more dashes. Options 
+may also be specied in a configuration file ($HOME/.lampi.conf)
+using the associated variable (see "Advanced options" below). 
+.PP
+.SH ARGUMENTS
 
+\fIprog\fP
+must be either a single executable or a 
+comma\-delimited list of executables for each host or machine (which is 
+not supported for all environments). Executable arguments apply to all 
+specified executables. 
+.PP
+.SH COMMON OPTIONS
+
+.TP
+\fB\-h, \-help\fP
+ Print help and exit. 
 .TP
 \fB\-n\fP|\fB\-np\fP \fI number of processes\fP
  A single value 
@@ -59,24 +74,22 @@ machine.
  A comma\-delimited list of name(s) of 
 hosts to use. 
 .TP
-\fB\-threads\fP
- Turn on thread safe code. 
-.TP
-\fB\-t\fP
+\fB\-t,\-p\fP
  Turn on tagging of standard output and error lines 
 with either GR[HR.LR.HN] (GR = global rank, HR = host rank, LR = 
 local rank, HN = host name), or simply HR (on RMS/prun systems). 
 .TP
-\fB\-dev\fP\fI netpaths\fP
- A colon\-delimited list of one or more 
-network paths to use for this MPI job. Currently the choices are 
-some combination of \fItcp\fP
-(TCP/IP), \fIudp\fP
-(UDP/IP), \fIgm\fP
-(Myrinet/GM), \fIquadrics\fP
-(QsNet/Elan3) and \fIib\fP
-(InfiniBand), 
-depending on your installation. 
+\fB\-v\fP
+ Turn on verbose debugging information. 
+.TP
+\fB\-V, \-version\fP
+ Print version and exit. 
+.TP
+\fB\-local\fP
+ Run on the local host using fork/exec to spawn the processes. 
+.TP
+\fB\-threads\fP
+ Turn on thread safe code. 
 .TP
 \fB\-crc\fP
  Use 32\-bit CRCs instead of 32\-bit additive checksums 
@@ -95,16 +108,162 @@ data integrity guarantees are provided only at the network adapter
 level. The defaults are "ack", and "checksum" for a LA\-MPI library 
 built with reliability mode enabled. 
 .PP
-For a complete list of options available with your installation, type 
-mpirun \-help\&.
-.PP
-.SH ARGUMENTS
+.SH OTHER OPTIONS
 
-The \fIexecutable\fP
-must be either a single executable or a 
-comma\-delimited list of executables for each host or machine (which is 
-not supported for all environments). Executable arguments apply to all 
-specified executables. 
+.TP
+\fB\-N,\-nhosts\fP\fI ARG,...\fP
+ Number of hosts (machines) 
+.br 
+Configuration file variable: \fBHostCount\fP
+.TP
+\fB\-H, \-hostlist\fP\fI ARG,...\fP
+ List of hosts (machines) 
+.br 
+Configuration file variable: \fBHostList\fP
+.TP
+\fB\-machinefile\fP\fI ARG,...\fP
+ File containing list of hosts (machines) 
+.br 
+Configuration file variable: \fBMachineFile\fP
+.TP
+\fB\-n, \-np, \-nprocs\fP\fI ARG,...\fP
+ Number of processes total or on each host (machine) 
+.br 
+Configuration file variable: \fBProcs\fP
+.TP
+\fB\-f, \-no\-arg\-check\fP
+ No checking of MPI arguments 
+.br 
+Configuration file variable: \fBNoArgCheck\fP
+.TP
+\fB\-t, \-p, \-output\-prefix\fP
+ Prefix standard output and error with helpful information 
+.br 
+Configuration file variable: \fBOutputPrefix\fP
+.TP
+\fB\-q, \-quiet\fP
+ Suppress start\-up messages 
+.br 
+Configuration file variable: \fBQuiet\fP
+.TP
+\fB\-v, \-verbose\fP
+ Extremely verbose progress information 
+.br 
+Configuration file variable: \fBVerbose\fP
+.TP
+\fB\-w, \-warn\fP
+ Enable warning messages 
+.br 
+Configuration file variable: \fBWarn\fP
+.TP
+\fB\-i, \-interface\fP\fI ARG,...\fP
+ List of interface names to be used by TCP/UDP paths 
+.br 
+Configuration file variable: \fBInterfaceList\fP
+.TP
+\fB\-ni, \-interfaces\fP\fI ARG,...\fP
+ Maximum number of interfaces to be used by TCP/UDP paths 
+.br 
+Configuration file variable: \fBInterfaces\fP
+.TP
+\fB\-s, \-mpirun\-hostname\fP\fI ARG,...\fP
+ A comma\-delimited list of preferred IP interface name 
+fragments (whole, suffix, or prefix) or addresses for TCP/IP 
+administrative and UDP/IP data traffic. 
+.br 
+Configuration file variable: \fBMpirunHostname\fP
+.TP
+\fB\-nolsf\fP
+ No LSF control will be used in job 
+.br 
+Configuration file variable: \fBNoLSF\fP
+.TP
+\fB\-cpulist\fP\fI ARG,...\fP
+ Which CPUs to use (when available)
+.br 
+Configuration file variable: \fBCpuList\fP
+.TP
+\fB\-d, \-working\-dir\fP\fI ARG,...\fP
+ Current directory 
+.br 
+Configuration file variable: \fBWorkingDir\fP
+.TP
+\fB\-rusage\fP
+ Print resource usage (when available) 
+.br 
+Configuration file variable: \fBPrintRusage\fP
+.TP
+\fB\-dapp\fP\fI ARG,...\fP
+ Absolute path to binary 
+.br 
+Configuration file variable: \fBDirectoryOfBinary\fP
+.TP
+\fB\-e, \-exe\fP\fI ARG,...\fP
+ Binary name 
+.br 
+Configuration file variable: \fBExecutable\fP
+.TP
+\fB\-dev\fP\fI ARG,...\fP
+ Type of network. A colon\-delimited list of one or more network 
+paths to use for this MPI job. Currently the choices are some 
+combination of \fItcp\fP
+(TCP/IP), \fIudp\fP
+(UDP/IP), \fIgm\fP
+(Myrinet/GM), \fIquadrics\fP
+(QsNet/Elan3) and \fIib\fP
+(InfiniBand), depending on your installation. 
+.br 
+Configuration file variable: \fBNetworkDevices\fP
+.TP
+\fB\-debug\-daemon\fP
+ Wait in LA\-MPI daemon for debugger to attach (when applicable) 
+.br 
+Configuration file variable: \fBDebugDaemon\fP
+.TP
+\fB\-env\fP\fI ARG,...\fP
+ List environment variables and settings 
+.br 
+Configuration file variable: \fBEnvVars\fP
+.TP
+\fB\-retry\fP\fI ARG,...\fP
+ Number of times to retry for resources 
+.br 
+Configuration file variable: \fBMaxRetryWhenNoResource\fP
+.TP
+\fB\-local\fP
+ Run on the local host using fork/exec to spawn the processes 
+.br 
+Configuration file variable: \fBLocal\fP
+.TP
+\fB\-ssh\fP
+ use SSH instead of RSH to create remote processes 
+.br 
+Configuration file variable: \fBUseSSH\fP
+.TP
+\fB\-threads\fP
+ Threads used in job 
+.br 
+Configuration file variable: \fBNoThreads\fP
+.TP
+\fB\-timeout\fP\fI ARG,...\fP
+ Time in seconds to wait for client applications to connect back 
+.br 
+Configuration file variable: \fBConnectTimeout\fP
+.TP
+\fB\-heartbeat\-period\fP\fI ARG,...\fP
+ Period in seconds of heartbeats between mpirun and daemon processes 
+.br 
+Configuration file variable: \fBHeartbeatPeriod\fP
+.TP
+\fB\-crc\fP
+ Use CRCs instead of checksums 
+.br 
+Configuration file variable: \fBUseCRC\fP
+.TP
+\fB\-list\-options\fP
+ Print detailed list of all options and exit 
+.br 
+Configuration file variable: \fBListOptions\fP
 .PP
 .SH EXAMPLES
 
@@ -228,7 +387,7 @@ matured for production use on terascale platforms.
 .PP
 .SH VERSION
 
-Version: 1.5.13 of 12 August 2005\&.
+Version: 1.5.13 of 24 August 2005\&.
 .PP
 .SH BUGS
 
@@ -237,7 +396,7 @@ Please report bugs to \fBlampi\-support@lanl.gov\fP\&.
 .SH LICENSE
 
 .PP
-Copyright 2002\-2004. The Regents of the University of 
+Copyright 2002\-2005. The Regents of the University of 
 California. This material was produced under U.S. Government contract 
 W\-7405\-ENG\-36 for Los Alamos National Laboratory, which is operated by 
 the University of California for the U.S. Department of Energy. The 
