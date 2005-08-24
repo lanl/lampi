@@ -4,10 +4,10 @@ CPPFLAGS	+=
 LDFLAGS		+=
 LDLIBS		+=
 
-all: hello mpi-ping mpi-coll-bench
+all: mpi-hello mpi-ping mpi-coll-bench
 
 clean:
-	$(RM) hello mpi-coll-bench mpi-ping mpi-ping-thread *.o
+	$(RM) mpi-hello mpi-coll-bench mpi-ping mpi-ping-thread *.o lampi.log
 
 mpi-ping-thread: mpi-ping-thread.c
 	$(CC) -pthread $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS) -lpthread
