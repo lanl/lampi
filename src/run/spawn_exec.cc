@@ -79,13 +79,13 @@ int SpawnExec(unsigned int *auth_data,
      */
 
     if (RunParams.NHosts != 1) {
-        perror("SpawnExec only valid for 1 host");
-        return -1;
+        ulm_err(("Error: SpawnExec only valid for 1 host\n"));
+        return EXIT_FAILURE;
     }
     *hosts_started = (int *) ulm_malloc(sizeof(int));
     if (*hosts_started == NULL) {
-        perror("malloc");
-        return -1;
+        ulm_err(("Error: malloc: %s\n", strerror(errno)));
+        return EXIT_FAILURE;
     }
 	
     snprintf(buf, sizeof(buf), "LAMPI_ADMIN_AUTH0=%u", auth_data[0]);
@@ -113,9 +113,10 @@ int SpawnExec(unsigned int *auth_data,
         fprintf(stderr, "\n");
         fflush(stderr);
     }
+
     rc = coprocess_open(argv, cp);
     if (rc < 0) {
-        perror("coprocess_open");
+        ulm_err(("Error: coprocess_open: %s\n", strerror(errno)));
         return EXIT_FAILURE;
     }
     *hosts_started[0] = 0;

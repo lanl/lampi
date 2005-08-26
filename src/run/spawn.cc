@@ -64,12 +64,6 @@
  * stdout and stderr files - in this case the controlling tty.
  */
 
-#define I_OWN(fs)   \
-    ( (getuid() == fs.st_uid) && (S_IXUSR & fs.st_mode) )
-
-#define GRP_OWN(fs) \
-( (getgid() == fs.st_gid) && (S_IXGRP & fs.st_mode) )
-
 int Spawn(unsigned int *AuthData, int ReceivingSocket,
           int **ListHostsStarted,
           int argc, char **argv)
@@ -86,22 +80,17 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
     }
 
     /*
-     * Check that executable is valid. Only safe to do this for bproc
-     * and RMS, where the executable is guaranteed to be on the front
-     * end.
+     * Check that executable is valid, but only exit on systems where
+     * where the executable is guaranteed to be on the front end.
      */
-    if (RunParams.UseRMS || RunParams.UseBproc) {
-        execName = RunParams.ExeList[0];
-        if (stat(execName, &fs) < 0) {
-            ulm_err(("%s: No such file or directory\n", execName));
+    if (access(RunParams.ExeList[0], X_OK) < 0) {
+        if (RunParams.UseRMS || RunParams.UseBproc || RunParams.Local) {
+            ulm_err(("Error: Can't execute \"%s\": %s\n",
+                     RunParams.ExeList[0], strerror(errno)));
             exit(EXIT_FAILURE);
-        }
-        isValid = (fs.st_mode & S_IFREG) &&
-            (I_OWN(fs) || GRP_OWN(fs) || (fs.st_mode & S_IXOTH));
-        if (0 == isValid) {
-            ulm_err(("%s: Permission denied: File not executable\n",
-                     execName));
-            exit(EXIT_FAILURE);
+        } else {
+            ulm_warn(("Warning: Can't execute \"%s\" on the local host: %s\n",
+                      RunParams.ExeList[0], strerror(errno)));
         }
     }
 
