@@ -106,6 +106,14 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
                          argc, argv);
     }
 
+    /*
+     * Override with ssh start-up if the user wants it...
+     */
+    if (RunParams.UseSSH) {
+        return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted,
+                        argc, argv);
+    }
+
     if (ENABLE_RMS) {
         return SpawnRms(AuthData, ReceivingSocket,
                         argc, argv);
