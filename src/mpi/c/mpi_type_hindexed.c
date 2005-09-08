@@ -43,14 +43,23 @@
 #pragma weak MPI_Type_hindexed = PMPI_Type_hindexed
 #endif
 
-static int create_from_basic_type(int count, 
-                                  int *blocklength_array,
-                                  MPI_Aint *disp_array,
-                                  MPI_Datatype mtype_old,
-                                  MPI_Datatype *mtype_new);
+
+#define ENABLE_CREATE_FROM_BASIC_TYPE 1
+#define DO_TYPE_DUMP 0
+#define SWAP(a,b)           \
+    do {                    \
+        ssize_t c = (a);    \
+        (a) = (b);          \
+        (b) = c;            \
+    } while (0)
+
+static int create_from_basic_type(int, int *, MPI_Aint *,
+                                  MPI_Datatype, MPI_Datatype *);
+static void type_dump(ULMType_t *type);
 
 
-int PMPI_Type_create_hindexed(int count, 
+
+int PMPI_Type_create_hindexed(int count,
                               int *blocklength_array,
                               MPI_Aint *disp_array,
                               MPI_Datatype mtype_old,
@@ -109,17 +118,17 @@ int PMPI_Type_create_hindexed(int count,
         return MPI_SUCCESS;
     }
 
-#if 0
     /* Optimized special case if mtype_old is a basic type */
 
-    if (((ULMType_t *) mtype_old)->isbasic) {
-        return create_from_basic_type(count,
-                                      blocklength_array,
-                                      disp_array,
-                                      mytpe_old,
-                                      mtype_new);
-    }
-#endif
+    if (ENABLE_CREATE_FROM_BASIC_TYPE) {
+        if (((ULMType_t *) mtype_old)->isbasic) {
+            return create_from_basic_type(count,
+                                          blocklength_array,
+                                          disp_array,
+                                          mtype_old,
+                                          mtype_new);
+        }
+    }    
 
     /* create type array containing count copies of mtype_old */
     type_array = (MPI_Datatype *) ulm_malloc(count * sizeof(MPI_Datatype));
@@ -172,20 +181,25 @@ int PMPI_Type_create_hindexed(int count,
         newtype->envelope.aarray[i] = disp_array[i];
     }
     newtype->envelope.darray[0] = mtype_old;
+
     t = mtype_old;
     fetchNadd(&(t->ref_count), 1);
+
+    if (DO_TYPE_DUMP) {
+        type_dump(newtype);
+    }
 
     return rc;
 }
 
 
-int PMPI_Type_hindexed(int count, 
+int PMPI_Type_hindexed(int count,
                        int *blocklength_array,
                        MPI_Aint *disp_array,
                        MPI_Datatype mtype_old,
                        MPI_Datatype *mtype_new)
 {
-    return PMPI_Type_create_hindexed(count, 
+    return PMPI_Type_create_hindexed(count,
                                      blocklength_array,
                                      disp_array,
                                      mtype_old,
@@ -196,47 +210,67 @@ int PMPI_Type_hindexed(int count,
 /*
  * Special case if mtype_old is basic
  */
-static int create_from_basic_type(int count, 
+static int create_from_basic_type(int count,
                                   int *blocklength_array,
                                   MPI_Aint *disp_array,
                                   MPI_Datatype mtype_old,
                                   MPI_Datatype *mtype_new)
 {
-    int i, rc;
-    ULMType_t *oldtype = (ULMType_t *) mtype_old;
-    ULMType_t *newtype;
+    int i;
     size_t size;
+    ssize_t lb, ub;
+    ULMType_t *newtype;
+    ULMType_t *oldtype = (ULMType_t *) mtype_old;
+
+    /* create new type */
 
     newtype = (ULMType_t *) ulm_malloc(sizeof(ULMType_t));
-    newtype->type_map = (ULMType_t *) ulm_malloc(count * sizeof(ULMTypeMapElt_t));
-    newtype->lower_bound = disp_array[0];
+    newtype->type_map = (ULMTypeMapElt_t *) ulm_malloc(count * sizeof(ULMTypeMapElt_t));
 
-    size = 0;
-    for (i = i; i < count; i++) {
-        if (disp_array[i] < newtype->lower_bound) {
-            newtype->lower_bound = disp_array[i];
+    lb = disp_array[0];
+    ub = disp_array[0] + blocklength_array[i] * oldtype->extent;
+    if (ub < lb) {
+        SWAP(lb, ub);
+    }
+
+    for (i = 0; i < count; i++) {
+        ssize_t l = disp_array[i];
+        ssize_t u = disp_array[i] + blocklength_array[i] * oldtype->extent;
+
+        if (u < l) {
+            SWAP(l, u);
+        }
+        if (ub < u) {
+            ub = u;
+        }
+        if (lb > l) {
+            lb = l;
         }
         newtype->type_map[i].size = (size_t) (blocklength_array[i] * oldtype->extent);
         newtype->type_map[i].offset = (ssize_t) disp_array[i];
         newtype->type_map[i].seq_offset = size + newtype->type_map[i].size;
         size += newtype->type_map[i].size;
     }
-    newtype->extent = 0;
+    newtype->lower_bound = lb;
+    newtype->extent = ub - lb;
     newtype->packed_size = 0;
-    newtype->num_pairs = 0;
+    newtype->num_pairs = count;
     newtype->layout = NON_CONTIGUOUS;
     newtype->isbasic = 0;
     newtype->num_primitives = 0;
     newtype->second_primitive_offset = 0;
     newtype->op_index = 0;
-    newtype->fhandle = -1
+    newtype->fhandle = -1;
     newtype->ref_count = 1;
     newtype->committed = 0;
+    if (_mpi.fortran_layer_enabled) {
+        newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
+    }
 
-
+    *mtype_new = (MPI_Datatype) newtype;
 
     /* save "envelope" information */
-    newtype = *mtype_new;
+
     newtype->envelope.combiner = MPI_COMBINER_HINDEXED;
     newtype->envelope.nints = count + 1;
     newtype->envelope.naddrs = count;
@@ -253,15 +287,55 @@ static int create_from_basic_type(int count,
     newtype->envelope.darray[0] = mtype_old;
 
     /* mtype_old is basic so no need to increment its ref count */
-    if (0) {
-        fetchNadd(&(oldtype->ref_count), 1);
-    }
 
-    if (_mpi.fortran_layer_enabled) {
-        newtype->fhandle = _mpi_ptr_table_add(_mpif.type_table, newtype);
+    if (DO_TYPE_DUMP) {
+        type_dump(newtype);
     }
-
-    *mtype_old = (MPI_Datatype) newtype;
 
     return ULM_SUCCESS;
+}
+
+
+/*
+ * type_dump - Dump out a datatype to stderr (for debugging)
+ *
+ * \param type          pointer to datatype
+ */
+static void type_dump(ULMType_t *type)
+{
+    int i;
+
+    fprintf(stderr,
+            "type_dump: type at %p:\n"
+            "\tlower_bound = %ld\n"
+            "\textent = %ld\n"
+            "\tpacked_size = %ld\n"
+            "\tnum_pairs = %d\n"
+            "\tlayout = %d\n"
+            "\tisbasic = %d\n"
+            "\tnum_primitives = %d\n"
+            "\tsecond_primitive_offset = %d\n"
+            "\top_index = %d\n"
+            "\tfhandle = %d\n"
+            "\ttype_map =",
+            type,
+            (long) type->lower_bound,
+            (long) type->extent,
+            (long) type->packed_size,
+            type->num_pairs,
+            type->layout,
+            type->isbasic,
+            type->num_primitives,
+            type->second_primitive_offset,
+            type->op_index,
+            type->fhandle);
+    for (i = 0; i < type->num_pairs; i++) {
+        fprintf(stderr,
+                " (%ld, %ld, %ld)",
+                (long) type->type_map[i].size,
+                (long) type->type_map[i].offset,
+                (long) type->type_map[i].seq_offset);
+    }
+    fprintf(stderr, "\n");
+    fflush(stderr);
 }
