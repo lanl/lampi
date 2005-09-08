@@ -102,36 +102,48 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
         lampi_environ_find_integer("LAMPI_LOCAL", &(RunParams.Local));
     }
     if ((RunParams.NHosts == 1) && RunParams.Local) {
-        return SpawnExec(AuthData, ReceivingSocket, ListHostsStarted,
-                         argc, argv);
+        if (RunParams.Verbose) {
+            ulm_err(("*** Spawning application using fork/exec\n"));
+        }
+        return SpawnExec(AuthData, ReceivingSocket, ListHostsStarted, argc, argv);
     }
 
     /*
      * Override with ssh start-up if the user wants it...
      */
     if (RunParams.UseSSH) {
-        return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted,
-                        argc, argv);
+        if (RunParams.Verbose) {
+            ulm_err(("*** Spawning application using ssh\n"));
+        }
+        return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted, argc, argv);
     }
 
     if (ENABLE_RMS) {
-        return SpawnRms(AuthData, ReceivingSocket,
-                        argc, argv);
+        if (RunParams.Verbose) {
+            ulm_err(("*** Spawning application using RMS\n"));
+        }
+        return SpawnRms(AuthData, ReceivingSocket, argc, argv);
     }
 
     if (ENABLE_BPROC) {
-        return SpawnBproc(AuthData, ReceivingSocket, ListHostsStarted,
-                          argc, argv);
+        if (RunParams.Verbose) {
+            ulm_err(("*** Spawning application using BProc\n"));
+        }
+        return SpawnBproc(AuthData, ReceivingSocket, ListHostsStarted, argc, argv);
     }
 
     if (RunParams.UseLSF) {
-        return SpawnLsf(AuthData, ReceivingSocket,  ListHostsStarted,
-                        argc, argv);
+        if (RunParams.Verbose) {
+            ulm_err(("*** Spawning application using LSF\n"));
+        }
+        return SpawnLsf(AuthData, ReceivingSocket,  ListHostsStarted, argc, argv);
     }
 
     /*
      * Default: use rsh to spawn
      */
-    return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted,
-                    argc, argv);
+    if (RunParams.Verbose) {
+        ulm_err(("*** Spawning application using default method (rsh/ssh)\n"));
+    }
+    return SpawnRsh(AuthData, ReceivingSocket, ListHostsStarted, argc, argv);
 }
