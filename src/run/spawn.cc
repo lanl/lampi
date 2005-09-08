@@ -68,10 +68,6 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
           int **ListHostsStarted,
           int argc, char **argv)
 {
-    int isValid;
-    char *execName = NULL;
-    struct stat fs;
-
     /*
      * Fix for VAPI shared libraries
      */

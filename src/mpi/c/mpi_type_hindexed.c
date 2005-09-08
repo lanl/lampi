@@ -217,7 +217,6 @@ static int create_from_basic_type(int count,
                                   MPI_Datatype *mtype_new)
 {
     int i;
-    size_t size;
     ssize_t lb, ub;
     ULMType_t *newtype;
     ULMType_t *oldtype = (ULMType_t *) mtype_old;
@@ -228,7 +227,7 @@ static int create_from_basic_type(int count,
     newtype->type_map = (ULMTypeMapElt_t *) ulm_malloc(count * sizeof(ULMTypeMapElt_t));
 
     lb = disp_array[0];
-    ub = disp_array[0] + blocklength_array[i] * oldtype->extent;
+    ub = disp_array[0] + blocklength_array[0] * oldtype->extent;
     if (ub < lb) {
         SWAP(lb, ub);
     }
