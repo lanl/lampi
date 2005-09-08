@@ -217,7 +217,9 @@ static int create_from_basic_type(int count,
                                   MPI_Datatype *mtype_new)
 {
     int i;
-    ssize_t lb, ub;
+    size_t size;
+    ssize_t lb;
+    ssize_t ub;
     ULMType_t *newtype;
     ULMType_t *oldtype = (ULMType_t *) mtype_old;
 
@@ -232,6 +234,7 @@ static int create_from_basic_type(int count,
         SWAP(lb, ub);
     }
 
+    size = 0;
     for (i = 0; i < count; i++) {
         ssize_t l = disp_array[i];
         ssize_t u = disp_array[i] + blocklength_array[i] * oldtype->extent;
