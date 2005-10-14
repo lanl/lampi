@@ -40,14 +40,16 @@
 #endif
 
 int PMPI_Gatherv(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
-		 void *recvbuf, int *recvcount, int *displs,
+		 void *recvbuf, int *recvcounts, int *displs,
 		 MPI_Datatype recvdatatype, int root, MPI_Comm comm)
 {
+    int i;
+    int size;
     int rc;
     ULMType_t *sendtype;
     ULMType_t *recvtype;
-    ulm_gatherv_t   *gatherv;
-    
+    ulm_gatherv_t *gatherv;
+
     if (_mpi.check_args) {
         rc = MPI_SUCCESS;
         if (_mpi.finalized) {
@@ -60,13 +62,24 @@ int PMPI_Gatherv(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
             rc = MPI_ERR_COMM;
         } else if (ulm_invalid_source(comm, root)) {
             rc = MPI_ERR_RANK;
+        } else if ((sendbuf == NULL) && (sendcount > 0)) {
+            rc = MPI_ERR_BUFFER;
         } else if (ulm_am_i(comm, root)) {
             if (recvdatatype == MPI_DATATYPE_NULL) {
                 rc = MPI_ERR_TYPE;
-            } else if (recvcount == NULL) {
+            } else if (recvcounts == NULL) {
                 rc = MPI_ERR_COUNT;
             } else if (displs == NULL) {
                 rc = MPI_ERR_DISP;
+            } else if (recvbuf == NULL) {
+                rc = PMPI_Comm_size(comm, &size);
+                if (MPI_SUCCESS == rc) {
+                    for (i = 0; i < size; i++) {
+                        if (recvcounts[i] != 0) {
+                            rc = MPI_ERR_BUFFER;
+                        }
+                    }
+                }
             }
         }
         if (rc != MPI_SUCCESS) {
@@ -77,18 +90,17 @@ int PMPI_Gatherv(void *sendbuf, int sendcount, MPI_Datatype senddatatype,
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
 
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_GATHERV, (void **)&gatherv);
-    if ( ULM_SUCCESS == rc )
-    {
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_GATHERV,
+                                 (void **) &gatherv);
+    if (ULM_SUCCESS == rc) {
         rc = gatherv(sendbuf, sendcount, sendtype,
-                                 recvbuf, recvcount, displs, recvtype,
-                                 root, comm);
+                     recvbuf, recvcounts, displs, recvtype, root, comm);
     }
     rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
-ERRHANDLER:
+  ERRHANDLER:
     if (rc != MPI_SUCCESS) {
-	_mpi_errhandler(comm, rc, __FILE__, __LINE__);
+        _mpi_errhandler(comm, rc, __FILE__, __LINE__);
     }
 
     return rc;

@@ -44,25 +44,23 @@ int PMPI_Alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
 		   void *recvbuf, int *recvcounts, int *recvdispls,
 		   MPI_Datatype recvdatatype, MPI_Comm comm)
 {
+    int i;
     int rc;
+    int size;
     ULMType_t *sendtype;
     ULMType_t *recvtype;
-    ulm_alltoallv_t     *alltoallv;
-    
+    ulm_alltoallv_t *alltoallv;
+
     if (_mpi.check_args) {
         rc = MPI_SUCCESS;
         if (_mpi.finalized) {
             rc = MPI_ERR_INTERN;
-        } else if (sendbuf == NULL) {
-            rc = MPI_ERR_BUFFER;
         } else if (senddatatype == MPI_DATATYPE_NULL) {
             rc = MPI_ERR_TYPE;
         } else if (sendcounts == NULL) {
             rc = MPI_ERR_COUNT;
         } else if (senddispls == NULL) {
             rc = MPI_ERR_DISP;
-        } else if (recvbuf == NULL) {
-            rc = MPI_ERR_BUFFER;
         } else if (recvdatatype == MPI_DATATYPE_NULL) {
             rc = MPI_ERR_TYPE;
         } else if (recvcounts == NULL) {
@@ -71,6 +69,24 @@ int PMPI_Alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
             rc = MPI_ERR_DISP;
         } else if (ulm_invalid_comm(comm)) {
             rc = MPI_ERR_COMM;
+        } else if (sendbuf == NULL) {
+            rc = PMPI_Comm_size(comm, &size);
+            if (MPI_SUCCESS == rc) {
+                for (i = 0; i < size; i++) {
+                    if (sendcounts[i] != 0) {
+                        rc = MPI_ERR_BUFFER;
+                    }
+                }
+            }
+        } else if (recvbuf == NULL) {
+            rc = PMPI_Comm_size(comm, &size);
+            if (MPI_SUCCESS == rc) {
+                for (i = 0; i < size; i++) {
+                    if (recvcounts[i] != 0) {
+                        rc = MPI_ERR_BUFFER;
+                    }
+                }
+            }
         }
         if (rc != MPI_SUCCESS) {
             goto ERRHANDLER;
@@ -79,18 +95,18 @@ int PMPI_Alltoallv(void *sendbuf, int *sendcounts, int *senddispls,
 
     sendtype = (ULMType_t *) senddatatype;
     recvtype = (ULMType_t *) recvdatatype;
-    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLV, (void **)&alltoallv);
-    if ( ULM_SUCCESS == rc )
-    {
+    rc = ulm_comm_get_collective(comm, ULM_COLLECTIVE_ALLTOALLV,
+                                 (void **) &alltoallv);
+    if (ULM_SUCCESS == rc) {
         rc = alltoallv(sendbuf, sendcounts, senddispls,
-                                   sendtype, recvbuf, recvcounts,
-                                   recvdispls, recvtype, comm);
+                       sendtype, recvbuf, recvcounts,
+                       recvdispls, recvtype, comm);
     }
     rc = (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
-ERRHANDLER:
+  ERRHANDLER:
     if (rc != MPI_SUCCESS) {
-	_mpi_errhandler(comm, rc, __FILE__, __LINE__);
+        _mpi_errhandler(comm, rc, __FILE__, __LINE__);
     }
 
     return rc;
