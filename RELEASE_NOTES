@@ -478,6 +478,17 @@ Version 1.5.12
 
 Version 1.5.13
 
-- CRC bug fix for Myrinet/GM
+- New version of ROMIO with updated Panasas support.
+
+- CRC bug fix for Myrinet/GM.
 
 - Reworked retransmission logic for Myrinet/GM and improved error messages.
+
+- Optimized MPI_Type_hindexed() for MPI_BYTE to improve data
+  aggregation in ROMIO.
+
+- Optional processor affinity via "setenv LAMPI_PROCESSOR_AFFINITY 1"
+  (experimental).
+
+- Reworked error status and signal handling to be consistent with RMS
+  prun.
