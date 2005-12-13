@@ -57,6 +57,10 @@
 #  define openpty(A,B,C,D,E) -1
 #endif
 
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
+
 #include "queue/Communicator.h"
 #include "queue/contextID.h"
 #include "queue/globals.h"
@@ -229,8 +233,6 @@ void lampi_init_check_for_error(lampiState_t *s)
           "Initialization failed setting up resource management after all forked" },
         { ERROR_LAMPI_INIT_AT_FORK,
           "Initialization failed at fork" },
-        { ERROR_LAMPI_INIT_CONNECT_TO_DAEMON,
-          "Initialization failed connecting to daemon" },
         { ERROR_LAMPI_INIT_CONNECT_TO_MPIRUN,
           "Initialization failed connecting to mpirun" },
         { ERROR_LAMPI_INIT_RECEIVE_SETUP_PARAMS,
@@ -587,6 +589,26 @@ void lampi_init_postfork_resources(lampiState_t *s)
     if (s->verbose) {
         lampi_init_print("lampi_init_postfork_resources");
     }
+
+#ifdef HAVE_SCHED_SETAFFINITY
+    /*
+     * Enable processor affinity (experimental)
+     */
+    int flag = 0;
+    lampi_environ_find_integer("LAMPI_PROCESSOR_AFFINITY", &flag);
+    if (flag) {
+        unsigned long mask;
+
+        if (lampiState.local_size < 8 * sizeof(mask)) {
+            mask = (1 << lampiState.local_rank);
+            if (sched_setaffinity(0, sizeof(mask), &mask) < 0) {
+                ulm_warn(("Warning: sched_setaffinity() failed: errno = %d\n",
+                          strerror(errno)));
+            }
+        }
+    }
+#endif
+
     //
     // Figure out which box we're on and the offset that converts a
     // global proc id to a local one.
@@ -970,43 +992,6 @@ void lampi_init_fork(lampiState_t *s)
         for (int i = 0; i < s->local_size; i++) {
             s->local_pids[i] = s->local_pids[i + 1];
         }
-    }
-}
-
-
-void lampi_init_prefork_connect_to_daemon(lampiState_t *s)
-{
-    enum { BUFSZ = 512 };
-    char stderr_fifoname[BUFSZ];
-    char stdout_fifoname[BUFSZ];
-
-    if (s->error) {
-        return;
-    }
-    if (s->verbose) {
-        lampi_init_print("lampi_init_prefork_connect_to_daemon");
-    }
-
-    /*
-     * Create fifos
-     */
-
-    snprintf(stderr_fifoname, sizeof(stderr_fifoname),
-             "/tmp/lampid.%d/stderr.%d", getpgrp(), getpid());
-    snprintf(stdout_fifoname, sizeof(stdout_fifoname),
-             "/tmp/lampid.%d/stderr.%d", getpgrp(), getpid());
-
-    if (mkfifo(stderr_fifoname, S_IRWXU) < 0) {
-        s->error = ERROR_LAMPI_INIT_CONNECT_TO_DAEMON;
-    }
-
-    if (mkfifo(stdout_fifoname, S_IRWXU) < 0) {
-        s->error = ERROR_LAMPI_INIT_CONNECT_TO_DAEMON;
-    }
-
-    if (s->error) {
-        unlink(stderr_fifoname);
-        unlink(stdout_fifoname);
     }
 }
 
