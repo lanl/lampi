@@ -100,7 +100,6 @@ void lampi_init_print(const char*);
 /*
  * prototypes for initialization phases
  */
-void lampi_init_prefork_connect_to_daemon(lampiState_t *);
 void lampi_init_prefork_connect_to_mpirun(lampiState_t *);
 void lampi_init_prefork_debugger(lampiState_t *);
 void lampi_init_prefork_environment(lampiState_t *);
