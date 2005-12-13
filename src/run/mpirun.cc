@@ -291,8 +291,7 @@ static bool exchangeUDPPorts(int *errorCode)
         }
     }
     if (udphosts != 0) {
-        rc = s->allgather((void *) NULL, (void *) NULL,
-                          UDPGlobals::NPortsPerProc * sizeof(unsigned short));
+        rc = s->allgather(0, 0, UDPGlobals::NPortsPerProc * sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeUDPPorts() - allgather failed with error %d\n", 
                      rc));
@@ -328,7 +327,7 @@ static bool exchangeTCPPorts(int *errorCode)
         }
     }
     if (tcphosts != 0) {
-        rc = s->allgather((void *) NULL, (void *) NULL, sizeof(unsigned short));
+        rc = s->allgather(0, 0, sizeof(unsigned short));
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeTCPPorts() - allgather failed with error %d\n",
                      rc));
@@ -367,7 +366,7 @@ static bool exchangeIBInfo(int *errorCode)
 
     if (ibhosts != 0) {
 
-        rc = s->allgather((void *) NULL, (void *) NULL, 2 * sizeof(int));
+        rc = s->allgather(0, 0, 2 * sizeof(int));
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeIBInfo() - allgather of max active info failed (%d)\n", rc));
             returnValue = false;
@@ -410,8 +409,7 @@ static bool exchangeIBInfo(int *errorCode)
             return returnValue;
         }
 
-        rc = s->allgather((void *) NULL, (void *) NULL,
-                          active[0] * active[1] * active[2]);
+        rc = s->allgather(0, 0, active[0] * active[1] * active[2]);
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeIBInfo() - allgather of all process' active HCA/port info failed (%d)\n", rc));
             returnValue = false;
@@ -451,7 +449,7 @@ static bool exchangeGMInfo(int *errorCode)
 
     if (gmhosts != 0) {
 
-        rc = s->allgather((void *) NULL, (void *) NULL, sizeof(int));
+        rc = s->allgather(0, 0, sizeof(int));
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeGMInfo() - first allgather failed (%d)\n", rc));
             returnValue = false;
@@ -492,8 +490,7 @@ static bool exchangeGMInfo(int *errorCode)
             return returnValue;
         }
 
-        rc = s->allgather((void *) NULL, (void *) NULL,
-                          maxDevs * sizeof(localBaseDevInfo_t));
+        rc = s->allgather(0, 0, maxDevs * sizeof(localBaseDevInfo_t));
         if (rc != ULM_SUCCESS) {
             ulm_err(("Error: exchangeGMInfo() - second allgather failed (%d)\n",
                      rc));
