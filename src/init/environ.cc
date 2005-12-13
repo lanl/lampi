@@ -113,6 +113,9 @@ static struct {
     /* BPROC info. */
     { "BPROC_RANK", -1 },
 	
+    /* Processor affinity (experimental) */
+    { "LAMPI_PROCESSOR_AFFINITY", 0 },
+    
     { NULL }
 };
 
