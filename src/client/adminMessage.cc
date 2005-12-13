@@ -432,140 +432,6 @@ bool adminMessage::serverInitialize(int *authData, int nprocs, int *port)
 }
 
 
-//#define USE_SIMPLE_ALLGATHER
-#ifdef USE_SIMPLE_ALLGATHER
-
-/*
- * A trivial, implementation of allgather
- */
-int adminMessage::allgather(void *sendbuf, void *recvbuf, ssize_t bytesPerProc)
-{
-    char *p;
-    int i;
-    int rc;
-    int tag;
-    ssize_t totalBytes;
-
-    /* first check we have enough memory */
-
-    totalBytes = bytesPerProc * totalNProcesses_m;
-    if (totalBytes > lenSharedMemoryBuffer_m) {
-        ulm_err(("Error: Out of shared memory\n"));
-        return ULM_ERROR;
-    }
-
-    /* if we are mpirun */
-
-    if (server_m) {
-
-        void *buf = ulm_malloc(totalBytes);
-        if (!buf) {
-            return ULM_ERROR;
-        }
-
-        /* collect data from daemons */
-
-        for (i = 0, p = (char *) buf;
-             i < nhosts_m;
-             i++, p += groupHostData_m[i].nGroupProcIDOnHost * bytesPerProc) {
-
-            reset(RECEIVE, totalBytes);
-            if (false == receive(i, &tag, &rc)) {
-                ulm_free(buf);
-                return rc;
-            }
-            if (tag != ALLGATHER) {
-                ulm_free(buf);
-                return ULM_ERROR;
-            }
-            if (false == unpack(p, BYTE,
-                                bytesPerProc *
-                                groupHostData_m[i].nGroupProcIDOnHost)) {
-                ulm_free(buf);
-                return ULM_ERROR;
-            }
-        }
-
-        /* broadcast the data to daemons */
-
-        if (false == reset(SEND, totalBytes)) {
-            ulm_free(buf);
-            return ULM_ERROR;
-        }
-        if (false == pack(buf, BYTE, totalBytes)) {
-            ulm_free(buf);
-            return ULM_ERROR;
-        }
-        if (false == broadcast(ALLGATHER, &rc)) {
-            ulm_free(buf);
-            return rc;
-        }
-
-        ulm_free(buf);
-    }
-
-    /* if we are a daemon or an application */
-
-    if (!server_m) {
-
-        /* collect the data locally into a shared memory buffer */
-
-        localBarrier(); 
-        if (localProcessRank_m != DAEMON_PROC) {
-            p = (char *) sharedBuffer_m + bytesPerProc * localProcessRank_m;
-            memcpy((void *) p, sendbuf, bytesPerProc);
-        }
-
-        /* allgather between from daemons to mpirun */
-
-        localBarrier();
-        if (localProcessRank_m == hostCommRoot_m) {
-
-            /* send the data to mpirun */
-
-            size_t size = groupHostData_m[localProcessRank_m].nGroupProcIDOnHost * bytesPerProc;
-
-            if (false == reset(SEND, size)) {
-                return ULM_ERROR;
-            }
-            tag = ALLGATHER;
-            if (false == pack(&tag, LONGLONG, 1)) {
-                return ULM_ERROR;
-            }
-            if (false == pack(sharedBuffer_m, BYTE, size)) {
-                return ULM_ERROR;
-            }
-            if (false == send(-1, ALLGATHER, &rc)) {
-                return rc;
-            }
-
-            /* receive data from mpirun */
-
-            reset(RECEIVE, totalBytes);
-            if (false == receive(-1, &tag, &rc)) {
-                return rc;
-            }
-            if (tag != ALLGATHER) {
-                return ULM_ERROR;
-            }
-            if (false == unpack(sharedBuffer_m, BYTE, totalBytes)) {
-                return ULM_ERROR;
-            }
-        }
-
-        /* copy data to processes */
-
-        localBarrier();
-        if (localProcessRank_m != DAEMON_PROC) {
-            memcpy(recvbuf, sharedBuffer_m, totalBytes);
-        }
-    } 
-    
-    return ULM_SUCCESS;
-}
-
-#else
-
 /*
  * this primitive implementation of allgather handles only contiguous
  * data.  In this implementation, each host aggregates it's data and
@@ -783,7 +649,7 @@ int adminMessage::allgather(void *sendbuf, void *recvbuf, ssize_t bytesPerProc)
     /* done with client code */
     goto ReturnCode;
 
-ServerCode:
+  ServerCode:
 
     aggregateData = (size_t *) ulm_malloc(bytesPerProc * totalNProcesses_m);
     dataArrivedFromHost = (int *) ulm_malloc(sizeof(int) * totalNProcesses_m);
@@ -884,12 +750,10 @@ ServerCode:
     ulm_free(aggregateData);
     ulm_free(dataArrivedFromHost);
 
-ReturnCode:
+  ReturnCode:
 
     return returnCode;
 }
-
-#endif
 
 
 /* this is a primtive implementation of a barrier - it can 
@@ -1387,7 +1251,7 @@ bool adminMessage::pack(void *data, packType type, int count, packFunction pf, p
 
     if (count <= 0)
         return returnValue;
-    
+
     if (!data) {
         ulm_err(("adminMessage::pack data is NULL pointer (count = %d)\n", count));
         returnValue = false;
@@ -1396,66 +1260,66 @@ bool adminMessage::pack(void *data, packType type, int count, packFunction pf, p
 
     switch (type) {
     case BYTE:
-    {
-        if ((int) (sendOffset_m + count * sizeof(unsigned char)) > sendBufferSize_m) {
-            ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned char)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(data, dst, sizeof(unsigned char) * count);
-            sendOffset_m += count * sizeof(unsigned char);
+        {
+            if ((int) (sendOffset_m + count * sizeof(unsigned char)) > sendBufferSize_m) {
+                ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned char)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(data, dst, sizeof(unsigned char) * count);
+                sendOffset_m += count * sizeof(unsigned char);
+            }
         }
-    }
-    break;
+        break;
     case SHORT:
-    {
-        if ((int) (sendOffset_m + count * sizeof(unsigned short)) > sendBufferSize_m) {
+        {
+            if ((int) (sendOffset_m + count * sizeof(unsigned short)) > sendBufferSize_m) {
                 ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned short)));
                 returnValue = false;
             } else {
                 MEMCOPY_FUNC(data, dst, sizeof(unsigned short) * count);
                 sendOffset_m += count * sizeof(unsigned short);
             }
-    }
-    break;
+        }
+        break;
     case INTEGER:
-    {
-        if ((int) (sendOffset_m + count * sizeof(unsigned int)) > sendBufferSize_m) {
-            ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned int)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(data, dst, sizeof(unsigned int) * count);
-            sendOffset_m += count * sizeof(unsigned int);
+        {
+            if ((int) (sendOffset_m + count * sizeof(unsigned int)) > sendBufferSize_m) {
+                ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned int)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(data, dst, sizeof(unsigned int) * count);
+                sendOffset_m += count * sizeof(unsigned int);
+            }
         }
-    }
-    break;
+        break;
     case LONGLONG:
-    {
-        if ((int) (sendOffset_m + count * sizeof(unsigned long long)) > sendBufferSize_m) {
-            ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned long long)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(data, dst, sizeof(unsigned long long) * count);
-            sendOffset_m += count * sizeof(unsigned long long);
+        {
+            if ((int) (sendOffset_m + count * sizeof(unsigned long long)) > sendBufferSize_m) {
+                ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + count * sizeof(unsigned long long)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(data, dst, sizeof(unsigned long long) * count);
+                sendOffset_m += count * sizeof(unsigned long long);
+            }
         }
-    }
-    break;
+        break;
     case USERDEFINED:
-    {
-        if (!psf || !pf) {
-            ulm_err(("adminMessage:pack pack size function (psf = %p) and pack function (pf = %p)\n", psf, pf));
-            returnValue = false;
-            return returnValue;
+        {
+            if (!psf || !pf) {
+                ulm_err(("adminMessage:pack pack size function (psf = %p) and pack function (pf = %p)\n", psf, pf));
+                returnValue = false;
+                return returnValue;
+            }
+            int neededBytes = (*psf) (count);
+            if ((sendOffset_m + neededBytes) > sendBufferSize_m) {
+                ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + neededBytes));
+                returnValue = false;
+            } else {
+                (*pf) (data, dst, count);
+                sendOffset_m += neededBytes;
+            }
         }
-        int neededBytes = (*psf) (count);
-        if ((sendOffset_m + neededBytes) > sendBufferSize_m) {
-            ulm_err(("adminMessage::pack too much data (type %d), need %d bytes in send buffer\n", type, sendOffset_m + neededBytes));
-            returnValue = false;
-        } else {
-            (*pf) (data, dst, count);
-            sendOffset_m += neededBytes;
-        }
-    }
-    break;
+        break;
     default:
         ulm_err(("adminMessage::pack unknown packType %d\n", type));
         returnValue = false;
@@ -1499,81 +1363,81 @@ bool adminMessage::unpackMessage(void *data, packType type, int count, int timeo
 
     switch (type) {
     case BYTE:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned char)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned char)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(src, data, sizeof(unsigned char) * count);
-            recvOffset_m += count * sizeof(unsigned char);
-            if (recvOffset_m == recvBufferBytes_m) {
-                recvOffset_m = recvBufferBytes_m = 0;
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned char)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned char)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(src, data, sizeof(unsigned char) * count);
+                recvOffset_m += count * sizeof(unsigned char);
+                if (recvOffset_m == recvBufferBytes_m) {
+                    recvOffset_m = recvBufferBytes_m = 0;
+                }
             }
         }
-    }
-    break;
+        break;
     case SHORT:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned short)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned short)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(src, data, sizeof(unsigned short) * count);
-            recvOffset_m += count * sizeof(unsigned short);
-            if (recvOffset_m == recvBufferBytes_m) {
-                recvOffset_m = recvBufferBytes_m = 0;
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned short)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned short)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(src, data, sizeof(unsigned short) * count);
+                recvOffset_m += count * sizeof(unsigned short);
+                if (recvOffset_m == recvBufferBytes_m) {
+                    recvOffset_m = recvBufferBytes_m = 0;
+                }
             }
         }
-    }
-    break;
+        break;
     case INTEGER:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned int)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned int)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(src, data, sizeof(unsigned int) * count);
-            recvOffset_m += count * sizeof(unsigned int);
-            if (recvOffset_m == recvBufferBytes_m) {
-                recvOffset_m = recvBufferBytes_m = 0;
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned int)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned int)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(src, data, sizeof(unsigned int) * count);
+                recvOffset_m += count * sizeof(unsigned int);
+                if (recvOffset_m == recvBufferBytes_m) {
+                    recvOffset_m = recvBufferBytes_m = 0;
+                }
             }
         }
-    }
-    break;
+        break;
     case LONGLONG:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned long long)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned long long)));
-            returnValue = false;
-        } else {
-            MEMCOPY_FUNC(src, data, sizeof(unsigned long long) * count);
-            recvOffset_m += count * sizeof(unsigned long long);
-            if (recvOffset_m == recvBufferBytes_m) {
-                recvOffset_m = recvBufferBytes_m = 0;
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned long long)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned long long)));
+                returnValue = false;
+            } else {
+                MEMCOPY_FUNC(src, data, sizeof(unsigned long long) * count);
+                recvOffset_m += count * sizeof(unsigned long long);
+                if (recvOffset_m == recvBufferBytes_m) {
+                    recvOffset_m = recvBufferBytes_m = 0;
+                }
             }
         }
-    }
-    break;
+        break;
     case USERDEFINED:
-    {
-        if (!upsf || !upf) {
-            ulm_err(("adminMessage:unpack unpack size function (upsf = %p) and unpack function (upf = %p)\n", upsf, upf));
-            returnValue = false;
-            return returnValue;
-        }
-        int neededBytes = (*upsf) (count);
-        if ((recvOffset_m + neededBytes) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + neededBytes));
-            returnValue = false;
-        } else {
-            (*upf) (recvBuffer_m, data, count);
-            recvOffset_m += neededBytes;
-            if (recvOffset_m == recvBufferBytes_m) {
-                recvOffset_m = recvBufferBytes_m = 0;
+        {
+            if (!upsf || !upf) {
+                ulm_err(("adminMessage:unpack unpack size function (upsf = %p) and unpack function (upf = %p)\n", upsf, upf));
+                returnValue = false;
+                return returnValue;
+            }
+            int neededBytes = (*upsf) (count);
+            if ((recvOffset_m + neededBytes) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + neededBytes));
+                returnValue = false;
+            } else {
+                (*upf) (recvBuffer_m, data, count);
+                recvOffset_m += neededBytes;
+                if (recvOffset_m == recvBufferBytes_m) {
+                    recvOffset_m = recvBufferBytes_m = 0;
+                }
             }
         }
-    }
-    break;
+        break;
     default:
         ulm_err(("adminMessage::unpack unknown packType %d\n", type));
         returnValue = false;
@@ -1585,7 +1449,7 @@ bool adminMessage::unpackMessage(void *data, packType type, int count, int timeo
 
 
 bool adminMessage::unpack(void *data, packType type, int count, int timeout, unpackFunction upf,
-                              unpackSizeFunction upsf)
+                          unpackSizeFunction upsf)
 {
     bool returnValue = true, gotData = true;
     void *src = (void *) (recvBuffer_m);
@@ -1614,126 +1478,126 @@ bool adminMessage::unpack(void *data, packType type, int count, int timeout, unp
 
     switch (type) {
     case BYTE:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned char)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned char)));
-            returnValue = false;
-        } else {
-            if (recvBufferBytes_m < (int) (count * sizeof(unsigned char))) {
-                gotData =
-                    getRecvBytes(count * sizeof(unsigned char) - recvBufferBytes_m, timeout);
-            }
-            if (gotData) {
-                MEMCOPY_FUNC(src, data, sizeof(unsigned char) * count);
-                recvOffset_m += count * sizeof(unsigned char);
-                if (recvOffset_m == recvBufferBytes_m) {
-                    recvOffset_m = recvBufferBytes_m = 0;
-                }
-            } else {
-                ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned char), recvBufferBytes_m, timeout));
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned char)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned char)));
                 returnValue = false;
+            } else {
+                if (recvBufferBytes_m < (int) (count * sizeof(unsigned char))) {
+                    gotData =
+                        getRecvBytes(count * sizeof(unsigned char) - recvBufferBytes_m, timeout);
+                }
+                if (gotData) {
+                    MEMCOPY_FUNC(src, data, sizeof(unsigned char) * count);
+                    recvOffset_m += count * sizeof(unsigned char);
+                    if (recvOffset_m == recvBufferBytes_m) {
+                        recvOffset_m = recvBufferBytes_m = 0;
+                    }
+                } else {
+                    ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned char), recvBufferBytes_m, timeout));
+                    returnValue = false;
+                }
             }
         }
-    }
-    break;
+        break;
     case SHORT:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned short)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned short)));
-            returnValue = false;
-        } else {
-            if (recvBufferBytes_m < (int) (count * sizeof(unsigned short))) {
-                gotData =
-                    getRecvBytes(count * sizeof(unsigned short) - recvBufferBytes_m, timeout);
-            }
-            if (gotData) {
-                MEMCOPY_FUNC(src, data, sizeof(unsigned short) * count);
-                recvOffset_m += count * sizeof(unsigned short);
-                if (recvOffset_m == recvBufferBytes_m) {
-                    recvOffset_m = recvBufferBytes_m = 0;
-                }
-            } else {
-                ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned short), recvBufferBytes_m, timeout));
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned short)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned short)));
                 returnValue = false;
+            } else {
+                if (recvBufferBytes_m < (int) (count * sizeof(unsigned short))) {
+                    gotData =
+                        getRecvBytes(count * sizeof(unsigned short) - recvBufferBytes_m, timeout);
+                }
+                if (gotData) {
+                    MEMCOPY_FUNC(src, data, sizeof(unsigned short) * count);
+                    recvOffset_m += count * sizeof(unsigned short);
+                    if (recvOffset_m == recvBufferBytes_m) {
+                        recvOffset_m = recvBufferBytes_m = 0;
+                    }
+                } else {
+                    ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned short), recvBufferBytes_m, timeout));
+                    returnValue = false;
+                }
             }
         }
-    }
-    break;
+        break;
     case INTEGER:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned int)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned int)));
-            returnValue = false;
-        } else {
-            if (recvBufferBytes_m < (int) (count * sizeof(unsigned int))) {
-                gotData =
-                    getRecvBytes(count * sizeof(unsigned int) - recvBufferBytes_m, timeout);
-            }
-            if (gotData) {
-                MEMCOPY_FUNC(src, data, sizeof(unsigned int) * count);
-                recvOffset_m += count * sizeof(unsigned int);
-                if (recvOffset_m == recvBufferBytes_m) {
-                    recvOffset_m = recvBufferBytes_m = 0;
-                }
-            } else {
-                ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned int), recvBufferBytes_m, timeout));
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned int)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned int)));
                 returnValue = false;
+            } else {
+                if (recvBufferBytes_m < (int) (count * sizeof(unsigned int))) {
+                    gotData =
+                        getRecvBytes(count * sizeof(unsigned int) - recvBufferBytes_m, timeout);
+                }
+                if (gotData) {
+                    MEMCOPY_FUNC(src, data, sizeof(unsigned int) * count);
+                    recvOffset_m += count * sizeof(unsigned int);
+                    if (recvOffset_m == recvBufferBytes_m) {
+                        recvOffset_m = recvBufferBytes_m = 0;
+                    }
+                } else {
+                    ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned int), recvBufferBytes_m, timeout));
+                    returnValue = false;
+                }
             }
         }
-    }
-    break;
+        break;
     case LONGLONG:
-    {
-        if ((int) (recvOffset_m + count * sizeof(unsigned long long)) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned long long)));
-            returnValue = false;
-        } else {
-            if (recvBufferBytes_m < (int) (count * sizeof(unsigned long long))) {
-                gotData =
-                    getRecvBytes(count * sizeof(unsigned long long) - recvBufferBytes_m,
-                                 timeout);
-            }
-            if (gotData) {
-                MEMCOPY_FUNC(src, data, sizeof(unsigned long long) * count);
-                recvOffset_m += count * sizeof(unsigned long long);
-                if (recvOffset_m == recvBufferBytes_m) {
-                    recvOffset_m = recvBufferBytes_m = 0;
-                }
-            } else {
-                ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned long long), recvBufferBytes_m, timeout));
+        {
+            if ((int) (recvOffset_m + count * sizeof(unsigned long long)) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + count * sizeof(unsigned long long)));
                 returnValue = false;
+            } else {
+                if (recvBufferBytes_m < (int) (count * sizeof(unsigned long long))) {
+                    gotData =
+                        getRecvBytes(count * sizeof(unsigned long long) - recvBufferBytes_m,
+                                     timeout);
+                }
+                if (gotData) {
+                    MEMCOPY_FUNC(src, data, sizeof(unsigned long long) * count);
+                    recvOffset_m += count * sizeof(unsigned long long);
+                    if (recvOffset_m == recvBufferBytes_m) {
+                        recvOffset_m = recvBufferBytes_m = 0;
+                    }
+                } else {
+                    ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", count * sizeof(unsigned long long), recvBufferBytes_m, timeout));
+                    returnValue = false;
+                }
             }
         }
-    }
-    break;
+        break;
     case USERDEFINED:
-    {
-        if (!upsf || !upf) {
-            ulm_err(("adminMessage:unpack unpack size function (upsf = %p) and unpack function (upf = %p)\n", upsf, upf));
-            returnValue = false;
-            return returnValue;
-        }
-        int neededBytes = (*upsf) (count);
-        if ((recvOffset_m + neededBytes) > recvBufferSize_m) {
-            ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + neededBytes));
-            returnValue = false;
-        } else {
-            if (recvBufferBytes_m < neededBytes) {
-                gotData = getRecvBytes(neededBytes - recvBufferBytes_m, timeout);
-            }
-            if (gotData) {
-                (*upf) (recvBuffer_m, data, count);
-                recvOffset_m += neededBytes;
-                if (recvOffset_m == recvBufferBytes_m) {
-                    recvOffset_m = recvBufferBytes_m = 0;
-                }
-            } else {
-                ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", neededBytes, recvBufferBytes_m, timeout));
+        {
+            if (!upsf || !upf) {
+                ulm_err(("adminMessage:unpack unpack size function (upsf = %p) and unpack function (upf = %p)\n", upsf, upf));
                 returnValue = false;
+                return returnValue;
+            }
+            int neededBytes = (*upsf) (count);
+            if ((recvOffset_m + neededBytes) > recvBufferSize_m) {
+                ulm_err(("adminMessage::unpack too much data (type %d), need %d bytes in receive buffer\n", type, recvOffset_m + neededBytes));
+                returnValue = false;
+            } else {
+                if (recvBufferBytes_m < neededBytes) {
+                    gotData = getRecvBytes(neededBytes - recvBufferBytes_m, timeout);
+                }
+                if (gotData) {
+                    (*upf) (recvBuffer_m, data, count);
+                    recvOffset_m += neededBytes;
+                    if (recvOffset_m == recvBufferBytes_m) {
+                        recvOffset_m = recvBufferBytes_m = 0;
+                    }
+                } else {
+                    ulm_err(("adminMessage::unpack unable to get all of data (need %d bytes, have %d " "bytes, timeout %d seconds)\n", neededBytes, recvBufferBytes_m, timeout));
+                    returnValue = false;
+                }
             }
         }
-    }
-    break;
+        break;
     default:
         ulm_err(("adminMessage::unpack unknown packType %d\n", type));
         returnValue = false;
@@ -1756,7 +1620,7 @@ bool adminMessage::unpack(void *data, packType type, int count, int timeout, unp
  * (errrorCode is then set)
  */
 adminMessage::recvResult adminMessage::receiveFromAny(int *rank, int *tag, int *errorCode,
-                                                          int timeout)
+                                                      int timeout)
 {
     recvResult returnValue = OK;
     int sockfd = -1, maxfd = 0, s;
