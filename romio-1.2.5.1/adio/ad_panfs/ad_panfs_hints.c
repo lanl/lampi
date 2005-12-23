@@ -47,6 +47,14 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
                 }
 	            MPI_Info_set(fd->info, "panfs_concurrent_write", value); 
             }
+            else
+            {
+               /* ------------------------------------------------------------------------ */
+               /* User hints supplied, but not panfs_concurrent_write:                     */
+               /* Make panfs_concurrent_write == 1 the default (Steve Hodson) swh@lanl.gov */
+               /* ------------------------------------------------------------------------ */
+                MPI_Info_set(fd->info, "panfs_concurrent_write", "1");
+            }
 
             MPI_Info_get(users_info, "panfs_layout_type", MPI_MAX_INFO_VAL, 
                  value, &flag);
@@ -131,7 +139,11 @@ void ADIOI_PANFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
         }
         else
         {
-	        MPI_Info_set(fd->info, "panfs_concurrent_write", "0");
+           /* ------------------------------------------------------------------------ */
+           /* No user hints supplied:                                                  */
+           /* Make panfs_concurrent_write == 1 the default (Steve Hodson) swh@lanl.gov */
+           /* ------------------------------------------------------------------------ */
+           MPI_Info_set(fd->info, "panfs_concurrent_write", "1");
         }
     }
 

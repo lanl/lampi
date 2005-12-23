@@ -18,8 +18,8 @@
 #include <sys/asynch.h>
 #else
 #include <aio.h>
-#ifdef NEEDS_ADIOCB_T
-typedef struct adiocb adiocb_t;
+#ifdef NEEDS_AIOCB_T
+typedef struct aiocb aiocb_t;
 #endif
 #endif
 #endif

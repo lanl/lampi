@@ -1429,6 +1429,7 @@ else
 fi
 rm -f conftest*
 
+  has_aio_write=yes
 	if test "$has_aio_h" = "yes" -a "$has_aio_write" = "yes" -a \
 	        "$has_pthread" = "yes" ; then
 	    use_aio=yes	

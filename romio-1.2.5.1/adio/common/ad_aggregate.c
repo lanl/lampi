@@ -90,11 +90,12 @@ int ADIOI_Calc_aggregator(ADIO_File fd,
     
     /* get an index into our array of aggregators */
     rank_index = (int) ((off - min_off + fd_size)/ fd_size - 1);
-    /* next 2 lines added by swh@lanl.gov for zero length i/o           */
-    /* to keep 0 <= rank_index < fd->hints->cb_nodes, for zero-len I/O  */
-    rank_index = ADIOI_MAX(rank_index, 0);
-    rank_index = ADIOI_MIN(rank_index, fd->hints->cb_nodes-1);
-
+    /* we index into fd_end with rank_index, and fd_end was allocated to be no
+     * bigger than fd->hins->cb_nodes.   If we ever violate that, we're
+     * overrunning arrays.  Obviously, we should never ever hit this abort */
+    if (rank_index >= fd->hints->cb_nodes)
+            MPI_Abort(MPI_COMM_WORLD, 1);
+ 
     /* remember here that even in Rajeev's original code it was the case that
      * different aggregators could end up with different amounts of data to
      * aggregate.  here we use fd_end[] to make sure that we know how much
@@ -225,6 +226,10 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
      * contig_access_count was calculated way back in ADIOI_Calc_my_off_len()
      */
     for (i=0; i < contig_access_count; i++) {
+        /* short circuit offset/len processing if len == 0
+         *      (zero-byte  read/write */
+        if (len_list[i] == 0)
+                continue;
 	off = offset_list[i];
 	fd_len = len_list[i];
 	/* note: we set fd_len to be the total size of the access.  then
@@ -275,6 +280,10 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
 /* now fill in my_req */
     curr_idx = 0;
     for (i=0; i<contig_access_count; i++) { 
+        /* short circuit offset/len processing if len == 0
+         *      (zero-byte  read/write */
+        if (len_list[i] == 0)
+                continue;
 	off = offset_list[i];
 	fd_len = len_list[i];
 	proc = ADIOI_Calc_aggregator(fd, off, min_st_offset, &fd_len, fd_size, 

@@ -7,6 +7,9 @@
 
 #include "adio.h"
 
+/* eventually add this the ADIO_Hints_struct */
+int cb_nodes_user_specified;
+ 
 void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 {
 /* if fd->info is null, create a new info object. 
@@ -44,15 +47,18 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	 */
 	MPI_Info_set(info, "romio_cb_read", "automatic"); 
 	fd->hints->cb_read = ADIOI_HINT_AUTO;
-	MPI_Info_set(info, "romio_cb_write", "automatic"); 
-	fd->hints->cb_write = ADIOI_HINT_AUTO;
+       /* --------------------------------------- */
+       /* Turn on collective buffering by default */
+       /* for write only                          */
+       /* --------------------------------------- */
+        MPI_Info_set(info, "romio_cb_write", "enable");
+        fd->hints->cb_write = ADIOI_HINT_ENABLE;
 
 	fd->hints->cb_config_list = NULL;
 
 	/* number of processes that perform I/O in collective I/O */
 	MPI_Comm_size(fd->comm, &nprocs);
 	sprintf(value, "%d", nprocs);
-	MPI_Info_set(info, "cb_nodes", value);
 	fd->hints->cb_nodes = nprocs;
 
 	/* hint indicating that no indep. I/O will be performed on this file */
@@ -211,6 +217,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
 	MPI_Info_get(users_info, "cb_nodes", MPI_MAX_INFO_VAL, 
 		     value, &flag);
+        cb_nodes_user_specified = flag;
 	if (flag && ((intval=atoi(value)) > 0)) {
 	    tmp_val = intval;
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);

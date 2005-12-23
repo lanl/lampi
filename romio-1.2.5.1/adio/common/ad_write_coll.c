@@ -11,6 +11,20 @@
 #include "mpe.h"
 #endif
 
+/* eventually add this the ADIO_Hints_struct, set in ADIOI_GEN_SetInfo */
+int cb_nodes_user_specified;
+
+/* This is global only for info purposes to rompio */
+#include <limits.h>
+int           nprocs_for_coll_min =   INT_MAX;
+int           nprocs_for_coll_max =         0;
+unsigned long long min_pe_request = ULONG_MAX;
+unsigned long long max_pe_request =         0;
+unsigned long long min_rd_request = ULONG_MAX;
+unsigned long long max_rd_request =         0;
+unsigned long long tot_ind_calls  =         0;
+unsigned long long tot_agg_calls  =         0;
+ 
 /* prototypes of functions used for collective writes only. */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
                          datatype, int nprocs, int myrank, ADIOI_Access
@@ -67,13 +81,14 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     /* array of nprocs access structures, one for each other process
        whose request lies in this process's file domain. */
 
-    int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
+    int i, filetype_is_contig, nprocs, nprocs_for_coll, nprocs_for_creq, myrank;
     int *len_list, contig_access_count, interleave_count;
     int buftype_is_contig, *buf_idx;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
     ADIO_Offset *offset_list, start_offset, end_offset, *st_offsets, orig_fp;
     ADIO_Offset *fd_start, *fd_end, fd_size, min_st_offset, *end_offsets;
     ADIO_Offset off;
+    ADIO_Offset *stend_offsets, min_rd_st_offset, max_rd_end_offset, total_rd_size;
 
 #ifdef PROFILE
 	MPE_Log_event(13, 0, "start computation");
@@ -103,13 +118,68 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
    processes. The result is an array each of start and end offsets stored
    in order of process rank. */ 
     
-    st_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
-    end_offsets = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
-
-    MPI_Allgather(&start_offset, 1, ADIO_OFFSET, st_offsets, 1, ADIO_OFFSET, 
-		  fd->comm);
-    MPI_Allgather(&end_offset, 1, ADIO_OFFSET, end_offsets, 1, ADIO_OFFSET, 
-		  fd->comm);
+   /* --------------------------------------------------------------------- */
+   /* swh@lanl.gov (Steve Hodson):                                          */
+   /* This modification reduces 2 collective calls to 1 collective call     */
+   /* The original authors were very liberal in using collectives, even     */
+   /* though it is common knowledge that collectives don't scale            */
+   /* --------------------------------------------------------------------- */
+    st_offsets    = (ADIO_Offset *) ADIOI_Malloc(  nprocs*sizeof(ADIO_Offset));
+    end_offsets   = (ADIO_Offset *) ADIOI_Malloc(  nprocs*sizeof(ADIO_Offset));
+    stend_offsets = (ADIO_Offset *) ADIOI_Malloc(2*nprocs*sizeof(ADIO_Offset));
+    ADIO_Offset my_offsets[2] = {start_offset,end_offset}; 
+    MPI_Allgather(my_offsets, 2, ADIO_OFFSET, stend_offsets, 2, ADIO_OFFSET, fd->comm);
+    min_rd_st_offset  = stend_offsets[0];
+    max_rd_end_offset = stend_offsets[1]; 
+    for (i=0; i<nprocs; i++) 
+    {
+      st_offsets [i]    = stend_offsets[i*2  ];
+      end_offsets[i]    = stend_offsets[i*2+1]; 
+      min_rd_st_offset  = ADIOI_MIN(st_offsets [i],min_rd_st_offset);
+      max_rd_end_offset = ADIOI_MAX(end_offsets[i],max_rd_end_offset);
+      min_pe_request    = ADIOI_MIN(min_pe_request,end_offsets[i]-st_offsets[i]+1);
+      max_pe_request    = ADIOI_MAX(max_pe_request,end_offsets[i]-st_offsets[i]+1);
+    }
+      min_rd_request    = ADIOI_MIN(min_rd_request, max_rd_end_offset-min_rd_st_offset+1);
+      max_rd_request    = ADIOI_MAX(max_rd_request, max_rd_end_offset-min_rd_st_offset+1);
+    ADIOI_Free(stend_offsets);
+ 
+    /* ------------------------------------------------------------------ */
+    /* swh@lanl.gov (Steve Hodson):                                       */
+    /* If user has not specified cb_nodes then calculate it as follows:   */
+    /* 1)nprocs_for_coll depends initially on the collective request size.*/
+    /*   For larger requests the denominator is directly proportional to  */
+    /*   the number of times the collective buffer is reused per request. */
+    /* 2)nprocs_for_coll limited to 1/4      the number of processes      */
+    /* 3)nprocs_for_coll is at least to 1/32 the number of processes      */
+    /* 4)nprocs_for_coll limited to range 1-32. Need at least 1,          */
+    /*   but don't exceed expected number of disks in use at a time       */
+    /* 5)nprocs_for_coll even workaround                                  */
+    /* 6)nprocs_for_coll at least 2 for more than 15 processes,           */
+    /*   regardless of how small collective request is.                   */
+    /* Caveat:                                                            */
+    /* The preceeding recipe was arrived at empirically for the           */
+    /* Panasas file system on Flash. Applicability to other file systems  */
+    /* needs to be demonstrated.                                          */
+    /* Caution: Care must be taken below to make sure that nprocs_for_coll*/ 
+    /* NEVER exceeds the default aggregator configuration list build once */
+    /* in open: ADIOI_cb_config_list_parse. Since nprocs_for_coll is      */
+    /* usually less that this number, only a subset of the previously     */
+    /* allocated aggregators will be used.                                */
+    /* ------------------------------------------------------------------ */
+    if ( !cb_nodes_user_specified )
+    {
+      total_rd_size   = max_rd_end_offset - min_rd_st_offset + 1;
+      nprocs_for_creq = (int)(total_rd_size / ( 8 * 1024 * 1024 ));
+      nprocs_for_coll = ADIOI_MIN(nprocs_for_creq, nprocs/ 4);
+      nprocs_for_coll = ADIOI_MAX(nprocs_for_coll, nprocs/32);
+      nprocs_for_coll = ADIOI_MAX(nprocs_for_coll,  1);
+      nprocs_for_coll = ADIOI_MIN(nprocs_for_coll, 32);
+      if (nprocs_for_coll > 1 && nprocs_for_coll%2 ) nprocs_for_coll--;
+      if ( nprocs > 15 ) nprocs_for_coll = ADIOI_MAX(nprocs_for_coll, 2 );
+    }
+      nprocs_for_coll_min = ADIOI_MIN(nprocs_for_coll_min, nprocs_for_coll);
+      nprocs_for_coll_max = ADIOI_MAX(nprocs_for_coll_max, nprocs_for_coll);
 
 /* are the accesses of different processes interleaved? */
     interleave_count = 0;
@@ -124,6 +194,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 	(!interleave_count && (fd->hints->cb_write == ADIOI_HINT_AUTO)))
     {
 	/* use independent accesses */
+        tot_ind_calls++;
 	ADIOI_Free(offset_list);
 	ADIOI_Free(len_list);
 	ADIOI_Free(st_offsets);
@@ -146,6 +217,8 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
 	return;
     }
+
+    tot_agg_calls++;
 
 /* Divide the I/O workload among "nprocs_for_coll" processes. This is
    done by (logically) dividing the file into file domains (FDs); each
@@ -425,27 +498,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 		curr_offlen_ptr[i] = j;
 	    }
 	}
-	
-
-        /* ---------------------------------------------------------------------- */
-        /* Mod by swh@lanl.gov to fix inconsistency between count and recv_size,  */
-        /* in the case of zero length write requests from the user api            */
-        /* This is also taken care of in ADIOI_Heap_merge, so this mod serves     */
-        /* primarily for debugging.                                               */
-        /* ---------------------------------------------------------------------- */
-        for (i=0; i < nprocs; i++)
-        {
-          if (!recv_size[i])
-          {
-             if ( count[i] )
-             {
-/*             fprintf(stderr,"rank %03d P300 ADIOI_Exch_and_write recv_size=0, count[%d]=%d, setting count=0\n",my_rank_debug,i,count[i]);
-               fflush(stderr); */
-               count[i] = 0;
-             }
-          }
-        }
-
 
 #ifdef PROFILE
 	MPE_Log_event(14, 0, "end computation");
@@ -861,9 +913,7 @@ static void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
     heap_struct *a, tmp;
     int i, j, heapsize, l, r, k, smallest;
 
-/* Modified by swh@lanl.gov to prevent under-allocation due to inconsisencies between recv_size & count */
-/*  a = (heap_struct *) ADIOI_Malloc((nprocs_recv+1)*sizeof(heap_struct)); */
-    a = (heap_struct *) ADIOI_Malloc((total_elements+1)*sizeof(heap_struct));
+    a = (heap_struct *) ADIOI_Malloc((nprocs_recv+1)*sizeof(heap_struct));
 
     j = 0;
     for (i=0; i<nprocs; i++)
