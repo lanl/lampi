@@ -482,7 +482,8 @@ Version 1.5.13
 
 - CRC bug fix for Myrinet/GM.
 
-- Reworked retransmission logic for Myrinet/GM and improved error messages.
+- Reworked retransmission logic for Myrinet/GM and improved error
+  messages (inluding a patch from Linux Networx).
 
 - Optimized MPI_Type_hindexed() for MPI_BYTE to improve data
   aggregation in ROMIO.
@@ -491,4 +492,8 @@ Version 1.5.13
   (experimental).
 
 - Reworked error status and signal handling to be consistent with RMS
-  prun.
+  prun. Documentation updated to reflect this change.
+
+- On BProc, number of processes now defaults to the number of
+  processors in the allocation (deduced via the NODES environment
+  variable). Documentation updated to reflect this change.
