@@ -1,5 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<!-- Manual page created with latex2man on Wed Aug 24 14:50:37 MDT 2005 --
+<!-- Manual page created with latex2man on Fri Dec 23 13:23:46 MST 2005 --
 -- Author of latex2man: Juergen.Vollmer@acm.org --
 -- NOTE: This file is generated, DO NOT EDIT. -->
 <html>
@@ -8,8 +8,8 @@
 <h1 align=center>
 Los Alamos Message-Passing Interface 
 </h1>
-<h4 align=center>Resilient Technologies Team, CCS-1, LANL </h4>
-<h4 align=center>24 August 2005</h4>
+<h4 align=center>Application Communications and Performance Team, CCS-1, LANL </h4>
+<h4 align=center>23 December 2005</h4>
 <h4 align=center>Version 1.5.13</h4>
 <p>
 <tt>mpirun</tt>
@@ -319,7 +319,7 @@ Configuration file variable: <b>ListOptions</b>
 
 <ol compact>
 <dt>1. <tt>mpirun prog args</tt>
-<dd> On systems where LSF, this 
+<dd> On systems with LSF, this 
 command can be used to start <tt>prog args</tt>
 on some number of 
 hosts and processors preassigned by LSF. Note: In some 
@@ -355,7 +355,7 @@ then mpirun will assign as close as possible the same number of
 processes per host (in this example, 17 processes will be started on 
 n1 and n2, and 16 on n3 and n4). 
 </dd>
-<dt>5. <tt>mpirun -dev tcp -t -np 2,10,30,22 -h n1,n2,n3,n4 prog args</tt>
+<dt>5. <tt>mpirun -dev tcp -t -np 2,10,30,22 -H n1,n2,n3,n4 prog args</tt>
 <dd> 
 On systems with rsh spawning, this command will 
 start 2 processes on n1, 10 on n2, 30 on n3, and 22 on n4. Prefix 
@@ -413,6 +413,53 @@ obtained from <tt>mpirun -help</tt>.
 <h2><a name="section_8">Diagnostics</a></h2>
 
 <p>
+<tt>mpirun</tt>
+exits when all of the processes in the parallel program 
+have exited successfully (with exit status 0), when one or more 
+processes exit with non-zero exit status, when one process has been 
+killed by an unhandled signal, or if an uncorrectable user or system 
+error is detected. 
+<p>
+If all processes exit successfully then the exit status of 
+<tt>mpirun</tt>
+is 0. If some of the processes exit with non-zero 
+status, then the exit status of <tt>mpirun</tt>
+is the binary OR of 
+their individual exit statuses. If one of the processes is killed by 
+an unhandled signal, the exit status of <tt>mpirun</tt>
+is set to 128 
+plus the signal number. 
+<p>
+A number of special exit codes are returned to indicate LA-MPI 
+system-specific events: 
+<p>
+<dl compact>
+<dt>122
+<dd> Run-time environment error (e.g. a LA-MPI daemon died) 
+</dd>
+<dt>123
+<dd> MPI_Abort() was called 
+</dd>
+<dt>124
+<dd> System error 
+</dd>
+<dt>125
+<dd> Session expired (e.g. LSF) 
+</dd>
+<dt>126
+<dd> Resource not available (e.g. asking for more than allocated) 
+</dd>
+<dt>127
+<dd> Invalid arguments 
+</dd>
+</dl>
+<p>
+Note that a few unusual shells treat exit codes of 128 or above 
+eccentrically. For example the Tru64 csh sets $status to signal 
+number minus 128, so that if a parallel application is killed with 
+signal 11 the exit status will be -117, and not 139 as would be the 
+case with most shells. 
+<p>
 On error, LA-MPI attempts to provide detailed diagnostic messages 
 which are written both to standard error and the file <tt>lampi.log</tt>
 in the application's working directory. Occasionally, if a job dies 
@@ -435,15 +482,15 @@ variables.
 
 The LA-MPI project has now merged with Open MPI 
 (<a href ="http://www.open-mpi.org"><tt>http://www.open-mpi.org</tt></a>).
-The first release of Open MPI is 
-scheduled for mid 2005. 
+Open MPI version 1.0.0 was released 
+at SC|05, Seattle in November 2005. 
 <p>
 LA-MPI will continue to be maintained until Open MPI has sufficiently 
 matured for production use on terascale platforms. 
 <p>
 <h2><a name="section_10">Version</a></h2>
 
-Version: 1.5.13 of 24 August 2005.
+Version: 1.5.13 of 23 December 2005.
 <p>
 <h2><a name="section_11">Bugs</a></h2>
 
@@ -486,27 +533,14 @@ LA-CC-02-41.
 <p>
 <h2><a name="section_13">Authors</a></h2>
 
-Rob T. Aulwes, <br>
- 
-Laura Casswell, <br>
- 
-David J. Daniel, <br>
- 
-Denis G. Dimick, <br>
- 
-Nehal N. Desai, <br>
- 
-Richard L. Graham, <br>
- 
-L. Dean Risinger, <br>
- 
-Mitchel W. Sukalski, <br>
- 
-Timothy S. Woodall, <br>
- 
-Ginger A. Young 
 <p>
-<a href ="mailto:lampi-support@lanl.gov"><tt>lampi-support@lanl.gov</tt></a>
+LA-MPI is developed by the Application Communications and Performance 
+Team, CCS-1 at Los Alamos National Laboratory. Contributors have 
+included Rob T. Aulwes, Laura Casswell, David J. Daniel, Denis 
+G. Dimick, Nehal N. Desai, Richard L. Graham, L. Dean Risinger, 
+Mitchel W. Sukalski, Timothy S. Woodall, and Ginger A. Young 
+<p>
+Contact: <a href ="mailto:lampi-support@lanl.gov"><tt>lampi-support@lanl.gov</tt></a>
 <p>
 </body>
 </html>

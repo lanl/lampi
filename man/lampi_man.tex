@@ -27,7 +27,7 @@
 
 \begin{document}
 
-\begin{Name}{1}{LA-MPI}{Resilient Technologies Team, CCS-1, LANL}{LA-MPI -- Los Alamos MPI}{Los Alamos Message-Passing Interface}
+\begin{Name}{1}{LA-MPI}{Application Communications and Performance Team, CCS-1, LANL}{LA-MPI -- Los Alamos MPI}{Los Alamos Message-Passing Interface}
 
   \Prog{mpirun} - run MPI programs using the Los Alamos Message-Passing Interface, LA-MPI.
 \end{Name}
@@ -199,7 +199,7 @@ specified executables.
 \section{Examples}
 %%%%%%%%%%%%%%%%%%
 \begin{enumerate}\setlength{\itemsep}{2cm}
-\item[1. \Prog{mpirun prog args}] On systems where LSF, this
+\item[1. \Prog{mpirun prog args}] On systems with LSF, this
   command can be used to start \Prog{prog args} on some number of
   hosts and processors preassigned by LSF.  Note: In some
   installations LA-MPI does not interact directly with LSF, so that a
@@ -224,7 +224,7 @@ specified executables.
   then mpirun will assign as close as possible the same number of
   processes per host (in this example, 17 processes will be started on
   n1 and n2, and 16 on n3 and n4).
-\item[5. \Prog{mpirun -dev tcp -t -np 2,10,30,22 -h n1,n2,n3,n4 prog args}]
+\item[5. \Prog{mpirun -dev tcp -t -np 2,10,30,22 -H n1,n2,n3,n4 prog args}]
   On systems with rsh spawning, this command will
   start 2 processes on n1, 10 on n2, 30 on n3, and 22 on n4. Prefix
   tagging of standard output and standard error will be done, and only
@@ -266,6 +266,37 @@ obtained from \Prog{mpirun -help}.
 \section{Diagnostics}
 %%%%%%%%%%%%%%%%%%%%%
 
+\Prog{mpirun} exits when all of the processes in the parallel program
+have exited successfully (with exit status 0), when one or more
+processes exit with non-zero exit status, when one process has been
+killed by an unhandled signal, or if an uncorrectable user or system
+error is detected.
+
+If all processes exit successfully then the exit status of
+\Prog{mpirun} is 0.  If some of the processes exit with non-zero
+status, then the exit status of \Prog{mpirun} is the binary OR of
+their individual exit statuses. If one of the processes is killed by
+an unhandled signal, the exit status of \Prog{mpirun} is set to 128
+plus the signal number.
+
+A number of special exit codes are returned to indicate LA-MPI
+system-specific events:
+
+\begin{Description}\setlength{\itemsep}{0cm}
+\item[122] Run-time environment error (e.g. a LA-MPI daemon died)
+\item[123] MPI\_Abort() was called
+\item[124] System error
+\item[125] Session expired (e.g. LSF)
+\item[126] Resource not available (e.g. asking for more than allocated)
+\item[127] Invalid arguments
+\end{Description}
+
+Note that a few unusual shells treat exit codes of 128 or above
+eccentrically.  For example the Tru64 csh sets \$status to signal
+number minus 128, so that if a parallel application is killed with
+signal 11 the exit status will be -117, and not 139 as would be the
+case with most shells.
+
 On error, LA-MPI attempts to provide detailed diagnostic messages
 which are written both to standard error and the file \File{lampi.log}
 in the application's working directory.  Occasionally, if a job dies
@@ -285,8 +316,8 @@ variables.
 \section{Future development}
 %%%%%%%%%%%%%%%%%%%%%%%%
 The LA-MPI project has now merged with Open MPI
-(\URL{http://www.open-mpi.org}).  The first release of Open MPI is
-scheduled for mid 2005.
+(\URL{http://www.open-mpi.org}).  Open MPI version 1.0.0 was released
+at SC|05, Seattle in November 2005.
 
 LA-MPI will continue to be maintained until Open MPI has sufficiently
 matured for production use on terascale platforms.
@@ -336,19 +367,14 @@ LA-CC-02-41.
 
 \section{Authors}
 %%%%%%%%%%%%%%%%
-\noindent
-Rob T. Aulwes, \\
-Laura Casswell, \\
-David J. Daniel, \\
-Denis G. Dimick, \\
-Nehal N. Desai, \\
-Richard L. Graham, \\
-L. Dean Risinger, \\
-Mitchel W. Sukalski, \\
-Timothy S. Woodall, \\
-Ginger A. Young
 
-\Email{lampi-support@lanl.gov}
+LA-MPI is developed by the Application Communications and Performance
+Team, CCS-1 at Los Alamos National Laboratory.  Contributors have
+included Rob T. Aulwes, Laura Casswell, David J. Daniel, Denis
+G. Dimick, Nehal N. Desai, Richard L. Graham, L. Dean Risinger,
+Mitchel W. Sukalski, Timothy S. Woodall, and Ginger A. Young
+
+Contact: \Email{lampi-support@lanl.gov}
 
 \LatexManEnd
 
