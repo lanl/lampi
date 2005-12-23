@@ -100,7 +100,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (NHostInfoFound == 0) {
         if (ReadNPFromFile) {
             printf(" Unable to get number of processes per host.\n");
-            exit(EXIT_FAILURE);
+            exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
         }
         *NHosts = 1;
         RetVal = gethostname(LocalHostName, ULM_MAX_HOSTNAME_LEN);
@@ -108,7 +108,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
             printf
                 (" Error: gethostname() call failed - unable to get local host name.\n");
             perror(" gethostname() call failed ");
-            exit(EXIT_FAILURE);
+            exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
         }
         NetEntry = gethostbyname(LocalHostName);
         len = strlen(NetEntry->h_name);
@@ -116,7 +116,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
             printf
                 (" Error: Host name too long for library buffer, length = %ld\n",
                  (long) len);
-            exit(EXIT_FAILURE);
+            exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
         }
         (*HostList) = ulm_new(HostName_t,  1);
         sprintf((char *) HostList[0], NetEntry->h_name, len);
@@ -139,7 +139,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 if (IndxTPStart > argc) {
                     printf
                         ("Error: No hosts specified for host list (option -tph).\n");
-                    exit(EXIT_FAILURE);
+                    exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                 }
                 IndxTPEnd = argc - 1;
             }
@@ -149,7 +149,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (CommandLineHostList) {
         if (ReadNPFromFile) {
             printf(" Unable to get number of processes per host.\n");
-            exit(EXIT_FAILURE);
+            exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
         }
         /* parse the data */
         *NHosts = 0;
@@ -173,14 +173,14 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     printf("Error: Unrecognized host name %s\n",
                            ArgList[j]);
                     perror(" gethostbyname ");
-                    exit(EXIT_FAILURE);
+                    exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                 }
                 len = strlen(NetEntry->h_name);
                 if (len > ULM_MAX_HOSTNAME_LEN) {
                     printf
                         (" Error: Host name too long for library buffer, length = %ld\n",
                          (long) len);
-                    exit(EXIT_FAILURE);
+                    exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                 }
                 sprintf((char *) (*HostList)[cnt], NetEntry->h_name, len);
                 cnt++;
@@ -206,7 +206,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (InputHostList == NULL) {
         printf("Error: opening hostlist file: %s\n", argv[i]);
         perror(" Open Error ");
-        exit(EXIT_FAILURE);
+        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
     }
     ExeIndex = 3;
     if (!ExeListFound) {
@@ -244,7 +244,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                             ("Error: getting number of Hosts from host file.\n");
                         printf(" String Parsed %s\n", ArgList[1]);
                         perror(" Error in atoi ");
-                        exit(EXIT_FAILURE);
+                        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                     }
                 }
                 free(ArgList[0]);
@@ -259,21 +259,21 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                 printf("  %d arguments expeted, but got only %d\n",
                        ExpectNArgs, NArgs);
                 printf(" Input line:: %s", buf);
-                exit(EXIT_FAILURE);
+                exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
             }
             n = parseString(&ArgList, buf, 3, " ,\n");
             NetEntry = gethostbyname(ArgList[0]);
             if (NetEntry == NULL) {
                 printf("Error: Unrecognized host name %s\n", buf1[0]);
                 perror(" gethostbyname ");
-                exit(EXIT_FAILURE);
+                exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
             }
             len = strlen(NetEntry->h_name);
             if (len > ULM_MAX_HOSTNAME_LEN) {
                 printf
                     (" Error: Host name too long for library buffer, length = %ld\n",
                      (long) len);
-                exit(EXIT_FAILURE);
+                exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
             }
 
             if (ReadNPFromFile) {
@@ -282,7 +282,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     printf
                         ("Error: reading in number of process.\n  Input line:: %s",
                          buf1[1]);
-                    exit(EXIT_FAILURE);
+                    exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                 }
             }
             for (i = 0; i < n; i++)
@@ -299,7 +299,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
     if (Found && (cnt1 < *NHosts)) {
         printf("Error:  Found %d hosts in host_file, but expected %d\n",
                cnt1, *NHosts);
-        exit(EXIT_FAILURE);
+        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
     }
     /* rewind and readin the data  - error already checked for */
     *NHosts = cnt1;
@@ -350,7 +350,7 @@ int SetupClientHostInfo(int argc, char **argv, int NULMArgs,
                     if (getcwd(DirName, ULM_MAX_PATH_LEN) == NULL) {
                         printf("getcwd() call failed\n");
                         perror(" getcwd ");
-                        exit(EXIT_FAILURE);
+                        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
                     }
                     sprintf((char *) (*WorkingDirList)[cnt1], "%s/%s",
                             DirName, ArgList[j]);

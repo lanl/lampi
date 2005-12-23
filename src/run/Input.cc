@@ -601,9 +601,9 @@ static void Version(const char *msg)
 
 void FatalNoInput(const char *msg)
 {
-    ulm_err(("Error: No input data provided (%s)\n", msg));
+    ulm_err(("Error: Invalid arguments: No input data provided (%s)\n", msg));
     Usage(stderr);
-    exit(EXIT_FAILURE);
+    exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
 }
 
 
@@ -1737,9 +1737,9 @@ void SetConnectTimeout(const char *InfoStream)
 
     RunParams.ConnectTimeout = strtol(Options[index].InputData, &ptr, 10);
     if (ptr == Options[index].InputData) {
-        ulm_err(("Error: Parsing timeout (%s)\n", Options[index].InputData));
+        ulm_err(("Error: Invalid arguments: Parsing timeout (%s)\n", Options[index].InputData));
         Usage(stderr);
-        exit(EXIT_FAILURE);
+        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
     }
 }
 
@@ -1755,9 +1755,9 @@ void SetHeartbeatPeriod(const char *InfoStream)
 
     RunParams.HeartbeatPeriod = strtol(Options[index].InputData, &ptr, 10);
     if (ptr == Options[index].InputData) {
-        ulm_err(("Error: Parsing HeartbeatPeriod (%s)\n", Options[index].InputData));
+        ulm_err(("Error: Invalid Arguments: Parsing HeartbeatPeriod (%s)\n", Options[index].InputData));
         Usage(stderr);
-        exit(EXIT_FAILURE);
+        exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
     }
 }
 

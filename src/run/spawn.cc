@@ -83,7 +83,7 @@ int Spawn(unsigned int *AuthData, int ReceivingSocket,
         if (RunParams.UseRMS || RunParams.UseBproc || RunParams.Local) {
             ulm_err(("Error: Can't execute \"%s\": %s\n",
                      RunParams.ExeList[0], strerror(errno)));
-            exit(EXIT_FAILURE);
+            exit(MPIRUN_EXIT_INVALID_ARGUMENTS);
         } else {
             ulm_warn(("Warning: Can't execute \"%s\" on the local host: %s\n",
                       RunParams.ExeList[0], strerror(errno)));

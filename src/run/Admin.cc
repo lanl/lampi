@@ -164,6 +164,9 @@ int CheckForControlMsgs(void)
                              host,
                              WEXITSTATUS(status),
                              WTERMSIG(status)));
+                    if (0 == AbnormalExitStatus) {
+                        AbnormalExitStatus = MPIRUN_EXIT_RUNTIME_ERROR;
+                    }
                     close(fd[host]);
                     fd[host] = -1;
                     RunParams.ActiveHost[host] = 0;
@@ -181,6 +184,9 @@ int CheckForControlMsgs(void)
             if (size == 0) {
                 ulm_err(("Error: Lost connection to daemon on host %d\n",
                          host));
+                if (0 == AbnormalExitStatus) {
+                    AbnormalExitStatus = MPIRUN_EXIT_SYSTEM_ERROR;
+                }
                 fd[host] = -1;
                 RunParams.ActiveHost[host] = 0;
                 RunParams.HostsAbNormalTerminated++;
@@ -189,6 +195,9 @@ int CheckForControlMsgs(void)
             if (size < 0 || error != ULM_SUCCESS) {
                 ulm_err(("Error: RecvSocket: host=%i size=%ld error=%d\n",
                          host, (long) size, error));
+                if (0 == AbnormalExitStatus) {
+                    AbnormalExitStatus = MPIRUN_EXIT_RUNTIME_ERROR;
+                }
                 return -1;
             }
 
@@ -292,6 +301,9 @@ int CheckForControlMsgs(void)
                     if (abnormal_term_msg.signal != 0 &&
                         abnormal_term_msg.signal > 0 &&
                         abnormal_term_msg.signal < 32) {
+                        if (0 == AbnormalExitStatus) {
+                            AbnormalExitStatus = 128 + abnormal_term_msg.signal;
+                        }
                         snprintf(s, sizeof(s),
                                  "Error: An MPI process exited with signal %d "
                                  "(%s) "
@@ -313,6 +325,9 @@ int CheckForControlMsgs(void)
                                  host,
                                  abnormal_term_msg.lrank,
                                  abnormal_term_msg.pid);
+                        if (AbnormalExitStatus < 120) {
+                            AbnormalExitStatus |= (abnormal_term_msg.status & 0xFF);
+                        }
                     }
                     LogJobMsg(s);
                     ulm_err((s));

@@ -55,10 +55,8 @@ static bool gotClientProcessCount = false;
 #if ENABLE_BPROC
 #include <sys/bproc.h>
 #include "init/environ.h"
-#endif
 
-#if ENABLE_BPROC
-int nodestatus(int node, char *status, int len)
+static int nodestatus(int node, char *status, int len)
 {
 // return 1 if a BPROC node is up, 0 otherwise.
 // string describing status is written to char status[len] 
@@ -77,6 +75,29 @@ int nodestatus(int node, char *status, int len)
 #endif
 }
 #endif
+
+static int bproc_get_nnodes_from_nodes(void)
+{
+    /*
+     * Get the number of nodes from the NODES environment variable
+     */
+
+    char *s;
+    char *p;
+    char *q;
+    int nnodes = 0;
+
+    s = getenv("NODES");
+    if (s) {
+        nnodes = 1;
+        p = s;
+        for (p = s; (q = strchr(p, ',')); p = q + 1) {
+            nnodes++;
+        }
+    }
+
+    return nnodes;
+}
 
 void getBJSNodes(void)
 {
@@ -449,6 +470,22 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     if (gotClientProcessCount) {
         return;
     }
+
+#if ENABLE_BPROC
+    /*
+     * On BProc systems if there is a NODES environment variable then
+     * by default start 2 processes on each specified node.
+     */
+
+    if (bproc_get_nnodes_from_nodes()) {
+        int OptionIndex = MatchOption("Procs");
+        sprintf(Options[OptionIndex].InputData,
+                "%d", 2 * bproc_get_nnodes_from_nodes());
+        return GetClientProcessCount(InfoStream);
+    }
+    ulm_err(("Error: No argument to -np/-n and BProc NODES environment variable not set\n"));
+    Abort();
+#endif
 
     if (!RunParams.UseLSF) {
         ulm_err(("Error: No argument to -np/-n.\n"));

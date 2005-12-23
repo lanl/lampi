@@ -46,6 +46,8 @@
 #include "run/Run.h"
 #include "run/RunParams.h"
 
+int AbnormalExitStatus = 0;
+
 static int TerminateInitiated = 0;
 
 /*
@@ -63,6 +65,7 @@ void AbortFunction(const char *file, int line)
         _ulm_log("mpirun exiting: no clients spawned\n");
 
         if (RunParams.CmdLineOK == 0) {
+            AbnormalExitStatus = MPIRUN_EXIT_INVALID_ARGUMENTS;
             Usage(stderr);
         }
 
@@ -72,11 +75,11 @@ void AbortFunction(const char *file, int line)
         _ulm_log("mpirun exiting: aborting clients\n");
 
         if (!fd) {
-            exit(EXIT_FAILURE);
+            exit(AbnormalExitStatus);
         }
 
         if (ENABLE_RMS) {
-            exit(EXIT_FAILURE);
+            exit(AbnormalExitStatus);
         }
 
         TerminateInitiated = 1;
@@ -108,6 +111,5 @@ void AbortFunction(const char *file, int line)
     }
 
     LogJobAbort();
-
-    exit(EXIT_FAILURE);
+    exit(AbnormalExitStatus);
 }

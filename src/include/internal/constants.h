@@ -162,6 +162,18 @@ enum QueueType_t {
     IBRECVFRAGFREELIST
 };
 
+/* exit code handling for mpirun */
+
+enum {
+    MPIRUN_EXIT_SUCCESS = 0,
+    MPIRUN_EXIT_RUNTIME_ERROR = 122,
+    MPIRUN_EXIT_ABORT = 123,
+    MPIRUN_EXIT_SYSTEM_ERROR = 124,
+    MPIRUN_EXIT_SESSION_EXPIRED = 125,
+    MPIRUN_EXIT_RESOURCE_NOT_AVAILABLE = 126,
+    MPIRUN_EXIT_INVALID_ARGUMENTS = 127,
+};
+
 
 #ifdef __cplusplus
 

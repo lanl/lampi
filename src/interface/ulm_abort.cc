@@ -92,7 +92,8 @@ extern "C" int _ulm_abort(int comm, int error, char *file, int line)
             lampiState.AbnormalExit->flag = 1;
             lampiState.AbnormalExit->pid = getpid();
             lampiState.AbnormalExit->signal = 0;
-            lampiState.AbnormalExit->status = error;
+            //lampiState.AbnormalExit->status = error;
+            lampiState.AbnormalExit->status = MPIRUN_EXIT_ABORT;
         }
         ATOMIC_UNLOCK(lampiState.AbnormalExit->lock);
         /* unblock SIGCHLD processing */

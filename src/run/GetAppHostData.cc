@@ -88,6 +88,7 @@ void GetAppHostCount(const char *InfoStream)
     if (ptr == *HostData.begin()) {
         ulm_err(("Error: Parsing nhosts input (%s)\n", *HostData.begin()));
         Usage(stderr);
+        AbnormalExitStatus = MPIRUN_EXIT_INVALID_ARGUMENTS;
         Abort();
     }
     RunParams.NHostsSet = true;

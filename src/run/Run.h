@@ -37,6 +37,8 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+extern int AbnormalExitStatus;
+
 /* prototypes */
 
 #define Abort() AbortFunction(__FILE__, __LINE__)
