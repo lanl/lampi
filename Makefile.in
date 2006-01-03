@@ -97,6 +97,7 @@ ROMIOMAKEFILE	:= @romiodir@/Makefile
 ROMIOLIB	:= $(PWD)/$(ROMIODIR)/objects/romio.$(LIBEXT)
 OBJ_ROMIO	:= $(ROMIODIR)/objects/*.$(OBJEXT)
 ROMIOCONFIGURE  := $(abs_srcdir)/$(ROMIODIR)/configure
+ROMIOCONFIGURE  += -enable-aio
 ROMIOCONFIGURE	+= -noprofile -cc=$(CC) -fc=$(FC) -f90=$(F90)
 ifeq "$(enable_debug)" "yes"
 ROMIOCONFIGURE	+= -debug
