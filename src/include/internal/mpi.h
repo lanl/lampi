@@ -93,6 +93,7 @@ struct mpi_state_t {
     } collective;
 #endif
     MPI_Request proc_null_request;
+    MPI_Request proc_null_request_persistent;
     int fortran_layer_enabled;
     int threadsafe;
     lockStructure_t lock[1];

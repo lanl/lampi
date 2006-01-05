@@ -47,7 +47,7 @@ int PMPI_Recv_init(void *buf, int count, MPI_Datatype type, int source,
     int rc;
 
     if (source == MPI_PROC_NULL) {
-	*request = _mpi.proc_null_request;
+	*request = _mpi.proc_null_request_persistent;
 	return MPI_SUCCESS;
     }
 

@@ -53,6 +53,7 @@ static int called = 0;
  * Something for the proc null request handle to point at
  */
 static int dummy_proc_null_request;
+static int dummy_proc_null_request_persistent;
 
 /*
  * Some null objects
@@ -120,6 +121,7 @@ int _mpi_init(void)
         _mpi.initialized = 1;
         _mpi.finalized = 0;
         _mpi.proc_null_request = &dummy_proc_null_request;
+        _mpi.proc_null_request_persistent = &dummy_proc_null_request_persistent;
 
         rc = atexit(atexit_handler);
         if (rc < 0) {

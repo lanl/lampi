@@ -43,7 +43,9 @@ int PMPI_Start(MPI_Request *request)
 {
     int rc;
 
-    if (*request == MPI_REQUEST_NULL || *request == _mpi.proc_null_request) {
+    if (*request == MPI_REQUEST_NULL ||
+        *request == _mpi.proc_null_request ||
+        *request == _mpi.proc_null_request_persistent) {
 	return MPI_SUCCESS;
     }
 

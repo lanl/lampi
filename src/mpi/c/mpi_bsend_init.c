@@ -51,7 +51,7 @@ int PMPI_Bsend_init(void *buf, int count, MPI_Datatype type, int dest,
     ULMBufferRange_t *allocation = NULL;
 
     if (dest == MPI_PROC_NULL) {
-	*request = _mpi.proc_null_request;
+	*request = _mpi.proc_null_request_persistent;
 	return MPI_SUCCESS;
     }
 

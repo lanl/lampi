@@ -67,7 +67,8 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
         return MPI_SUCCESS;
     }
 
-    if (*request == _mpi.proc_null_request) {
+    if (*request == _mpi.proc_null_request ||
+        *request == _mpi.proc_null_request_persistent) {
 	if (status) {
 	    status->MPI_ERROR = MPI_SUCCESS;
 	    status->MPI_SOURCE = MPI_PROC_NULL;
@@ -76,6 +77,9 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	    status->_persistent = 0;
 	}
         *flag = 1;
+        if (*request == _mpi.proc_null_request) {
+            *request = MPI_REQUEST_NULL;
+        }
 	return MPI_SUCCESS;
     }
 

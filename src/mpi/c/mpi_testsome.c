@@ -78,9 +78,10 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
 	ULMStatus_t stat;
 	int completed, rc;
 
+        /* skip null requests */
 	if (array_of_requests[i] == MPI_REQUEST_NULL) {
 	    nnull++;
-	    continue;		/* skip null requests */
+	    continue;
 	}
 
 	/* skip persistent inactive requests */
@@ -88,6 +89,24 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
 	    ninactive++;
 	    continue;
 	}
+
+        /* handle proc null requests */
+        if (array_of_requests[i] == _mpi.proc_null_request ||
+            array_of_requests[i] == _mpi.proc_null_request_persistent) {
+            if (array_of_statuses) {
+                array_of_statuses->MPI_ERROR = MPI_SUCCESS;
+                array_of_statuses->MPI_SOURCE = MPI_PROC_NULL;
+                array_of_statuses->MPI_TAG = MPI_ANY_TAG;
+                array_of_statuses->_count = 0;
+                array_of_statuses->_persistent = 0;
+                array_of_statuses++;
+            }
+            if (array_of_requests[i] == _mpi.proc_null_request) {
+                array_of_requests[i] = MPI_REQUEST_NULL;
+            }
+            (*outcount) += 1;
+            continue;
+        }
 
 	completed = 0;
 	rc = ulm_test(req + i, &completed, &stat);

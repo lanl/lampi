@@ -83,9 +83,10 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 	    int completed = 0;
 	    int rc;
 
+            /* skip null requests */
 	    if (array_of_requests[i] == MPI_REQUEST_NULL) {
 		nnull++;
-		continue;	/* skip null requests */
+		continue;
 	    }
 
 	    /* skip persistent inactive requests */
@@ -93,6 +94,23 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 		ninactive++;
 		continue;
 	    }
+
+	    /* handle proc null requests */
+            if (array_of_requests[i] == _mpi.proc_null_request ||
+                array_of_requests[i] == _mpi.proc_null_request_persistent) {
+                if (status) {
+                    status->MPI_ERROR = MPI_SUCCESS;
+                    status->MPI_SOURCE = MPI_PROC_NULL;
+                    status->MPI_TAG = MPI_ANY_TAG;
+                    status->_count = 0;
+                    status->_persistent = 0;
+                }
+                if (array_of_requests[i] == _mpi.proc_null_request) {
+                    array_of_requests[i] = MPI_REQUEST_NULL;
+                }
+                *index = i;
+                return MPI_SUCCESS;
+            }
 
 	    rc = ulm_test(req + i, &completed, &stat);
 	    if ( (rc == ULM_ERR_RECV_LESS_THAN_POSTED) ||

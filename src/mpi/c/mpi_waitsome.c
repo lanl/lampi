@@ -78,16 +78,17 @@ int PMPI_Waitsome(int incount, MPI_Request array_of_requests[],
 	ULMStatus_t stat;
 	int ninactive, nnull;
 
-	ninactive = 0;
-	nnull = 0;
+        ninactive = 0;
+        nnull = 0;
 
 	for (i = 0; i < incount; i++) {
 
 	    int completed, rc;
 
+            /* skip null requests */
 	    if (array_of_requests[i] == MPI_REQUEST_NULL) {
 		nnull++;
-		continue;	/* skip null requests */
+		continue;
 	    }
 
 	    /* skip persistent inactive requests */
@@ -96,6 +97,25 @@ int PMPI_Waitsome(int incount, MPI_Request array_of_requests[],
 		continue;
 	    }
 
+	    /* handle proc null requests */
+            if (array_of_requests[i] == _mpi.proc_null_request ||
+                array_of_requests[i] == _mpi.proc_null_request_persistent) {
+                if (array_of_statuses) {
+                    array_of_statuses->MPI_ERROR = MPI_SUCCESS;
+                    array_of_statuses->MPI_SOURCE = MPI_PROC_NULL;
+                    array_of_statuses->MPI_TAG = MPI_ANY_TAG;
+                    array_of_statuses->_count = 0;
+                    array_of_statuses->_persistent = 0;
+                    array_of_statuses++;
+                }
+                if (array_of_requests[i] == _mpi.proc_null_request) {
+                    array_of_requests[i] = MPI_REQUEST_NULL;
+                }
+                (*outcount) += 1;
+                continue;
+            }
+
+            /* a real request to test */
 	    completed = 0;
 	    rc = ulm_test(req + i, &completed, &stat);
 	    if (rc == ULM_ERR_RECV_LESS_THAN_POSTED) {
@@ -120,8 +140,9 @@ int PMPI_Waitsome(int incount, MPI_Request array_of_requests[],
 	    if (completed) {
 		*array_of_indices = i;
 		(*outcount) += 1;
-		if (req[i] == ULM_REQUEST_NULL)
+		if (req[i] == ULM_REQUEST_NULL) {
 		    array_of_requests[i] = MPI_REQUEST_NULL;
+                }
 		array_of_indices++;
 		if (array_of_statuses) {
 		    array_of_statuses->MPI_ERROR = _mpi_error(stat.error_m);

@@ -64,6 +64,8 @@ extern "C" int ulm_invalid_request(ULMRequest_t *request)
         return 0;
     } else if (*request == _mpi.proc_null_request) {
         return 0;
+    } else if (*request == _mpi.proc_null_request_persistent) {
+        return 0;
     } else if (r->requestType != REQUEST_TYPE_RECV &&
                r->requestType != REQUEST_TYPE_SEND) {
         return 1;
