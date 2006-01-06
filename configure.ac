@@ -15,6 +15,8 @@ AC_PROG_LN_S
 AC_PROG_RANLIB
 
 # Checks for libraries.
+AC_CHECK_LIB(aio, aio_error)
+AC_CHECK_LIB(rt, aio_error)
 
 # Checks for header files.
 AC_HEADER_STDC
