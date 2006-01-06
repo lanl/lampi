@@ -590,6 +590,7 @@ void lampi_init_postfork_resources(lampiState_t *s)
         lampi_init_print("lampi_init_postfork_resources");
     }
 
+#undef HAVE_SCHED_SETAFFINITY
 #ifdef HAVE_SCHED_SETAFFINITY
     /*
      * Enable processor affinity (experimental)
