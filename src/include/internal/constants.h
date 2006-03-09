@@ -56,9 +56,9 @@
 /* time from first client startup to timing out if startup not finished */
 #define STARTUPINTERVAL                 120.0
 /* retransmit timeout */
-#define RETRANS_TIME                    (double)(5.0)
+#define RETRANS_TIME                    (double)(10.0)
 /* maximum power of two multiple of RETRANS_TIME for exponential backoff */
-#define MAXRETRANS_POWEROFTWO_MULTIPLE  (int)(15)
+#define MAXRETRANS_POWEROFTWO_MULTIPLE  (int)(8)
 /* minimum of RETRANS_TIME */
 #define MIN_RETRANS_TIME                (double)(1.0)
 
