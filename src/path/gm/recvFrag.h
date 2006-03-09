@@ -234,11 +234,21 @@ inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
         DataOK = true;
     } else {
         DataOK = false;
-        ulm_err(("Warning: Corrupt fragment data received [rank %d --> rank %d (%s)]: "
-                 "%s received=0x%x, calculated=0x%x\n", 
-                 gmHeader_m->data.senderID, myproc(), mynodename(),
+        ulm_err(("Process rank %d (%s): Warning: "
+                 "Corrupt fragment data received [rank %d --> rank %d]: "
+                 "%s received=0x%x, calculated=0x%x: "
+                 "ctx %d tag %d dataLength %d msgLength %d frag_seq %d isendSeq %d\n",
+                 myproc(), mynodename(),
+                 gmHeader_m->data.senderID,
+                 gmHeader_m->data.destID,
                  (usecrc()) ? "CRC" : "checksum",
-                 gmHeader_m->data.dataChecksum, checksum));
+                 gmHeader_m->data.dataChecksum, checksum,
+                 EXTRACT_CTX(gmHeader_m->data.ctxAndMsgType),
+                 (int) gmHeader_m->data.user_tag,
+                 (int) gmHeader_m->data.dataLength,
+                 (int) gmHeader_m->data.msgLength,
+                 (int) gmHeader_m->data.frag_seq,
+                 (int) gmHeader_m->data.isendSeq_m));
         if (!gmState.doAck) {
             ulm_exit(("Error: Reliability protocol not active. Cannot recover.\n"));
         }
