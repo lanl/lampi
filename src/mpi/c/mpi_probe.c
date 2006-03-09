@@ -56,6 +56,7 @@ int PMPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     ULMStatus_t stat;
     int rc = ULM_SUCCESS;
     int flag = 0;
+    int first = 1;
 
     if (_mpi.check_args) {
         rc = MPI_SUCCESS;
@@ -75,9 +76,16 @@ int PMPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 
     while (flag == 0) {
 	rc = ulm_iprobe(source, comm, tag, &flag, &stat);
-	ulm_dbg(("MPI_Probe: ulm_iprobe returned %d, flag = %d. "
-		 "status.(src, tag, error) = %d %d %d\n",
-		 rc, flag, stat.peer_m, stat.tag_m, stat.error_m));
+        if (0) {
+            if (first && (flag == 0)) {
+                ulm_err(("MPI_Probe: ulm_iprobe(peer=%d, tag=%d) spinning...\n", source, tag));
+                first = 0;
+            } else if (flag) {
+                ulm_err(("MPI_Probe: ulm_iprobe(peer=%d, tag=%d) succeeded. "
+                         "status.(peer=%d, tag=%d, length=%d)\n",
+                         source, tag, stat.peer_m, stat.tag_m, stat.length_m));
+            }
+        }
     }
 
     status->MPI_SOURCE = stat.peer_m;
