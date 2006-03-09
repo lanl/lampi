@@ -229,6 +229,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 gmState.gmLock.lock();
             }
 
+
             gm_send_with_callback(sfd->gmPort(),
                                   addr,
                                   gmState.log2Size,
@@ -392,11 +393,36 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 
                 if (HeaderOK) {
 
+
                     switch (rf->gmHeader_m->common.type) {
                     case MESSAGE_DATA:
+                        if(rf->gmHeader_m->data.destID != (uint32_t)myproc()) {
+                            ulm_warn(("Process rank %d (%s): received misdelivered data fragment "
+                                 "[rank %d --> rank %d]: ctx %d tag %d dataLength %d msgLength %d frag_seq %d isendSeq %d\n",
+                                 myproc(), mynodename(),
+                                 rf->gmHeader_m->data.senderID, rf->gmHeader_m->data.destID,
+                                 EXTRACT_CTX(rf->gmHeader_m->data.ctxAndMsgType), (int)rf->gmHeader_m->data.user_tag, 
+                                 (int)rf->gmHeader_m->data.dataLength, (int)rf->gmHeader_m->data.msgLength,
+                                 (int)rf->gmHeader_m->data.frag_seq, (int)rf->gmHeader_m->data.isendSeq_m));
+                            rf->ReturnDescToPool(0);
+                            rf = 0;
+                            continue;
+                        }
                         rf->msgData(timeNow);
                         break;
                     case MESSAGE_DATA_ACK:
+                        if(rf->gmHeader_m->dataAck.dest_proc != myproc()) {
+                            ulm_warn(("Process rank %d (%s): received misdelivered data ack "
+                                 "[rank %d --> rank %d]: ctx %d status %d received %d delivered %d frag_seq %d isendSeq %d\n",
+                                 myproc(), mynodename(),
+                                 rf->gmHeader_m->dataAck.src_proc, rf->gmHeader_m->dataAck.dest_proc,
+                                 EXTRACT_CTX(rf->gmHeader_m->dataAck.ctxAndMsgType), (int)rf->gmHeader_m->dataAck.ackStatus,
+                                 (int)rf->gmHeader_m->dataAck.receivedFragSeq, (int)rf->gmHeader_m->dataAck.deliveredFragSeq,
+                                 (int)rf->gmHeader_m->dataAck.thisFragSeq, (int)rf->gmHeader_m->dataAck.isendSeq_m));
+                            rf->ReturnDescToPool(0);
+                            rf = 0;
+                            continue;
+                        }
                         rf->msgDataAck(timeNow);
                         break;
                     default:
