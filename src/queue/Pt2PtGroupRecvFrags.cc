@@ -70,6 +70,19 @@ int Communicator::handleReceivedFrag(BaseRecvFragDesc_t *DataHeader,
 	unsigned int glfragSrc = remoteGroup->mapGroupProcIDToGlobalProcID[fragSrc];
 	reliabilityInfo->dataSeqsLock[glfragSrc].lock();
 	if (reliabilityInfo->receivedDataSeqs[glfragSrc].recordIfNotRecorded(DataHeader->seq_m, &recorded)) {
+
+            ulm_warn(("Process rank %d (%s): received duplicate fragment "
+                      "[rank %d --> rank %d]: "
+                      "ctx %d tag %d msgLength %d frag_seq %d isendSeq %d\n",
+                      myproc(), mynodename(),
+                      DataHeader->srcProcID_m,
+                      DataHeader->dstProcID_m,
+                      DataHeader->ctx_m,
+                      DataHeader->tag_m,
+                      DataHeader->msgLength_m,
+                      DataHeader->seq_m,
+                      DataHeader->isendSeq_m));
+
 	    // this is a duplicate from a retransmission...maybe a previous ACK was lost?
 	    // unlock so we can lock while building the ACK...
 	    if (reliabilityInfo->deliveredDataSeqs[glfragSrc].isRecorded(DataHeader->seq_m)) {
