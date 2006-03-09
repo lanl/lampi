@@ -139,6 +139,14 @@ bool BasePath_t::resend(SendDesc_t *message, int *errorCode)
             (1 << FragDesc->numTransmits_m) : (1 << MAXRETRANS_POWEROFTWO_MULTIPLE);
             if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
                 // resend this frag...
+
+                ulm_warn(("Warning: resending timed out fragment [global rank %d (%s) --> global rank %d]: "
+                          "addr=%p, msglength=%ld, tag=%d\n",
+                          myproc(), mynodename(), FragDesc->globalDestProc_m,
+                          FragDesc->parentSendDesc_m->addr_m,
+                          (long) FragDesc->parentSendDesc_m->posted_m.length_m,
+                          FragDesc->parentSendDesc_m->posted_m.tag_m));
+                
                 returnValue = true;
                 FragDesc->WhichQueue = fragSendQueue();
                 TmpDesc = (BaseSendFragDesc_t *) message->FragsToAck.RemoveLinkNoLock(FragDesc);
