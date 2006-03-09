@@ -497,3 +497,10 @@ Version 1.5.13
 - On BProc, number of processes now defaults to the number of
   processors in the allocation (deduced via the NODES environment
   variable). Documentation updated to reflect this change.
+
+Version 1.5.14
+
+- Added more robustness to Myrinet GM support: (a) Misdelivered
+  fragments are discarded; (b) Rendezvous protocol adopted for first
+  fragment to avoid overloading destination with retransmits in a
+  sporadically communicating application.
