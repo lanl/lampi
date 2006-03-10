@@ -397,13 +397,18 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     switch (rf->gmHeader_m->common.type) {
                     case MESSAGE_DATA:
                         if(rf->gmHeader_m->data.destID != (uint32_t)myproc()) {
-                            ulm_warn(("Process rank %d (%s): received misdelivered data fragment "
-                                 "[rank %d --> rank %d]: ctx %d tag %d dataLength %d msgLength %d frag_seq %d isendSeq %d\n",
-                                 myproc(), mynodename(),
-                                 rf->gmHeader_m->data.senderID, rf->gmHeader_m->data.destID,
-                                 EXTRACT_CTX(rf->gmHeader_m->data.ctxAndMsgType), (int)rf->gmHeader_m->data.user_tag, 
-                                 (int)rf->gmHeader_m->data.dataLength, (int)rf->gmHeader_m->data.msgLength,
-                                 (int)rf->gmHeader_m->data.frag_seq, (int)rf->gmHeader_m->data.isendSeq_m));
+                            ulm_warn(("Process rank %d (%s): Warning: "
+                                      "Received misdelivered data fragment [rank %d --> rank %d]: "
+                                      "ctx=%d, tag=%d, fraglength=%ld, msglength=%ld, fragseq=%ld, msgseq=%ld\n",
+                                      myproc(), mynodename(),
+                                      rf->gmHeader_m->data.senderID,
+                                      rf->gmHeader_m->data.destID,
+                                      EXTRACT_CTX(rf->gmHeader_m->data.ctxAndMsgType),
+                                      (int)rf->gmHeader_m->data.user_tag, 
+                                      (long)rf->gmHeader_m->data.dataLength,
+                                      (long)rf->gmHeader_m->data.msgLength,
+                                      (long)rf->gmHeader_m->data.frag_seq,
+                                      (long)rf->gmHeader_m->data.isendSeq_m));
                             rf->ReturnDescToPool(0);
                             rf = 0;
                             continue;

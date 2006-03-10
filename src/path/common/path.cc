@@ -140,12 +140,18 @@ bool BasePath_t::resend(SendDesc_t *message, int *errorCode)
             if ((curTime - FragDesc->timeSent_m) >= (RETRANS_TIME * max_multiple)) {
                 // resend this frag...
 
-                ulm_warn(("Warning: resending timed out fragment [global rank %d (%s) --> global rank %d]: "
-                          "addr=%p, msglength=%ld, tag=%d\n",
-                          myproc(), mynodename(), FragDesc->globalDestProc_m,
-                          FragDesc->parentSendDesc_m->addr_m,
+                ulm_warn(("Process rank %d (%s): Warning: "
+                          "Resending timed out fragment [rank %d --> rank %d]: "
+                          "ctx=%d, tag=%d, fraglength=%ld, msglength=%ld, fragseq=%ld, msgseq=%ld\n",
+                          myproc(), mynodename(),
+                          myproc(),
+                          FragDesc->globalDestProc_m,
+                          FragDesc->parentSendDesc_m->ctx_m,
+                          FragDesc->parentSendDesc_m->posted_m.tag_m,
+                          (long) FragDesc->length_m,
                           (long) FragDesc->parentSendDesc_m->posted_m.length_m,
-                          FragDesc->parentSendDesc_m->posted_m.tag_m));
+                          (long) FragDesc->fragSeq_m,
+                          (long) FragDesc->parentSendDesc_m->isendSeq_m));
                 
                 returnValue = true;
                 FragDesc->WhichQueue = fragSendQueue();
