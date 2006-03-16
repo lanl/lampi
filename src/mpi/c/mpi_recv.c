@@ -49,7 +49,7 @@ int PMPI_Recv(void *buf, int count, MPI_Datatype type, int source,
     int rc;
 
     if (source == MPI_PROC_NULL) {
-	if (status) {
+	if (status != MPI_STATUS_IGNORE) {
 	    status->MPI_SOURCE = MPI_PROC_NULL;
 	    status->MPI_TAG = MPI_ANY_TAG;
 	    status->MPI_ERROR = MPI_SUCCESS;
@@ -82,7 +82,7 @@ int PMPI_Recv(void *buf, int count, MPI_Datatype type, int source,
     rc = ulm_recv(buf, count, datatype, source, tag, comm, &stat);
 
     /* fill out status object */
-    if (status) {
+    if (status != MPI_STATUS_IGNORE) {
         status->MPI_ERROR = _mpi_error(stat.error_m);
         status->MPI_SOURCE = stat.peer_m;
         status->MPI_TAG = stat.tag_m;

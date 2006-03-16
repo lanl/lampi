@@ -88,6 +88,7 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
 
     } else {
 
+        MPI_Status status_tmp;
         ULMType_t *type = mtype;
         size_t type_index = 0;
         size_t map_index = 0;
@@ -104,6 +105,11 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
                 rc = MPI_ERR_NO_MEM;
                 goto ERRHANDLER;
             }
+        }
+
+        /* we need a real status so that we can unpack */
+        if (status == MPI_STATUS_IGNORE) {
+            status = &status_tmp;
         }
 
         rc = MPI_Sendrecv(buf, count, mtype, dest, sendtag,
@@ -123,8 +129,10 @@ int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype mtype,
                        &map_index,
                        &map_offset);
 
-        if(recv_buf != recv_block)
+        if(recv_buf != recv_block) {
             ulm_free(recv_buf);
+        }
+        
         return MPI_SUCCESS;
     }
 

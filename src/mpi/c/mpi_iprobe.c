@@ -80,7 +80,7 @@ int PMPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 	     rc, *flag, stat.peer_m, stat.tag_m, stat.error_m));
 
     /* fill out status object if there's a matching message */
-    if (*flag) {
+    if (*flag && (status != MPI_STATUS_IGNORE)) {
 	status->MPI_SOURCE = stat.peer_m;
 	status->MPI_TAG = stat.tag_m;
 	status->MPI_ERROR = _mpi_error(stat.error_m);

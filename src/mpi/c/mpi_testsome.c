@@ -65,7 +65,7 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
         }
     }
 
-    if (array_of_statuses) {
+    if (array_of_statuses != MPI_STATUSES_IGNORE) {
 	memset(array_of_statuses, 0, incount * sizeof(MPI_Status));
     }
 
@@ -93,7 +93,7 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
         /* handle proc null requests */
         if (array_of_requests[i] == _mpi.proc_null_request ||
             array_of_requests[i] == _mpi.proc_null_request_persistent) {
-            if (array_of_statuses) {
+            if (array_of_statuses != MPI_STATUSES_IGNORE) {
                 array_of_statuses->MPI_ERROR = MPI_SUCCESS;
                 array_of_statuses->MPI_SOURCE = MPI_PROC_NULL;
                 array_of_statuses->MPI_TAG = MPI_ANY_TAG;
@@ -114,7 +114,7 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
 	    rc = ULM_SUCCESS;
 	}
 	if (rc != ULM_SUCCESS) {
-	    if (array_of_statuses) {
+            if (array_of_statuses != MPI_STATUSES_IGNORE) {
 		array_of_statuses->MPI_ERROR = _mpi_error(stat.error_m);
 		array_of_statuses->MPI_SOURCE = stat.peer_m;
 		array_of_statuses->MPI_TAG = stat.tag_m;
@@ -134,7 +134,7 @@ int PMPI_Testsome(int incount, MPI_Request *array_of_requests,
 	    if (req[i] == ULM_REQUEST_NULL)
 		array_of_requests[i] = MPI_REQUEST_NULL;
 	    array_of_indices++;
-	    if (array_of_statuses) {
+            if (array_of_statuses != MPI_STATUSES_IGNORE) {
 		array_of_statuses->MPI_ERROR = _mpi_error(stat.error_m);
 		array_of_statuses->MPI_SOURCE = stat.peer_m;
 		array_of_statuses->MPI_TAG = stat.tag_m;

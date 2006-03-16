@@ -100,20 +100,24 @@ int PMPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     if (source != MPI_PROC_NULL) {        /* wait for recv */
 
         rc = ulm_wait(&req, &stat);
-        status->MPI_ERROR = _mpi_error(stat.error_m);
-        status->MPI_SOURCE = stat.peer_m;
-        status->MPI_TAG = stat.tag_m;
-        status->_count = stat.length_m;
-        status->_persistent = stat.persistent_m;
-        rc = status->MPI_ERROR;
+        rc = _mpi_error(stat.error_m);
+        if (status != MPI_STATUS_IGNORE) {
+            status->MPI_ERROR = rc;
+            status->MPI_SOURCE = stat.peer_m;
+            status->MPI_TAG = stat.tag_m;
+            status->_count = stat.length_m;
+            status->_persistent = stat.persistent_m;
+        }
 
     } else {
 
-        status->MPI_ERROR = MPI_SUCCESS;
-        status->MPI_SOURCE = MPI_PROC_NULL;
-        status->MPI_TAG = MPI_ANY_TAG;
-        status->_count = 0;
-        status->_persistent = 0;
+        if (status != MPI_STATUS_IGNORE) {
+            status->MPI_ERROR = MPI_SUCCESS;
+            status->MPI_SOURCE = MPI_PROC_NULL;
+            status->MPI_TAG = MPI_ANY_TAG;
+            status->_count = 0;
+            status->_persistent = 0;
+        }
         rc = MPI_SUCCESS;
     }
 

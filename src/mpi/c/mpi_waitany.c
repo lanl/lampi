@@ -64,7 +64,7 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
         }
     }
 
-    if (status) {
+    if (status != MPI_STATUS_IGNORE) {
 	memset(status, 0, sizeof(MPI_Status));
     }
 
@@ -98,7 +98,7 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 	    /* handle proc null requests */
             if (array_of_requests[i] == _mpi.proc_null_request ||
                 array_of_requests[i] == _mpi.proc_null_request_persistent) {
-                if (status) {
+                if (status != MPI_STATUS_IGNORE) {
                     status->MPI_ERROR = MPI_SUCCESS;
                     status->MPI_SOURCE = MPI_PROC_NULL;
                     status->MPI_TAG = MPI_ANY_TAG;
@@ -119,7 +119,7 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 	    }
 
 	    if (rc != ULM_SUCCESS) {
-		if (status) {
+                if (status != MPI_STATUS_IGNORE) {
 		    status->MPI_ERROR = _mpi_error(stat.error_m);
 		    status->MPI_SOURCE = stat.peer_m;
 		    status->MPI_TAG = stat.tag_m;
@@ -136,7 +136,7 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 		*index = i;
 		if (req[i] == ULM_REQUEST_NULL)
 		    array_of_requests[i] = MPI_REQUEST_NULL;
-		if (status) {
+                if (status != MPI_STATUS_IGNORE) {
 		    status->MPI_ERROR = _mpi_error(stat.error_m);
 		    status->MPI_SOURCE = stat.peer_m;
 		    status->MPI_TAG = stat.tag_m;
@@ -153,11 +153,12 @@ int PMPI_Waitany(int count, MPI_Request *array_of_requests, int *index,
 
     /* return index of MPI_UNDEFINED and empty status */
     *index = MPI_UNDEFINED;
-    status->MPI_ERROR = MPI_SUCCESS;
-    status->MPI_SOURCE = MPI_ANY_SOURCE;
-    status->MPI_TAG = MPI_ANY_TAG;
-    status->_count = 0;
-    status->_persistent = 0;
-
+    if (status != MPI_STATUS_IGNORE) {
+        status->MPI_ERROR = MPI_SUCCESS;
+        status->MPI_SOURCE = MPI_ANY_SOURCE;
+        status->MPI_TAG = MPI_ANY_TAG;
+        status->_count = 0;
+        status->_persistent = 0;
+    }
     return MPI_SUCCESS;
 }

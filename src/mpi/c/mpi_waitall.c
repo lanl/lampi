@@ -50,7 +50,7 @@ int PMPI_Waitall(int count,
     int flag = 0;
     int rc;
 
-    if (array_of_statuses) {
+    if (array_of_statuses != MPI_STATUSES_IGNORE) {
 	memset(array_of_statuses, 0, count * sizeof(MPI_Status));
     }
 

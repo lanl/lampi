@@ -62,14 +62,16 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     }
 
     if (request == NULL || *request == MPI_REQUEST_NULL) {
-        memset(status, 0, sizeof(MPI_Status));
+        if (status != MPI_STATUS_IGNORE) {
+            memset(status, 0, sizeof(MPI_Status));
+        }
         *flag = 1;
         return MPI_SUCCESS;
     }
 
     if (*request == _mpi.proc_null_request ||
         *request == _mpi.proc_null_request_persistent) {
-	if (status) {
+	if (status != MPI_STATUS_IGNORE) {
 	    status->MPI_ERROR = MPI_SUCCESS;
 	    status->MPI_SOURCE = MPI_PROC_NULL;
 	    status->MPI_TAG = MPI_ANY_TAG;
@@ -86,7 +88,7 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     rc = ulm_test((ULMRequest_t *) request, flag, &stat);
     rc = _mpi_error(rc);
     if (rc != MPI_SUCCESS) {
-	if (status) {
+	if (status != MPI_STATUS_IGNORE) {
 	    status->MPI_ERROR = _mpi_error(stat.error_m);
 	    status->MPI_SOURCE = stat.peer_m;
 	    status->MPI_TAG = stat.tag_m;
@@ -97,7 +99,7 @@ int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	_mpi_errhandler(MPI_COMM_WORLD, rc, __FILE__, __LINE__);
 	return rc;
     }
-    if (status) {
+    if (status != MPI_STATUS_IGNORE) {
 	status->MPI_ERROR = _mpi_error(stat.error_m);
 	status->MPI_SOURCE = stat.peer_m;
 	status->MPI_TAG = stat.tag_m;

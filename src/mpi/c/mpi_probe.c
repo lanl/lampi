@@ -88,12 +88,14 @@ int PMPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
         }
     }
 
-    status->MPI_SOURCE = stat.peer_m;
-    status->MPI_TAG = stat.tag_m;
-    status->MPI_ERROR = _mpi_error(stat.error_m);
-    status->_count = stat.length_m;
-    status->_persistent = stat.persistent_m;
-    status->_state = stat.state_m;
+    if (status != MPI_STATUS_IGNORE) {
+        status->MPI_SOURCE = stat.peer_m;
+        status->MPI_TAG = stat.tag_m;
+        status->MPI_ERROR = _mpi_error(stat.error_m);
+        status->_count = stat.length_m;
+        status->_persistent = stat.persistent_m;
+        status->_state = stat.state_m;
+    }
 
     rc =  (rc == ULM_SUCCESS) ? MPI_SUCCESS : _mpi_error(rc);
 
