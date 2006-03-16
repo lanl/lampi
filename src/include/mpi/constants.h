@@ -59,6 +59,7 @@ extern void *ulm_request_null_location;
 #define MPI_REQUEST_NULL        ((MPI_Request) &ulm_request_null_location)
 #define MPI_ERRHANDLER_NULL     ((MPI_Errhandler) -1)
 #define MPI_STATUS_IGNORE       ((MPI_Status *) NULL)
+#define MPI_STATUSES_IGNORE     ((MPI_Status *) NULL)
 #define MPI_IN_PLACE            ((void *) -1)
 
 /*
