@@ -58,7 +58,7 @@ void mpi_sendrecv_f(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 #else
@@ -75,7 +75,7 @@ void PMPI_SENDRECV(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
@@ -90,7 +90,7 @@ void pmpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
@@ -105,7 +105,7 @@ void pmpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
@@ -120,7 +120,7 @@ void pmpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void MPI_SENDRECV(void *sendbuf, MPI_Fint *sendcount,
@@ -135,7 +135,7 @@ void MPI_SENDRECV(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
@@ -150,7 +150,7 @@ void mpi_sendrecv(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
@@ -165,7 +165,7 @@ void mpi_sendrecv_(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
@@ -180,7 +180,7 @@ void mpi_sendrecv__(void *sendbuf, MPI_Fint *sendcount,
 
     *rc = MPI_Sendrecv(sendbuf, *sendcount, c_sendtype,
                        *dest, *sendtag, recvbuf, *recvcount,
-                       c_recvtype, *src, *recvtag, *comm, status);
+                       c_recvtype, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 #endif

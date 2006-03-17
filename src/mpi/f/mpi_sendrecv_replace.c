@@ -55,7 +55,7 @@ void mpi_sendrecv_replace_f(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 #else
@@ -69,7 +69,7 @@ void PMPI_SENDRECV_REPLACE(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv_replace(void *buf, MPI_Fint *count,
@@ -81,7 +81,7 @@ void pmpi_sendrecv_replace(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv_replace_(void *buf, MPI_Fint *count,
@@ -93,7 +93,7 @@ void pmpi_sendrecv_replace_(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_sendrecv_replace__(void *buf, MPI_Fint *count,
@@ -105,7 +105,7 @@ void pmpi_sendrecv_replace__(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void MPI_SENDRECV_REPLACE(void *buf, MPI_Fint *count,
@@ -117,7 +117,7 @@ void MPI_SENDRECV_REPLACE(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv_replace(void *buf, MPI_Fint *count,
@@ -129,7 +129,7 @@ void mpi_sendrecv_replace(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv_replace_(void *buf, MPI_Fint *count,
@@ -141,7 +141,7 @@ void mpi_sendrecv_replace_(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_sendrecv_replace__(void *buf, MPI_Fint *count,
@@ -153,7 +153,7 @@ void mpi_sendrecv_replace__(void *buf, MPI_Fint *count,
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
     *rc = MPI_Sendrecv_replace(buf, *count, c_type, *dest,
-                               *sendtag, *src, *recvtag, *comm, status);
+                               *sendtag, *src, *recvtag, *comm, MPI_Status_f2c(status));
 }
 
 #endif

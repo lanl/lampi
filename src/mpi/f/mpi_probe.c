@@ -49,7 +49,7 @@
 void mpi_probe_f(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 #else
@@ -57,49 +57,49 @@ void mpi_probe_f(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
 void PMPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void MPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Comm *comm,
                  MPI_Status *status, MPI_Fint *rc)
 {
-    *rc = MPI_Probe(*source, *tag, *comm, status);
+    *rc = MPI_Probe(*source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 #endif

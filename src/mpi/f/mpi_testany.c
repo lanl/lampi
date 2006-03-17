@@ -40,6 +40,7 @@ void mpi_testany_f(MPI_Fint *count, MPI_Fint *request_array,
                    MPI_Status *status, MPI_Fint *rc)
 {
     MPI_Request *c_req;
+    MPI_Status c_status;
     int i;
 
     c_req = ulm_malloc(*count * sizeof(MPI_Request));
@@ -51,6 +52,10 @@ void mpi_testany_f(MPI_Fint *count, MPI_Fint *request_array,
 
     for (i = 0; i < *count; i++) {
         c_req[i] = MPI_Request_f2c(request_array[i]);
+    }
+
+    if (MPI_Status_f2c(status) == MPI_STATUS_IGNORE) {
+        status = &c_status;
     }
 
     *rc = MPI_Testany(*count, c_req, index, flag, status);

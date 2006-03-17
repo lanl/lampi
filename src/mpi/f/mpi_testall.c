@@ -39,6 +39,7 @@ void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
                    MPI_Fint *flag, MPI_Status *status_array, MPI_Fint *rc)
 {
     MPI_Request *c_req;
+    MPI_Status *c_status_array;
     int i;
 
     c_req = ulm_malloc(*count * sizeof(MPI_Request));
@@ -52,7 +53,18 @@ void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
         c_req[i] = MPI_Request_f2c(request_array[i]);
     }
 
-    *rc = MPI_Testall(*count, c_req, flag, status_array);
+    if (MPI_Statuses_f2c(status_array) == MPI_STATUSES_IGNORE) {
+        c_status_array = ulm_malloc(*count * sizeof(MPI_Status));
+        if (c_status_array == NULL) {
+            *rc = MPI_ERR_INTERN;
+            _mpi_errhandler(MPI_COMM_WORLD, *rc, __FILE__, __LINE__);
+            return;
+        }
+    } else {
+        c_status_array = status_array;
+    }
+
+    *rc = MPI_Testall(*count, c_req, flag, c_status_array);
 
     if (*rc == MPI_SUCCESS && *flag) {
         /*
@@ -60,7 +72,7 @@ void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
          */
         for (i = 0; i < *count; i++) {
             if ((request_array[i] >= 0)
-                && (status_array[i]._persistent == 0)) {
+                && (c_status_array[i]._persistent == 0)) {
                 _mpi_ptr_table_free(_mpif.request_table, request_array[i]);
                 /* set to MPI_REQUEST_NULL */
                 request_array[i] = -1;
@@ -70,6 +82,9 @@ void mpi_testall_f(MPI_Fint *count, MPI_Fint *request_array,
 
     if (c_req) {
         ulm_free(c_req);
+    }
+    if (c_status_array != status_array) {
+        ulm_free(c_status_array);
     }
 }
 

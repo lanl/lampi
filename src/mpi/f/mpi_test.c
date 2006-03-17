@@ -41,6 +41,11 @@ void mpi_test_f(MPI_Fint *req, MPI_Fint *flag,
                 MPI_Status *status, MPI_Fint *rc)
 {
     MPI_Request c_req = MPI_Request_f2c(*req);
+    MPI_Status c_status;
+
+    if (MPI_Status_f2c(status) == MPI_STATUS_IGNORE) {
+        status = &c_status;
+    }
 
     *rc = MPI_Test(&c_req, flag, status);
     if (*rc == MPI_SUCCESS && (*req >= 0) && *flag

@@ -52,7 +52,7 @@ void mpi_recv_f(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 #else
@@ -63,7 +63,7 @@ void PMPI_RECV(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -72,7 +72,7 @@ void pmpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -81,7 +81,7 @@ void pmpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void pmpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -90,7 +90,7 @@ void pmpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void MPI_RECV(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -99,7 +99,7 @@ void MPI_RECV(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -108,7 +108,7 @@ void mpi_recv(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -117,7 +117,7 @@ void mpi_recv_(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 void mpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
@@ -126,7 +126,7 @@ void mpi_recv__(void *buf, MPI_Fint *count, MPI_Fint *type,
 {
     MPI_Datatype c_type = MPI_Type_f2c(*type);
 
-    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, status);
+    *rc = MPI_Recv(buf, *count, c_type, *source, *tag, *comm, MPI_Status_f2c(status));
 }
 
 #endif
