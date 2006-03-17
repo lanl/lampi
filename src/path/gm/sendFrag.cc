@@ -40,6 +40,7 @@
 #include "path/gm/sendFrag.h"
 #include "os/atomic.h"
 
+
 bool gmSendFragDesc::init(int globalDestProc,
                           int tmapIndex,
                           SendDesc_t *parentSendDesc,
@@ -70,6 +71,7 @@ bool gmSendFragDesc::init(int globalDestProc,
         timeSent_m = -1;
         initialized_m = true;
         didRecvAck_m = false;
+        gmSends_m = 0;
     }
 
     if (!currentSrcAddr_m) {
@@ -232,6 +234,8 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
 
     if ( GMFRAGFREELIST == WhichQueue )
         return;		// already freed
+    if ( gmSends_m != 0 )
+        return;
 
     bsd->clearToSend_m = true;
 

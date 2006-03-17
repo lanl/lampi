@@ -42,6 +42,7 @@
 #include "os/atomic.h"
 
 
+
 inline bool gmPath::canReach(int globalDestProcessID)
 {
     // return true only for processes not on our "box"
@@ -67,7 +68,7 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
 {
     Group *group;
     gmSendFragDesc *sfd;
-    gmSendFragDesc *afd;
+    gmSendFragDesc *current;
     int globalDestProc;
     int nDescsToAllocate;
     int rc;
@@ -225,30 +226,30 @@ bool gmPath::send(SendDesc_t *message, bool *incomplete, int *errorCode)
                 sfd->initResendInfo(message, timeNow);
             }
 
+            // switch frag to ack list and remove from send list
+            current = sfd;
+            current->WhichQueue = GMFRAGSTOACK;
+            sfd = (gmSendFragDesc*)message->FragsToSend.RemoveLinkNoLock(current);
+            message->FragsToAck.AppendNoLock(current);
+            numSent++;
+
+            // queue send to gm
             if (usethreads()) {
                 gmState.gmLock.lock();
             }
-
-
-            gm_send_with_callback(sfd->gmPort(),
+            current->gmSends_m++;
+            gm_send_with_callback(current->gmPort(),
                                   addr,
                                   gmState.log2Size,
-                                  sfd->length_m + sizeof(gmHeader),
+                                  current->length_m + sizeof(gmHeader),
                                   GM_LOW_PRIORITY,
-                                  sfd->gmDestNodeID(),
-                                  sfd->gmDestPortID(),
+                                  current->gmDestNodeID(),
+                                  current->gmDestPortID(),
                                   callback,
-                                  (void *) sfd);
+                                  (void *) current);
             if (usethreads()) {
                 gmState.gmLock.unlock();
             }
-
-            // switch frag to ack list and remove from send list
-            afd = sfd;
-            afd->WhichQueue = GMFRAGSTOACK;
-            sfd = (gmSendFragDesc *) message->FragsToSend.RemoveLinkNoLock(afd);
-            message->FragsToAck.AppendNoLock(afd);
-            numSent++;
         }
     }
 
@@ -397,18 +398,21 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                     switch (rf->gmHeader_m->common.type) {
                     case MESSAGE_DATA:
                         if(rf->gmHeader_m->data.destID != (uint32_t)myproc()) {
-                            ulm_warn(("Process rank %d (%s): Warning: "
-                                      "Received misdelivered data fragment [rank %d --> rank %d]: "
-                                      "ctx=%d, tag=%d, fraglength=%ld, msglength=%ld, fragseq=%ld, msgseq=%ld\n",
-                                      myproc(), mynodename(),
-                                      rf->gmHeader_m->data.senderID,
-                                      rf->gmHeader_m->data.destID,
-                                      EXTRACT_CTX(rf->gmHeader_m->data.ctxAndMsgType),
-                                      (int)rf->gmHeader_m->data.user_tag, 
-                                      (long)rf->gmHeader_m->data.dataLength,
-                                      (long)rf->gmHeader_m->data.msgLength,
-                                      (long)rf->gmHeader_m->data.frag_seq,
-                                      (long)rf->gmHeader_m->data.isendSeq_m));
+                            unsigned int node_id;
+                            gm_get_node_id(devInfo->gmPort, &node_id);
+                            ulm_warn(("Process rank %d (%s): GM node %d port %d "
+                                 "received misdelivered data fragment from GM node %d port %d: \n"
+                                 "[rank %d (GM node %d) --> rank %d (GM node %d)]: "
+                                 "ctx %d tag %d dataLength %d msgLength %d frag_seq %d isendSeq %d\n",
+                                 myproc(), mynodename(), node_id, (int)devInfo->port_id,
+                                 gm_ntoh_u16(event->recv.sender_node_id), gm_ntoh_u8(event->recv.sender_port_id),
+                                 (int)rf->gmHeader_m->data.senderID, 
+                                 (int)devInfo->remoteDevList[rf->gmHeader_m->data.senderID].node_id,
+                                 (int)rf->gmHeader_m->data.destID, 
+                                 (int)devInfo->remoteDevList[rf->gmHeader_m->data.destID].node_id,
+                                 EXTRACT_CTX(rf->gmHeader_m->data.ctxAndMsgType), (int)rf->gmHeader_m->data.user_tag, 
+                                 (int)rf->gmHeader_m->data.dataLength, (int)rf->gmHeader_m->data.msgLength,
+                                 (int)rf->gmHeader_m->data.frag_seq, (int)rf->gmHeader_m->data.isendSeq_m));
                             rf->ReturnDescToPool(0);
                             rf = 0;
                             continue;
@@ -417,10 +421,18 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         break;
                     case MESSAGE_DATA_ACK:
                         if(rf->gmHeader_m->dataAck.dest_proc != myproc()) {
-                            ulm_warn(("Process rank %d (%s): received misdelivered data ack "
-                                 "[rank %d --> rank %d]: ctx %d status %d received %d delivered %d frag_seq %d isendSeq %d\n",
-                                 myproc(), mynodename(),
-                                 rf->gmHeader_m->dataAck.src_proc, rf->gmHeader_m->dataAck.dest_proc,
+                            unsigned int node_id;
+                            gm_get_node_id(devInfo->gmPort, &node_id);
+                            ulm_warn(("Process rank %d (%s): GM node %d port %d "
+                                 "received misdelivered data fragment from GM node %d port %d: \n"
+                                 "[rank %d (GM node %d) --> rank %d (GM node %d)]: "
+                                 "ctx %d status %d received %d delivered %d frag_seq %d isendSeq %d\n",
+                                 myproc(), mynodename(), node_id, (int)devInfo->port_id,
+                                 gm_ntoh_u16(event->recv.sender_node_id), gm_ntoh_u8(event->recv.sender_port_id),
+                                 (int)rf->gmHeader_m->dataAck.src_proc, 
+                                 (int)devInfo->remoteDevList[rf->gmHeader_m->dataAck.src_proc].node_id,
+                                 (int)rf->gmHeader_m->dataAck.dest_proc,
+                                 (int)devInfo->remoteDevList[rf->gmHeader_m->dataAck.dest_proc].node_id,
                                  EXTRACT_CTX(rf->gmHeader_m->dataAck.ctxAndMsgType), (int)rf->gmHeader_m->dataAck.ackStatus,
                                  (int)rf->gmHeader_m->dataAck.receivedFragSeq, (int)rf->gmHeader_m->dataAck.deliveredFragSeq,
                                  (int)rf->gmHeader_m->dataAck.thisFragSeq, (int)rf->gmHeader_m->dataAck.isendSeq_m));
@@ -543,6 +555,7 @@ void gmPath::callback(struct gm_port *port,
     if (usethreads()) {
         gmState.localDevList[sfd->dev_m].Lock.unlock();
     }
+    sfd->gmSends_m--;
 
     switch (status) {
     case GM_TRY_AGAIN:
@@ -551,9 +564,18 @@ void gmPath::callback(struct gm_port *port,
         // try again if the receiver is busy 
         ulm_err(("Warning: Myrinet/GM: Retrying send: %d (%s) -> %d (status = %d)\n",
                  myproc(), mynodename(), sfd->globalDestProc_m, status));
+
+        // remove frag descriptor from list of frags to be acked
+        if (sfd->WhichQueue == GMFRAGSTOACK) {
+             bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
+        } else {
+             ulm_err(("Warning: invalid queue?\n"));
+        }
+        // requeue on list of frags to send
+        sfd->WhichQueue = GMFRAGSTOSEND;
         bsd->FragsToSend.Append(sfd);
         return;
-    case GM_SUCCESS:
+    case GM_SUCCESS: 
         break;
     default:
         // otherwise fail if there was a failure 

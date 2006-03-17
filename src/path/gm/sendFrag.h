@@ -41,10 +41,10 @@
 
 class gmSendFragDesc : public BaseSendFragDesc_t {
 
-protected:
-    bool	didRecvAck_m;
-
 public:
+    bool	didRecvAck_m;
+    int         gmSends_m;
+
 
     // data members
 
