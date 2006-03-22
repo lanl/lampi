@@ -145,9 +145,10 @@ int CheckForControlMsgs(void)
         }
     }
 
-    rc = select(maxfd + 1, (fd_set *) &fdset, NULL, NULL, &timeout);
-    if (rc <= 0) {
-        return rc;
+    while ((rc = select(maxfd + 1, (fd_set *) &fdset, NULL, NULL, &timeout)) <= 0) {
+        if (rc != EINTR) {
+            return rc;
+        }
     }
 
     for (int host = 0; host < RunParams.NHosts; host++) {
