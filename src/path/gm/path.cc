@@ -539,6 +539,23 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
 }
 
 
+static void gmPath_timed_out_resume(struct gm_port *port,
+				    void *context,
+				    gm_status_t status)
+{
+    gmSendFragDesc *sfd = (gmSendFragDesc *) context;
+    if (usethreads()) {
+        gmState.localDevList[sfd->dev_m].Lock.lock();
+    }
+
+    gmState.localDevList[sfd->dev_m].sendTokens++;
+
+    if (usethreads()) {
+        gmState.localDevList[sfd->dev_m].Lock.unlock();
+    }
+}
+
+
 void gmPath::callback(struct gm_port *port,
                       void *context,
                       gm_status_t status)
@@ -550,7 +567,9 @@ void gmPath::callback(struct gm_port *port,
         gmState.localDevList[sfd->dev_m].Lock.lock();
     }
 
-    gmState.localDevList[sfd->dev_m].sendTokens++;
+    if (status != GM_SEND_TIMED_OUT) {
+        gmState.localDevList[sfd->dev_m].sendTokens++;
+    }
 
     if (usethreads()) {
         gmState.localDevList[sfd->dev_m].Lock.unlock();
@@ -560,21 +579,49 @@ void gmPath::callback(struct gm_port *port,
     switch (status) {
     case GM_TRY_AGAIN:
     case GM_BUSY:
+        ulm_exit(("Error: Myrinet/GM: %s (%d). "
+		  "Sending from rank %d (%s) to rank %d.\n",
+		  gm_strerror(status), (int) status,
+                  myproc(), mynodename(), sfd->globalDestProc_m));
+	return;
     case GM_SEND_TIMED_OUT:
+        // it is also possible to use gm_drop_sends() instead of
+	// gm_resume_sending() if minimizing disorder is more
+	// important than avoiding requeuing/resending
+        gm_resume_sending(port, GM_LOW_PRIORITY,
+			  sfd->gmDestNodeID(),
+			  sfd->gmDestPortID(),
+			  gmPath_timed_out_resume,
+			  context);
+	// fall through send_dropped case
+    case GM_SEND_DROPPED:
         // try again if the receiver is busy 
-        ulm_err(("Warning: Myrinet/GM: Retrying send: %d (%s) -> %d (status = %d)\n",
-                 myproc(), mynodename(), sfd->globalDestProc_m, status));
+        ulm_warn(("Warning: Myrinet/GM: %s (%d). "
+                  "Retrying dropped/timed-out send: %d (%s) -> %d\n",
+		  gm_strerror(status), (int) status,
+		  myproc(), mynodename(), sfd->globalDestProc_m));
 
         // remove frag descriptor from list of frags to be acked
+	assert(sfd->WhichQueue == GMFRAGSTOACK);
         if (sfd->WhichQueue == GMFRAGSTOACK) {
              bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
         } else {
              ulm_err(("Warning: invalid queue?\n"));
         }
+
         // requeue on list of frags to send
         sfd->WhichQueue = GMFRAGSTOSEND;
         bsd->FragsToSend.Append(sfd);
+
+        // make sure send descriptor is on incomplete list
+	assert (bsd->WhichQueue == INCOMPLETEISENDQUEUE
+		|| bsd->WhichQueue == UNACKEDISENDQUEUE);
+	if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
+            UnackedPostedSends.RemoveLink(bsd);
+            IncompletePostedSends.Append(bsd);
+	}
         return;
+
     case GM_SUCCESS: 
         break;
     default:
