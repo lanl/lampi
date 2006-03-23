@@ -76,28 +76,34 @@ static int nodestatus(int node, char *status, int len)
 }
 #endif
 
-static int bproc_get_nnodes_from_nodes(void)
-{
-    /*
-     * Get the number of nodes from the NODES environment variable
-     */
 
+/*
+ * Get the number of processors from the NODES environment variable
+ */
+static int bproc_get_nprocs(void)
+{
+    FILE *fp;
     char *s;
-    char *p;
-    char *q;
-    int nnodes = 0;
+    int nprocs;
 
     s = getenv("NODES");
-    if (s) {
-        nnodes = 1;
-        p = s;
-        for (p = s; (q = strchr(p, ',')); p = q + 1) {
-            nnodes++;
-        }
+    if (s == NULL) {
+        return -1;
     }
 
-    return nnodes;
+    fp = popen("bpsh $NODES cat /proc/cpuinfo | grep processor | wc -l", "r");
+    if (fp == NULL) {
+        return -1;
+    }
+    if (1 != fscanf(fp, "%d", &nprocs)) {
+        pclose(fp);
+        return -1;
+    }
+    pclose(fp);
+
+    return nprocs;
 }
+
 
 void getBJSNodes(void)
 {
@@ -465,6 +471,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     int Host;
     int LSFHost;
     int nhosts;
+    int nprocs;
 
     /* make sure we only do GetClientProcessCount... once between -np and -n! */
     if (gotClientProcessCount) {
@@ -477,13 +484,14 @@ void GetClientProcessCountNoInput(const char *InfoStream)
      * by default start 2 processes on each specified node.
      */
 
-    if (bproc_get_nnodes_from_nodes()) {
+    nprocs = bproc_get_nprocs();
+    if (nprocs > 0) {
         int OptionIndex = MatchOption("Procs");
         sprintf(Options[OptionIndex].InputData,
-                "%d", 2 * bproc_get_nnodes_from_nodes());
+                "%d", nprocs);
         return GetClientProcessCount(InfoStream);
     }
-    ulm_err(("Error: No argument to -np/-n and BProc NODES environment variable not set\n"));
+    ulm_err(("Error: No argument to -np/-n and failed to guess from BProc environment\n"));
     Abort();
 #endif
 
