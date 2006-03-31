@@ -234,7 +234,7 @@ inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
         DataOK = true;
     } else {
         DataOK = false;
-        ulm_err(("Process rank %d (%s): Warning: "
+        ulm_log(("Process rank %d (%s): Warning: "
                  "Corrupt fragment data received [rank %d --> rank %d]: "
                  "%s received=0x%x, calculated=0x%x: "
                  "ctx=%d, tag=%d, fraglength=%ld, msglength=%ld, fragseq=%ld, msgseq=%ld\n",

@@ -614,7 +614,7 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow,
         // process that sent the original message; otherwise, just
         // rely on sender side retransmission
 
-        ulm_err(("Warning: Received \"DATA CORRUPT\" acknowledgment [rank %d (%s) <-- rank %d]\n",
+        ulm_log(("Warning: Received \"DATA CORRUPT\" acknowledgment [rank %d (%s) <-- rank %d]\n",
                  myproc(), mynodename(), srcProcID_m));
                  
         // retransmit...
@@ -626,11 +626,11 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow,
             UnackedPostedSends.RemoveLink(bsd);
             bsd->WhichQueue = INCOMPLETEISENDQUEUE;
             IncompletePostedSends.Append(bsd);
-            ulm_err(("Warning: Retransmitting fragment [rank %d (%s) --> rank %d]\n",
-                     myproc(), mynodename(), srcProcID_m));
+            ulm_warn(("Warning: Retransmitting fragment [rank %d (%s) --> rank %d]\n",
+                      myproc(), mynodename(), srcProcID_m));
         } else {
-            ulm_err(("Warning: Retransmitting fragment on timeout [rank %d (%s) --> rank %d]\n",
-                     myproc(), mynodename(), srcProcID_m));
+            ulm_warn(("Warning: Retransmitting fragment on timeout [rank %d (%s) --> rank %d]\n",
+                      myproc(), mynodename(), srcProcID_m));
         }
 
         // reset WhichQueue flag

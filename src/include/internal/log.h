@@ -44,41 +44,57 @@
 extern int ulm_dbg_enabled;
 extern int ulm_warn_enabled;
 
+int ulm_log_enabled = 1;
+
 /* error, warning, debug and exit macros */
 
 #define ulm_dbg(x)                                      \
     do {                                                \
         if (ulm_dbg_enabled) {                          \
-            _ulm_set_file_line(__FILE__, __LINE__) ;    \
+            _ulm_set_file_line(__FILE__, __LINE__);     \
             _ulm_log x ;                                \
         }                                               \
     } while (0)
 
-#define ulm_err(x)                                      \
+#define ulm_err(x)                              \
+    do {                                        \
+        _ulm_set_file_line(__FILE__, __LINE__); \
+        _ulm_log x ;                            \
+    } while (0)
+
+#define ulm_log(x)                                      \
     do {                                                \
-        _ulm_set_file_line(__FILE__, __LINE__) ;        \
-        _ulm_log x ;                                    \
+        if (ulm_warn_enabled) {                         \
+            _ulm_set_file_line(__FILE__, __LINE__);     \
+            _ulm_log x ;                                \
+        } else if (ulm_log_enabled) {                   \
+            _ulm_set_file_line(__FILE__, __LINE__);     \
+            _ulm_log_to_file x ;                        \
+        }                                               \
     } while (0)
 
 #define ulm_warn(x)                                     \
     do {                                                \
         if (ulm_warn_enabled) {                         \
-            _ulm_set_file_line(__FILE__, __LINE__) ;    \
+            _ulm_set_file_line(__FILE__, __LINE__);     \
             _ulm_log x ;                                \
         }                                               \
     } while (0)
 
-#define ulm_exit(x)                                     \
-    do {                                                \
-        _ulm_set_file_line(__FILE__, __LINE__) ;        \
-        _ulm_log x ;                                    \
-        exit(EXIT_FAILURE);                             \
+#define ulm_exit(x)                             \
+    do {                                        \
+        _ulm_set_file_line(__FILE__, __LINE__); \
+        _ulm_log x ;                            \
+        exit(EXIT_FAILURE);                     \
     } while (0)
 
 CDECL_BEGIN
 
 /* print message to stderr and log file */
 void _ulm_log(const char* fmt, ...);
+
+/* print message to log file */
+void _ulm_log_to_file(const char* fmt, ...);
 
 /* set file and line information in message buffer */
 void _ulm_set_file_line(const char *file, int lineno);

@@ -503,4 +503,8 @@ Version 1.5.14
 - Added more robustness to Myrinet GM support: (a) Misdelivered
   fragments are discarded; (b) Rendezvous protocol adopted for first
   fragment to avoid overloading destination with retransmits in a
-  sporadically communicating application.
+  sporadically communicating application; (c) Patch from Myricom for
+  correct handling of GM send timeouts.
+
+- Change to correctly obtain the effective number of processors in an
+  LSF/BJS allocation on Bproc, even for dual core processors.

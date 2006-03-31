@@ -400,7 +400,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         if(rf->gmHeader_m->data.destID != (uint32_t)myproc()) {
                             unsigned int node_id;
                             gm_get_node_id(devInfo->gmPort, &node_id);
-                            ulm_warn(("Process rank %d (%s): GM node %d port %d "
+                            ulm_log(("Process rank %d (%s): GM node %d port %d "
                                  "received misdelivered data fragment from GM node %d port %d: \n"
                                  "[rank %d (GM node %d) --> rank %d (GM node %d)]: "
                                  "ctx %d tag %d dataLength %d msgLength %d frag_seq %d isendSeq %d\n",
@@ -423,7 +423,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         if(rf->gmHeader_m->dataAck.dest_proc != myproc()) {
                             unsigned int node_id;
                             gm_get_node_id(devInfo->gmPort, &node_id);
-                            ulm_warn(("Process rank %d (%s): GM node %d port %d "
+                            ulm_log(("Process rank %d (%s): GM node %d port %d "
                                  "received misdelivered data fragment from GM node %d port %d: \n"
                                  "[rank %d (GM node %d) --> rank %d (GM node %d)]: "
                                  "ctx %d status %d received %d delivered %d frag_seq %d isendSeq %d\n",

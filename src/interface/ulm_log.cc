@@ -83,6 +83,35 @@ extern "C" void _ulm_log(const char *fmt, ...)
     buf[0] = '\0';
 }
 
+extern "C" void _ulm_log_to_file(const char *fmt, ...)
+{
+    /* write to a log file */
+
+    FILE *stream;
+    va_list ap;
+
+    if (!initialized) {
+        initialized = 1;
+        if (getenv("LAMPI_LOG")) {
+            snprintf(log_filename, buf_size, getenv("LAMPI_LOG"));
+        }
+    }
+
+    va_start(ap, fmt);
+    vsnprintf(buf + strlen(buf), buf_size - strlen(buf), fmt, ap);
+    va_end(ap);
+
+    stream = fopen(log_filename, "a");
+    if (stream) {
+        time_t t = time(NULL);
+        fputs(ctime(&t), stream);
+        fputs(buf, stream);
+        fflush(stream);
+        fclose(stream);
+    }
+    buf[0] = '\0';
+}
+
 extern "C" void _ulm_set_file_line(const char *name, int line)
 {
     char *p = strstr(name, "src/");
