@@ -1,3 +1,891 @@
+2006-03-31 12:25  ddd
+
+	* configure.ac: Release candidate 1.5.14-rc6
+
+2006-03-31 12:20  ddd
+
+	* RELEASE_NOTES, configure.ac, src/include/internal/log.h,
+	  src/interface/ulm_log.cc, src/path/common/BaseDesc.cc,
+	  src/path/gm/path.cc, src/path/gm/recvFrag.h, configure: Making
+	  data-corruption error messages less intrusive: they get logged to
+	  lampi.log but only to stderr for "mpirun -w".
+
+2006-03-22 18:40  ddd
+
+	* src/path/gm/path.cc: Adding patch from Myricom for handling
+	  GM_SEND_TIMED_OUT
+
+2006-03-22 18:40  ddd
+
+	* src/run/GetClientProcessCount.cc: Changing mechanism for guessing
+	  nprocs on bproc systems when -np is not specified.  This should
+	  work on dual core machines...  see.
+
+2006-03-22 10:47  ddd
+
+	* configure, configure.ac: Updating for 1.5.14-rc5
+
+2006-03-22 10:45  ddd
+
+	* src/run/Admin.cc: Handle interrupted select()  (was causing
+	  problems for Open Speedshop).
+
+2006-03-17 17:15  ddd
+
+	* configure, configure.ac: Tagging for 1.5.14-rc4
+
+2006-03-17 14:50  twoodall
+
+	* src/path/gm/: path.cc, sendFrag.cc, sendFrag.h: - rework log
+	  messages - dont release gm buffer until all pending sends
+	  complete
+
+2006-03-16 18:55  ddd
+
+	* src/mpi/f/: mpi_iprobe.c, mpi_probe.c, mpi_recv.c,
+	  mpi_sendrecv.c, mpi_sendrecv_replace.c, mpi_test.c,
+	  mpi_testall.c, mpi_testany.c, mpi_testsome.c, mpi_wait.c,
+	  mpi_waitall.c, mpi_waitany.c, mpi_waitsome.c: MPI_STATUS_IGNORE
+	  and MPI_STATUSES_IGNORE support for Fortran.
+
+2006-03-16 14:10  ddd
+
+	* configure, configure.ac: Updating for release 1.5.14-rc3
+
+2006-03-16 14:10  ddd
+
+	* rpm/: lampi-clustermatic.spec, lampi-lsf-bproc.spec, lampi.spec:
+	  Updating for release 1.5.14
+
+2006-03-16 14:09  ddd
+
+	* src/include/internal/mpif.h: Macros for handling fortran
+	  definition of MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE.
+
+2006-03-16 14:05  ddd
+
+	* src/include/mpi/constants.h: C definition of MPI_STATUSES_IGNORE.
+
+	  Requested by Matt Challacombe.
+
+2006-03-16 14:05  ddd
+
+	* src/include/mpi/mpif.h: Fortran definitions for MPI_STATUS_IGNORE
+	  MPI_STATUSES_IGNORE.
+
+	  Requested by Matt Challacombe.
+
+2006-03-16 14:04  ddd
+
+	* src/mpi/c/: mpi_iprobe.c, mpi_probe.c, mpi_recv.c,
+	  mpi_sendrecv.c, mpi_sendrecv_replace.c, mpi_test.c,
+	  mpi_testall.c, mpi_testany.c, mpi_testsome.c, mpi_wait.c,
+	  mpi_waitall.c, mpi_waitany.c, mpi_waitsome.c: C interface changes
+	  to properly support MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE.
+	  Most -- but not all -- of this was working, but this cleans
+	  things up.  The real work is in the Fortran interface.
+
+	  Requested by Matt Challacombe.
+
+2006-03-09 18:19  ddd
+
+	* src/: path/common/path.cc, path/gm/path.cc, path/gm/recvFrag.h,
+	  queue/Pt2PtGroupRecvFrags.cc: Making warnings a little more
+	  consistent
+
+2006-03-09 15:49  ddd
+
+	* src/queue/Pt2PtGroupRecvFrags.cc: Adding a warning (optional) for
+	  receiving a duplicate fragment.
+
+2006-03-09 14:55  ddd
+
+	* RELEASE_NOTES, configure, configure.ac: Updating for version
+	  1.5.4-rc2
+
+2006-03-09 10:29  ddd
+
+	* src/include/internal/constants.h: Changing the initial
+	  retransmission time to 10 seconds, and the exponential backoff
+	  limit to 2^8.  This means the maximum retry period (after
+	  backoff) will be 10 * 256 seconds = 42 minutes.
+
+2006-03-09 09:30  ddd
+
+	* src/path/gm/recvFrag.h: Adding more information to data
+	  corruption message.
+
+2006-03-09 09:12  twoodall
+
+	* src/path/gm/path.cc: drop misdelivered packets
+
+2006-03-09 09:07  ddd
+
+	* src/path/gm/path.cc: Adding rendezvous logic to GM path:
+	  fragments are only sent eagerly after the first acknowledgement
+	  is received.
+
+2006-03-09 09:06  ddd
+
+	* src/path/common/path.cc: Adding warning (enabled by "mpirun -w")
+	  for resending of timed out fragments.
+
+2006-03-09 09:04  ddd
+
+	* src/include/internal/constants.h: Removing archaic constants
+
+2006-03-09 09:03  ddd
+
+	* src/mpi/c/mpi_probe.c: Adding some (disabled) debug code for
+	  MPI_Probe()
+
+2006-01-05 17:39  ddd
+
+	* config.h.in, configure, configure.ac: Adding librt to the build
+	  (where it exists) for aio_ functions (now enabled in ROMIO).
+	  This saves the user having to supply -lrt on the build line.
+
+2006-01-05 17:38  ddd
+
+	* src/init/init.cc: Commenting out sched_setaffinity() since it can
+	  cause problems
+
+2006-01-05 13:16  ddd
+
+	* configure.ac, src/include/internal/mpi.h,
+	  src/interface/ulm_check.cc, src/mpi/c/mpi_bsend_init.c,
+	  src/mpi/c/mpi_recv_init.c, src/mpi/c/mpi_request_free.c,
+	  src/mpi/c/mpi_rsend_init.c, src/mpi/c/mpi_send_init.c,
+	  src/mpi/c/mpi_ssend_init.c, src/mpi/c/mpi_start.c,
+	  src/mpi/c/mpi_test.c, src/mpi/c/mpi_testall.c,
+	  src/mpi/c/mpi_testany.c, src/mpi/c/mpi_testsome.c,
+	  src/mpi/c/mpi_wait.c, src/mpi/c/mpi_waitall.c,
+	  src/mpi/c/mpi_waitany.c, src/mpi/c/mpi_waitsome.c,
+	  src/mpi/internal/mpi_state.c: Reworking MPI_PROC_NULL requests,
+	  to deal with: - Bug in MPI_Waitall() reported by X division user
+	  (which in fact was   present in other functions).  - A lurking
+	  problem: persistent MPI_PROC_NULL requests were not supported
+	  at all.
+
+2006-01-03 11:25  ddd
+
+	* Makefile.in: Enabling asynchronous I/O
+
+2005-12-23 13:31  ddd
+
+	* src/: include/internal/constants.h, interface/ulm_abort.cc:
+	  Adding features requested by X Division users:
+
+	  1. Exit statuses mimic RMS behavior.	2. Guess "-np" option from
+	  "NODES" environment variable if not specified.
+
+2005-12-23 13:30  ddd
+
+	* RELEASE_NOTES: Updating release notes.
+
+2005-12-23 13:29  ddd
+
+	* man/: lampi.html, lampi.man1, lampi_man.tex, mpirun.html,
+	  mpirun.man1: Updating documentation to reflect changes in exit
+	  status handling.
+
+2005-12-23 13:28  ddd
+
+	* romio-1.2.5.1/: configure, adio/ad_nfs/ad_nfs.h,
+	  adio/ad_panfs/ad_panfs.h, adio/ad_panfs/ad_panfs_hints.c,
+	  adio/ad_ufs/ad_ufs.h, adio/common/ad_aggregate.c,
+	  adio/common/ad_hints.c, adio/common/ad_write_coll.c,
+	  mpi-io/set_size.c: Adding ROMIO patches from Steve Hodson
+
+2005-12-23 13:28  ddd
+
+	* src/run/: Abort.cc, Admin.cc, GetAppHostData.cc,
+	  GetClientProcessCount.cc, Input.cc, Run.h,
+	  SetupClientHostInfo.cc, spawn.cc: Adding features requested by X
+	  Division users:
+
+	  1. Exit statuses mimic RMS behavior.	2. Guess "-np" option from
+	  "NODES" environment variable if not specified.
+
+2005-12-13 15:52  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for 1.5.13 (still have to implement
+	  error status fixes).
+
+2005-12-13 15:40  ddd
+
+	* config.h.in, configure.ac: Tests for processor affinity headers
+	  and functions
+
+2005-12-13 15:39  ddd
+
+	* src/run/mpirun.cc: Minor changes
+
+2005-12-13 15:37  ddd
+
+	* src/init/init.cc: Adding environment variable to experiment with
+	  processor affinity, and removing some dead code.
+
+2005-12-13 15:36  ddd
+
+	* src/init/environ.cc: Adding environment variable to experiment
+	  with processor affinity
+
+2005-12-13 15:23  ddd
+
+	* src/init/init.h: Removing dead code.
+
+2005-12-13 15:22  ddd
+
+	* src/client/adminMessage.cc: Reversing experimental changes for
+	  Mitch
+
+2005-10-31 09:19  ddd
+
+	* src/client/adminMessage.cc: Partially complete version of
+	  start-up allgather for Mitch.
+
+2005-10-14 13:19  ddd
+
+	* configure, configure.ac: Version 1.5.13-rc2
+
+2005-10-14 13:17  ddd
+
+	* src/mpi/c/: mpi_allgatherv.c, mpi_alltoallv.c, mpi_gatherv.c,
+	  mpi_scatterv.c: More intelligent error checking for vector
+	  collectives so that a null buffer is acceptable if the
+	  corresponding counts are all zero.
+
+2005-10-11 13:44  ddd
+
+	* src/include/mpi/mpi.h: Adding definitions for MPI_LONG_LONG and
+	  MPI_UNSIGNED_LONG_LONG, names that are not strictly in the
+	  standard but really should be since they are more consistent with
+	  other conventions that MPI_LONG_LONG_INT that actually is in the
+	  standard.
+
+2005-10-11 13:42  ddd
+
+	* romio-1.2.5.1/mpi-io/set_size.c: Make sure error_code is set.
+
+	  This fix should be superceded by the next version of ROMIO in any
+	  case.
+
+2005-09-08 15:16  ddd
+
+	* src/mpi/c/mpi_type_hindexed.c: More compiler warnings.
+
+2005-09-08 14:17  ddd
+
+	* src/: run/spawn.cc, mpi/c/mpi_type_hindexed.c: Removing unused
+	  variables
+
+2005-09-08 11:16  ddd
+
+	* src/mpi/c/mpi_type_hindexed.c: MPI_Type_create_hindexed()
+	  optimized for the case when the old type is basic.
+
+	  Now enabled and passing Intel test suite.
+
+2005-09-07 19:00  ddd
+
+	* src/mpi/c/mpi_type_hindexed.c: First pass at
+	  MPI_Type_create_hindexed() optimized for the case when the old
+	  type is basic.
+
+	  Not yet debugged, and not yet called.
+
+2005-09-07 18:18  ddd
+
+	* src/run/spawn.cc: Verbose debugging information for spawn.
+
+2005-08-26 08:59  ddd
+
+	* src/run/spawn.cc: Allow override with ssh start-up even on bproc
+	  systems if the user really wants it (for testing and developing
+	  on broken systems).
+
+2005-08-25 19:00  ddd
+
+	* src/run/: spawn.cc, spawn_exec.cc: Simplifying checks for
+	  accessibility of the executable (motivated by recent use of
+	  "mpirun -local" by application developers).
+
+2005-08-24 14:53  ddd
+
+	* src/check/: Makefile, hello.c, mpi-hello.c: Updating tests --
+	  will include mpi-hello and mpi-ping in the installation
+
+2005-08-24 14:52  ddd
+
+	* man/: lampi.html, lampi.man1, lampi_man.tex, mpirun.html,
+	  mpirun.man1: Updating documentation
+
+2005-08-18 17:14  ddd
+
+	* src/check/: Makefile, hello.c, mpi-coll-bench.c,
+	  mpi-ping-thread.c, mpi-ping.c: Cleaning up tests
+
+2005-08-12 14:50  ddd
+
+	* man/: lampi.html, lampi.man1, lampi_man.tex, mpirun.html,
+	  mpirun.man1: Fixing man pages
+
+2005-08-12 14:47  ddd
+
+	* src/run/Input.cc: Use getenv("HOME") to get the home directory
+	  rather than looking it up in the passwd entry.
+
+	  This is better because of the fun and games CCN are playing with
+	  home directories on systems like pink.
+
+2005-08-10 16:16  ddd
+
+	* src/run/Input.cc: Fix typo in help message
+
+2005-08-10 15:36  ddd
+
+	* config.h.in, configure: Ready for lampi-1.5.13-rc1
+
+2005-08-10 13:52  ddd
+
+	* RELEASE_NOTES, configure.ac, src/include/internal/lampi_state.h,
+	  src/include/internal/state.h, src/init/init.cc,
+	  src/path/common/BaseDesc.cc, src/path/gm/path.cc,
+	  src/path/gm/path.h, src/path/gm/recvFrag.cc,
+	  src/path/gm/recvFrag.h: Ready for lampi-1.5.13-rc1
+
+2005-08-10 11:05  ddd
+
+	* src/path/: common/BaseDesc.cc, gm/path.cc, gm/recvFrag.cc,
+	  gm/recvFrag.h: Cleaning up retransmission protocol in GM path -
+	  simplify spaghetti-like if statements - die as early as possible
+	  if acking is off - better error messages
+
+2005-08-09 18:10  ddd
+
+	* mpicc: Cosmetic changes
+
+2005-08-09 18:09  ddd
+
+	* src/path/: common/BaseDesc.cc, gm/path.cc, gm/recvFrag.cc,
+	  gm/recvFrag.h, gm/sendFrag.cc: Checking in current state of CRC
+	  fixes (in GM and general).  More to come to get retransmission
+	  working correctly after a corrupt CRC.
+
+2005-06-29 14:30  ddd
+
+	* Makefile.in, mpicc, src/init/init.cc,
+	  src/path/common/BaseDesc.cc: Adding a primitive mpicc compiler
+	  wrapper.
+
+2005-06-22 19:10  ddd
+
+	* lampi.module: Updated module file with host-dependent paths.
+
+2005-06-22 19:09  ddd
+
+	* Makefile.eclipse: Wrapper makefile for eclipse
+
+2005-06-22 19:08  ddd
+
+	* config.h.in, configure, configure.ac: Fixes for Tru64 socklen_t
+
+2005-06-22 13:12  ddd
+
+	* src/util/: HashNode.h, Links.h: Adding virtual destructors to
+	  quiten gcc 4.0.
+
+2005-06-22 13:11  ddd
+
+	* src/run/Admin.cc, configure, configure.ac, config.h.in: Improving
+	  abnormal termination message to include description of the signal
+	  that killed the application.
+
+2005-06-22 13:08  ddd
+
+	* src/interface/ulm_abort.cc: Simplifying error messages from
+	  ulm_abort().
+
+2005-06-22 13:07  ddd
+
+	* src/client/ScanStdoutStderr.cc: Quietening gcc 4.0 warnings.
+
+2005-06-14 15:57  ddd
+
+	* config.h.in, configure, configure.ac, src/client/adminMessage.cc,
+	  src/include/internal/malloc.h, src/include/internal/new.h,
+	  src/init/init_tcp.cc, src/path/tcp/tcppath.cc,
+	  src/path/tcp/tcppeer.cc, src/path/udp/UDPNetwork.cc: Changes for
+	  Mac OS X 10.4 (Tiger) using gcc 4.0.	Checked against linux using
+	  3.2.2.
+
+2005-06-03 09:23  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  romio-1.2.5.1/mpi-io/set_size.c, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Adding a work around to
+	  ADIO_Resize supplied by Steve Hodson to stop MPI-IO performance
+	  being affected by truncating a file.
+
+2005-04-20 10:36  ddd
+
+	* src/mpi/c/mpi_cancel.c: Improved wording in warning message.
+
+2005-04-20 09:53  ddd
+
+	* RELEASE_NOTES: Updating for lampi-1.5.11
+
+2005-04-19 18:34  ddd
+
+	* src/mpi/c/mpi_get_elements.c: Checking in a probable fix for
+	  MPI_Type_get_elements() applied to multiple recursively defined
+	  MPI datatypes.
+
+2005-04-19 13:40  ddd
+
+	* configure.ac, configure: Adding dynamic library nicety suggested
+	  by Pascal Thibaudeau of CEA/le Ripault, France.
+
+2005-04-19 11:55  ddd
+
+	* src/interface/ulm_abort.cc: Simplifying I/O flushing and
+	  forwarding on abnormal exit.
+
+2005-04-19 11:55  ddd
+
+	* src/mpi/: c/mpi_abort.c, f/mpi_abort.c: Removing useless file and
+	  line info from abort functions when they are not macros.
+
+2005-04-19 11:54  ddd
+
+	* src/: include/internal/malloc.h, include/internal/new.h,
+	  interface/ulm_log.cc: Making error messages a wee bit safer
+
+2005-04-19 11:23  ddd
+
+	* src/mpi/internal/mpi_state.c: Simplifying I/O flushing and
+	  forwarding on abnormal exit.
+
+2005-04-19 08:31  ddd
+
+	* src/run/GetClientProcessCount.cc: Removing references to BJS from
+	  error messages since they can be generated on LSF systems too.
+
+2005-04-08 15:55  ddd
+
+	* Makefile.in, README_f90, mpi.f90: Adding roll-your-own Fortran 90
+	  module with instructions.
+
+2005-04-06 14:15  ddd
+
+	* src/mpi/: internal/mpi_state.c, c/mpi_abort.c, f/mpi_abort.c:
+	  Simplifying atexit() handler.
+
+2005-04-06 14:13  ddd
+
+	* src/path/tcp/tcprecv.cc: Demoting error message to a warning
+	  since this is generated on MPI_Abort() when running with TCP
+	  path.
+
+2005-04-06 14:12  ddd
+
+	* src/path/gm/init.cc: gcc 3.4.3 reports this redundant cast as
+	  illegal in this context.
+
+2005-03-29 10:56  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Updating for lampi-1.5.11 (subject to test)
+
+2005-03-29 10:55  ddd
+
+	* romio-1.2.5.1/adio/common/: ad_aggregate.c, ad_write_coll.c:
+	  Adding zero-length I/O fixes for ROMIO (courtesy Steve Hodson).
+
+2005-03-29 09:25  ddd
+
+	* src/client/Daemon.cc: Plugging one more (unlikely) stdio hole.
+
+2005-03-25 12:25  ddd
+
+	* src/mpi/: c/mpi_address.c, c/mpi_type_hindexed.c,
+	  c/mpi_type_hvector.c, c/mpi_type_struct.c, f/mpi_type_hindexed.c,
+	  f/mpi_type_struct.c: Fixes for MacOS X and other systems without
+	  weak symbols.
+
+2005-03-25 12:24  ddd
+
+	* src/client/adminMessage.cc: Removing unused variable
+
+2005-03-24 18:27  ddd
+
+	* src/interface/ulm_abort.cc: Add a gratuitous sleep to context
+	  switch and give fortran run-times a chance to pit out there last
+	  mouthful.
+
+2005-03-24 18:26  ddd
+
+	* src/mpi/c/mpi_abort.c: Mark library as finalized in MPI_Abort()
+	  to avoid atexit handler whining.
+
+2005-03-24 18:25  ddd
+
+	* src/mpi/f/mpi_abort.c: Update license
+
+2005-03-24 18:24  ddd
+
+	* src/mpi/f/mpi_type_hindexed.c: Remove unused variable
+
+2005-03-24 18:24  ddd
+
+	* src/: include/internal/mpif_decls.h, mpi/f/mpi_type_hvector.c:
+	  Forward declarations for gcc weak symbols
+
+2005-03-24 18:23  ddd
+
+	* configure, configure.ac, RELEASE_NOTES: Preparing for
+	  lampi-1.5.11 release candidate 1
+
+2005-03-24 17:47  ddd
+
+	* src/mpi/c/mpi_cancel.c: Adding one-time warning message to
+	  MPI_Cancel().
+
+2005-03-24 16:40  ddd
+
+	* src/mpi/: f/mpi_abort.c, internal/mpi_state.c: Adding atexit
+	  handler to flush standard I/O of processes that exit without
+	  MPI_Finalize() or MPI_Abort().
+
+2005-03-24 16:38  ddd
+
+	* src/interface/ulm_abort.cc: Better flushing of standard I/O in
+	  MPI_Abort()
+
+2005-03-24 16:37  ddd
+
+	* src/: include/mpi/mpi.h, mpi/c/mpi_address.c,
+	  mpi/c/mpi_type_hindexed.c, mpi/c/mpi_type_hvector.c,
+	  mpi/c/mpi_type_struct.c, mpi/f/mpi_address.c,
+	  mpi/f/mpi_type_hindexed.c, mpi/f/mpi_type_hvector.c,
+	  mpi/f/mpi_type_struct.c: Adding MPI_Get_address() and
+	  MPI_Type_create_*() for support of some MPI-2 functionality.
+
+2005-03-24 16:35  ddd
+
+	* src/init/: init.cc, fork_many.cc: Make sure the daemon reaps
+	  children even if SIGCHLD gets hijacked by someone else.
+
+2005-02-16 14:38  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for 1.5.10 release.
+
+2005-02-16 10:42  twoodall
+
+	* src/mpi/f/mpi_wait.c: check fortran index for null handle rather
+	  than c
+
+2005-02-11 09:34  ddd
+
+	* src/interface/: ulm_test.cc, ulm_wait.cc: if-ing out a redundant
+	  check in the ulm layer (mainly to clarify the logic)
+
+2005-02-10 11:22  ddd
+
+	* src/path/common/BaseDesc.h: Class member maxOutstandingFrags is
+	  no longer used
+
+2005-02-10 11:21  ddd
+
+	* src/run/KillAppProcs.cc: Adding some warnings and diagnostics
+
+2005-02-10 11:18  ddd
+
+	* src/: path/gm/init.cc, path/gm/path.cc, path/gm/state.h,
+	  init/environ.cc: Making max outstanding frags for GM runtime
+	  adjustable (via environment)
+
+2005-02-10 11:16  ddd
+
+	* src/path/: quadrics/header.h, ib/header.h: Removing unused macro
+
+2005-02-04 09:52  ddd
+
+	* src/run/: Admin.cc, Log.cc, Run.h: Writing status and signal to
+	  syslog on abnormal exit.
+
+2005-02-04 09:19  ddd
+
+	* configure, configure.ac: Adding -fPIC to ROMIO configuration
+	  where needed
+
+2005-02-04 09:18  ddd
+
+	* src/path/gm/header.h: Fixing padding in GM data ack for 64-bit
+	  systems
+
+2005-02-04 09:18  ddd
+
+	* src/path/gm/path.cc: Adding status to GM resend warning.
+
+2005-01-20 08:36  ddd
+
+	* configure, configure.ac, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Updating version number
+	  for test release.
+
+2005-01-20 08:35  ddd
+
+	* src/init/init_debug.cc: Adding redundant MPIR_PROCDESC
+	  declaration to see if it helps with Totalview problem reported by
+	  KT Thompson (CCS-4)
+
+2005-01-19 15:22  ddd
+
+	* src/run/mpirun.cc: Fix from Ron if name resolution fails
+
+2005-01-19 15:21  ddd
+
+	* src/run/Run.cc: Extra help for moving along stdout/stderr on
+	  abnormal exit.
+
+2005-01-19 15:16  ddd
+
+	* src/: include/internal/types.h, interface/ulm_comm_dup.cc,
+	  mpi/f/mpi_attr_put.c: Conversion functions for 32- to 64-bit
+	  correctness.	gcc was complaining on opteron.
+
+2005-01-19 15:15  ddd
+
+	* src/client/: Admin.cc, Daemon.cc, adminMessage.cc: Extra help for
+	  moving along stdout/stderr on abnormal exit.
+
+2005-01-19 15:14  ddd
+
+	* configure.ac, configure: Moving -Wno-deprecated flag to CXXFLAGS,
+	  since recent gcc's don't like it in CFLAGS
+
+2004-12-07 14:01  ddd
+
+	* src/run/: Run.cc, mpirun.cc: Adding additional sanity checks.
+
+2004-12-07 14:01  ddd
+
+	* src/run/spawn_rsh.cc: Removing debug code.
+
+2004-12-07 14:00  ddd
+
+	* src/run/Input.cc: Fixing bug in -np processing.
+
+2004-12-07 14:00  ddd
+
+	* src/run/GetClientProcessCount.cc: Cleaning up error messages.
+
+2004-12-07 13:59  ddd
+
+	* src/path/gm/path.cc: Adding warning message if gm_send is
+	  retried.
+
+2004-12-03 19:46  ddd
+
+	* src/: client/Daemon.cc, run/Admin.cc: Fixing spurious pid of
+	  abnormally terminating process and simplifying related error
+	  message.
+
+2004-12-03 19:41  ddd
+
+	* src/run/Admin.cc: Fix for waitpid() on daemons for BPROC systems
+
+2004-12-03 19:40  ddd
+
+	* src/run/: spawn_rsh.cc, mpirun.cc: Removing archaic alarm code
+
+2004-12-02 15:41  ddd
+
+	* Makefile.in, RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec, src/client/adminMessage.cc,
+	  src/client/adminMessage.h, src/init/fork_many.cc,
+	  src/path/gm/init.cc, src/path/gm/path.cc, src/path/gm/path.h,
+	  src/path/gm/recvFrag.cc, src/path/gm/recvFrag.h,
+	  src/path/ib/path.cc, src/run/Abort.cc, src/run/mpirun.cc,
+	  src/run/spawn_bproc.cc: Completing removal of pthreads.
+	  Housekeeping for 1.5.9.
+
+2004-11-30 16:17  ddd
+
+	* src/run/spawn_bproc.cc: Storing pids from bproc_vexecmove_io() so
+	  that we can use waitpid() to detect abnormal daemon exit.
+
+2004-11-30 16:16  ddd
+
+	* src/run/Run.cc: Moving Abort() up so that we still have a chance
+	  to get standard I/O from other processes.
+
+2004-11-30 16:15  ddd
+
+	* src/run/Admin.cc: Using waitpid() to detect abnormal daemon exit.
+	   More timely than reading socket.
+
+	  Moving Abort() up so that we still have a chance to get standard
+	  I/O from other processes.
+
+2004-11-29 14:17  twoodall
+
+	* src/path/gm/path.cc: retry fragments that fail when receiver is
+	  not available
+
+2004-11-29 13:42  twoodall
+
+	* src/: client/adminMessage.cc, client/adminMessage.h,
+	  init/init.cc, run/FixRunParameters.cc: - remove accept thread -
+	  wasn't really buying us anything - seemed to be an issue w/
+	  totalview/bproc/old linux threads library - thread never started
+	  under totalview - always use dotted IP address in debugger proc
+	  table - change client connect to retry up to a maximum timeout
+
+2004-11-23 17:40  ddd
+
+	* src/: client/AbortLocalHost.cc, client/Admin.cc,
+	  client/CheckForControlMsgs.cc, client/CheckIfChildrenAlive.cc,
+	  client/ClientSendStdin.cc, client/Daemon.cc,
+	  client/DrainSTDIO.cc, client/OrderlyShutdown.cc,
+	  client/ScanStdoutStderr.cc, client/SendStdIn.cc,
+	  client/SocketGeneric.cc, client/ULMClient.h,
+	  client/adminMessage.cc, client/adminMessage.h, client/daemon.h,
+	  client/daemonLoop.cc, client/libmpi.mk,
+	  client/setupMemoryPools.cc, client/setupPerProcSharedMemPools.cc,
+	  collective/barrierSetup.cc, collective/newalltoall.cc,
+	  collective/quadrics/ulm_bcast_interhost_quadrics.cc,
+	  include/internal/lampi_state.h, include/internal/types.h,
+	  init/fork_many.cc, init/init.cc, init/init_proc.cc,
+	  interface/ulm_init.cc, interface/ulm_irecv_init.cc,
+	  interface/ulm_isend_init.cc, interface/ulm_request_free.cc,
+	  mem/FreeLists.h, mem/ULMPool.h, os/IRIX/SN0/IRIX_request.cc,
+	  os/IRIX/SN0/IRIX_request_private.cc, os/IRIX/SN0/MD_acquire.cc,
+	  os/IRIX/SN0/MD_acquire.h, os/IRIX/SN0/SN0BarrierSetup.cc,
+	  os/IRIX/SN0/numa.cc, os/IRIX/SN0/request.h,
+	  path/common/InitSendDescriptors.cc, path/ib/path.cc,
+	  path/quadrics/init.cc, path/quadrics/path.cc,
+	  path/quadrics/recvFrag.cc, path/quadrics/sendFrag.h,
+	  path/sharedmem/InitSMPDevs.cc, path/udp/UDPNetwork.cc,
+	  path/udp/init.cc, path/udp/path.cc, path/udp/recvFrag.cc,
+	  path/udp/sendFrag.cc, queue/Group.cc,
+	  queue/Pt2PtGroupMatchFrags.cc, queue/Pt2PtGroupProgress.cc,
+	  queue/Pt2PtGroupRecv.cc, queue/Pt2PtGroupRecvFrags.cc,
+	  queue/Pt2PtGroupSend.cc, queue/ReliabilityInfo.cc,
+	  queue/barrier.cc, run/Abort.cc, run/Admin.cc,
+	  run/CheckForControlMsgs.cc, run/CheckHeartBeat.cc,
+	  run/Daemonize.cc, run/GetDebugData.cc, run/Input.cc, run/Input.h,
+	  run/KillAppProcs.cc, run/ProcessInput.cc, run/Run.cc, run/Run.h,
+	  run/RunParams.h, run/SendInputDataToClients.cc, run/Signal.cc,
+	  run/mpirun.cc, run/mpirun.mk, run/spawn_lsf.cc, run/spawn_rsh.cc,
+	  util/Utility.cc, util/Utility.h, util/cbQueue.h: A large
+	  check-in: - replace heartbeat timeout by admin socket hang-up.  -
+	  fixes for gcc 3.4.x - general clean-up and simplification of
+	  mpirun and daemon code
+
+2004-11-23 12:17  ddd
+
+	* configure, configure.ac: Configure fixes for apple with
+	  non-apple-supplied gcc
+
+2004-11-15 17:01  ddd
+
+	* src/: init/init_debug.cc, util/libmpi.mk: More clean up of
+	  debugger logic
+
+2004-11-15 16:42  ddd
+
+	* src/: run/Input.cc, init/init_debug.cc: More clean up of debugger
+	  logic
+
+2004-11-15 16:39  ddd
+
+	* src/: client/TVSetup.cc, client/adminMessage.h,
+	  client/daemonLoop.cc, client/libmpi.mk,
+	  include/internal/lampi_state.h, init/init.cc, init/init.h,
+	  init/init_debug.cc, init/init_rms.cc, run/CheckForControlMsgs.cc,
+	  run/Debugger.cc, run/FixRunParameters.cc, run/GetDebugData.cc,
+	  run/Input.cc, run/Input.h, run/ProcessInput.cc,
+	  run/RearrangeHostList.cc, run/Run.h, run/RunParams.h,
+	  run/SendInputDataToClients.cc, run/mpirun.cc,
+	  util/MPIR_Breakpoint.c, util/libmpi.mk, util/mpirun.mk: More
+	  clean up of debugger logic
+
+2004-11-14 17:45  ddd
+
+	* src/run/: CheckForControlMsgs.cc, Debugger.cc, Run.h, TV.h,
+	  TVSetUp.cc, TVSetUpApp.cc, mpirun.cc, mpirun.mk: Cleaning up
+	  debugger logic
+
+2004-11-14 16:29  ddd
+
+	* src/client/daemonLoop.cc: Quietening compiler warnings
+
+2004-11-14 13:50  ddd
+
+	* src/run/: Daemonize.cc, TVSetUp.cc, TVSetUpApp.cc: Make sure proc
+	  table is always initialized
+
+2004-10-29 14:52  ddd
+
+	* src/run/Input.cc: Missed a file for 1.5.8
+
+2004-10-28 19:16  ddd
+
+	* src/run/spawn.cc: Fix bad checkin
+
+2004-10-28 19:09  ddd
+
+	* src/: client/CheckForControlMsgs.cc, client/ClientSendStdin.cc,
+	  client/adminMessage.h, client/daemonLoop.cc,
+	  include/internal/constants.h, include/internal/lampi_state.h,
+	  init/init.cc, run/Abort.cc, run/CheckForControlMsgs.cc,
+	  run/CheckHeartBeat.cc, run/Daemonize.cc, run/FixRunParameters.cc,
+	  run/GetAppHostData.cc, run/GetClientApp.cc,
+	  run/GetClientProcessCount.cc, run/GetClientWorkingDirectory.cc,
+	  run/GetDebugData.cc, run/GetInterfaces.cc,
+	  run/GetNetworkDevList.cc, run/Input.cc, run/Input.h,
+	  run/KillAppProcs.cc, run/Log.cc, run/ProcessInput.cc,
+	  run/RearrangeHostList.cc, run/Run.h, run/RunParams.h,
+	  run/SendInputDataToClients.cc, run/Signal.cc, run/TVSetUp.cc,
+	  run/TVSetUpApp.cc, run/VerifyLsfResources.cc, run/globals.h,
+	  run/mpirun.cc, run/parseEnvironmentSettings.cc, run/spawn.cc,
+	  run/spawn_bproc.cc, run/spawn_exec.cc, run/spawn_lsf.cc,
+	  run/spawn_rms.cc, run/spawn_rsh.cc: 1. Making heartbeat period
+	  and timeout run-time adjustable (including	ability to turn it
+	  off).
+
+	  2. Adding support for IB (when used in conjunction with) Mitch's
+	  VAPI	  patch.
+
+	  3. Misc changes: Updated help message.  Updated man page. Command
+	  line	  now accepts minus-minus options (--np as well as -np) and
+	  can do    aliases.
+
+2004-10-28 19:04  ddd
+
+	* src/path/sharedmem/SMPDev.h: Fix from Ron Minnich for Opteron in
+	  64-bit mode.
+
+2004-10-28 19:02  ddd
+
+	* configure, configure.ac, man/lampi.man1, man/lampi_man.tex,
+	  man/mpirun.man1, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec, RELEASE_NOTES: Updating
+	  for 1.5.8
+
+2004-10-13 15:47  ddd
+
+	* ChangeLog: Latest changes
+
 2004-10-13 15:46  ddd
 
 	* RELEASE_NOTES, config.h.in, configure, configure.ac,
