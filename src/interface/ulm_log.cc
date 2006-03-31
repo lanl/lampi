@@ -45,6 +45,7 @@
 
 int ulm_warn_enabled = 0;
 int ulm_dbg_enabled = ENABLE_DBG;
+int ulm_log_enabled = 1;
 
 static const int buf_size = 4096;
 static char buf[buf_size];

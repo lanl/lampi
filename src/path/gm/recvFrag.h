@@ -218,7 +218,7 @@ inline bool gmRecvFragDesc::CheckData(unsigned int checksum, ssize_t length)
         int test;
 
         if (first) {
-            srand((unsigned int) myproc() * 1021 + 79);
+            srand((unsigned int) myproc() * 1021 + 79 + 111);
             first = 0;
         }
         test = 1 + (int) ((double) frequency * rand() / (RAND_MAX + 1.0));

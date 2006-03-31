@@ -42,9 +42,8 @@
 /* Runtime control of warning and debug messages */
 
 extern int ulm_dbg_enabled;
+extern int ulm_log_enabled;
 extern int ulm_warn_enabled;
-
-int ulm_log_enabled = 1;
 
 /* error, warning, debug and exit macros */
 

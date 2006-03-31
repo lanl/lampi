@@ -626,10 +626,10 @@ void BaseRecvFragDesc_t::handlePt2PtMessageAck(double timeNow,
             UnackedPostedSends.RemoveLink(bsd);
             bsd->WhichQueue = INCOMPLETEISENDQUEUE;
             IncompletePostedSends.Append(bsd);
-            ulm_warn(("Warning: Retransmitting fragment [rank %d (%s) --> rank %d]\n",
+            ulm_log(("Warning: Retransmitting fragment [rank %d (%s) --> rank %d]\n",
                       myproc(), mynodename(), srcProcID_m));
         } else {
-            ulm_warn(("Warning: Retransmitting fragment on timeout [rank %d (%s) --> rank %d]\n",
+            ulm_log(("Warning: Retransmitting fragment (data corruption reported) [rank %d (%s) --> rank %d]\n",
                       myproc(), mynodename(), srcProcID_m));
         }
 

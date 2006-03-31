@@ -104,7 +104,7 @@ bool gmRecvFragDesc::AckData(double timeNow)
     }
 
     if (p->ackStatus == ACKSTATUS_DATACORRUPT) {
-        ulm_warn(("Warning: Sending \"DATA CORRUPT\" ack, rank %d <-- rank %d (%s)\n",
+        ulm_warn(("Warning: Sending \"DATA CORRUPT\" acknowledgment [rank %d <-- rank %d (%s)]\n",
                   gmHeader_m->data.senderID, myproc(), mynodename()));
     }
 
