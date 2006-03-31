@@ -460,7 +460,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         received_checksum = 2 * rf->gmHeader_m->data.checksum;
                     }
 
-                    ulm_err(("Warning: Corrupt fragment header received "
+                    ulm_log(("Warning: Corrupt fragment header received "
                              "[rank %d --> rank %d (%s)]: "
                              "%s received=0x%x, calculated=0x%x\n", 
                              rf->gmHeader_m->data.senderID, myproc(), mynodename(),
@@ -471,7 +471,7 @@ bool gmPath::receive(double timeNow, int *errorCode, recvType recvTypeArg = ALL)
                         // Return descriptor to the pool and
                         // proceed. We don't send a NACK but the data
                         // will be sent again after timeout :)
-                        ulm_err(("Warning: Waiting for fragment to be retransmitted.\n"));
+                        ulm_log(("Warning: Waiting for fragment to be retransmitted.\n"));
                         rf->ReturnDescToPool(0);
                         rf = 0;
                         continue;
