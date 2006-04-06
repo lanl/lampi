@@ -1,3 +1,18 @@
+2006-04-06 09:53  ddd
+
+	* RELEASE_NOTES, configure, configure.ac: Release 1.5.14
+
+2006-03-31 15:29  ddd
+
+	* ChangeLog: Updating ChangeLog
+
+2006-03-31 15:28  ddd
+
+	* src/: include/internal/log.h, interface/ulm_log.cc,
+	  path/common/BaseDesc.cc, path/gm/recvFrag.cc, path/gm/recvFrag.h:
+	  Making data-corruption error messages less intrusive: they get
+	  logged to lampi.log but only to stderr for "mpirun -w".
+
 2006-03-31 12:25  ddd
 
 	* configure.ac, ChangeLog: Release candidate 1.5.14-rc6
