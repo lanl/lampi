@@ -508,3 +508,5 @@ Version 1.5.14
 
 - Change to correctly obtain the effective number of processors in an
   LSF/BJS allocation on Bproc, even for dual core processors.
+
+- Numerous changes to error reporting.
