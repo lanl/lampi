@@ -147,10 +147,6 @@ MODULES_MPIRUN="$MODULES_MPIRUN src/util"
 
 # Defaults compilation/link options for all hosts.
 
-LDFLAGS_LIBMPI=""
-LDLIBS_LIBMPI=""
-LDFLAGS_MPIRUN=""
-LDLIBS_MPIRUN=""
 LIBEXT="a"
 DLLEXT="so"
 
@@ -187,31 +183,35 @@ with_romio=${with_romio:-no}
 
 # Host dependent features.
 
+[ -z "$CFLAGS" ] && CFLAGS=""
+[ -z "$CPPFLAGS" ] && CPPFLAGS=""
+[ -z "$CXXFLAGS" ] && CXXFLAGS=""
+
 case "${host}" in
 
 i?86-pc-linux*)
         if test "$CC" = "icc" ; then
            CXX="$CC"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
+           _LDFLAGS_LIBMPI='-shared'
         else
            CC="gcc"
            CXX="g++"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           CFLAGS="$CFLAGS -march=i686 -finline-functions"
-           CFLAGS="$CFLAGS -Wall"
+           _CFLAGS="$_CFLAGS -march=i686 -finline-functions"
+           _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS -Wno-deprecated"
+        _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -239,25 +239,25 @@ i?86-pc-cygwin*)
         if test "$CC" = "icc" ; then
            CXX="$CC"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared'
+           _LDFLAGS_LIBMPI='-shared'
         else
            CC="gcc"
            CXX="g++"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           CFLAGS="$CFLAGS -march=i686 -finline-functions"
-           CFLAGS="$CFLAGS -Wall"
+           _CFLAGS="$_CFLAGS -march=i686 -finline-functions"
+           _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS -Wno-deprecated"
+        _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -276,25 +276,25 @@ ia64-unknown-linux*)
         if test "$CC" = "ecc" ; then
            CXX="$CC"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           CFLAGS="$CFLAGS -restrict"
+           _CFLAGS="$_CFLAGS -restrict"
         else
            CC="gcc"
            CXX="g++"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           CFLAGS="$CFLAGS -finline-functions"
-           CFLAGS="$CFLAGS -Wall"
+           _CFLAGS="$_CFLAGS -finline-functions"
+           _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS -Wno-deprecated"
+        _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -322,16 +322,15 @@ x86_64-unknown-linux*)
         CC="gcc"
         CXX="g++"
         if test "$enable_debug" = "yes" ; then
-           CFLAGS="-g"
+           _CFLAGS="$_CFLAGS -g"
         else
-           CFLAGS="-g -O"
+           _CFLAGS="$_CFLAGS -g -O"
         fi
-	#CFLAGS="$CFLAGS -finline-functions -m32"
-        CFLAGS="$CFLAGS -finline-functions -fPIC"
-	CFLAGS="$CFLAGS -Wall"
+        _CFLAGS="$_CFLAGS -finline-functions -fPIC"
+	_CFLAGS="$_CFLAGS -Wall"
         # link flags with "make rpath=" support
-        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
-        CXXFLAGS="$CFLAGS -Wno-deprecated"
+        _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+        _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lutil"
@@ -359,30 +358,30 @@ x86_64-unknown-linux*)
 alpha*-dec*)
         if test "$CC" = "gcc" ; then
            CXX="g++"
-           CFLAGS="-Wall -mcpu=ev6"
+           _CFLAGS="$_CFLAGS -Wall -mcpu=ev6"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="$CFLAGS -g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="$CFLAGS -O3"
+              _CFLAGS="$_CFLAGS -O3"
            fi
-           CXXFLAGS="$CFLAGS"
+           _CXXFLAGS="$_CFLAGS"
 
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         else
            CXX="cxx"
-           CFLAGS="-arch host -accept restrict_keyword"
-           CPPFLAGS="$CPPFLAGS -w"
+           _CFLAGS="$_CFLAGS -arch host -accept restrict_keyword"
+           _CPPFLAGS="-w"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="$CFLAGS -g -gall -trapuv"
+              _CFLAGS="$_CFLAGS -g -gall -trapuv"
            else
               # benchmarks seems to do better with -O3 than -O4 and -O5
-              CFLAGS="$CFLAGS -g3 -O3"
+              _CFLAGS="$_CFLAGS -g3 -O3"
            fi
-           CXXFLAGS="$CFLAGS -model ansi"
+           _CXXFLAGS="$_CFLAGS -model ansi"
 
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared -all $(patsubst %,-rpath %,$(rpath)) -none'
+           _LDFLAGS_LIBMPI='-shared -all $(patsubst %,-rpath %,$(rpath)) -none'
            if test "$with_romio" = "yes" ; then
               LDLIBS_LIBMPI="$LDLIBS_LIBMPI -laio"
            fi
@@ -410,36 +409,35 @@ powerpc-apple-darwin*)
         CC="gcc"
         CXX="g++"
         if test "$enable_debug" = "yes" ; then
-           CFLAGS="-g"
+           _CFLAGS="$_CFLAGS -g"
         else
-           CFLAGS="-g -O"
+           _CFLAGS="$_CFLAGS -g -O"
         fi
-        CFLAGS="$CFLAGS -finline-functions -fno-common -Wall"
+        _CFLAGS="$_CFLAGS -finline-functions -fno-common -Wall"
         AC_MSG_CHECKING([for -Wno-long-double])
         AC_LANG_CONFTEST([[ int a(void) { return 0; } ]])
         if $CC -Wno-long-double -c conftest.c 2>/dev/null ; then
-           CFLAGS="$CFLAGS -Wno-long-double -no-cpp-precomp"
+           _CFLAGS="$_CFLAGS -Wno-long-double -no-cpp-precomp"
            AC_MSG_RESULT([yes])
         else
            AC_MSG_RESULT([no])
         fi
         DLLEXT="dylib"
         CURRENT_VERSION=`echo $PACKAGE_VERSION | sed -e 's/-.*$//'`
-        LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace -current_version $CURRENT_VERSION -compatibility_version 1.0.0"
+        _LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI -dynamiclib -flat_namespace -current_version $CURRENT_VERSION -compatibility_version 1.0.0"
         ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -arch=freebsd"
-        ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='$CFLAGS $CPPFLAGS'"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
         MODULES_OS="$MODULES_OS src/os/DARWIN"
         if test "$PPC_TYPE" = "ppc970" ; then
-            CFLAGS="$CFLAGS -mcpu=970 -mtune=970 -mpowerpc64 -mpowerpc-gpopt"
-            CPPFLAGS="$CPPFLAGS -D__ppc_64__ -force_cpusubtype_ALL"
+            _CFLAGS="$_CFLAGS $CFLAGS -mcpu=970 -mtune=970 -mpowerpc64 -mpowerpc-gpopt"
+            _CPPFLAGS="-D__ppc_64__ -force_cpusubtype_ALL"
             MODULES_OS="$MODULES_OS src/os/DARWIN/ppc_64"
         else
             MODULES_OS="$MODULES_OS src/os/DARWIN/powerpc"
         fi
-        CXXFLAGS="$CFLAGS -Wno-deprecated"
+        _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         # default features for this host
 
@@ -455,28 +453,28 @@ mips-sgi-irix*)
         if test "$CC" = "cc" ; then
            CXX="CC"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-O0 -g -LANG:restrict=ON"
+              _CFLAGS="$_CFLAGS -O0 -g -LANG:restrict=ON"
            else
-              CFLAGS="-O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON"
+              _CFLAGS="$_CFLAGS -O3 -g3 -OPT:Olimit=0 -LANG:restrict=ON"
            fi
-           CFLAGS="$CFLAGS -64 -mips4 -LANG:ansi-for-init-scope=ON"
+           _CFLAGS="$_CFLAGS -64 -mips4 -LANG:ansi-for-init-scope=ON"
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
            LDLIBS_LIBMPI="$LDLIBS_LIBMPI -lftn"
         else
            CC="gcc"
            CXX="g++"
            if test "$enable_debug" = "yes" ; then
-              CFLAGS="-g"
+              _CFLAGS="$_CFLAGS -g"
            else
-              CFLAGS="-g -O"
+              _CFLAGS="$_CFLAGS -g -O"
            fi
-           CFLAGS="$CFLAGS -finline-functions"
-           CFLAGS="$CFLAGS -Wall"
+           _CFLAGS="$_CFLAGS -finline-functions"
+           _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
-           LDFLAGS_LIBMPI="$LDFLAGS_LIBMPI "'-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+           _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
         fi
-        CXXFLAGS="$CFLAGS -no_auto_include -Wno-deprecated"
+        _CXXFLAGS="-no_auto_include -Wno-deprecated $_CFLAGS"
 
         # OS defines and modules
         MODULES_OS="$MODULES_OS src/os"
@@ -508,6 +506,25 @@ sparc-sun-solaris2.*)
         AC_MSG_ERROR([Unknown system type... ${host}])
 	;;
 esac
+
+# Append user supplied variables to standard flags
+
+if [ ! -z "$OVERRIDE" ] ; then
+   CFLAGS="$_CFLAGS $CFLAGS"
+   CPPFLAGS="$_CPPFLAGS $CPPFLAGS"
+   CXXFLAGS="$_CXXFLAGS $CXXFLAGS"
+fi
+
+LDFLAGS="$_LDFLAGS $LDFLAGS"
+LDLIBS="$_LDLIBS $LDLIBS $LIBS"
+
+LDFLAGS_LIBMPI="$_LDFLAGS_LIBMPI $LDFLAGS_LIBMPI"
+LDLIBS_LIBMPI="$_LDLIBS_LIBMPI $LDLIBS_LIBMPI"
+
+LDFLAGS_MPIRUN="$_LDFLAGS_MPIRUN $LDFLAGS_MPIRUN"
+LDLIBS_MPIRUN="$_LDLIBS_MPIRUN $LDLIBS_MPIRUN"
+
+ROMIO_CONFIG_OPTIONS="$ROMIO_CONFIG_OPTIONS -cflags='$CFLAGS $CPPFLAGS'"
 
 # Optional features
 
@@ -771,9 +788,8 @@ AH_TEMPLATE([ENABLE_MEMPROFILE],
 
 AC_SUBST(F90)
 AC_SUBST(LDFLAGS_LIBMPI)
-AC_SUBST(LDFLAGS_LIBMPI)
-AC_SUBST(LDFLAGS_MPIRUN)
 AC_SUBST(LDLIBS_LIBMPI)
+AC_SUBST(LDFLAGS_MPIRUN)
 AC_SUBST(LDLIBS_MPIRUN)
 AC_SUBST(LN_S)
 AC_SUBST(MODULES_LIBMPI)
