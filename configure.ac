@@ -183,10 +183,6 @@ with_romio=${with_romio:-no}
 
 # Host dependent features.
 
-[ -z "$CFLAGS" ] && CFLAGS=""
-[ -z "$CPPFLAGS" ] && CPPFLAGS=""
-[ -z "$CXXFLAGS" ] && CXXFLAGS=""
-
 case "${host}" in
 
 i?86-pc-linux*)
@@ -509,10 +505,20 @@ esac
 
 # Append user supplied variables to standard flags
 
-if [ ! -z "$OVERRIDE" ] ; then
-   CFLAGS="$_CFLAGS $CFLAGS"
-   CPPFLAGS="$_CPPFLAGS $CPPFLAGS"
-   CXXFLAGS="$_CXXFLAGS $CXXFLAGS"
+if test "$ac_test_CFLAGS" = "set" ; then
+   CFLAGS="$_CFLAGS $ac_save_CFLAGS"
+else
+   CFLAGS="$_CFLAGS"
+fi
+if test "$ac_test_CPPFLAGS" = "set" ; then
+   CPPFLAGS="$_CPPFLAGS $ac_save_CPPFLAGS"
+else
+   CPPFLAGS="$_CPPFLAGS"
+fi
+if test "$ac_test_CXXFLAGS" = "set" ; then
+   CXXFLAGS="$_CXXFLAGS $ac_save_CXXFLAGS"
+else
+   CXXFLAGS="$_CXXFLAGS"
 fi
 
 LDFLAGS="$_LDFLAGS $LDFLAGS"
