@@ -50,8 +50,8 @@ CDECL_BEGIN
 #define LOOKUP_REQ(X)	((MPI_Request *) &(_mpif.request_table->addr[(X)]))
 #define LOOKUP_TYPE(X)	((MPI_Datatype) _mpif.type_table->addr[(X)])
 
-/* -1 is the fortran value of MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE */
-#define IGNORE_STATUS(status)     (*((MPI_Fint *) status) == -1)
+/* -7 is the fortran value of MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE */
+#define IGNORE_STATUS(status)     (*((MPI_Fint *) status) == -7)
 #define MPI_Status_f2c(status)    (IGNORE_STATUS(status) ? MPI_STATUS_IGNORE : status)
 #define MPI_Statuses_f2c(status)  (IGNORE_STATUS(status) ? MPI_STATUSES_IGNORE : status)
 
