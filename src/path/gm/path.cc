@@ -544,6 +544,12 @@ static void gmPath_timed_out_resume(struct gm_port *port,
 				    gm_status_t status)
 {
     gmSendFragDesc *sfd = (gmSendFragDesc *) context;
+
+    if (status != GM_SUCCESS) {
+        ulm_exit(("Error: Myrinet/GM: %s (%d): callback from gm_resume_sending() failed\n"));
+    }
+
+
     if (usethreads()) {
         gmState.localDevList[sfd->dev_m].Lock.lock();
     }

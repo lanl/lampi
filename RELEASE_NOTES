@@ -510,3 +510,11 @@ Version 1.5.14
   LSF/BJS allocation on Bproc, even for dual core processors.
 
 - Numerous changes to error reporting.
+
+Version 1.5.15
+
+- Changed definition of MPI_IGNORE_STATUS to avoid conflict with
+  MPI_ANY_SOURCE in MPI_Probe().  [rc1]
+
+- Handle error conditions in gm_send_with_callback() for fragment
+  acknowledgements. [rc2]

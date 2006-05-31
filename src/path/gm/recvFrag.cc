@@ -160,11 +160,19 @@ bool gmRecvFragDesc::AckData(double timeNow)
 
 // GM call back function to free resources for data ACKs
 
-void gmRecvFragDesc::ackCallback(struct gm_port *port,
-                                 void *context, gm_status_t status)
+static void gmPath_ack_timed_out_resume(struct gm_port *port,
+                                        void *context,
+                                        gm_status_t status)
 {
     int dev;
     gmFragBuffer *buf = (gmFragBuffer *) context;
+    gmHeaderDataAck *p = (gmHeaderDataAck *) &(buf->header.dataAck);
+
+    if (status != GM_SUCCESS) {
+        ulm_exit(("Error: Myrinet/GM: %s (%d): callback from gm_resume_sending() failed\n"));
+    }
+
+    ulm_warn(("Warning: Retrying timed-out ack: In callback for gm_resume_sending().\n"));
 
     // Find the device corresponding to this port
     for (dev = 0; dev < gmState.nDevsAllocated; dev++) {
@@ -172,22 +180,86 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
             break;
         }
     }
-
     if (dev == gmState.nDevsAllocated) {
         ulm_err(("Error! Unable to match GM port.\n"));
         return;
     }
-    // reclaim send token and return fragment buffer to free list
-    if (usethreads()) {
-        gmState.localDevList[dev].Lock.lock();
-        gmState.localDevList[dev].sendTokens++;
-        gmState.localDevList[dev].bufList.
-            returnElementNoLock((Links_t *) buf, 0);
-        gmState.localDevList[dev].Lock.unlock();
-    } else {
-        gmState.localDevList[dev].sendTokens++;
-        gmState.localDevList[dev].bufList.
-            returnElementNoLock((Links_t *) buf, 0);
+
+    // send the ACK again
+    gm_send_with_callback(port,
+                          p,
+                          gmState.log2Size,
+                          sizeof(gmHeader),
+                          GM_LOW_PRIORITY,
+                          gmState.localDevList[dev].remoteDevList[p->dest_proc].node_id,
+                          gmState.localDevList[dev].remoteDevList[p->dest_proc].port_id,
+                          gmRecvFragDesc::ackCallback,
+                          context);
+}
+
+
+void gmRecvFragDesc::ackCallback(struct gm_port *port,
+                                 void *context,
+                                 gm_status_t status)
+{
+    int dev;
+    gmFragBuffer *buf = (gmFragBuffer *) context;
+    gmHeaderDataAck *p = (gmHeaderDataAck *) &(buf->header.dataAck);
+
+    // Find the device corresponding to this port
+    for (dev = 0; dev < gmState.nDevsAllocated; dev++) {
+        if (gmState.localDevList[dev].gmPort == port) {
+            break;
+        }
+    }
+    if (dev == gmState.nDevsAllocated) {
+        ulm_err(("Error! Unable to match GM port.\n"));
+        return;
+    }
+
+    switch (status) {
+    case GM_TRY_AGAIN:
+    case GM_BUSY:
+        ulm_exit(("Error: Myrinet/GM: %s (%d). "
+		  "Sending ack from rank %d (%s) to rank %d.\n",
+		  gm_strerror(status), (int) status,
+                  myproc(), mynodename(), p->dest_proc));
+        break;
+    case GM_SEND_TIMED_OUT:
+        // it is also possible to use gm_drop_sends() instead of
+	// gm_resume_sending() if minimizing disorder is more
+	// important than avoiding requeuing/resending
+        ulm_warn(("Warning: Myrinet/GM: %s (%d). Retrying timed-out ack: %d (%s) -> %d\n",
+		  gm_strerror(status), (int) status,
+		  myproc(), mynodename(), p->dest_proc));
+        gm_resume_sending(port,
+                          GM_LOW_PRIORITY,
+                          gmState.localDevList[dev].remoteDevList[p->dest_proc].node_id,
+                          gmState.localDevList[dev].remoteDevList[p->dest_proc].port_id,
+                          gmPath_ack_timed_out_resume,
+                          context);
+        break;
+    case GM_SEND_DROPPED:
+        // try again if the receiver is busy 
+        ulm_warn(("Warning: GM status is GM_SEND_DROPPED. Should not get here.\n"));
+        break;
+    case GM_SUCCESS: 
+        // reclaim send token and return fragment buffer to free list
+        if (usethreads()) {
+            gmState.localDevList[dev].Lock.lock();
+            gmState.localDevList[dev].sendTokens++;
+            gmState.localDevList[dev].bufList.returnElementNoLock((Links_t *) buf, 0);
+            gmState.localDevList[dev].Lock.unlock();
+        } else {
+            gmState.localDevList[dev].sendTokens++;
+            gmState.localDevList[dev].bufList.returnElementNoLock((Links_t *) buf, 0);
+        }
+        break;
+    default:
+        // otherwise fail if there was a failure 
+        ulm_exit(("Error: Myrinet/GM: %s (%d). "
+                  "Trying to send ack from rank %d (%s).\n",
+                  gm_strerror(status), (int) status, myproc(), mynodename()));
     }
 }
 
