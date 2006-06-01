@@ -35,6 +35,11 @@
 #include "config.h"
 #endif
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <assert.h>
+
 #include "internal/log.h"
 #include "path/gm/recvFrag.h"
 #include "util/dclock.h"
@@ -204,7 +209,12 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 {
     int dev;
     gmFragBuffer *buf = (gmFragBuffer *) context;
+
+    assert(buf);
+
     gmHeaderDataAck *p = (gmHeaderDataAck *) &(buf->header.dataAck);
+
+    assert(p);
 
     // Find the device corresponding to this port
     for (dev = 0; dev < gmState.nDevsAllocated; dev++) {
@@ -268,12 +278,19 @@ void gmRecvFragDesc::ackCallback(struct gm_port *port,
 
 void gmRecvFragDesc::msgDataAck(double timeNow)
 {
+    assert(gmHeader_m);
+
     gmSendFragDesc *sfd;
     SendDesc_t *bsd;
     gmHeaderDataAck *p = &(gmHeader_m->dataAck);
 
+    assert(p);
+
     sfd = (gmSendFragDesc *) p->ptrToSendDesc.ptr;
     bsd = (SendDesc_t *) sfd->parentSendDesc_m;
+
+    assert(sfd);
+    assert(bsd);
 
     // if we receive duplicate acks - the send descriptor may have
     // already been returned to the freelist - or reused - before the
@@ -320,7 +337,11 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
 
 void gmRecvFragDesc::msgData(double timeNow)
 {
+    assert(gmHeader_m);
+
     gmHeaderData *p = &(gmHeader_m->data);
+
+    assert(p);
 
     DataOK = false;
     srcProcID_m = p->senderID;
