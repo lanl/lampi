@@ -518,3 +518,5 @@ Version 1.5.15
 
 - Handle error conditions in gm_send_with_callback() for fragment
   acknowledgements. [rc2]
+
+- Adding assert() statements to recvFrag.cc [rc3]
