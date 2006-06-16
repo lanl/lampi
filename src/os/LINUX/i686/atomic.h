@@ -219,9 +219,9 @@ inline static void setBigAtomicUnsignedInt(bigAtomicUnsignedInt *addr,
     addr->lock.data.lockData_m = LOCK_UNLOCKED;
 }
 
-#define mb __asm__ __volatile__("": : :"memory");
-#define wmb __asm__ __volatile__("": : :"memory");
-#define rmb __asm__ __volatile__("": : :"memory");
+#define mb() __asm__ __volatile__("": : :"memory")
+#define wmb() __asm__ __volatile__("": : :"memory")
+#define rmb() __asm__ __volatile__("": : :"memory")
 
 
 #endif /* LINUX_I686_ATOMIC_H_INCLUDED */
