@@ -520,3 +520,8 @@ Version 1.5.15
   acknowledgements. [rc2]
 
 - Adding assert() statements to recvFrag.cc [rc3]
+
+- Fixing memory barriers and spinunlock for x86 and x86_64
+  architectures.  Although these architectures have well-defined
+  memory ordering, the compiler might still reorder code if it gets
+  inlined. [rc4]
