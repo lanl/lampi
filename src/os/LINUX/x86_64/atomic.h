@@ -168,6 +168,7 @@ inline static int fetchNset(volatile int *addr, int setValue)
  */
 inline static void spinunlock(lockStructure_t *lockData)
 {
+    __asm__ __volatile__("": : :"memory");
     lockData->data.lockData_m = 1;
 }
 
@@ -217,5 +218,9 @@ inline static void setBigAtomicUnsignedInt(bigAtomicUnsignedInt *addr,
     addr->data = value;
     addr->lock.data.lockData_m = LOCK_UNLOCKED;
 }
+
+#define mb() __asm__ __volatile__("": : :"memory")
+#define wmb() __asm__ __volatile__("": : :"memory")
+#define rmb() __asm__ __volatile__("": : :"memory")
 
 #endif /* LINUX_X86_64_ATOMIC_H_INCLUDED */
