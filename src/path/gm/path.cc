@@ -607,25 +607,29 @@ void gmPath::callback(struct gm_port *port,
 		  gm_strerror(status), (int) status,
 		  myproc(), mynodename(), sfd->globalDestProc_m));
 
-        // remove frag descriptor from list of frags to be acked
-	assert(sfd->WhichQueue == GMFRAGSTOACK);
         if (sfd->WhichQueue == GMFRAGSTOACK) {
-             bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
+            // remove frag descriptor from list of frags to be acked
+            ulm_warn(("Warning: sfd->WhichQueue = GMFRAGSTOACK\n"));
+            bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
+            // requeue on list of frags to send
+            sfd->WhichQueue = GMFRAGSTOSEND;
+            bsd->FragsToSend.Append(sfd);
+
+            // make sure send descriptor is on incomplete list
+            assert (bsd->WhichQueue == INCOMPLETEISENDQUEUE
+                    || bsd->WhichQueue == UNACKEDISENDQUEUE);
+            if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
+                UnackedPostedSends.RemoveLink(bsd);
+                IncompletePostedSends.Append(bsd);
+            }
+        } else if (sfd->WhichQueue == GMFRAGSTOSEND) {
+            // LA-MPI in process of retransmitting
+            ulm_warn(("Warning: sfd->WhichQueue = GMFRAGSTOSEND\n"));
         } else {
-             ulm_err(("Warning: invalid queue?\n"));
+            ulm_err(("Error: unknown queue: sfd->WhichQueue = %d\n",
+                     sfd->WhichQueue));
         }
 
-        // requeue on list of frags to send
-        sfd->WhichQueue = GMFRAGSTOSEND;
-        bsd->FragsToSend.Append(sfd);
-
-        // make sure send descriptor is on incomplete list
-	assert (bsd->WhichQueue == INCOMPLETEISENDQUEUE
-		|| bsd->WhichQueue == UNACKEDISENDQUEUE);
-	if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
-            UnackedPostedSends.RemoveLink(bsd);
-            IncompletePostedSends.Append(bsd);
-	}
         return;
 
     case GM_SUCCESS: 
