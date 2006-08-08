@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX F77 FFLAGS ac_ct_F77 INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LN_S RANLIB ac_ct_RANLIB EGREP ALLOCA LIBOBJS POW_LIB F90 LDFLAGS_LIBMPI LDLIBS_LIBMPI LDFLAGS_MPIRUN LDLIBS_MPIRUN MODULES_LIBMPI MODULES_MPIRUN MODULES_OS LIBEXT DLLEXT enable_bproc enable_check_api_args enable_dbg enable_debug enable_dynamic enable_gm enable_profile enable_ib enable_large_file_support enable_lsf enable_memprofile enable_numa enable_pty_stdio enable_qsnet enable_reliability enable_rms enable_shared_memory enable_static enable_tcp enable_udp with_romio romiodir ROMIO_FS ROMIO_CONFIG_OPTIONS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX F77 FFLAGS ac_ct_F77 INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LN_S RANLIB ac_ct_RANLIB EGREP ALLOCA LIBOBJS POW_LIB F90 LDFLAGS_LIBMPI LDLIBS_LIBMPI LDFLAGS_MPIRUN LDLIBS_MPIRUN MODULES_LIBMPI MODULES_MPIRUN MODULES_OS LIBEXT DLLEXT enable_aio enable_bproc enable_check_api_args enable_dbg enable_debug enable_dynamic enable_gm enable_profile enable_ib enable_large_file_support enable_lsf enable_memprofile enable_numa enable_pty_stdio enable_qsnet enable_reliability enable_rms enable_shared_memory enable_static enable_tcp enable_udp with_romio romiodir ROMIO_FS ROMIO_CONFIG_OPTIONS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -14078,6 +14078,7 @@ echo $ECHO_N "checking makefile configuration include... $ECHO_C" >&6
 
 
 
+
           ac_config_files="$ac_config_files Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -14732,6 +14733,7 @@ s,@MODULES_MPIRUN@,$MODULES_MPIRUN,;t t
 s,@MODULES_OS@,$MODULES_OS,;t t
 s,@LIBEXT@,$LIBEXT,;t t
 s,@DLLEXT@,$DLLEXT,;t t
+s,@enable_aio@,$enable_aio,;t t
 s,@enable_bproc@,$enable_bproc,;t t
 s,@enable_check_api_args@,$enable_check_api_args,;t t
 s,@enable_dbg@,$enable_dbg,;t t

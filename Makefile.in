@@ -69,6 +69,7 @@ DLLEXT		:= @DLLEXT@
 
 # Optional feature/package autoconf substitutions
 
+enable_aio			:= @enable_aio@
 enable_bproc			:= @enable_bproc@
 enable_check_api_args		:= @enable_check_api_args@
 enable_dbg			:= @enable_dbg@
