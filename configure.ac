@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(lampi,1.5.15, lampi-support@lanl.gov)
+AC_INIT(lampi,1.5.16-rc1, lampi-support@lanl.gov)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([conf])
 AC_CANONICAL_HOST
@@ -166,6 +166,7 @@ enable_static=${enable_static:-yes}
 enable_bproc=${enable_bproc:-no}
 enable_dbg=${enable_dbg:-no}
 enable_debug=${enable_debug:-no}
+enable_profile=${enable_profile:-no}
 enable_gm=${enable_gm:-no}
 enable_ib=${enable_ib:-no}
 enable_large_file_support=${enable_large_file_support:-no}
@@ -200,12 +201,15 @@ i?86-pc-linux*)
            if test "$enable_debug" = "yes" ; then
               _CFLAGS="$_CFLAGS -g"
            else
-              _CFLAGS="$_CFLAGS -g -O"
+              _CFLAGS="$_CFLAGS -g -O2"
            fi
            _CFLAGS="$_CFLAGS -march=i686 -finline-functions"
            _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
            _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+          if test "$enable_profile" = "yes" ; then
+            _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+          fi
         fi
         _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
@@ -246,12 +250,15 @@ i?86-pc-cygwin*)
            if test "$enable_debug" = "yes" ; then
               _CFLAGS="$_CFLAGS -g"
            else
-              _CFLAGS="$_CFLAGS -g -O"
+              _CFLAGS="$_CFLAGS -g -O2"
            fi
            _CFLAGS="$_CFLAGS -march=i686 -finline-functions"
            _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
            _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+          if test "$enable_profile" = "yes" ; then
+            _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+          fi
         fi
         _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
@@ -283,12 +290,15 @@ ia64-unknown-linux*)
            if test "$enable_debug" = "yes" ; then
               _CFLAGS="$_CFLAGS -g"
            else
-              _CFLAGS="$_CFLAGS -g -O"
+              _CFLAGS="$_CFLAGS -g -O2"
            fi
            _CFLAGS="$_CFLAGS -finline-functions"
            _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
            _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+          if test "$enable_profile" = "yes" ; then
+            _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+          fi
         fi
         _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
@@ -320,12 +330,15 @@ x86_64-unknown-linux*)
         if test "$enable_debug" = "yes" ; then
            _CFLAGS="$_CFLAGS -g"
         else
-           _CFLAGS="$_CFLAGS -g -O"
+           _CFLAGS="$_CFLAGS -g -O2"
         fi
         _CFLAGS="$_CFLAGS -finline-functions -fPIC"
 	_CFLAGS="$_CFLAGS -Wall"
         # link flags with "make rpath=" support
         _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+        if test "$enable_profile" = "yes" ; then
+          _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+        fi
         _CXXFLAGS="$_CFLAGS -Wno-deprecated"
 
         if test "$enable_pty_stdio" = "yes" ; then
@@ -364,6 +377,9 @@ alpha*-dec*)
 
            # link flags with "make rpath=" support
            _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+          if test "$enable_profile" = "yes" ; then
+            _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+          fi
         else
            CXX="cxx"
            _CFLAGS="$_CFLAGS -arch host -accept restrict_keyword"
@@ -407,7 +423,7 @@ powerpc-apple-darwin*)
         if test "$enable_debug" = "yes" ; then
            _CFLAGS="$_CFLAGS -g"
         else
-           _CFLAGS="$_CFLAGS -g -O"
+           _CFLAGS="$_CFLAGS -g -O2"
         fi
         _CFLAGS="$_CFLAGS -finline-functions -fno-common -Wall"
         AC_MSG_CHECKING([for -Wno-long-double])
@@ -417,6 +433,9 @@ powerpc-apple-darwin*)
            AC_MSG_RESULT([yes])
         else
            AC_MSG_RESULT([no])
+        fi
+        if test "$enable_profile" = "yes" ; then
+          _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
         fi
         DLLEXT="dylib"
         CURRENT_VERSION=`echo $PACKAGE_VERSION | sed -e 's/-.*$//'`
@@ -463,12 +482,15 @@ mips-sgi-irix*)
            if test "$enable_debug" = "yes" ; then
               _CFLAGS="$_CFLAGS -g"
            else
-              _CFLAGS="$_CFLAGS -g -O"
+              _CFLAGS="$_CFLAGS -g -O2"
            fi
            _CFLAGS="$_CFLAGS -finline-functions"
            _CFLAGS="$_CFLAGS -Wall"
            # link flags with "make rpath=" support
            _LDFLAGS_LIBMPI='-shared $(patsubst %,-Wl$(comma)-rpath$(comma)%,$(subst :, ,$(rpath)))'
+          if test "$enable_profile" = "yes" ; then
+            _CFLAGS="$_CFLAGS -pg -fprofile-arcs -ftest-coverage"
+          fi
         fi
         _CXXFLAGS="-no_auto_include -Wno-deprecated $_CFLAGS"
 
@@ -689,6 +711,15 @@ else
    AC_DEFINE(ENABLE_PTY_STDIO, 0)
 fi
 
+AC_ARG_ENABLE(profile,
+              AC_HELP_STRING([--enable-profile], [enable gcov and gprof profile compilation of the library (gcc only)]))
+echo "feature PROFILE... ${enable_profile:-no}"
+if test "$enable_profile" = "yes" ; then
+   AC_DEFINE(ENABLE_PROFILE, 1)
+else
+   AC_DEFINE(ENABLE_PROFILE, 0)
+fi
+
 AC_ARG_ENABLE(check_api_args,
               AC_HELP_STRING([--enable-check-api-args], [enable checking of API arguments]))
 echo "feature CHECK_API_ARGS... ${enable_check_api_args:-no}"
@@ -766,6 +797,9 @@ AH_TEMPLATE([ENABLE_QSNET],
 AH_TEMPLATE([ENABLE_GM],
             [Define to 1 if the Myrinet GM path is enabled.])
 
+AH_TEMPLATE([ENABLE_PROFILE],
+            [Define to 1 if this is a profile compilation.])
+
 AH_TEMPLATE([ENABLE_INFINIBAND],
             [Define to 1 if the InfiniBand path is enabled.])
 
@@ -811,6 +845,7 @@ AC_SUBST(enable_dbg)
 AC_SUBST(enable_debug)
 AC_SUBST(enable_dynamic)
 AC_SUBST(enable_gm)
+AC_SUBST(enable_profile)
 AC_SUBST(enable_ib)
 AC_SUBST(enable_large_file_support)
 AC_SUBST(enable_lsf)

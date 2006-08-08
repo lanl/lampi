@@ -35,6 +35,9 @@
 /* Define to 1 if memory profiling is enabled. */
 #undef ENABLE_MEMPROFILE
 
+/* Define to 1 if this is a profile compilation. */
+#undef ENABLE_PROFILE
+
 /* Define to 1 if use of pty's for stdio redirection is enabled. */
 #undef ENABLE_PTY_STDIO
 
