@@ -882,6 +882,7 @@ Optional Features:
   --enable-profile        enable gcov and gprof profile compilation of the
                           library (gcc only)
   --enable-check-api-args enable checking of API arguments
+  --enable-aio            enable asynchronous IO (for MPI-IO)
   --enable-dbg            enable copious debugging output
   --enable-syslog         enable syslog recording of jobs
   --enable-memprofile     enable memory profiling
@@ -3047,7 +3048,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3050:" \
+echo "$as_me:3051:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -13074,6 +13075,7 @@ enable_reliability=${enable_reliability:-yes}
 enable_shared_memory=${enable_shared_memory:-yes}
 enable_static=${enable_static:-yes}
 
+enable_aio=${enable_aio:-no}
 enable_bproc=${enable_bproc:-no}
 enable_dbg=${enable_dbg:-no}
 enable_debug=${enable_debug:-no}
@@ -13901,6 +13903,13 @@ else
 _ACEOF
 
 fi
+
+# Check whether --enable-aio or --disable-aio was given.
+if test "${enable_aio+set}" = set; then
+  enableval="$enable_aio"
+
+fi;
+echo "feature AIO... ${enable_aio:-no}"
 
 # Check whether --enable-enable-dbg or --disable-enable-dbg was given.
 if test "${enable_enable_dbg+set}" = set; then

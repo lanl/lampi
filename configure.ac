@@ -164,6 +164,7 @@ enable_reliability=${enable_reliability:-yes}
 enable_shared_memory=${enable_shared_memory:-yes}
 enable_static=${enable_static:-yes}
 
+enable_aio=${enable_aio:-no}
 enable_bproc=${enable_bproc:-no}
 enable_dbg=${enable_dbg:-no}
 enable_debug=${enable_debug:-no}
@@ -729,6 +730,10 @@ if test "$enable_check_api_args" = "yes" ; then
 else
    AC_DEFINE(ENABLE_CHECK_API_ARGS, 0)
 fi
+
+AC_ARG_ENABLE(aio,
+            AC_HELP_STRING([--enable-aio], [enable asynchronous IO (for MPI-IO)]))
+echo "feature AIO... ${enable_aio:-no}"
 
 AC_ARG_ENABLE(enable-dbg,
               AC_HELP_STRING([--enable-dbg], [enable copious debugging output]))
