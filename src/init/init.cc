@@ -360,6 +360,26 @@ void lampi_init_postfork_globals(lampiState_t *s)
     if (s->client) {
         s->client->setLocalProcessRank(s->local_rank);
     }
+
+    if (ENABLE_PROFILE) {
+        /* when doing gmon profiling, get unique names for each
+         * process */
+        if (getenv("GMON_OUT_PREFIX") == NULL) {
+            static char gmon_out_prefix[64];
+            if (s->iAmDaemon) {
+                snprintf(gmon_out_prefix,
+                         sizeof(gmon_out_prefix) - 1,
+                         "GMON_OUT_PREFIX=gmon.out.daemon.%d",
+                         s->hostid);
+            } else {
+                snprintf(gmon_out_prefix,
+                         sizeof(gmon_out_prefix) - 1,
+                         "GMON_OUT_PREFIX=gmon.out.%d",
+                         s->global_rank);
+            }
+            putenv(gmon_out_prefix);
+        }
+    }
 }
 
 
