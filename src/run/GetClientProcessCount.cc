@@ -471,7 +471,6 @@ void GetClientProcessCountNoInput(const char *InfoStream)
     int Host;
     int LSFHost;
     int nhosts;
-    int nprocs;
 
     /* make sure we only do GetClientProcessCount... once between -np and -n! */
     if (gotClientProcessCount) {
@@ -484,7 +483,7 @@ void GetClientProcessCountNoInput(const char *InfoStream)
      * by default start 2 processes on each specified node.
      */
 
-    nprocs = bproc_get_nprocs();
+    int nprocs = bproc_get_nprocs();
     if (nprocs > 0) {
         int OptionIndex = MatchOption("Procs");
         sprintf(Options[OptionIndex].InputData,
