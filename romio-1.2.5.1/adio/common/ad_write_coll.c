@@ -12,7 +12,7 @@
 #endif
 
 /* eventually add this the ADIO_Hints_struct, set in ADIOI_GEN_SetInfo */
-int cb_nodes_user_specified;
+extern int cb_nodes_user_specified;
 
 /* This is global only for info purposes to rompio */
 #include <limits.h>
