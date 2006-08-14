@@ -525,3 +525,20 @@ Version 1.5.15
   architectures.  Although these architectures have well-defined
   memory ordering, the compiler might still reorder code if it gets
   inlined. [rc4]
+
+Version 1.5.16
+
+- Making "-O2" the default optimization level for gcc.
+
+- Adding an option to enable gprof profiling of the library.
+
+- Added backtrace feature for linux.
+
+- Disabled asynchronous I/O by default because of issues with panasas
+  filesystems on 64-bit linux. Renable with "configure --enable-aio".
+
+- Handling the case where a GM send may time out after LA-MPI has
+  timed out and the fragment descriptor has been moved back to the
+  GMFRAGSTOSEND list.
+
+
