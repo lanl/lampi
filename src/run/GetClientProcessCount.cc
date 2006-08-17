@@ -80,6 +80,7 @@ static int nodestatus(int node, char *status, int len)
 /*
  * Get the number of processors from the NODES environment variable
  */
+ #if ENABLE_BPROC
 static int bproc_get_nprocs(void)
 {
     FILE *fp;
@@ -103,6 +104,7 @@ static int bproc_get_nprocs(void)
 
     return nprocs;
 }
+#endif
 
 
 void getBJSNodes(void)
