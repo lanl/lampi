@@ -119,7 +119,9 @@ void GetNetworkDevListNoInput(const char *InfoStream)
 #if ENABLE_INFINIBAND
         RunParams.ListPathTypes[i][DevCnt++] = PATH_IB;
 #endif
-
+        if (DevCnt == 0) {
+            ulm_dbg(("Warning: No network devices configured\n"));
+        }
     }                           /* end i loop */
 }
 
