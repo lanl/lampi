@@ -433,7 +433,7 @@ public:
         }
 
     // process received fragment sequence range
-    int BaseRecvFragDesc_t::processRecvDataSeqs(BaseAck_t *ackPtr, 
+    int processRecvDataSeqs(BaseAck_t *ackPtr, 
 		    int glSourceProcess, ReliabilityInfo *reliabilityData);
 
     // return descriptor to descriptor pool
