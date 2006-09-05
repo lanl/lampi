@@ -93,6 +93,8 @@ int push_frags_into_network(double timeNow)
 
         if (LockReturn == 1) {
 
+            assert(SendDesc->WichQueue == INCOMPLETEISENDQUEUE);
+
             //
             // Push a send.
             //
@@ -157,6 +159,7 @@ int push_frags_into_network(double timeNow)
                     // message has been acked
                     SendDesc_t *TmpDesc = (SendDesc_t *)
                         IncompletePostedSends.RemoveLinkNoLock(SendDesc);
+                    SendDesc->WhichQueue = ONNOLIST;
 
                     if (!SendDesc->messageDone) {
                         SendDesc->messageDone = REQUEST_COMPLETE;

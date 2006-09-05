@@ -853,12 +853,16 @@ int CheckForRetransmits()
             do {
                 if (sendDesc->path_m->resend(sendDesc, &errorCode)) {
                     // move to incomplete isend list
+                    ulm_warn(("Process rank %d (%s): Warning: moving SendDesc (0x%lx, %ld) from UnackedPostedSends to IncompletePostedSends\n",
+                              myproc(), mynodename(), sendDesc, sendDesc->isendSeq_m));
                     TmpDesc = (SendDesc_t *)
                         UnackedPostedSends.RemoveLinkNoLock(sendDesc);
+                    sendDesc->WhichQueue = INCOMPLETEISENDQUEUE;
                     IncompletePostedSends.Append(sendDesc);
                 } else if (errorCode == ULM_SUCCESS) {
                     break;
                 } else if (errorCode == ULM_ERR_BAD_PATH) {
+                    ulm_warn(("WARNING: Unhandled ULM_ERR_BAD_PATH\n"));
 // revisit                    // unbind message from old path
 // revisit                    sendDesc->path_m->unbind(sendDesc, (int *) 0, 0);
 // revisit                    // select a new path
