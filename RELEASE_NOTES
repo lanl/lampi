@@ -541,4 +541,5 @@ Version 1.5.16
   timed out and the fragment descriptor has been moved back to the
   GMFRAGSTOSEND list.
 
-
+- Fix segmentation faults due to list corruption from GM fragment
+  retransmission

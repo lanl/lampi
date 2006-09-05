@@ -237,20 +237,22 @@ void gmSendFragDesc::freeResources(double timeNow, SendDesc_t *bsd)
     if ( gmSends_m != 0 )
         return;
 
-    bsd->clearToSend_m = true;
+    if (NULL != bsd) {
+        bsd->clearToSend_m = true;
 
-    // remove frag descriptor from list of frags to be acked
-    if (WhichQueue == GMFRAGSTOACK) {
-        bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
-    }
-    else if (ENABLE_RELIABILITY && WhichQueue == GMFRAGSTOSEND) {
-        bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
-        // increment NumSent since we were going to send this again...
-        (bsd->NumSent)++;
-    }
-    else {
-        ulm_exit(("Error: gmPath::callback: Frag on %d queue\n",
-                  WhichQueue));
+        // remove frag descriptor from list of frags to be acked
+        if (WhichQueue == GMFRAGSTOACK) {
+            bsd->FragsToAck.RemoveLinkNoLock((Links_t *) this);
+        }
+        else if (ENABLE_RELIABILITY && WhichQueue == GMFRAGSTOSEND) {
+            bsd->FragsToSend.RemoveLinkNoLock((Links_t *) this);
+            // increment NumSent since we were going to send this again...
+            (bsd->NumSent)++;
+        }
+        else {
+            ulm_exit(("Error: gmPath::callback: Frag on %d queue\n",
+                      WhichQueue));
+        }
     }
 
     if (ENABLE_RELIABILITY) {

@@ -287,16 +287,16 @@ void gmRecvFragDesc::msgDataAck(double timeNow)
     assert(p);
 
     sfd = (gmSendFragDesc *) p->ptrToSendDesc.ptr;
-    bsd = (SendDesc_t *) sfd->parentSendDesc_m;
-
     assert(sfd);
-    assert(bsd);
+    bsd = (SendDesc_t *) sfd->parentSendDesc_m;
 
     // if we receive duplicate acks - the send descriptor may have
     // already been returned to the freelist - or reused - before the
     // duplicate is received - so verify that this is the correct
     // descriptor
     if (NULL == bsd || bsd->isendSeq_m != p->isendSeq_m) {
+        ulm_warn(("Process rank %d (%s): Warning: returning descriptor to pool as dup: 0x%x, %d, %x\n",
+                  myproc(), mynodename(), bsd, (NULL == bsd) ? 0 : bsd->isendSeq_m, p->isendSeq_m));
         ReturnDescToPool(0);
         return;
     }

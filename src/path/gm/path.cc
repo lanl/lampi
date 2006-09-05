@@ -567,7 +567,13 @@ void gmPath::callback(struct gm_port *port,
                       gm_status_t status)
 {
     gmSendFragDesc *sfd = (gmSendFragDesc *) context;
+    assert(NULL != sfd);
     SendDesc_t *bsd = (SendDesc_t *) sfd->parentSendDesc_m;
+
+    if (NULL == bsd) {
+        ulm_warn(("Process rank %d (%s): Warning: gmPath::callback handling sfd with NULL bsd\n",
+                  myproc(), mynodename()));
+    }
 
     if (usethreads()) {
         gmState.localDevList[sfd->dev_m].Lock.lock();
@@ -604,10 +610,10 @@ void gmPath::callback(struct gm_port *port,
         // try again if the receiver is busy 
         ulm_warn(("Warning: Myrinet/GM: %s (%d). "
                   "Retrying dropped/timed-out send: %d (%s) -> %d\n",
-		  gm_strerror(status), (int) status,
-		  myproc(), mynodename(), sfd->globalDestProc_m));
+                 gm_strerror(status), (int) status,
+                 myproc(), mynodename(), sfd->globalDestProc_m));
 
-        if (sfd->WhichQueue == GMFRAGSTOACK) {
+        if (NULL != bsd && sfd->WhichQueue == GMFRAGSTOACK) {
             // remove frag descriptor from list of frags to be acked
             ulm_warn(("Warning: sfd->WhichQueue = GMFRAGSTOACK\n"));
             bsd->FragsToAck.RemoveLinkNoLock((Links_t *) sfd);
@@ -619,15 +625,21 @@ void gmPath::callback(struct gm_port *port,
             assert (bsd->WhichQueue == INCOMPLETEISENDQUEUE
                     || bsd->WhichQueue == UNACKEDISENDQUEUE);
             if (bsd->WhichQueue == UNACKEDISENDQUEUE) {
+                ulm_warn(("Process rank %d (%s): Warning: moving bsd "
+                          "(0x%lx, %ld) from UnackedPostedSends to "
+                          "IncompletePostedSends\n",
+                          myproc(), mynodename(), bsd, bsd->isendSeq_m));
                 UnackedPostedSends.RemoveLink(bsd);
+                bsd->WhichQueue = INCOMPLETEISENDQUEUE;
                 IncompletePostedSends.Append(bsd);
             }
-        } else if (sfd->WhichQueue == GMFRAGSTOSEND) {
+        } else if (NULL != bsd && sfd->WhichQueue == GMFRAGSTOSEND) {
             // LA-MPI in process of retransmitting
-            ulm_warn(("Warning: sfd->WhichQueue = GMFRAGSTOSEND\n"));
-        } else {
-            ulm_err(("Error: unknown queue: sfd->WhichQueue = %d\n",
-                     sfd->WhichQueue));
+            ulm_warn(("Process rank %d (%s): Warning: sfd->WhichQueue = GMFRAGSTOSEND\n",
+                      myproc(), mynodename()));
+        } else if (NULL != bsd) {
+            ulm_err(("Process rank %d (%s): Error: unknown queue: sfd->WhichQueue = %d\n",
+                     myproc(), mynodename(), sfd->WhichQueue));
         }
 
         return;
@@ -648,30 +660,34 @@ void gmPath::callback(struct gm_port *port,
         }
     }
 
-    // Register frag as acked, if this is not a synchronous message
-    // first fragment.  If it is, we need to wait for a fragment ACK
-    // upon matching the message.
-    if (usethreads()) {
-        bsd->Lock.lock();
-    }
+    if (NULL != bsd) {
+        // Register frag as acked, if this is not a synchronous message
+        // first fragment.  If it is, we need to wait for a fragment ACK
+        // upon matching the message.
+        if (usethreads()) {
+            bsd->Lock.lock();
+        }
 
-    (bsd->NumSent)++;
+        (bsd->NumSent)++;
 
-    sfd->setSendDidComplete(true);
-    if ((bsd->sendType == ULM_SEND_SYNCHRONOUS) && (sfd->seqOffset_m == 0)) {
-        if (sfd->didReceiveAck()) {
-            sfd->freeResources(dclock(), bsd);
+        sfd->setSendDidComplete(true);
+        if ((bsd->sendType == ULM_SEND_SYNCHRONOUS) && (sfd->seqOffset_m == 0)) {
+            if (sfd->didReceiveAck()) {
+                sfd->freeResources(dclock(), bsd);
+            }
+        } else {
+            if (false == gmState.doAck) {
+                (bsd->NumAcked)++;
+                sfd->freeResources(dclock(), bsd);
+            } else if (sfd->didReceiveAck()) {
+                sfd->freeResources(dclock(), bsd);
+            }
+        }
+
+        if (usethreads()) {
+            bsd->Lock.unlock();
         }
     } else {
-        if (false == gmState.doAck) {
-            (bsd->NumAcked)++;
-            sfd->freeResources(dclock(), bsd);
-        } else if (sfd->didReceiveAck()) {
-            sfd->freeResources(dclock(), bsd);
-        }
-    }
-
-    if (usethreads()) {
-        bsd->Lock.unlock();
+        sfd->freeResources(dclock(), NULL);
     }
 }
