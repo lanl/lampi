@@ -1,3 +1,171 @@
+2006-09-14 16:33  ddd
+
+	* Makefile.in, RELEASE_NOTES: Preparing for 1.5.16
+
+2006-09-14 16:29  ddd
+
+	* RELEASE_NOTES, configure, configure.ac,
+	  rpm/lampi-clustermatic.spec, rpm/lampi-lsf-bproc.spec,
+	  rpm/lampi.spec: Preparing for 1.5.16
+
+2006-09-05 14:44  bbarrett
+
+	* src/path/common/BaseDesc.h: * Don't need to explicitly list the
+	  class name, and it annoys modern   versions of GCC
+
+2006-09-05 13:40  bbarrett
+
+	* src/queue/: Pt2PtGroupMisc.cc, Pt2PtGroupProgress.cc: [no log
+	  message]
+
+2006-09-05 13:40  bbarrett
+
+	* RELEASE_NOTES, configure, configure.ac, src/path/gm/path.cc,
+	  src/path/gm/recvFrag.cc, src/path/gm/sendFrag.cc: * Fix for two
+	  cases (in gmPath::callback and CheckForRetransmits() where   we
+	  moved a send descriptor from UnackedPostedSends to
+	  IncompletePostedSends   without updating WhichQueue, leading to
+	  list coruption later down the line.  * Remove assert from
+	  gmRecvFragDesc::msgDataAck() that bsd is not NULL.	This was
+	  recently added, and it is ok for the BSD to be NULL, we handle
+	  that as a finished descriptor.  * Added code to
+	  gmPath::callback() to handle case similar to the
+	  gmRecvFragDesc::msgDataAck -- bsd can be NULL if the send has
+	  already   completed and this was a retransmit frag completing *
+	  Added some warnings and added rank / nodename to others to better
+	  diagnose when messages are being dropped / retransmitted *
+	  Bumped version number to 1.5.16-rc2
+
+2006-08-18 15:04  ddd
+
+	* src/run/GetNetworkDevList.cc: Quietening compiler
+
+2006-08-18 15:01  ddd
+
+	* romio-1.2.5.1/adio/ad_panfs/: pan_fs_client_cw_mode.h,
+	  pan_fs_client_statfs.h: Removing Panasas header files that really
+	  shouldn't be here.
+
+2006-08-16 18:20  ddd
+
+	* src/run/GetClientProcessCount.cc: Quietening the compiler on
+	  non-bproc builds
+
+2006-08-14 12:48  ddd
+
+	* RELEASE_NOTES: Updating for 1.5.16-rc1
+
+2006-08-08 14:53  ddd
+
+	* src/run/GetClientProcessCount.cc: Quietening compiler
+
+2006-08-08 14:53  ddd
+
+	* romio-1.2.5.1/adio/common/ad_write_coll.c: Making variable
+	  external. Presumably this is what is intended...
+
+2006-08-08 14:49  ddd
+
+	* configure, configure.ac, Makefile.in: Turning off asynchronous
+	  I/O by default since this was causing data corruption on 64-bit
+	  linux systems with panasas file systems.
+
+	  Adding a top-level configure option "--enable-aio" to turn it on
+	  for systems where it is safe.
+
+2006-08-08 11:24  ddd
+
+	* Makefile.in, configure, configure.ac: Turning off asynchronous
+	  I/O by default since this was causing data corruption on 64-bit
+	  linux systems with panasas file systems.
+
+	  Adding a top-level configure option "--enable-aio" to turn it on
+	  for systems where it is safe.
+
+2006-08-08 11:11  ddd
+
+	* src/path/gm/path.cc: Handling the case where a GM send may time
+	  out after LA-MPI has timed out and the fragment descriptor has
+	  been moved back to the GMFRAGSTOSEND list.
+
+2006-08-08 11:09  ddd
+
+	* src/mpi/c/mpi_init.c, configure, configure.ac, config.h.in:
+	  Adding backtrace support for linux
+
+2006-08-08 10:55  ddd
+
+	* src/init/init.cc: - Adding an option to enable gprof profiling of
+	  the library.
+
+2006-08-08 10:55  ddd
+
+	* configure, configure.ac, config.h.in: - Adding an option to
+	  enable gprof profiling of the library.  - Making "-O2" the
+	  default optimization level for gcc.  - Updating for 1.5.16-rc1
+
+2006-06-16 18:20  ddd
+
+	* configure, configure.ac: Preparing for 1.5.15
+
+2006-06-16 10:16  ddd
+
+	* src/os/LINUX/i686/atomic.h: Correcting memory barrier macros
+
+2006-06-16 09:36  ddd
+
+	* RELEASE_NOTES, configure, configure.ac: Preparing for 1.5.15-rc4
+
+2006-06-16 09:34  ddd
+
+	* src/os/LINUX/: i686/atomic.h, x86_64/atomic.h: Fixing memory
+	  barriers and spinunlock for x86 and x86_64 architectures.
+	  Although these architectures have well-defined memory ordering,
+	  the compiler might still reorder code if it gets inlined.
+
+2006-06-01 15:05  ddd
+
+	* RELEASE_NOTES, configure, configure.ac: Ready for 1.5.15-rc3
+
+2006-06-01 15:03  ddd
+
+	* src/path/gm/recvFrag.cc: Adding assert statements.
+
+2006-05-31 16:11  ddd
+
+	* RELEASE_NOTES, configure, configure.ac, src/path/gm/path.cc,
+	  src/path/gm/recvFrag.cc: Patch for GM_SEND_TIMED_OUT while
+	  sending an ack.
+
+2006-05-25 09:49  ddd
+
+	* configure, configure.ac, rpm/lampi-clustermatic.spec,
+	  rpm/lampi-lsf-bproc.spec, rpm/lampi.spec: Ready for 1.5.15-rc1
+
+2006-05-25 09:49  ddd
+
+	* src/include/: internal/mpif.h, mpi/mpif.h: Fix for
+	  MPI_Probe(MPI_ANY_SOURCE, ...)
+
+2006-05-23 11:04  ddd
+
+	* src/run/: access.cc, spawn_bproc_clean.cc: Adding some reference
+	  files
+
+2006-04-28 14:40  ddd
+
+	* configure, configure.ac: Improvements to configure for overriding
+	  of CFLAGS and CXXFLAGS
+
+2006-04-24 08:43  ddd
+
+	* configure, configure.ac: Updating configure so that CFLAGS and
+	  CXXFLAGS can be properly set from the command line.
+
+2006-04-06 10:01  ddd
+
+	* ChangeLog: [no log message]
+
 2006-04-06 09:53  ddd
 
 	* RELEASE_NOTES, configure, configure.ac: Release 1.5.14

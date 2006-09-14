@@ -544,3 +544,6 @@ Version 1.5.16
 - Fix segmentation faults due to list corruption from GM fragment
   retransmission
 
+- Removed the debug_gate file from the build since it is no longer
+  required.
+
