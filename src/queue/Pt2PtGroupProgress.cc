@@ -93,7 +93,7 @@ int push_frags_into_network(double timeNow)
 
         if (LockReturn == 1) {
 
-            assert(SendDesc->WichQueue == INCOMPLETEISENDQUEUE);
+            assert(SendDesc->WhichQueue == INCOMPLETEISENDQUEUE);
 
             //
             // Push a send.
