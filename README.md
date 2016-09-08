@@ -4,6 +4,9 @@ LA-MPI: Los Alamos Message Passing Interface
 LA-MPI is a portable, end-to-end, network-fault-tolerant
 implementation of the MPI 1.2 standard (with some extensions).
 
+LA-MPI has been approved for release with associated LA-CC Number
+LA-CC-02-41.
+
 
 BUILDING THE LIBRARY
 --------------------
